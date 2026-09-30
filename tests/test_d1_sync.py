@@ -6,23 +6,24 @@ from morning_hockey.schedule import HELSINKI, ScheduleDay, ScheduleGame, Schedul
 
 
 class FakeResponse:
-    def __init__(self, payload):
+    def __init__(self, payload, status_code=200):
         self._payload = payload
-
-    def raise_for_status(self):
-        pass
+        self.status_code = status_code
+        self.ok = status_code < 400
+        self.text = str(payload)
 
     def json(self):
         return self._payload
 
 
 class FakeSession:
-    def __init__(self):
+    def __init__(self, response=None):
         self.calls = []
+        self._response = response or FakeResponse({"success": True, "result": []})
 
     def post(self, url, headers=None, json=None):
         self.calls.append({"url": url, "headers": headers, "json": json})
-        return FakeResponse({"success": True, "result": []})
+        return self._response
 
 
 def test_d1_client_posts_sql_and_params_with_bearer_auth():
@@ -36,6 +37,19 @@ def test_d1_client_posts_sql_and_params_with_bearer_auth():
     assert call["url"] == "https://api.cloudflare.com/client/v4/accounts/acc123/d1/database/db456/query"
     assert call["headers"] == {"Authorization": "Bearer token789"}
     assert call["json"] == {"sql": "SELECT 1 WHERE ? = ?", "params": [1, 1]}
+
+
+def test_d1_client_surfaces_the_response_body_on_failure():
+    error_body = {"success": False, "errors": [{"code": 7500, "message": "no such table: games"}]}
+    session = FakeSession(response=FakeResponse(error_body, status_code=400))
+    client = D1Client("acc123", "db456", "token789", session=session)
+
+    try:
+        client.execute("INSERT INTO games VALUES (?)", [1])
+        assert False, "expected RuntimeError"
+    except RuntimeError as error:
+        assert "400" in str(error)
+        assert "no such table: games" in str(error)
 
 
 PAGE = SchedulePage(

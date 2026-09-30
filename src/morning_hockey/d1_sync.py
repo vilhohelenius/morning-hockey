@@ -45,7 +45,12 @@ class D1Client:
 
     def execute(self, sql: str, params: list | None = None) -> dict:
         response = self._session.post(self._url, headers=self._headers, json={"sql": sql, "params": params or []})
-        response.raise_for_status()
+        if not response.ok:
+            # D1's actual error detail (e.g. "no such table: games") is in the
+            # JSON body, not in requests' generic HTTPError message -- surface
+            # it directly so a failure is diagnosable from the Actions log
+            # alone, without needing the Cloudflare dashboard.
+            raise RuntimeError(f"D1 query failed ({response.status_code}): {response.text}")
         return response.json()
 
 
