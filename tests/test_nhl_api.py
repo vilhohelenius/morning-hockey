@@ -118,3 +118,43 @@ def test_a_429_throttles_every_later_request_not_just_the_retry(monkeypatch):
     # the next, otherwise-unrelated request was paced by the throttle
     assert len(sleeps) > sleeps_before_next_call
     assert sleeps[-1] == throttle_step
+
+
+def test_get_caches_identical_paths_within_one_client():
+    session = FakeSession([FakeResponse(200, {"n": 1})])
+    client = NHLClient(session=session)
+
+    first = client._get("/standings/now")
+    second = client._get("/standings/now")
+
+    assert first == {"n": 1}
+    assert second == {"n": 1}
+    assert session.calls == 1  # second call served from cache, no new HTTP request
+
+
+def test_get_does_not_cache_across_different_paths():
+    session = FakeSession([FakeResponse(200, {"n": 1}), FakeResponse(200, {"n": 2})])
+    client = NHLClient(session=session)
+
+    assert client._get("/roster/CHI/current") == {"n": 1}
+    assert client._get("/roster/CAR/current") == {"n": 2}
+    assert session.calls == 2
+
+
+def test_stats_query_caches_identical_queries_but_not_different_ones():
+    session = FakeSession(
+        [
+            FakeResponse(200, {"data": [{"n": 1}]}),
+            FakeResponse(200, {"data": [{"n": 2}]}),
+        ]
+    )
+    client = NHLClient(session=session)
+
+    first = client._stats_query("skater/summary", 'seasonId=1 and gameTypeId=2', "[]", -1)
+    again = client._stats_query("skater/summary", 'seasonId=1 and gameTypeId=2', "[]", -1)
+    different = client._stats_query("skater/summary", 'seasonId=2 and gameTypeId=2', "[]", -1)
+
+    assert first == [{"n": 1}]
+    assert again == [{"n": 1}]  # served from cache
+    assert different == [{"n": 2}]  # different cayenneExp -> real second request
+    assert session.calls == 2

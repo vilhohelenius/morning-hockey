@@ -36,6 +36,12 @@ class NHLClient:
         self._session = session or requests.Session()
         self._min_interval = 0.0
         self._last_request_at = 0.0
+        # Several call sites legitimately need the same endpoint+params within
+        # one run (e.g. standings for both the standings page and a team's own
+        # division context) — nothing on the NHL side changes in the ~1-2
+        # minutes a build takes, so caching per (path or query) for the life
+        # of this client instance is safe and avoids re-fetching identical data.
+        self._cache: dict[object, object] = {}
 
     def _throttle(self) -> None:
         if self._min_interval <= 0:
@@ -70,7 +76,9 @@ class NHLClient:
         raise AssertionError("unreachable")  # loop always returns or raises
 
     def _get(self, path: str) -> dict:
-        return self._request(f"{BASE_URL}{path}").json()
+        if path not in self._cache:
+            self._cache[path] = self._request(f"{BASE_URL}{path}").json()
+        return self._cache[path]
 
     def scoreboard(self, date: str = "now") -> dict:
         """Scores for a given date (YYYY-MM-DD) or the current slate ("now")."""
@@ -96,11 +104,14 @@ class NHLClient:
 
     def _stats_query(self, resource: str, cayenne_exp: str, sort: str, limit: int) -> list[dict]:
         """Query a season-long stats report (api.nhle.com/stats/rest)."""
-        response = self._request(
-            f"{STATS_BASE_URL}/{resource}",
-            params={"cayenneExp": cayenne_exp, "sort": sort, "limit": limit},
-        )
-        return response.json()["data"]
+        key = ("stats", resource, cayenne_exp, sort, limit)
+        if key not in self._cache:
+            response = self._request(
+                f"{STATS_BASE_URL}/{resource}",
+                params={"cayenneExp": cayenne_exp, "sort": sort, "limit": limit},
+            )
+            self._cache[key] = response.json()["data"]
+        return self._cache[key]
 
     def skater_summary(self, cayenne_exp: str, sort: str, limit: int = -1) -> list[dict]:
         return self._stats_query("skater/summary", cayenne_exp, sort, limit)
