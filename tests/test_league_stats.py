@@ -55,7 +55,41 @@ def test_build_skater_top_maps_bios_fields_and_builds_asset_urls():
     assert row.points == 3
     assert row.logo == "https://assets.nhle.com/logos/nhl/svg/EDM_light.svg"
     assert row.headshot == "https://assets.nhle.com/mugs/nhl/20262027/EDM/8478402.png"
-    assert client.last_skater_call == ("seasonId=20262027 and gameTypeId=2", 50)
+    assert client.last_skater_call == ("seasonId=20262027 and gameTypeId=2", -1)
+
+
+def _skater(player_id, name, position, points, goals=0, assists=0):
+    return {
+        "playerId": player_id,
+        "skaterFullName": name,
+        "currentTeamAbbrev": "CHI",
+        "nationalityCode": "CAN",
+        "positionCode": position,
+        "gamesPlayed": 1,
+        "goals": goals,
+        "assists": assists,
+        "points": points,
+    }
+
+
+def test_build_skater_top_caps_forwards_and_defensemen_independently():
+    # 3 forwards, 3 defensemen -- capping at 2 should keep 2 of EACH (4 total),
+    # not just an overall top-2 (which would be all forwards here)
+    client = FakeClient(
+        skaters=[
+            _skater(1, "Forward A", "C", points=10),
+            _skater(2, "Forward B", "L", points=9),
+            _skater(3, "Forward C", "R", points=8),
+            _skater(4, "Defenseman A", "D", points=7),
+            _skater(5, "Defenseman B", "D", points=6),
+            _skater(6, "Defenseman C", "D", points=5),
+        ]
+    )
+
+    rows = build_skater_top(client, 20262027, limit=2)
+
+    names = [r.name for r in rows]
+    assert names == ["Forward A", "Forward B", "Defenseman A", "Defenseman B"]
 
 
 def test_build_goalie_top_resolves_current_team_and_merges_nationality_from_bios():

@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import datetime as dt
 
-from .league_stats import SkaterStatRow, skater_row
+from .league_stats import SkaterStatRow, cap_per_position, skater_row
 from .nhl_api import NHLClient
 
 _CANDIDATE_SEASON_WINDOW = 2  # seasons back from the current one to consider
@@ -75,5 +75,4 @@ def build_rookie_top(client: NHLClient, season_id: int, limit: int = 100) -> lis
         if _is_rookie(landing, season_id):
             rookies.append(row)
 
-    rookies.sort(key=lambda r: (-r["points"], -r["goals"], r["skaterFullName"]))
-    return [skater_row(row, season_id) for row in rookies[:limit]]
+    return [skater_row(row, season_id) for row in cap_per_position(rookies, limit)]

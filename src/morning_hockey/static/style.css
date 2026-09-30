@@ -111,6 +111,64 @@ a {
   color: #fff;
 }
 
+.nav-group-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 10px;
+  background: none;
+  color: var(--text);
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.nav-group-toggle.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.nav-group-chevron {
+  font-size: 0.75rem;
+  transition: transform 0.15s ease;
+}
+
+.nav-group-toggle[aria-expanded="true"] .nav-group-chevron {
+  transform: rotate(180deg);
+}
+
+.nav-sublist {
+  list-style: none;
+  margin: 2px 0 0;
+  padding: 0;
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nav-sublist.open {
+  display: flex;
+}
+
+.nav-sublist a {
+  display: block;
+  padding: 8px 12px 8px 30px;
+  border-radius: 10px;
+  color: var(--muted);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.88rem;
+}
+
+.nav-sublist a.active {
+  background: var(--accent);
+  color: #fff;
+}
+
 .main-column {
   flex: 1;
   min-width: 0;

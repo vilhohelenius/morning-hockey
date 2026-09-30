@@ -77,10 +77,23 @@ def skater_row(row: dict, season_id: int) -> SkaterStatRow:
     )
 
 
+def cap_per_position(rows: list[dict], limit: int) -> list[dict]:
+    """Independently caps forwards and defensemen at `limit` each, instead
+    of one flat overall cut, then re-merges them into a single points-sorted
+    list. Otherwise filtering the resulting table down to just one position
+    on the site would show whatever handful of that position happened to
+    land in an overall top-N cut, rather than a genuinely complete top-N for
+    that position. Shared with rookies.py, which builds its list the same
+    way starting from a different (rookie-filtered) set of rows."""
+    forwards = [r for r in rows if r["positionCode"] != "D"][:limit]
+    defensemen = [r for r in rows if r["positionCode"] == "D"][:limit]
+    return sorted(forwards + defensemen, key=lambda r: (-r["points"], -r["goals"], r["skaterFullName"]))
+
+
 def build_skater_top(client: NHLClient, season_id: int, limit: int = 100) -> list[SkaterStatRow]:
     cayenne_exp = f"seasonId={season_id} and gameTypeId=2"
-    rows = client.skater_bios(cayenne_exp, _SKATER_SORT, limit)
-    return [skater_row(row, season_id) for row in rows]
+    rows = client.skater_bios(cayenne_exp, _SKATER_SORT, limit=-1)
+    return [skater_row(row, season_id) for row in cap_per_position(rows, limit)]
 
 
 def _goalie_nationalities(client: NHLClient, season_id: int) -> dict[int, str]:

@@ -26,6 +26,14 @@
     link.addEventListener("click", closeSidebar);
   });
 
+  document.querySelectorAll(".nav-group-toggle").forEach(function (toggle) {
+    toggle.addEventListener("click", function () {
+      var sublist = toggle.nextElementSibling;
+      var isOpen = sublist.classList.toggle("open");
+      toggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+    });
+  });
+
   function el(tag, className, text) {
     var node = document.createElement(tag);
     if (className) node.className = className;
@@ -395,10 +403,41 @@
     });
   }
 
+  function applyRanks(table) {
+    var positionFilter = table.dataset.positionFilter || "all";
+    var rows = Array.prototype.slice.call(table.querySelectorAll("tbody tr"));
+    rows.sort(function (a, b) {
+      return parseInt(a.dataset.rank, 10) - parseInt(b.dataset.rank, 10);
+    });
+    var visible = rows.filter(function (row) {
+      return (
+        positionFilter === "all" ||
+        (positionFilter === "D" ? row.dataset.position === "D" : row.dataset.position !== "D")
+      );
+    });
+
+    var rank = 0;
+    var prevGoals = null;
+    var prevAssists = null;
+    visible.forEach(function (row, i) {
+      var goals = row.dataset.goals;
+      var assists = row.dataset.assists;
+      if (i === 0 || goals !== prevGoals || assists !== prevAssists) {
+        rank = i + 1;
+      }
+      var cell = row.querySelector(".col-rank");
+      if (cell) cell.textContent = rank;
+      prevGoals = goals;
+      prevAssists = assists;
+    });
+  }
+
   document.querySelectorAll(".table-filters").forEach(function (group) {
     var table = document.getElementById(group.dataset.tableId);
     if (!table) return;
     var buttons = group.querySelectorAll(".filter-btn");
+
+    applyRanks(table);
 
     buttons.forEach(function (btn) {
       btn.addEventListener("click", function () {
@@ -408,6 +447,7 @@
         btn.classList.add("active");
         table.dataset.positionFilter = btn.dataset.position;
         applyRowVisibility(table);
+        applyRanks(table);
       });
     });
   });
