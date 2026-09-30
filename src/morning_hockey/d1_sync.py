@@ -172,6 +172,56 @@ def sync_rookie_stats(client: D1Client, rows: list, season_id: int) -> int:
     return len(rows)
 
 
+# ---------- Suomipörssi (every Finnish player, not a top-N cut) ----------
+
+_INSERT_FINNISH_SKATER_SQL = """
+INSERT INTO finnish_skater_stats (
+    player_id, season_id, name, team_abbrev, logo, headshot, position,
+    games_played, goals, assists, points, updated_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+"""
+
+_INSERT_FINNISH_GOALIE_SQL = """
+INSERT INTO finnish_goalie_stats (
+    player_id, season_id, name, team_abbrev, logo, headshot,
+    games_played, wins, losses, ot_losses, goals_against_average, save_pct, shutouts, updated_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+"""
+
+
+def _finnish_skater_params(row, season_id: int, synced_at: str) -> list:
+    return [
+        row.player_id, season_id, row.name, row.team, row.logo, row.headshot,
+        row.position, row.games_played, row.goals, row.assists, row.points, synced_at,
+    ]
+
+
+def _finnish_goalie_params(row, season_id: int, synced_at: str) -> list:
+    return [
+        row.player_id, season_id, row.name, row.team, row.logo, row.headshot,
+        row.games_played, row.wins, row.losses, row.ot_losses,
+        row.goals_against_average, row.save_pct, row.shutouts, synced_at,
+    ]
+
+
+def sync_finnish_skaters(client: D1Client, rows: list, season_id: int) -> int:
+    """Replaces the whole finnish_skater_stats table -- same delete-then-
+    reinsert reasoning as the other leaderboard tables above."""
+    synced_at = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
+    client.execute("DELETE FROM finnish_skater_stats")
+    for row in rows:
+        client.execute(_INSERT_FINNISH_SKATER_SQL, _finnish_skater_params(row, season_id, synced_at))
+    return len(rows)
+
+
+def sync_finnish_goalies(client: D1Client, rows: list, season_id: int) -> int:
+    synced_at = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
+    client.execute("DELETE FROM finnish_goalie_stats")
+    for row in rows:
+        client.execute(_INSERT_FINNISH_GOALIE_SQL, _finnish_goalie_params(row, season_id, synced_at))
+    return len(rows)
+
+
 def sync_standings(client: D1Client, page) -> int:
     """Upserts every team's standings row -- unlike the leaderboards above,
     the set of teams never shrinks, so a plain upsert (matching games) is

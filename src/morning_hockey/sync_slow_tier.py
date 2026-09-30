@@ -9,12 +9,20 @@ from __future__ import annotations
 
 import os
 
-from .d1_sync import D1Client, sync_goalie_stats, sync_rookie_stats, sync_skater_stats, sync_standings
+from .d1_sync import (
+    D1Client,
+    sync_finnish_goalies,
+    sync_finnish_skaters,
+    sync_goalie_stats,
+    sync_rookie_stats,
+    sync_skater_stats,
+    sync_standings,
+)
 from .league_stats import build_goalie_top, build_skater_top
 from .nhl_api import NHLClient
 from .rookies import build_rookie_top
 from .standings import build_standings
-from .suomiporssi import current_season_id
+from .suomiporssi import build_goalie_leaderboard, build_leaderboard, current_season_id
 
 
 def run() -> None:
@@ -42,6 +50,14 @@ def run() -> None:
     standings = build_standings(client)
     standings_count = sync_standings(d1, standings)
     print(f"Synced {standings_count} standings rows to D1.")
+
+    fin_skaters = build_leaderboard(client, season_id)
+    fin_skater_count = sync_finnish_skaters(d1, fin_skaters, season_id)
+    print(f"Synced {fin_skater_count} Finnish skaters to D1.")
+
+    fin_goalies = build_goalie_leaderboard(client, season_id)
+    fin_goalie_count = sync_finnish_goalies(d1, fin_goalies, season_id)
+    print(f"Synced {fin_goalie_count} Finnish goalies to D1.")
 
 
 if __name__ == "__main__":

@@ -2,6 +2,8 @@ import datetime as dt
 
 from morning_hockey.d1_sync import (
     D1Client,
+    sync_finnish_goalies,
+    sync_finnish_skaters,
     sync_goalie_stats,
     sync_rookie_stats,
     sync_schedule,
@@ -12,6 +14,7 @@ from morning_hockey.league_stats import GoalieStatRow, SkaterStatRow
 from morning_hockey.models import TeamInfo
 from morning_hockey.schedule import HELSINKI, ScheduleDay, ScheduleGame, SchedulePage
 from morning_hockey.standings import Conference, Division, StandingsPage, StandingsRow
+from morning_hockey.suomiporssi import GoalieLeaderboardRow, LeaderboardRow
 
 
 class FakeResponse:
@@ -198,6 +201,65 @@ def test_sync_rookie_stats_reuses_the_skater_shape_into_its_own_table():
     assert count == 1
     assert session.calls[0]["json"]["sql"] == "DELETE FROM rookie_season_stats"
     assert session.calls[1]["json"]["params"][2] == "Connor McDavid"
+
+
+FIN_SKATER = LeaderboardRow(
+    player_id=3,
+    name="Mikko Rantanen",
+    team="DAL",
+    logo="dal.svg",
+    headshot="rantanen.png",
+    position="R",
+    games_played=1,
+    goals=1,
+    assists=1,
+    points=2,
+)
+
+FIN_GOALIE = GoalieLeaderboardRow(
+    player_id=4,
+    name="Juuse Saros",
+    team="NSH",
+    logo="nsh.svg",
+    headshot="saros.png",
+    games_played=1,
+    wins=1,
+    losses=0,
+    ot_losses=0,
+    goals_against_average=2.0,
+    save_pct=0.930,
+    shutouts=0,
+)
+
+
+def test_sync_finnish_skaters_deletes_then_reinserts_every_row():
+    session = FakeSession()
+    client = D1Client("acc123", "db456", "token789", session=session)
+
+    count = sync_finnish_skaters(client, [FIN_SKATER], 20262027)
+
+    assert count == 1
+    assert session.calls[0]["json"]["sql"] == "DELETE FROM finnish_skater_stats"
+    insert_params = session.calls[1]["json"]["params"]
+    assert insert_params[0] == 3  # player_id
+    assert insert_params[1] == 20262027  # season_id
+    assert insert_params[2] == "Mikko Rantanen"
+    assert insert_params[3] == "DAL"  # team_abbrev
+
+
+def test_sync_finnish_goalies_deletes_then_reinserts_every_row():
+    session = FakeSession()
+    client = D1Client("acc123", "db456", "token789", session=session)
+
+    count = sync_finnish_goalies(client, [FIN_GOALIE], 20262027)
+
+    assert count == 1
+    assert session.calls[0]["json"]["sql"] == "DELETE FROM finnish_goalie_stats"
+    insert_params = session.calls[1]["json"]["params"]
+    assert insert_params[0] == 4
+    assert insert_params[2] == "Juuse Saros"
+    assert insert_params[10] == 2.0  # goals_against_average
+    assert insert_params[11] == 0.930  # save_pct
 
 
 STANDINGS_PAGE = StandingsPage(

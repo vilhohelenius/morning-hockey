@@ -124,3 +124,47 @@ CREATE TABLE IF NOT EXISTS standings_rows (
 );
 
 CREATE INDEX IF NOT EXISTS idx_standings_rows_division ON standings_rows(conference, division, division_rank);
+
+-- Phase 4 (Suomipörssi page port): every Finnish skater/goalie, fetched
+-- directly by nationalityCode="FIN" -- NOT derivable from skater_season_stats
+-- /goalie_season_stats above, which are overall top-100-per-position/top-30
+-- cuts and would silently miss a Finnish player outside that cut (goalies
+-- especially, with only 30 synced league-wide). Delete-then-reinsert each
+-- sync, same reasoning as the other leaderboard tables: a Finnish player
+-- who's sent down, injured, or traded out of the NHL needs to disappear,
+-- not just stop getting updated.
+CREATE TABLE IF NOT EXISTS finnish_skater_stats (
+    player_id INTEGER PRIMARY KEY,
+    season_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    team_abbrev TEXT NOT NULL,
+    logo TEXT NOT NULL,
+    headshot TEXT NOT NULL,
+    position TEXT NOT NULL,
+    games_played INTEGER NOT NULL,
+    goals INTEGER NOT NULL,
+    assists INTEGER NOT NULL,
+    points INTEGER NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_finnish_skater_stats_points ON finnish_skater_stats(points DESC);
+
+CREATE TABLE IF NOT EXISTS finnish_goalie_stats (
+    player_id INTEGER PRIMARY KEY,
+    season_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    team_abbrev TEXT NOT NULL,
+    logo TEXT NOT NULL,
+    headshot TEXT NOT NULL,
+    games_played INTEGER NOT NULL,
+    wins INTEGER NOT NULL,
+    losses INTEGER NOT NULL,
+    ot_losses INTEGER NOT NULL,
+    goals_against_average REAL NOT NULL,
+    save_pct REAL NOT NULL,
+    shutouts INTEGER NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_finnish_goalie_stats_save_pct ON finnish_goalie_stats(save_pct DESC);
