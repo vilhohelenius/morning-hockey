@@ -114,7 +114,7 @@ def run(pages_base_url: str, ntfy_topic: str | None, ntfy_server: str) -> None:
     for team_abbrev in TEAM_ABBREVS:
         team_page = build_team_page(client, team_abbrev, season_id)
         game_reports = build_game_reports(
-            client, team_page.recent_games, team_abbrev, team_page.name, team_page.logo
+            client, team_page.recent_games, team_abbrev, team_page.name, team_page.logo, season_id
         )
         render_game_reports(game_reports, team_abbrev, SITE_DIR)
         render_team_page(team_page, SITE_DIR, report_game_ids=frozenset(r.game_id for r in game_reports))

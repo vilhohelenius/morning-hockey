@@ -50,6 +50,7 @@ LANDING = {
                 "periodDescriptor": {"number": 1, "periodType": "REG"},
                 "goals": [
                     {
+                        "playerId": 1,
                         "firstName": {"default": "Gustav"},
                         "lastName": {"default": "Forsling"},
                         "teamAbbrev": {"default": "FLA"},
@@ -64,6 +65,11 @@ LANDING = {
 }
 
 RIGHT_RAIL = {"teamGameStats": [{"category": "sog", "awayValue": 20, "homeValue": 15}]}
+
+EMPTY_ROSTER = {"forwards": [], "defensemen": [], "goalies": []}
+
+SKATER_BIOS = [{"playerId": 1, "nationalityCode": "SWE"}]
+GOALIE_BIOS = [{"playerId": 2, "nationalityCode": "USA"}]
 
 GAME = ScheduleGame(
     game_id=2026020001,
@@ -89,9 +95,22 @@ class FakeClient:
     def boxscore(self, game_id):
         return BOXSCORE
 
+    def roster(self, team_abbrev):
+        return EMPTY_ROSTER
+
+    def skater_bios(self, cayenne_exp, sort, limit=-1):
+        return SKATER_BIOS
+
+    def goalie_bios(self, cayenne_exp, sort, limit=-1):
+        return GOALIE_BIOS
+
 
 def test_build_game_report_assigns_away_home_by_is_home_flag():
-    report = build_game_report(FakeClient(), GAME, "FLA", "Florida Panthers", "fla.svg")
+    report = build_game_report(
+        FakeClient(), GAME, "FLA", "Florida Panthers", "fla.svg", 20262027,
+        {row["playerId"]: row["nationalityCode"] for row in SKATER_BIOS},
+        {row["playerId"]: row["nationalityCode"] for row in GOALIE_BIOS},
+    )
 
     assert isinstance(report, GameReportPage)
     # GAME.is_home is False, so the team itself (FLA) is away, TOR is home
@@ -112,7 +131,11 @@ def test_build_game_report_assigns_away_home_by_is_home_flag():
 
 
 def test_build_game_report_maps_full_player_stat_lines_and_drops_unused_goalies():
-    report = build_game_report(FakeClient(), GAME, "FLA", "Florida Panthers", "fla.svg")
+    report = build_game_report(
+        FakeClient(), GAME, "FLA", "Florida Panthers", "fla.svg", 20262027,
+        {row["playerId"]: row["nationalityCode"] for row in SKATER_BIOS},
+        {row["playerId"]: row["nationalityCode"] for row in GOALIE_BIOS},
+    )
 
     assert len(report.away_skaters) == 1
     skater = report.away_skaters[0]
@@ -120,10 +143,13 @@ def test_build_game_report_maps_full_player_stat_lines_and_drops_unused_goalies(
     assert skater.plus_minus == 1
     assert skater.shots == 3
     assert skater.toi == "18:20"
+    assert skater.nationality == "SWE"
+    assert skater.headshot == "https://assets.nhle.com/mugs/nhl/20262027/FLA/1.png"
 
     # the 0:00 TOI backup goalie never played -- must be excluded
     assert len(report.away_goalies) == 1
     assert report.away_goalies[0].name == "Spencer Knight"
+    assert report.away_goalies[0].nationality == "USA"
 
     assert report.home_skaters == []
     assert report.home_goalies == []
@@ -149,6 +175,8 @@ def test_build_game_reports_skips_a_game_whose_data_fails_without_crashing():
         result="OTL",
     )
 
-    reports = build_game_reports(PartlyFailingClient(), [GAME, other_game], "FLA", "Florida Panthers", "fla.svg")
+    reports = build_game_reports(
+        PartlyFailingClient(), [GAME, other_game], "FLA", "Florida Panthers", "fla.svg", 20262027
+    )
 
     assert [r.game_id for r in reports] == [2026020001]

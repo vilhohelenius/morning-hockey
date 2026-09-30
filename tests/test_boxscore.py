@@ -7,13 +7,14 @@ SCORING_BY_PERIOD = [
         "periodDescriptor": {"number": 2, "periodType": "REG"},
         "goals": [
             {
+                "playerId": 1,
                 "firstName": {"default": "Gustav"},
                 "lastName": {"default": "Forsling"},
                 "teamAbbrev": {"default": "FLA"},
                 "timeInPeriod": "04:55",
                 "strength": "ev",
                 "assists": [
-                    {"firstName": {"default": "Carter"}, "lastName": {"default": "Verhaeghe"}},
+                    {"playerId": 2, "firstName": {"default": "Carter"}, "lastName": {"default": "Verhaeghe"}},
                 ],
             }
         ],
@@ -22,6 +23,7 @@ SCORING_BY_PERIOD = [
         "periodDescriptor": {"number": 4, "periodType": "OT"},
         "goals": [
             {
+                "playerId": 3,
                 "firstName": {"default": "Sebastian"},
                 "lastName": {"default": "Aho"},
                 "teamAbbrev": {"default": "CAR"},
@@ -43,7 +45,7 @@ TEAM_GAME_STATS = [
 
 
 def test_build_goal_events_labels_periods_and_carries_full_names():
-    events = build_goal_events(SCORING_BY_PERIOD, away_abbrev="FLA", home_abbrev="CAR")
+    events = build_goal_events(SCORING_BY_PERIOD, away_abbrev="FLA", home_abbrev="CAR", finnish_ids=set())
 
     assert len(events) == 2
     first, second = events
@@ -63,6 +65,16 @@ def test_build_goal_events_labels_periods_and_carries_full_names():
     assert second.strength == "YV"
     assert second.away_score == 1
     assert second.home_score == 1  # CAR (home) tied it up
+
+
+def test_build_goal_events_flags_finnish_scorers_and_assisters():
+    # player 2 (Carter Verhaeghe, an assist) is marked Finnish here purely to
+    # exercise the flagging -- id 1 (the goal scorer) is left un-flagged
+    events = build_goal_events(SCORING_BY_PERIOD, away_abbrev="FLA", home_abbrev="CAR", finnish_ids={2})
+
+    first = events[0]
+    assert first.scorer == "Gustav Forsling"
+    assert first.assists == ["Carter Verhaeghe 🇫🇮"]
 
 
 def test_build_team_stats_computes_save_pct_from_score_and_shots():
@@ -110,7 +122,9 @@ def test_build_team_stats_shows_a_dash_for_zero_power_play_opportunities():
 
 
 def test_build_box_score_combines_goals_and_team_stats():
-    box = build_box_score(FakeClient(), game_id=1, away_abbrev="FLA", home_abbrev="CAR", away_score=1, home_score=2)
+    box = build_box_score(
+        FakeClient(), game_id=1, away_abbrev="FLA", home_abbrev="CAR", away_score=1, home_score=2, finnish_ids=set()
+    )
 
     assert isinstance(box, GameBoxScore)
     assert len(box.goals) == 2

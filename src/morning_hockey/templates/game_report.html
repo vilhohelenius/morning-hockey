@@ -4,6 +4,8 @@
 {% block header_title %}{{ report.away.abbrev }} – {{ report.home.abbrev }}{% endblock %}
 
 {% block content %}
+<a class="back-link" href="{{ nav.team_chi }}">← Takaisin joukkuesivulle</a>
+
 <header class="page-header">
   <p class="subtitle">{{ report.date | human_date }}</p>
 </header>
@@ -20,8 +22,8 @@
       <span>{{ report.home.score }}</span>
     </div>
     <div class="team home">
-      <img src="{{ report.home.logo }}" alt="" class="logo" loading="lazy">
       <span class="abbrev">{{ report.home.abbrev }}</span>
+      <img src="{{ report.home.logo }}" alt="" class="logo" loading="lazy">
     </div>
   </div>
   {% if report.final_type != "REG" %}
@@ -81,8 +83,8 @@
   <table class="stats-table">
     <thead>
       <tr>
+        <th class="col-rank">#</th>
         <th data-type="text">Pelaaja</th>
-        <th>As</th>
         <th>M</th>
         <th>S</th>
         <th>P</th>
@@ -95,8 +97,16 @@
     <tbody>
     {% for p in skaters %}
       <tr>
-        <td>{{ p.name }}</td>
-        <td>{{ p.position }}</td>
+        <td class="col-rank">{{ loop.index }}</td>
+        <td>
+          <span class="player-cell">
+            <img src="{{ p.headshot }}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
+            <span class="player-name">
+              {{ p.name }}
+              <span class="player-meta">{{ p.nationality | nationality_flag }} {{ p.nationality }} · {{ p.position }}</span>
+            </span>
+          </span>
+        </td>
         <td>{{ p.goals }}</td>
         <td>{{ p.assists }}</td>
         <td class="stat-strong">{{ p.points }}</td>
@@ -116,6 +126,7 @@
   <table class="stats-table">
     <thead>
       <tr>
+        <th class="col-rank">#</th>
         <th data-type="text">Pelaaja</th>
         <th>Torj.</th>
         <th>Päästi</th>
@@ -127,7 +138,16 @@
     <tbody>
     {% for g in goalies %}
       <tr>
-        <td>{{ g.name }}</td>
+        <td class="col-rank">{{ loop.index }}</td>
+        <td>
+          <span class="player-cell">
+            <img src="{{ g.headshot }}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
+            <span class="player-name">
+              {{ g.name }}
+              <span class="player-meta">{{ g.nationality | nationality_flag }} {{ g.nationality }}</span>
+            </span>
+          </span>
+        </td>
         <td>{{ g.saves }}</td>
         <td>{{ g.shots_against - g.saves }}</td>
         <td class="stat-strong">{{ "%.3f" | format(g.save_pct) }}</td>

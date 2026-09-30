@@ -348,7 +348,9 @@
       awayHeaderLogo.alt = "";
       awayHeaderLogo.className = "team-detail-logo";
       header.appendChild(awayHeaderLogo);
-      header.appendChild(el("span", "team-detail-name", awayAbbrev + " – " + homeAbbrev));
+      header.appendChild(el("span", "team-detail-name", awayAbbrev));
+      header.appendChild(el("span", "team-detail-vs", "–"));
+      header.appendChild(el("span", "team-detail-name", homeAbbrev));
       var homeHeaderLogo = document.createElement("img");
       homeHeaderLogo.src = homeLogo;
       homeHeaderLogo.alt = "";

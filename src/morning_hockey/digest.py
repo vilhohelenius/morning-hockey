@@ -103,7 +103,9 @@ def build_digest(client: NHLClient, date: str = "now") -> Digest:
         home = team_info(game["homeTeam"])
         box_score = None
         try:
-            box_score = build_box_score(client, game["id"], away.abbrev, home.abbrev, away.score, home.score)
+            box_score = build_box_score(
+                client, game["id"], away.abbrev, home.abbrev, away.score, home.score, set(finnish_index)
+            )
         except (requests.exceptions.RequestException, KeyError, TypeError) as error:
             # Enrichment, not core data: a hiccup on one game's box score
             # shouldn't take down the whole night's digest.

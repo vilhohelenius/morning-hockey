@@ -4,7 +4,8 @@ stat comparison, built from the /landing and /right-rail endpoints.
 Unlike the Finnish-only scorer/goalie lines built elsewhere from the /score
 endpoint's goal list, /landing's scoring summary already carries full names
 for both the scorer and every assister, so there's no need to cross-
-reference a roster to resolve them.
+reference a roster to resolve them -- except to flag which of them (if any)
+are Finnish, which the caller supplies as a set of player ids.
 """
 from __future__ import annotations
 
@@ -13,6 +14,7 @@ from .nhl_api import NHLClient
 
 _PERIOD_NUMBER_LABELS = {1: "1. erä", 2: "2. erä", 3: "3. erä"}
 _STRENGTH_LABELS = {"pp": "YV", "sh": "AV"}
+_FINNISH_FLAG = "🇫🇮"
 
 
 def _period_label(descriptor: dict) -> str:
@@ -28,7 +30,14 @@ def _player_name(person: dict) -> str:
     return f"{person['firstName']['default']} {person['lastName']['default']}"
 
 
-def build_goal_events(scoring_by_period: list[dict], away_abbrev: str, home_abbrev: str) -> list[GoalEvent]:
+def _name_with_flag(person: dict, finnish_ids: set[int]) -> str:
+    name = _player_name(person)
+    return f"{name} {_FINNISH_FLAG}" if person["playerId"] in finnish_ids else name
+
+
+def build_goal_events(
+    scoring_by_period: list[dict], away_abbrev: str, home_abbrev: str, finnish_ids: set[int]
+) -> list[GoalEvent]:
     events = []
     away_score = 0
     home_score = 0
@@ -45,8 +54,8 @@ def build_goal_events(scoring_by_period: list[dict], away_abbrev: str, home_abbr
                     period_label=label,
                     time_in_period=goal["timeInPeriod"],
                     team_abbrev=team_abbrev,
-                    scorer=_player_name(goal),
-                    assists=[_player_name(a) for a in goal.get("assists", [])],
+                    scorer=_name_with_flag(goal, finnish_ids),
+                    assists=[_name_with_flag(a, finnish_ids) for a in goal.get("assists", [])],
                     strength=_STRENGTH_LABELS.get(goal.get("strength"), ""),
                     away_score=away_score,
                     home_score=home_score,
@@ -118,12 +127,18 @@ def build_team_stats(team_game_stats: list[dict], away_score: int, home_score: i
 
 
 def build_box_score(
-    client: NHLClient, game_id: int, away_abbrev: str, home_abbrev: str, away_score: int, home_score: int
+    client: NHLClient,
+    game_id: int,
+    away_abbrev: str,
+    home_abbrev: str,
+    away_score: int,
+    home_score: int,
+    finnish_ids: set[int],
 ) -> GameBoxScore:
     landing = client.landing(game_id)
     right_rail = client.right_rail(game_id)
 
-    goals = build_goal_events(landing.get("summary", {}).get("scoring", []), away_abbrev, home_abbrev)
+    goals = build_goal_events(landing.get("summary", {}).get("scoring", []), away_abbrev, home_abbrev, finnish_ids)
     team_stats = build_team_stats(right_rail.get("teamGameStats", []), away_score, home_score)
 
     return GameBoxScore(goals=goals, team_stats=team_stats)

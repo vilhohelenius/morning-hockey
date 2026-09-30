@@ -150,6 +150,7 @@ class FakeClient:
                         "periodDescriptor": {"number": 1, "periodType": "REG"},
                         "goals": [
                             {
+                                "playerId": 1,
                                 "firstName": {"default": "Carter"},
                                 "lastName": {"default": "Verhaeghe"},
                                 "teamAbbrev": {"default": "FLA"},
