@@ -9,6 +9,7 @@ division, or in the top 2 of its conference's wild-card race.
 """
 from __future__ import annotations
 
+import datetime as dt
 from dataclasses import dataclass
 
 from .nhl_api import NHLClient
@@ -76,8 +77,19 @@ def _row(raw: dict) -> StandingsRow:
     )
 
 
-def build_standings(client: NHLClient) -> StandingsPage:
-    raw_rows = client.standings()["standings"]
+def build_standings(client: NHLClient, today: dt.date | None = None) -> StandingsPage:
+    """Full standings by division, with playoff qualification highlighted.
+
+    During the NHL offseason the standings API returns an empty list; in that
+    case this returns an empty StandingsPage (no divisions, no conferences)
+    rather than raising, so the nightly run degrades gracefully instead of
+    crashing before it can deploy anything.
+    """
+    raw_rows = client.standings().get("standings", [])
+    if not raw_rows:
+        return StandingsPage(
+            as_of_date=(today or dt.datetime.now(dt.UTC).date()).isoformat(), divisions=[], conferences=[]
+        )
 
     by_division: dict[tuple[str, str], list[dict]] = {}
     by_conference: dict[str, list[dict]] = {}

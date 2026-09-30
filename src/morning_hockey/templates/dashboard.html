@@ -112,6 +112,7 @@
 </section>
 
 <section>
+  {% if team %}
   <h2 class="section-title"><img src="{{ team.logo }}" alt="" class="nav-icon">{{ team.name }}</h2>
   <p class="subtitle">{{ team.division_name }}: {{ team.division_rank }}. sija</p>
 
@@ -148,6 +149,10 @@
   {% endif %}
 
   <a class="archive-link" href="{{ nav.team_chi }}">Joukkuesivulle →</a>
+  {% else %}
+  <h2 class="section-title">Joukkuesivu</h2>
+  <p class="empty-note">Sarjataulukko ei ole saatavilla (kesäkausi).</p>
+  {% endif %}
 </section>
 
 {% if other_dates %}

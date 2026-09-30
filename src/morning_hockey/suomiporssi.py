@@ -2,6 +2,7 @@
 the NHL stats REST API."""
 from __future__ import annotations
 
+import datetime as dt
 from dataclasses import dataclass
 
 from .nhl_api import NHLClient
@@ -51,9 +52,21 @@ class GoalieLeaderboardRow:
     shutouts: int
 
 
-def current_season_id(client: NHLClient) -> int:
-    standings = client.standings()
-    return standings["standings"][0]["seasonId"]
+def current_season_id(client: NHLClient, today: dt.date | None = None) -> int:
+    """The active NHL season id (YYYY(YYYY+1)) for the current standings.
+
+    Falls back to a season derived from today's date when the standings are
+    empty (e.g. the NHL offseason, when the standings API returns no rows).
+    """
+    rows = client.standings().get("standings", [])
+    if rows:
+        return rows[0]["seasonId"]
+    ref = today or dt.datetime.now(dt.UTC).date()
+    # A season runs roughly October–June. Before September it belongs to the
+    # previous calendar year (the one that just ended); from September on it
+    # is the upcoming season.
+    start_year = ref.year - 1 if ref.month < 9 else ref.year
+    return start_year * 10_000 + (start_year + 1)
 
 
 def current_team(team_abbrevs: str) -> str:
