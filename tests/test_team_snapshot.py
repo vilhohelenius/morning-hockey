@@ -27,11 +27,12 @@ GOALIE_STATS = [
 ]
 
 
-def _game(game_id, date, away, home, away_score, home_score, state="OFF", final_type="REG"):
+def _game(game_id, away, home, away_score, home_score, state="OFF", final_type="REG"):
+    # Real /schedule/{date} responses don't repeat the date on each game the
+    # way club-schedule-season does — only the enclosing day dict has it.
     return {
         "id": game_id,
         "gameType": 2,
-        "gameDate": date,
         "gameState": state,
         "gameOutcome": {"lastPeriodType": final_type},
         "awayTeam": {"abbrev": away, "commonName": {"default": away}, "logo": f"{away}.svg", "score": away_score},
@@ -44,12 +45,12 @@ def _game(game_id, date, away, home, away_score, home_score, state="OFF", final_
 WEEK_MINUS_2 = {
     "previousStartDate": None,
     "nextStartDate": "2026-09-15",
-    "gameWeek": [{"date": "2026-09-08", "games": [_game(1, "2026-09-08", "CHI", "MIN", 1, 4)]}],
+    "gameWeek": [{"date": "2026-09-08", "games": [_game(1, "CHI", "MIN", 1, 4)]}],
 }
 WEEK_MINUS_1 = {
     "previousStartDate": "2026-09-08",
     "nextStartDate": "2026-09-22",
-    "gameWeek": [{"date": "2026-09-15", "games": [_game(2, "2026-09-15", "TOR", "CHI", 2, 5)]}],
+    "gameWeek": [{"date": "2026-09-15", "games": [_game(2, "TOR", "CHI", 2, 5)]}],
 }
 WEEK_NOW = {
     "previousStartDate": "2026-09-15",
@@ -59,8 +60,8 @@ WEEK_NOW = {
             "date": "2026-09-22",
             "games": [
                 # not involving CHI at all — should never leak into CHI's snapshot
-                _game(3, "2026-09-22", "TOR", "MTL", 3, 1),
-                _game(4, "2026-09-22", "CHI", "VGK", 2, 3, final_type="OT"),
+                _game(3, "TOR", "MTL", 3, 1),
+                _game(4, "CHI", "VGK", 2, 3, final_type="OT"),
             ],
         }
     ],
@@ -68,7 +69,7 @@ WEEK_NOW = {
 WEEK_PLUS_1 = {
     "previousStartDate": "2026-09-22",
     "nextStartDate": "2026-10-06",
-    "gameWeek": [{"date": "2026-09-29", "games": [_game(5, "2026-09-29", "UTA", "CHI", None, None, state="FUT")]}],
+    "gameWeek": [{"date": "2026-09-29", "games": [_game(5, "UTA", "CHI", None, None, state="FUT")]}],
 }
 
 SCHEDULE_BY_DATE = {

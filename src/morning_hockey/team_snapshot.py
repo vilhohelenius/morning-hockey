@@ -93,6 +93,10 @@ def _nearby_weeks_of_games(client: NHLClient) -> list[dict]:
     def _collect(payload: dict) -> None:
         for day in payload.get("gameWeek", []):
             for game in day.get("games", []):
+                # The weekly schedule endpoint doesn't necessarily repeat
+                # the date on each game the way club-schedule-season does;
+                # the enclosing day already carries it.
+                game.setdefault("gameDate", day["date"])
                 games_by_id[game["id"]] = game
 
     current = client.schedule("now")
