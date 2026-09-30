@@ -78,6 +78,13 @@ def run(pages_base_url: str, ntfy_topic: str | None, ntfy_server: str) -> None:
     snapshots = build_team_snapshots(client, all_abbrevs, season_id)
     render_standings(standings_page, snapshots, SITE_DIR)
     print(f"Sarjataulukko: tilanne {standings_page.as_of_date} ({len(snapshots)} joukkuekorttia).")
+    sample = next(iter(snapshots.values()), None)
+    if sample is not None:
+        print(
+            f"  esim. {sample.abbrev}: {len(sample.recent_results)} ottelua, "
+            f"{len(sample.top_scorers)} pistepörssiä, maalivahti={sample.starting_goalie}, "
+            f"seuraava={sample.next_game.opponent_abbrev if sample.next_game else None}"
+        )
 
     bracket = build_bracket(standings_page)
     render_playoffs(bracket, SITE_DIR)
