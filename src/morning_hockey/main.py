@@ -8,21 +8,22 @@ from dataclasses import asdict
 from pathlib import Path
 
 from .digest import build_digest
-from .leaderboard import build_leaderboard, current_season_id
 from .league_stats import build_goalie_top, build_skater_top
 from .nhl_api import NHLClient
-from .notify import send_ntfy
+from .notify import send_ntfy, send_team_recap
 from .playoffs import build_bracket
 from .render import (
-    render_leaderboard,
     render_league_stats,
     render_playoffs,
     render_site,
     render_standings,
+    render_suomiporssi,
     render_team_page,
 )
 from .standings import build_standings
+from .suomiporssi import build_goalie_leaderboard, build_leaderboard, current_season_id
 from .team import build_team_page
+from .team_recap import build_team_recap
 
 DATA_DIR = Path("data")
 SITE_DIR = Path("site")
@@ -58,9 +59,10 @@ def run(pages_base_url: str, ntfy_topic: str | None, ntfy_server: str) -> None:
     render_site(_load_archive(), SITE_DIR)
 
     season_id = current_season_id(client)
-    leaderboard_rows = build_leaderboard(client, season_id)
-    render_leaderboard(leaderboard_rows, season_id, SITE_DIR)
-    print(f"Pistepörssi: {len(leaderboard_rows)} suomalaispelaajaa kaudelta {season_id}.")
+    fin_skaters = build_leaderboard(client, season_id)
+    fin_goalies = build_goalie_leaderboard(client, season_id)
+    render_suomiporssi(fin_skaters, fin_goalies, season_id, SITE_DIR)
+    print(f"Suomipörssi: {len(fin_skaters)} pelaajaa, {len(fin_goalies)} maalivahtia kaudelta {season_id}.")
 
     skater_top = build_skater_top(client, season_id)
     goalie_top = build_goalie_top(client, season_id)
@@ -84,6 +86,16 @@ def run(pages_base_url: str, ntfy_topic: str | None, ntfy_server: str) -> None:
         page_url = f"{pages_base_url.rstrip('/')}/nights/{digest.date}.html"
         send_ntfy(digest, page_url, ntfy_topic, ntfy_server)
         print(f"ntfy notification sent, linking to {page_url}")
+
+    for team_abbrev in TEAM_ABBREVS:
+        recap = build_team_recap(client, team_abbrev)
+        if recap is None:
+            print(f"{team_abbrev}: ei ottelua viime yönä, ei erillistä ilmoitusta.")
+            continue
+        if ntfy_topic:
+            team_page_url = f"{pages_base_url.rstrip('/')}/joukkueet/{team_abbrev.lower()}.html"
+            send_team_recap(recap, team_page_url, ntfy_topic, ntfy_server)
+            print(f"{team_abbrev}-ilmoitus lähetetty, linkkinä {team_page_url}")
 
 
 def main() -> None:

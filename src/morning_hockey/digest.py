@@ -23,24 +23,26 @@ def final_type(game: dict) -> str:
     return game.get("gameOutcome", {}).get("lastPeriodType", "REG")
 
 
-def scorer_lines(game: dict, finnish_index: dict[int, dict]) -> list[ScorerLine]:
-    """Finnish goals + assists for a game, from the /score endpoint's goal list."""
+def scorer_lines(game: dict, player_index: dict[int, dict]) -> list[ScorerLine]:
+    """Goals + assists for a game, from the /score endpoint's goal list, for
+    whichever players are keyed in player_index (e.g. Finnish players across
+    both teams, or one team's own roster)."""
     tally: dict[int, dict] = {}
     for goal in game.get("goals", []):
         scorer_id = goal["playerId"]
-        if scorer_id in finnish_index:
+        if scorer_id in player_index:
             entry = tally.setdefault(scorer_id, {"goals": 0, "assists": 0})
             entry["goals"] += 1
         for assist in goal.get("assists", []):
             assist_id = assist["playerId"]
-            if assist_id in finnish_index:
+            if assist_id in player_index:
                 entry = tally.setdefault(assist_id, {"goals": 0, "assists": 0})
                 entry["assists"] += 1
 
     lines = [
         ScorerLine(
-            name=finnish_index[player_id]["name"],
-            team=finnish_index[player_id]["team"],
+            name=player_index[player_id]["name"],
+            team=player_index[player_id]["team"],
             goals=stats["goals"],
             assists=stats["assists"],
         )
@@ -50,21 +52,22 @@ def scorer_lines(game: dict, finnish_index: dict[int, dict]) -> list[ScorerLine]
     return lines
 
 
-def goalie_lines(boxscore: dict, finnish_index: dict[int, dict]) -> list[GoalieLine]:
-    """Finnish goalies who saw ice time, from the /boxscore endpoint."""
+def goalie_lines(boxscore: dict, player_index: dict[int, dict]) -> list[GoalieLine]:
+    """Goalies who saw ice time, from the /boxscore endpoint, filtered to
+    whichever players are keyed in player_index."""
     lines: list[GoalieLine] = []
     stats = boxscore.get("playerByGameStats", {})
     for side in ("awayTeam", "homeTeam"):
         for goalie in stats.get(side, {}).get("goalies", []):
             player_id = goalie["playerId"]
-            if player_id not in finnish_index:
+            if player_id not in player_index:
                 continue
             if goalie.get("toi", "0:00") in ("0:00", "00:00"):
                 continue
             lines.append(
                 GoalieLine(
-                    name=finnish_index[player_id]["name"],
-                    team=finnish_index[player_id]["team"],
+                    name=player_index[player_id]["name"],
+                    team=player_index[player_id]["team"],
                     decision=goalie.get("decision"),
                     saves=goalie.get("saves", 0),
                     shots_against=goalie.get("shotsAgainst", 0),

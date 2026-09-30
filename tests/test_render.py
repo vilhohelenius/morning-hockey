@@ -1,8 +1,8 @@
 import re
 from pathlib import Path
 
-from morning_hockey.leaderboard import LeaderboardRow
-from morning_hockey.render import render_leaderboard, render_site, render_standings, render_team_page
+from morning_hockey.render import render_site, render_standings, render_suomiporssi, render_team_page
+from morning_hockey.suomiporssi import GoalieLeaderboardRow, LeaderboardRow
 from morning_hockey.standings import Conference, Division, StandingsPage, StandingsRow
 from morning_hockey.team import DivisionRow, RosterSkater, TeamPage
 
@@ -37,7 +37,7 @@ def test_render_site_writes_index_and_night_page(tmp_path: Path):
     assert "Sebastian Aho" in index_html
     assert "FLA" in index_html and "CAR" in index_html
     assert 'href="arkisto.html"' in index_html
-    assert 'href="pisteporssi.html"' in index_html
+    assert 'href="suomiporssi.html"' in index_html
     assert 'href="sarjataulukko.html"' in index_html
     assert 'href="joukkueet/chi.html"' in index_html
 
@@ -58,9 +58,9 @@ def test_render_site_handles_empty_archive(tmp_path: Path):
     assert (output_dir / "arkisto.html").exists()
 
 
-def test_render_leaderboard_writes_page_with_rows(tmp_path: Path):
+def test_render_suomiporssi_writes_skaters_and_goalies(tmp_path: Path):
     output_dir = tmp_path / "site"
-    rows = [
+    skaters = [
         LeaderboardRow(
             player_id=8477493,
             name="Aleksander Barkov",
@@ -74,23 +74,41 @@ def test_render_leaderboard_writes_page_with_rows(tmp_path: Path):
             points=3,
         )
     ]
+    goalies = [
+        GoalieLeaderboardRow(
+            player_id=8477293,
+            name="Juuse Saros",
+            team="NSH",
+            logo="https://assets.nhle.com/logos/nhl/svg/NSH_light.svg",
+            headshot="https://assets.nhle.com/mugs/nhl/20262027/NSH/8477293.png",
+            games_played=1,
+            wins=1,
+            losses=0,
+            ot_losses=0,
+            goals_against_average=1.5,
+            save_pct=0.955,
+            shutouts=0,
+        )
+    ]
 
-    render_leaderboard(rows, 20262027, output_dir)
+    render_suomiporssi(skaters, goalies, 20262027, output_dir)
 
-    html = (output_dir / "pisteporssi.html").read_text(encoding="utf-8")
+    html = (output_dir / "suomiporssi.html").read_text(encoding="utf-8")
     assert "Aleksander Barkov" in html
+    assert "Juuse Saros" in html
     assert "2026" in html and "2027" in html
     assert 'src="https://assets.nhle.com/mugs/nhl/20262027/FLA/8477493.png"' in html
-    assert 'src="https://assets.nhle.com/logos/nhl/svg/FLA_light.svg"' in html
+    assert "0.955" in html
 
 
-def test_render_leaderboard_handles_no_rows(tmp_path: Path):
+def test_render_suomiporssi_handles_no_rows(tmp_path: Path):
     output_dir = tmp_path / "site"
 
-    render_leaderboard([], 20262027, output_dir)
+    render_suomiporssi([], [], 20262027, output_dir)
 
-    html = (output_dir / "pisteporssi.html").read_text(encoding="utf-8")
-    assert "Ei tilastoituja" in html
+    html = (output_dir / "suomiporssi.html").read_text(encoding="utf-8")
+    assert "Ei tilastoituja suomalaispelaajia" in html
+    assert "Ei tilastoituja suomalaisia maalivahteja" in html
 
 
 def test_render_team_page_writes_under_joukkueet(tmp_path: Path):

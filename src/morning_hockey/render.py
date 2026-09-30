@@ -49,7 +49,7 @@ _MAX_ARCHIVE_LINKS = 14
 def _nav(asset_prefix: str) -> dict[str, str]:
     return {
         "home": f"{asset_prefix}index.html",
-        "leaderboard": f"{asset_prefix}pisteporssi.html",
+        "suomiporssi": f"{asset_prefix}suomiporssi.html",
         "standings": f"{asset_prefix}sarjataulukko.html",
         "playoffs": f"{asset_prefix}playoffit.html",
         "league_stats": f"{asset_prefix}tilastot.html",
@@ -108,16 +108,17 @@ def render_site(archive: list[dict], output_dir: Path) -> None:
     (output_dir / "arkisto.html").write_text(archive_html, encoding="utf-8")
 
 
-def render_leaderboard(rows: list, season_id: int, output_dir: Path) -> None:
+def render_suomiporssi(skaters: list, goalies: list, season_id: int, output_dir: Path) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
-    html = _env.get_template("leaderboard.html").render(
-        rows=rows,
+    html = _env.get_template("suomiporssi.html").render(
+        skaters=skaters,
+        goalies=goalies,
         season_label=season_label(season_id),
         asset_prefix="",
         nav=_nav(""),
-        active_page="leaderboard",
+        active_page="suomiporssi",
     )
-    (output_dir / "pisteporssi.html").write_text(html, encoding="utf-8")
+    (output_dir / "suomiporssi.html").write_text(html, encoding="utf-8")
 
 
 def render_standings(page, output_dir: Path) -> None:

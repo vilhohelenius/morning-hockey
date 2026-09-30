@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .leaderboard import HEADSHOT_URL, TEAM_LOGO_URL, current_team
+from .suomiporssi import HEADSHOT_URL, TEAM_LOGO_URL, current_team
 from .nhl_api import NHLClient
 
 _SKATER_SORT = (
