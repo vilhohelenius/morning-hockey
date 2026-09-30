@@ -770,71 +770,44 @@ main {
   text-align: left;
 }
 
-.team-panel-backdrop {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.25);
-  z-index: 40;
-  /* Decorative dimming only: team buttons must stay clickable underneath
-     so clicking another team while the panel is open switches it in place. */
-  pointer-events: none;
-}
-
-.team-panel-backdrop.open {
-  display: block;
-}
-
-.team-panel {
-  display: none;
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 41;
-  max-height: 25vh;
-  overflow-y: auto;
+.team-detail {
   background: var(--card-bg);
-  border-top: 1px solid var(--border);
-  border-radius: 16px 16px 0 0;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.25);
-  padding: 10px 14px 14px;
-}
-
-.team-panel.open {
-  display: block;
-}
-
-@media (min-width: 860px) {
-  .team-panel {
-    left: auto;
-    right: 20px;
-    bottom: 20px;
-    width: min(340px, 25vw);
-    max-height: 25vh;
-    border-radius: 16px;
-    border: 1px solid var(--border);
-  }
-}
-
-.team-panel-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 6px;
-}
-
-.team-panel-title {
-  font-weight: 700;
-  font-size: 0.95rem;
-}
-
-.team-panel-body {
+  border: 1px solid var(--accent);
+  border-radius: 12px;
+  padding: 10px 12px 12px;
   display: flex;
   flex-direction: column;
   gap: 8px;
   font-size: 0.82rem;
+}
+
+.team-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.team-detail-logo {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.team-detail-name {
+  flex: 1;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.team-detail-close {
+  flex-shrink: 0;
+}
+
+.team-detail-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .tp-section-title {
@@ -860,12 +833,30 @@ main {
 
 .tp-scorer-row {
   display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: 8px;
 }
 
 .tp-scorer-line {
   color: var(--muted);
+  white-space: nowrap;
+}
+
+.tp-player {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.tp-player-photo {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--bg);
+  flex-shrink: 0;
 }
 
 .tp-empty {
@@ -884,10 +875,6 @@ main {
   border: 1px solid var(--border);
   border-radius: 12px;
   font-size: 0.9rem;
-}
-
-.primetime-row.is-prime {
-  border-color: var(--accent);
 }
 
 .primetime-time {
@@ -918,14 +905,4 @@ main {
 .primetime-score-pending {
   color: var(--muted);
   font-weight: 400;
-}
-
-.primetime-dot {
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--accent);
-  margin-left: 4px;
-  vertical-align: middle;
 }

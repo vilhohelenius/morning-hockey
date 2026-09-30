@@ -12,13 +12,7 @@ import time
 from dataclasses import dataclass
 
 from .nhl_api import NHLClient
-
-# A brief pause between the 32 back-to-back club-schedule-season requests
-# (one per team), so this burst is less likely to trip the public API's
-# rate limiting in the first place. NHLClient itself retries with backoff
-# if a request gets rate-limited anyway.
-_SCHEDULE_REQUEST_PAUSE = 0.2
-from .suomiporssi import current_team
+from .suomiporssi import HEADSHOT_URL, current_team
 from .team import ScheduleGame, split_schedule
 
 _RECENT = 5
@@ -33,6 +27,12 @@ _GOALIE_SORT = (
     '{"property":"savePct","direction":"DESC"}]'
 )
 
+# A brief pause between the 32 back-to-back club-schedule-season requests
+# (one per team), so this burst is less likely to trip the public API's
+# rate limiting in the first place. NHLClient itself retries with backoff
+# if a request gets rate-limited anyway.
+_SCHEDULE_REQUEST_PAUSE = 0.2
+
 
 @dataclass(frozen=True)
 class RecentResult:
@@ -43,6 +43,7 @@ class RecentResult:
 @dataclass(frozen=True)
 class TopScorer:
     name: str
+    headshot: str
     goals: int
     assists: int
     points: int
@@ -51,6 +52,7 @@ class TopScorer:
 @dataclass(frozen=True)
 class SnapshotGoalie:
     name: str
+    headshot: str
     games_played: int
     save_pct: float
 
@@ -86,9 +88,16 @@ def _team_snapshot(
     abbrev: str,
     skater_rows: list[dict],
     goalie_rows: list[dict],
+    season_id: int,
 ) -> TeamSnapshot:
     top_scorers = [
-        TopScorer(name=row["skaterFullName"], goals=row["goals"], assists=row["assists"], points=row["points"])
+        TopScorer(
+            name=row["skaterFullName"],
+            headshot=HEADSHOT_URL.format(season=season_id, abbrev=abbrev, player_id=row["playerId"]),
+            goals=row["goals"],
+            assists=row["assists"],
+            points=row["points"],
+        )
         for row in skater_rows[:_TOP_SCORERS]
     ]
 
@@ -96,7 +105,10 @@ def _team_snapshot(
     if goalie_rows:
         top = goalie_rows[0]
         starting_goalie = SnapshotGoalie(
-            name=top["goalieFullName"], games_played=top["gamesPlayed"], save_pct=top["savePct"]
+            name=top["goalieFullName"],
+            headshot=HEADSHOT_URL.format(season=season_id, abbrev=abbrev, player_id=top["playerId"]),
+            games_played=top["gamesPlayed"],
+            save_pct=top["savePct"],
         )
 
     schedule = client.club_schedule_season(abbrev)
@@ -126,6 +138,6 @@ def build_team_snapshots(
         if i > 0:
             time.sleep(_SCHEDULE_REQUEST_PAUSE)
         snapshots[abbrev] = _team_snapshot(
-            client, abbrev, skaters_by_team.get(abbrev, []), goalies_by_team.get(abbrev, [])
+            client, abbrev, skaters_by_team.get(abbrev, []), goalies_by_team.get(abbrev, []), season_id
         )
     return snapshots

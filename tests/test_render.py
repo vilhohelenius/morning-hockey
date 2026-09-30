@@ -201,8 +201,21 @@ def test_render_standings_writes_divisions_and_wildcard_race(tmp_path: Path):
         "CHI": TeamSnapshot(
             abbrev="CHI",
             recent_results=[RecentResult(result="W", opponent_abbrev="NSH")],
-            top_scorers=[TopScorer(name="Tyler Bertuzzi", goals=2, assists=1, points=3)],
-            starting_goalie=SnapshotGoalie(name="Spencer Knight", games_played=5, save_pct=0.912),
+            top_scorers=[
+                TopScorer(
+                    name="Tyler Bertuzzi",
+                    headshot="https://assets.nhle.com/mugs/nhl/20262027/CHI/1.png",
+                    goals=2,
+                    assists=1,
+                    points=3,
+                )
+            ],
+            starting_goalie=SnapshotGoalie(
+                name="Spencer Knight",
+                headshot="https://assets.nhle.com/mugs/nhl/20262027/CHI/2.png",
+                games_played=5,
+                save_pct=0.912,
+            ),
             next_game=ScheduleGame(
                 game_id=2,
                 date="2026-10-01",
@@ -228,9 +241,11 @@ def test_render_standings_writes_divisions_and_wildcard_race(tmp_path: Path):
     # legend dot + one qualified row in the division + one in the wildcard race
     assert html.count("playoff-dot") == 3
     assert 'data-team-abbrev="CHI"' in html
+    assert 'data-team-name="Blackhawks"' in html
     assert "Tyler Bertuzzi" in html
     assert "Spencer Knight" in html
     assert '"opponent_abbrev": "UTA"' in html
+    assert "team-panel" not in html  # old fixed-panel markup is gone
 
 
 def test_render_playoffs_writes_round1_and_placeholders(tmp_path: Path):
@@ -318,9 +333,8 @@ def test_render_primetime_writes_games_with_finnish_times(tmp_path: Path):
                 game_id=1,
                 away=TeamInfo(abbrev="BOS", name="Bruins", logo="bos.svg", score=0),
                 home=TeamInfo(abbrev="NYR", name="Rangers", logo="nyr.svg", score=0),
-                start_local=dt.datetime(2026, 1, 16, 2, 0, tzinfo=HELSINKI),
+                start_local=dt.datetime(2026, 1, 15, 20, 0, tzinfo=HELSINKI),
                 game_state="FUT",
-                is_prime_time=True,
                 is_finished=False,
             )
         ],
@@ -331,8 +345,7 @@ def test_render_primetime_writes_games_with_finnish_times(tmp_path: Path):
 
     html = (output_dir / "primetime.html").read_text(encoding="utf-8")
     assert "BOS" in html and "NYR" in html
-    assert "02:00" in html
-    assert "primetime-dot" in html
+    assert "20:00" in html
 
 
 def test_render_league_stats_writes_skaters_and_goalies_tables(tmp_path: Path):

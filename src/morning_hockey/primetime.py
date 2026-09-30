@@ -1,10 +1,6 @@
-"""Tonight's NHL schedule converted to Finnish local time, so a Finnish fan
-can see at a glance which games land in the evening/early-night window they
-can actually watch live — US matinee and early-evening games, through the
-typical 7pm ET slate (which lands around 2am Finnish time).
-
-West-coast games starting even later (landing in the Finnish early-morning
-hours) are still listed, just not flagged as prime time.
+"""Upcoming NHL games, filtered to the ones a Finnish fan could watch live:
+those starting between 18:00 and 24:00 Europe/Helsinki local time, across
+the next week's schedule.
 """
 from __future__ import annotations
 
@@ -18,9 +14,8 @@ from .nhl_api import NHLClient
 
 HELSINKI = ZoneInfo("Europe/Helsinki")
 
-# Prime time = Finnish local hour is >= 18 (evening) or < 3 (early night).
-_PRIME_START_HOUR = 18
-_PRIME_END_HOUR = 3
+_WINDOW_START_HOUR = 18  # 18:00 Finnish time
+_WINDOW_END_HOUR = 24  # up to (not including) midnight
 
 
 @dataclass(frozen=True)
@@ -30,7 +25,6 @@ class PrimeTimeGame:
     home: TeamInfo
     start_local: dt.datetime  # Europe/Helsinki, tz-aware
     game_state: str
-    is_prime_time: bool
     is_finished: bool
 
 
@@ -40,31 +34,34 @@ class PrimeTimePage:
     games: list[PrimeTimeGame]
 
 
-def is_prime_time(local_start: dt.datetime) -> bool:
-    hour = local_start.hour
-    return hour >= _PRIME_START_HOUR or hour < _PRIME_END_HOUR
+def starts_in_window(local_start: dt.datetime) -> bool:
+    return _WINDOW_START_HOUR <= local_start.hour < _WINDOW_END_HOUR
 
 
 def build_primetime(client: NHLClient, date: str = "now") -> PrimeTimePage:
-    scoreboard = client.scoreboard(date)
-    target_date = scoreboard.get("currentDate", date)
+    schedule = client.schedule(date)
+    game_week = schedule.get("gameWeek", [])
+    as_of_date = game_week[0]["date"] if game_week else date
 
     games = []
-    for game in scoreboard.get("games", []):
-        start_utc = dt.datetime.fromisoformat(game["startTimeUTC"].replace("Z", "+00:00"))
-        start_local = start_utc.astimezone(HELSINKI)
-        game_state = game.get("gameState", "")
-        games.append(
-            PrimeTimeGame(
-                game_id=game["id"],
-                away=team_info(game["awayTeam"]),
-                home=team_info(game["homeTeam"]),
-                start_local=start_local,
-                game_state=game_state,
-                is_prime_time=is_prime_time(start_local),
-                is_finished=game_state in FINISHED_STATES,
+    for day in game_week:
+        for game in day.get("games", []):
+            start_utc = dt.datetime.fromisoformat(game["startTimeUTC"].replace("Z", "+00:00"))
+            start_local = start_utc.astimezone(HELSINKI)
+            if not starts_in_window(start_local):
+                continue
+
+            game_state = game.get("gameState", "")
+            games.append(
+                PrimeTimeGame(
+                    game_id=game["id"],
+                    away=team_info(game["awayTeam"]),
+                    home=team_info(game["homeTeam"]),
+                    start_local=start_local,
+                    game_state=game_state,
+                    is_finished=game_state in FINISHED_STATES,
+                )
             )
-        )
     games.sort(key=lambda g: g.start_local)
 
-    return PrimeTimePage(as_of_date=target_date, games=games)
+    return PrimeTimePage(as_of_date=as_of_date, games=games)

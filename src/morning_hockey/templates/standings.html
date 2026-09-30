@@ -27,7 +27,7 @@
     {% for row in division.rows %}
     <div class="division-row">
       <span class="division-rank">{{ row.division_rank }}</span>
-      <button type="button" class="division-team team-trigger" data-team-abbrev="{{ row.abbrev }}">
+      <button type="button" class="division-team team-trigger" data-team-abbrev="{{ row.abbrev }}" data-team-name="{{ row.name }}">
         <img src="{{ row.logo }}" alt="" class="division-logo" loading="lazy">
         {{ row.abbrev }}
         {% if row.qualified %}<span class="playoff-dot"></span>{% endif %}
@@ -50,7 +50,7 @@
     {% for row in conference.wildcard_race[:6] %}
     <div class="division-row">
       <span class="division-rank">VK{{ row.wildcard_rank }}</span>
-      <button type="button" class="division-team team-trigger" data-team-abbrev="{{ row.abbrev }}">
+      <button type="button" class="division-team team-trigger" data-team-abbrev="{{ row.abbrev }}" data-team-name="{{ row.name }}">
         <img src="{{ row.logo }}" alt="" class="division-logo" loading="lazy">
         {{ row.abbrev }}
         {% if row.qualified %}<span class="playoff-dot"></span>{% endif %}
@@ -70,13 +70,5 @@
 </section>
 {% endfor %}
 
-<div id="team-panel-backdrop" class="team-panel-backdrop"></div>
-<div id="team-panel" class="team-panel" role="dialog" aria-modal="true" aria-hidden="true">
-  <div class="team-panel-header">
-    <span id="team-panel-title" class="team-panel-title"></span>
-    <button type="button" id="team-panel-close" class="icon-btn" aria-label="Sulje">✕</button>
-  </div>
-  <div id="team-panel-body" class="team-panel-body"></div>
-</div>
 <script id="team-snapshots" type="application/json">{{ snapshots_json | safe }}</script>
 {% endblock %}

@@ -26,14 +26,9 @@
     link.addEventListener("click", closeSidebar);
   });
 
-  var teamPanel = document.getElementById("team-panel");
-  var teamPanelBackdrop = document.getElementById("team-panel-backdrop");
-  var teamPanelTitle = document.getElementById("team-panel-title");
-  var teamPanelBody = document.getElementById("team-panel-body");
-  var teamPanelClose = document.getElementById("team-panel-close");
   var snapshotsEl = document.getElementById("team-snapshots");
 
-  if (teamPanel && snapshotsEl) {
+  if (snapshotsEl) {
     var snapshots = {};
     try {
       snapshots = JSON.parse(snapshotsEl.textContent || "{}");
@@ -41,13 +36,29 @@
       snapshots = {};
     }
 
-    var openAbbrev = null;
+    var openTrigger = null;
+    var detailEl = null;
 
     function el(tag, className, text) {
       var node = document.createElement(tag);
       if (className) node.className = className;
       if (text !== undefined) node.textContent = text;
       return node;
+    }
+
+    function playerChip(headshotUrl, label) {
+      var wrap = el("span", "tp-player");
+      var img = document.createElement("img");
+      img.src = headshotUrl;
+      img.alt = "";
+      img.loading = "lazy";
+      img.className = "tp-player-photo";
+      img.onerror = function () {
+        img.style.visibility = "hidden";
+      };
+      wrap.appendChild(img);
+      wrap.appendChild(el("span", null, label));
+      return wrap;
     }
 
     function section(titleText) {
@@ -80,7 +91,7 @@
       }
       scorers.forEach(function (s, i) {
         var row = el("div", "tp-scorer-row");
-        row.appendChild(el("span", null, (i + 1) + ". " + s.name));
+        row.appendChild(playerChip(s.headshot, (i + 1) + ". " + s.name));
         row.appendChild(el("span", "tp-scorer-line", s.goals + "+" + s.assists + "=" + s.points));
         wrap.appendChild(row);
       });
@@ -88,13 +99,13 @@
     }
 
     function renderGoalie(goalie) {
-      var wrap = section("Oletettu ykkösmaalivahti");
+      var wrap = section("Ykkösmaalivahti");
       if (!goalie) {
         wrap.appendChild(el("p", "tp-empty", "Ei tietoa."));
         return wrap;
       }
       var row = el("div", "tp-scorer-row");
-      row.appendChild(el("span", null, goalie.name));
+      row.appendChild(playerChip(goalie.headshot, goalie.name));
       row.appendChild(el("span", "tp-scorer-line", goalie.games_played + " O · " + goalie.save_pct.toFixed(3)));
       wrap.appendChild(row);
       return wrap;
@@ -111,55 +122,69 @@
       return wrap;
     }
 
-    function openTeamPanel(abbrev) {
+    function closeDetail() {
+      if (detailEl && detailEl.parentNode) detailEl.parentNode.removeChild(detailEl);
+      if (openTrigger) openTrigger.setAttribute("aria-expanded", "false");
+      detailEl = null;
+      openTrigger = null;
+    }
+
+    function openDetail(trigger) {
+      var abbrev = trigger.dataset.teamAbbrev;
       var data = snapshots[abbrev];
       if (!data) return;
 
-      teamPanelTitle.textContent = abbrev;
-      teamPanelBody.innerHTML = "";
-      teamPanelBody.appendChild(renderResults(data.recent_results || []));
-      teamPanelBody.appendChild(renderScorers(data.top_scorers || []));
-      teamPanelBody.appendChild(renderGoalie(data.starting_goalie));
-      teamPanelBody.appendChild(renderNextGame(data.next_game));
+      closeDetail();
 
-      teamPanel.classList.add("open");
-      teamPanel.setAttribute("aria-hidden", "false");
-      teamPanelBackdrop.classList.add("open");
-      openAbbrev = abbrev;
+      var logoSrc = trigger.querySelector("img") ? trigger.querySelector("img").src : "";
+      var teamName = trigger.dataset.teamName || abbrev;
+
+      var panel = el("div", "team-detail");
+
+      var header = el("div", "team-detail-header");
+      var logo = document.createElement("img");
+      logo.src = logoSrc;
+      logo.alt = "";
+      logo.className = "team-detail-logo";
+      header.appendChild(logo);
+      header.appendChild(el("span", "team-detail-name", teamName));
+      var closeBtn = document.createElement("button");
+      closeBtn.type = "button";
+      closeBtn.className = "icon-btn team-detail-close";
+      closeBtn.setAttribute("aria-label", "Sulje");
+      closeBtn.textContent = "✕";
+      closeBtn.addEventListener("click", closeDetail);
+      header.appendChild(closeBtn);
+      panel.appendChild(header);
+
+      var body = el("div", "team-detail-body");
+      body.appendChild(renderResults(data.recent_results || []));
+      body.appendChild(renderScorers(data.top_scorers || []));
+      body.appendChild(renderGoalie(data.starting_goalie));
+      body.appendChild(renderNextGame(data.next_game));
+      panel.appendChild(body);
+
+      var row = trigger.closest(".division-row");
+      row.insertAdjacentElement("afterend", panel);
+
+      trigger.setAttribute("aria-expanded", "true");
+      detailEl = panel;
+      openTrigger = trigger;
     }
 
-    function closeTeamPanel() {
-      teamPanel.classList.remove("open");
-      teamPanel.setAttribute("aria-hidden", "true");
-      teamPanelBackdrop.classList.remove("open");
-      openAbbrev = null;
-    }
-
-    // The backdrop is decorative dimming only (pointer-events: none in CSS)
-    // so a team button underneath it stays clickable while the panel is
-    // open — switching teams should replace the panel's content in place,
-    // not require closing it first. Closing on an "outside" click is
-    // handled here instead of via a backdrop click listener.
     document.addEventListener("click", function (event) {
       var trigger = event.target.closest(".team-trigger");
-      if (trigger) {
-        var abbrev = trigger.dataset.teamAbbrev;
-        if (openAbbrev === abbrev) {
-          closeTeamPanel();
-        } else {
-          openTeamPanel(abbrev);
-        }
-        return;
-      }
+      if (!trigger) return;
 
-      if (openAbbrev && !event.target.closest("#team-panel")) {
-        closeTeamPanel();
+      if (openTrigger === trigger) {
+        closeDetail();
+      } else {
+        openDetail(trigger);
       }
     });
 
-    if (teamPanelClose) teamPanelClose.addEventListener("click", closeTeamPanel);
     document.addEventListener("keydown", function (event) {
-      if (event.key === "Escape") closeTeamPanel();
+      if (event.key === "Escape") closeDetail();
     });
   }
 

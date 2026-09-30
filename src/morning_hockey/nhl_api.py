@@ -60,6 +60,12 @@ class NHLClient:
     def club_schedule_season(self, team_abbrev: str) -> dict:
         return self._get(f"/club-schedule-season/{team_abbrev}/now")
 
+    def schedule(self, date: str = "now") -> dict:
+        """One week of league-wide games starting at the given date
+        (YYYY-MM-DD) or the current week ("now"), as {"gameWeek": [{"date":
+        ..., "games": [...]}, ...]}."""
+        return self._get(f"/schedule/{date}")
+
     def _stats_query(self, resource: str, cayenne_exp: str, sort: str, limit: int) -> list[dict]:
         """Query a season-long stats report (api.nhle.com/stats/rest)."""
         response = self._request(

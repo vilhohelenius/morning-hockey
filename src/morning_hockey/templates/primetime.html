@@ -6,15 +6,15 @@
 {% block content %}
 <header class="page-header">
   <h1>🌙 Prime time</h1>
-  <p class="subtitle">Yön ottelut Suomen aikaan · {{ page.as_of_date | human_date }}</p>
-  <p class="standings-legend"><span class="primetime-dot"></span> ilta/alkuyö Suomen aikaa (klo 18–03) —
-    näihin ehtii valveilla</p>
+  <p class="subtitle">Tuleva viikko, alkaen {{ page.as_of_date | human_date }}</p>
+  <p class="standings-legend">Vain ottelut, jotka alkavat Suomen aikaa klo 18–00 — nämä ehtii katsomaan
+    illalla ilman yövalvomista.</p>
 </header>
 
 {% if page.games %}
 <div class="schedule-list">
   {% for game in page.games %}
-  <div class="primetime-row {{ 'is-prime' if game.is_prime_time else '' }}">
+  <div class="primetime-row">
     <span class="primetime-time">{{ game.start_local | finnish_time }}</span>
     <span class="primetime-matchup">
       <img src="{{ game.away.logo }}" alt="" class="schedule-logo" loading="lazy">
@@ -22,7 +22,6 @@
       <span class="primetime-at">@</span>
       <img src="{{ game.home.logo }}" alt="" class="schedule-logo" loading="lazy">
       {{ game.home.abbrev }}
-      {% if game.is_prime_time %}<span class="primetime-dot"></span>{% endif %}
     </span>
     {% if game.is_finished %}
     <span class="primetime-score">{{ game.away.score }}–{{ game.home.score }}</span>
@@ -33,6 +32,6 @@
   {% endfor %}
 </div>
 {% else %}
-<p class="empty-note">Ei otteluita tänään.</p>
+<p class="empty-note">Ei klo 18–00 alkavia otteluita tulevalla viikolla.</p>
 {% endif %}
 {% endblock %}

@@ -78,10 +78,12 @@ def test_build_team_snapshots_ranks_top_scorers_and_starting_goalie():
 
     # top 3 by points, extra 4th skater excluded
     assert [s.name for s in snap.top_scorers] == ["Connor Bedard", "Tyler Bertuzzi", "Extra Skater"]
+    assert snap.top_scorers[0].headshot == "https://assets.nhle.com/mugs/nhl/20262027/CHI/2.png"
 
     # most games played wins the presumed #1 goalie spot, not best save pct
     assert snap.starting_goalie.name == "Spencer Knight"
     assert snap.starting_goalie.games_played == 8
+    assert snap.starting_goalie.headshot == "https://assets.nhle.com/mugs/nhl/20262027/CHI/10.png"
 
     # last 5 (here: 2) results, newest first, OT loss classified correctly
     assert [r.result for r in snap.recent_results] == ["OTL", "W"]
