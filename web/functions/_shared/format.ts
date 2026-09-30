@@ -85,6 +85,18 @@ export function nationalityFlag(code: string): string {
   return [...iso2].map((letter) => String.fromCodePoint(0x1f1e6 + letter.charCodeAt(0) - 65)).join("");
 }
 
+const FINAL_TYPES: Record<string, string> = { OT: "Jatkoaika", SO: "Voittolaukaukset" };
+
+export function finalTypeFi(code: string): string {
+  return FINAL_TYPES[code] ?? code;
+}
+
+const DECISIONS: Record<string, string> = { W: "voitto", L: "tappio" };
+
+export function decisionFi(code: string): string {
+  return DECISIONS[code] ?? code;
+}
+
 // D1 rows are plain data, not markup -- escape anything interpolated into
 // HTML so a stray "<"/"&" in a name (or, later, a user-entered favorite)
 // can't break the page or inject markup.

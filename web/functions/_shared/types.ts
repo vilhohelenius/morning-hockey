@@ -96,6 +96,44 @@ export interface FinnishGoalieRow {
   shutouts: number;
 }
 
+export interface DigestRow {
+  date: string;
+  generated_at: string;
+}
+
+export interface DigestGameRow {
+  game_id: number;
+  digest_date: string;
+  away_abbrev: string;
+  away_name: string;
+  away_logo: string;
+  away_score: number;
+  home_abbrev: string;
+  home_name: string;
+  home_logo: string;
+  home_score: number;
+  final_type: string;
+}
+
+export interface DigestScorerRow {
+  game_id: number;
+  name: string;
+  team_abbrev: string;
+  goals: number;
+  assists: number;
+}
+
+export interface DigestGoalieRow {
+  game_id: number;
+  name: string;
+  team_abbrev: string;
+  decision: string | null;
+  saves: number;
+  shots_against: number;
+  save_pct: number | null;
+  toi: string;
+}
+
 export interface Env {
   DB: D1Database;
 }
