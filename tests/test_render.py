@@ -181,3 +181,43 @@ def test_render_standings_writes_divisions_and_wildcard_race(tmp_path: Path):
     assert "NSH" in html
     # legend dot + one qualified row in the division + one in the wildcard race
     assert html.count("playoff-dot") == 3
+
+
+def test_render_playoffs_writes_round1_and_placeholders(tmp_path: Path):
+    from morning_hockey.playoffs import ConferenceBracket, Matchup, PlayoffBracket
+    from morning_hockey.render import render_playoffs
+    from morning_hockey.standings import StandingsRow
+
+    row_kwargs = dict(
+        logo="https://assets.nhle.com/logos/nhl/svg/CHI_light.svg",
+        games_played=10,
+        wins=6,
+        losses=3,
+        ot_losses=1,
+        points=13,
+        goal_differential=5,
+        qualified=True,
+    )
+    a = StandingsRow(division_rank=1, wildcard_rank=0, abbrev="COL", name="Avalanche", **row_kwargs)
+    b = StandingsRow(division_rank=4, wildcard_rank=2, abbrev="NSH", name="Predators", **row_kwargs)
+
+    bracket = PlayoffBracket(
+        as_of_date="2026-12-01",
+        conferences=[
+            ConferenceBracket(
+                name="Western",
+                round1=[Matchup("Central 1", a, "Villikortti 2", b)],
+                wildcard_race=[b],
+            )
+        ],
+    )
+
+    output_dir = tmp_path / "site"
+    render_playoffs(bracket, output_dir)
+
+    html = (output_dir / "playoffit.html").read_text(encoding="utf-8")
+    assert "Western-konferenssi" in html
+    assert "COL" in html and "NSH" in html
+    assert "Villikortti 2" in html
+    assert "Ottelun 1 voittaja" in html
+    assert "Stanley Cup" in html

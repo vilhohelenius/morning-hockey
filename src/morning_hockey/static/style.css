@@ -702,3 +702,77 @@ main {
   color: var(--muted);
   font-size: 0.85rem;
 }
+
+/* ---------- Playoff bracket ---------- */
+
+.bracket-round-title {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+  margin: 14px 0 6px;
+}
+
+.matchup-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 4px 14px;
+  margin-bottom: 8px;
+}
+
+.matchup-team {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.matchup-team + .matchup-vs {
+  border-top: 1px dashed var(--border);
+}
+
+.matchup-logo {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+}
+
+.matchup-abbrev {
+  font-weight: 700;
+}
+
+.matchup-seed {
+  color: var(--muted);
+  font-size: 0.7rem;
+}
+
+.matchup-points {
+  margin-left: auto;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.matchup-vs {
+  text-align: center;
+  font-size: 0.65rem;
+  color: var(--muted);
+  letter-spacing: 0.05em;
+  padding: 2px 0;
+}
+
+.matchup-card.placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 14px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-style: italic;
+}
+
+.matchup-card.placeholder .matchup-vs {
+  font-style: normal;
+  padding: 0;
+}

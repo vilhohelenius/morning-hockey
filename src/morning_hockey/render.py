@@ -30,6 +30,7 @@ def _nav(asset_prefix: str) -> dict[str, str]:
         "home": f"{asset_prefix}index.html",
         "leaderboard": f"{asset_prefix}pisteporssi.html",
         "standings": f"{asset_prefix}sarjataulukko.html",
+        "playoffs": f"{asset_prefix}playoffit.html",
         "team_chi": f"{asset_prefix}joukkueet/chi.html",
         "archive": f"{asset_prefix}arkisto.html",
     }
@@ -106,6 +107,17 @@ def render_standings(page, output_dir: Path) -> None:
         active_page="standings",
     )
     (output_dir / "sarjataulukko.html").write_text(html, encoding="utf-8")
+
+
+def render_playoffs(bracket, output_dir: Path) -> None:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    html = _env.get_template("playoffs.html").render(
+        bracket=bracket,
+        asset_prefix="",
+        nav=_nav(""),
+        active_page="playoffs",
+    )
+    (output_dir / "playoffit.html").write_text(html, encoding="utf-8")
 
 
 def render_team_page(team, output_dir: Path) -> None:
