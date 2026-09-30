@@ -16,7 +16,8 @@ from .team import team_display_name
 HELSINKI = ZoneInfo("Europe/Helsinki")
 
 _WINDOW_START_HOUR = 18  # 18:00 Finnish time
-_WINDOW_END_HOUR = 24  # up to (not including) midnight
+_WINDOW_END_HOUR = 0  # stretches past midnight, up to and including 00:30
+_WINDOW_END_MINUTE = 30
 
 
 @dataclass(frozen=True)
@@ -36,7 +37,9 @@ class PrimeTimePage:
 
 
 def starts_in_window(local_start: dt.datetime) -> bool:
-    return _WINDOW_START_HOUR <= local_start.hour < _WINDOW_END_HOUR
+    if local_start.hour >= _WINDOW_START_HOUR:
+        return True
+    return local_start.hour == _WINDOW_END_HOUR and local_start.minute <= _WINDOW_END_MINUTE
 
 
 def _team_info(payload: dict) -> TeamInfo:

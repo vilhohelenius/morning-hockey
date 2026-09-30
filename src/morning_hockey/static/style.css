@@ -772,7 +772,8 @@ main {
 
 .team-detail {
   background: var(--card-bg);
-  border: 1px solid var(--accent);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
   border-radius: 12px;
   padding: 10px 12px 12px;
   display: flex;
@@ -810,25 +811,54 @@ main {
   gap: 8px;
 }
 
+.tp-section {
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.tp-section:first-child {
+  padding-top: 0;
+  border-top: none;
+}
+
 .tp-section-title {
   color: var(--muted);
   font-size: 0.68rem;
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  margin: 0 0 3px;
+  margin: 0 0 5px;
 }
 
 .tp-results {
   display: flex;
-  gap: 4px;
+  gap: 6px;
 }
 
 .tp-result-chip {
   font-weight: 700;
-  font-size: 0.7rem;
-  padding: 2px 6px;
+  font-size: 0.75rem;
+  padding: 3px 9px;
   border-radius: 6px;
   white-space: nowrap;
+}
+
+.tp-next {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.tp-next-date {
+  color: var(--muted);
+  font-weight: 400;
+  font-size: 0.8rem;
+}
+
+.tp-next-opponent {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .tp-scorer-row {
@@ -865,21 +895,35 @@ main {
 
 /* ---------- Prime time ---------- */
 
+.primetime-day {
+  margin: 18px 0 8px;
+}
+
+.primetime-day:first-child {
+  margin-top: 0;
+}
+
 .primetime-row {
   display: grid;
-  grid-template-columns: 76px 1fr auto;
+  grid-template-columns: 52px 1fr auto;
   align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
+  gap: 10px;
+  padding: 10px 12px;
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: 12px;
   font-size: 0.9rem;
+  margin-bottom: 6px;
+}
+
+.primetime-row.is-finished {
+  opacity: 0.6;
 }
 
 .primetime-time {
-  color: var(--muted);
-  font-size: 0.8rem;
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 0.95rem;
   font-variant-numeric: tabular-nums;
 }
 

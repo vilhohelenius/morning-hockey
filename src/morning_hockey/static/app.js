@@ -46,6 +46,11 @@
       return node;
     }
 
+    function shortDate(iso) {
+      var parts = iso.split("-");
+      return parseInt(parts[2], 10) + "." + parseInt(parts[1], 10) + ".";
+    }
+
     function playerChip(headshotUrl, label) {
       var wrap = el("span", "tp-player");
       var img = document.createElement("img");
@@ -117,8 +122,21 @@
         wrap.appendChild(el("p", "tp-empty", "Ei tiedossa."));
         return wrap;
       }
-      var label = (game.is_home ? "vs " : "@ ") + game.opponent_abbrev + " · " + game.date;
-      wrap.appendChild(el("p", null, label));
+      var row = el("div", "tp-next");
+      row.appendChild(el("span", "tp-next-date", shortDate(game.date)));
+
+      var opponent = el("span", "tp-next-opponent");
+      opponent.appendChild(document.createTextNode(game.is_home ? "vs " : "@ "));
+      var logo = document.createElement("img");
+      logo.src = game.opponent_logo;
+      logo.alt = "";
+      logo.loading = "lazy";
+      logo.className = "schedule-logo";
+      opponent.appendChild(logo);
+      opponent.appendChild(document.createTextNode(game.opponent_abbrev));
+      row.appendChild(opponent);
+
+      wrap.appendChild(row);
       return wrap;
     }
 

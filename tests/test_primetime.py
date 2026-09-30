@@ -55,13 +55,16 @@ class FakeClient:
         return SCHEDULE
 
 
-def test_starts_in_window_is_evening_up_to_midnight_only():
+def test_starts_in_window_is_evening_stretched_to_zero_thirty():
     import datetime as dt
 
     assert starts_in_window(dt.datetime(2026, 1, 15, 18, 0, tzinfo=HELSINKI)) is True
     assert starts_in_window(dt.datetime(2026, 1, 15, 23, 59, tzinfo=HELSINKI)) is True
     assert starts_in_window(dt.datetime(2026, 1, 15, 17, 59, tzinfo=HELSINKI)) is False
-    assert starts_in_window(dt.datetime(2026, 1, 16, 0, 0, tzinfo=HELSINKI)) is False
+    # stretches past midnight up to and including 00:30
+    assert starts_in_window(dt.datetime(2026, 1, 16, 0, 0, tzinfo=HELSINKI)) is True
+    assert starts_in_window(dt.datetime(2026, 1, 16, 0, 30, tzinfo=HELSINKI)) is True
+    assert starts_in_window(dt.datetime(2026, 1, 16, 0, 31, tzinfo=HELSINKI)) is False
     assert starts_in_window(dt.datetime(2026, 1, 16, 2, 0, tzinfo=HELSINKI)) is False
 
 
