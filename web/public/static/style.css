@@ -707,6 +707,49 @@ main {
   opacity: 0.8;
 }
 
+/* Asetukset favorites rows -- flexbox, not a grid, on purpose: the old
+   /omat page reused .schedule-row's positionally-sized 4-column grid for a
+   3-child layout, and the mismatch caused the team/player name to overflow
+   into the next column. These rows have varying child counts (team row:
+   info + remove button; player row: info + stat line + remove button), so
+   flex-with-space-between fits whatever's actually there instead of
+   assuming fixed column roles. */
+.fav-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: 0.9rem;
+}
+
+.fav-row-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  min-width: 0;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.fav-row-info img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.fav-row-meta {
+  color: var(--muted);
+  font-weight: 500;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
 .roster-group-title {
   font-size: 0.8rem;
   text-transform: uppercase;

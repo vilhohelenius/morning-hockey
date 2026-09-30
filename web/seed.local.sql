@@ -124,3 +124,18 @@ INSERT INTO team_roster_goalies (player_id, team_abbrev, name, sweater_number, h
 
 INSERT INTO team_season_stats (team_abbrev, games_played, goals_for, goals_against, power_play_pct, penalty_kill_pct, faceoff_pct, shots_for_per_game, shots_against_per_game, shutouts, updated_at) VALUES
 ('TOR', 7, 25, 18, 0.24, 0.82, 0.51, 32.1, 27.4, 1, '2026-09-30T12:00:00Z');
+
+-- Phase 7: one local test user's favorites/theme, for exercising the
+-- sidebar's Omat dropdown and /omat/pelaajat/ /omat (Asetukset) without
+-- real Cloudflare Access -- `wrangler pages dev` accepts a spoofed
+-- Cf-Access-Authenticated-User-Email header locally (see _shared/auth.ts).
+INSERT INTO favorite_teams (email, team_abbrev, created_at) VALUES
+('test@example.com', 'TOR', '2026-09-30T12:00:00Z'),
+('test@example.com', 'CAR', '2026-09-30T12:00:00Z');
+
+INSERT INTO favorite_players (email, player_id, is_goalie, created_at) VALUES
+('test@example.com', 8479318, 0, '2026-09-30T12:00:00Z'),
+('test@example.com', 8480313, 1, '2026-09-30T12:00:00Z');
+
+INSERT INTO user_settings (email, theme, updated_at) VALUES
+('test@example.com', 'dark', '2026-09-30T12:00:00Z');

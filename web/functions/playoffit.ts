@@ -143,12 +143,13 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 ${sections}
 `;
 
-  const html = renderLayout({
+  const html = await renderLayout({
     title: "Playoff-bracket · Morning Hockey",
     headerTitle: "Playoff-bracket",
     activePage: "playoffs",
     content,
     request: context.request,
+    env: context.env,
   });
 
   return new Response(html, { headers: { "content-type": "text/html; charset=utf-8" } });

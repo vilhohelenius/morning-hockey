@@ -29,12 +29,13 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 </section>
 `;
 
-  const html = renderLayout({
+  const html = await renderLayout({
     title: "Pistepörssi · Morning Hockey",
     headerTitle: "Pistepörssi",
     activePage: "league_stats",
     content,
     request: context.request,
+    env: context.env,
   });
 
   return new Response(html, { headers: { "content-type": "text/html; charset=utf-8" } });

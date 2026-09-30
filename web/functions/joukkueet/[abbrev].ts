@@ -16,7 +16,8 @@
 // someone visits it, unlike the original team.html, which only linked
 // games nightly-digest.yml happened to pre-build a report for.
 
-import { escapeHtml, formatToi, shortDate } from "../_shared/format";
+import { escapeHtml, shortDate } from "../_shared/format";
+import { renderRosterGoalieTable, renderRosterSkaterTable } from "../_shared/leaderboard";
 import { renderLayout } from "../_shared/layout";
 import type {
   Env,
@@ -118,106 +119,6 @@ function renderSeasonStats(stats: TeamSeasonStatsRow | null): string {
 </section>`;
 }
 
-function renderSkaterTable(skaters: TeamRosterSkaterRow[]): string {
-  const rows = skaters
-    .map(
-      (player, index) => `
-      <tr data-name="${escapeHtml(player.name)}" data-gp="${player.games_played}"
-          data-goals="${player.goals}" data-assists="${player.assists}" data-rank="${index + 1}"
-          data-plusminus="${player.plus_minus}" data-toi="${player.avg_toi_seconds}">
-        <td class="col-rank">${index + 1}</td>
-        <td>
-          <span class="player-cell">
-            <img src="${escapeHtml(player.headshot)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
-            <span class="player-name">
-              ${escapeHtml(player.name)}
-              <span class="player-meta">#${player.sweater_number} · ${escapeHtml(player.position)}</span>
-            </span>
-          </span>
-        </td>
-        <td>${player.games_played}</td>
-        <td>${player.goals}</td>
-        <td>${player.assists}</td>
-        <td class="stat-strong">${player.points}</td>
-        <td>${player.plus_minus > 0 ? "+" : ""}${player.plus_minus}</td>
-        <td>${formatToi(player.avg_toi_seconds)}</td>
-      </tr>`,
-    )
-    .join("");
-
-  return `
-<section>
-  <h2 class="section-title">🏒 Pistepörssi</h2>
-  <div class="stats-table-wrap">
-    <table class="stats-table">
-      <thead>
-        <tr>
-          <th class="col-rank">#</th>
-          <th data-sort="name" data-type="text">Pelaaja</th>
-          <th data-sort="gp">O</th>
-          <th data-sort="goals">M</th>
-          <th data-sort="assists">S</th>
-          <th data-sort="rank" data-first-dir="asc" class="sort-asc">P</th>
-          <th data-sort="plusminus">+/-</th>
-          <th data-sort="toi">KA</th>
-        </tr>
-      </thead>
-      <tbody>${rows}</tbody>
-    </table>
-  </div>
-</section>`;
-}
-
-function renderGoalieTable(goalies: TeamRosterGoalieRow[]): string {
-  const rows = goalies
-    .map(
-      (player, index) => `
-      <tr data-name="${escapeHtml(player.name)}" data-gp="${player.games_played}" data-wins="${player.wins}"
-          data-losses="${player.losses}" data-otl="${player.ot_losses}"
-          data-gaa="${player.goals_against_average}" data-rank="${index + 1}">
-        <td class="col-rank">${index + 1}</td>
-        <td>
-          <span class="player-cell">
-            <img src="${escapeHtml(player.headshot)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
-            <span class="player-name">
-              ${escapeHtml(player.name)}
-              <span class="player-meta">#${player.sweater_number}</span>
-            </span>
-          </span>
-        </td>
-        <td>${player.games_played}</td>
-        <td>${player.wins}</td>
-        <td>${player.losses}</td>
-        <td>${player.ot_losses}</td>
-        <td>${player.goals_against_average.toFixed(2)}</td>
-        <td class="stat-strong">${player.save_pct.toFixed(3)}</td>
-      </tr>`,
-    )
-    .join("");
-
-  return `
-<section>
-  <h2 class="section-title">🥅 Maalivahdit</h2>
-  <div class="stats-table-wrap">
-    <table class="stats-table">
-      <thead>
-        <tr>
-          <th class="col-rank">#</th>
-          <th data-sort="name" data-type="text">Pelaaja</th>
-          <th data-sort="gp">O</th>
-          <th data-sort="wins">V</th>
-          <th data-sort="losses">H</th>
-          <th data-sort="otl">JH</th>
-          <th data-sort="gaa">GAA</th>
-          <th data-sort="rank" data-first-dir="asc" class="sort-asc">SV%</th>
-        </tr>
-      </thead>
-      <tbody>${rows}</tbody>
-    </table>
-  </div>
-</section>`;
-}
-
 export const onRequestGet: PagesFunction<Env> = async (context) => {
   const abbrev = String(context.params.abbrev).toUpperCase();
   const db = context.env.DB;
@@ -301,16 +202,17 @@ ${renderDivisionTable(division, abbrev)}
   }
 </section>
 
-${skaters.length ? renderSkaterTable(skaters) : ""}
-${goalies.length ? renderGoalieTable(goalies) : ""}
+${skaters.length ? renderRosterSkaterTable(skaters, "🏒 Pistepörssi") : ""}
+${goalies.length ? renderRosterGoalieTable(goalies, "🥅 Maalivahdit") : ""}
 `;
 
-  const html = renderLayout({
+  const html = await renderLayout({
     title: `${team.name} · Morning Hockey`,
     headerTitle: team.name,
     activePage: `team_${abbrev.toLowerCase()}`,
     content,
     request: context.request,
+    env: context.env,
   });
 
   return new Response(html, { headers: { "content-type": "text/html; charset=utf-8" } });

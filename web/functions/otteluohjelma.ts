@@ -81,12 +81,13 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 ${sections}
 `;
 
-  const html = renderLayout({
+  const html = await renderLayout({
     title: "Otteluohjelma · Morning Hockey",
     headerTitle: "Otteluohjelma",
     activePage: "schedule",
     content,
     request: context.request,
+    env: context.env,
   });
 
   return new Response(html, { headers: { "content-type": "text/html; charset=utf-8" } });

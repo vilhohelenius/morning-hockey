@@ -193,12 +193,13 @@ ${sections}
 <script id="team-snapshots" type="application/json">${snapshotsJson}</script>
 `;
 
-  const html = renderLayout({
+  const html = await renderLayout({
     title: "Sarjataulukko · Morning Hockey",
     headerTitle: "Sarjataulukko",
     activePage: "standings",
     content,
     request: context.request,
+    env: context.env,
   });
 
   return new Response(html, { headers: { "content-type": "text/html; charset=utf-8" } });

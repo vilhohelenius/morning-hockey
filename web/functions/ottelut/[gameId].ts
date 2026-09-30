@@ -358,12 +358,13 @@ ${
 }
 `;
 
-  const html = renderLayout({
+  const html = await renderLayout({
     title: `${game.away_abbrev} – ${game.home_abbrev} · Morning Hockey`,
     headerTitle: `${game.away_abbrev} – ${game.home_abbrev}`,
     activePage: `team_${game.away_abbrev.toLowerCase()}`,
     content,
     request: context.request,
+    env: context.env,
   });
 
   return new Response(html, { headers: { "content-type": "text/html; charset=utf-8" } });

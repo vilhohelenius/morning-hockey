@@ -9,24 +9,28 @@
 // ports each page in turn, which is fine while this only runs on the
 // *.pages.dev preview domain, side by side with the live site.
 
-import { readThemeCookie } from "./auth";
+import { authenticatedEmail, readThemeCookie } from "./auth";
+import { escapeHtml } from "./format";
+import type { Env, StandingsRow } from "./types";
 
 export interface LayoutOptions {
   title: string;
   headerTitle: string;
   activePage: string;
   content: string;
-  // Used only to read the theme cookie (see auth.ts) -- every route passes
-  // its own `context.request` here so the right data-theme attribute goes
-  // out on every page, not just /omat, without a D1 query per request.
+  // Used to read the theme cookie (see auth.ts) and, together with `env`,
+  // to look up the signed-in user's favorite teams for the sidebar's Omat
+  // dropdown -- every route passes its own `context.request`/`context.env`
+  // here so the right nav/theme goes out on every page, not just /omat.
   request?: Request;
+  env?: Env;
 }
 
 const NAV_HOME = { key: "home", href: "/", label: "🏠 Etusivu" };
-const NAV_OMAT = { key: "omat", href: "/omat", label: "⭐ Omat" };
 const NAV_STANDINGS = { key: "standings", href: "/sarjataulukko", label: "📊 Sarjataulukko" };
 const NAV_PLAYOFFS = { key: "playoffs", href: "/playoffit", label: "🏆 Playoff-bracket" };
 const NAV_ARCHIVE = { key: "archive", href: "/arkisto", label: "🗂️ Arkisto" };
+const NAV_SETTINGS = { key: "settings", href: "/omat", label: "⚙️ Asetukset" };
 
 const STATS_PAGES = [
   { key: "league_stats", href: "/tilastot", label: "Pistepörssi" },
@@ -39,6 +43,8 @@ const GAME_PAGES = [
   { key: "schedule", href: "/otteluohjelma", label: "Otteluohjelma" },
   { key: "primetime", href: "/primetime", label: "Prime time" },
 ];
+
+const OMAT_PLAYERS_ITEM = { key: "omat_players", href: "/omat/pelaajat", label: "⭐ Suosikkipelaajat" };
 
 function navLink(item: { key: string; href: string; label: string }, activePage: string): string {
   const active = item.key === activePage ? " active" : "";
@@ -70,9 +76,37 @@ function navGroup(
       </li>`;
 }
 
-export function renderLayout(options: LayoutOptions): string {
-  const { title, headerTitle, activePage, content, request } = options;
+// The Omat group's team entries are per-user, so they're fetched here
+// (rather than passed in) -- every route already passes request/env for
+// the theme cookie, so this piggybacks on the same plumbing instead of
+// every single page handler needing its own favorite_teams query.
+async function favoriteTeamNavItems(
+  request: Request | undefined,
+  env: Env | undefined,
+): Promise<{ key: string; href: string; label: string }[]> {
+  if (!request || !env) return [];
+  const email = authenticatedEmail(request);
+  if (!email) return [];
+
+  const { results } = await env.DB.prepare(
+    `SELECT s.* FROM favorite_teams f JOIN standings_rows s ON s.abbrev = f.team_abbrev
+     WHERE f.email = ? ORDER BY s.name`,
+  )
+    .bind(email)
+    .all<StandingsRow>();
+
+  return results.map((team) => ({
+    key: `team_${team.abbrev.toLowerCase()}`,
+    href: `/joukkueet/${team.abbrev.toLowerCase()}`,
+    label: escapeHtml(team.name),
+  }));
+}
+
+export async function renderLayout(options: LayoutOptions): Promise<string> {
+  const { title, headerTitle, activePage, content, request, env } = options;
   const theme = request ? readThemeCookie(request) : null;
+  const omatItems = [...(await favoriteTeamNavItems(request, env)), OMAT_PLAYERS_ITEM];
+
   return `<!doctype html>
 <html lang="fi"${theme ? ` data-theme="${theme}"` : ""}>
 <head>
@@ -92,12 +126,13 @@ export function renderLayout(options: LayoutOptions): string {
     </div>
     <ul class="nav-list">
       ${navLink(NAV_HOME, activePage)}
-      ${navLink(NAV_OMAT, activePage)}
+      ${navGroup("omat", "⭐ Omat", omatItems, activePage)}
       ${navLink(NAV_STANDINGS, activePage)}
       ${navGroup("stats", "📈 Tilastot", STATS_PAGES, activePage)}
       ${navLink(NAV_PLAYOFFS, activePage)}
       ${navGroup("games", "📅 Ottelut", GAME_PAGES, activePage)}
       ${navLink(NAV_ARCHIVE, activePage)}
+      ${navLink(NAV_SETTINGS, activePage)}
     </ul>
   </nav>
 

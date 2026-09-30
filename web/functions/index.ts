@@ -283,12 +283,13 @@ ${statTeaserTable("📈 NHL:n kärkipörssi", leagueSkaters.map((r, i) => render
 ${teamTeaser}
 `;
 
-  const html = renderLayout({
+  const html = await renderLayout({
     title: "Morning Hockey",
     headerTitle: "Etusivu",
     activePage: "home",
     content,
     request: context.request,
+    env: context.env,
   });
 
   return new Response(html, { headers: { "content-type": "text/html; charset=utf-8" } });

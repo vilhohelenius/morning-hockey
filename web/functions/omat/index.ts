@@ -1,21 +1,20 @@
-// /omat: the signed-in user's personalized page -- favorite teams/players,
-// a picker for each, and the theme toggle. Phase 7, and unlike every
-// earlier phase there's no templates/*.html to port: this page doesn't
-// exist in the original site at all.
+// /omat: "Asetukset" -- managing favorite teams/players and the theme
+// toggle. Not the personalized view itself any more: favorite teams and a
+// favorite-players leaderboard (/omat/pelaajat) now live directly in the
+// sidebar's "⭐ Omat" dropdown (see _shared/layout.ts), so this page is only
+// for adding/removing favorites and the theme, and sits at the bottom of
+// the sidebar as its own "⚙️ Asetukset" link.
 //
-// Favorites are looped one at a time (N+1 queries) rather than batch-
-// fetched like the standings snapshot's 32-team pass -- a person's
-// favorites list is a handful of rows, not 32, so the bulk-query
-// complexity that was worth it there isn't worth it here.
+// Path kept as /omat (not renamed to /asetukset) so the favorites/theme
+// POST routes under omat/* don't need their redirect targets changed.
 
 import { authenticatedEmail, readThemeCookie } from "../_shared/auth";
-import { escapeHtml, formatToi, shortDate } from "../_shared/format";
+import { escapeHtml, formatToi } from "../_shared/format";
 import { renderLayout } from "../_shared/layout";
 import type {
   Env,
   FavoritePlayerRow,
   FavoriteTeamRow,
-  GameRow,
   StandingsRow,
   TeamRosterGoalieRow,
   TeamRosterSkaterRow,
@@ -24,40 +23,25 @@ import type {
 
 const SEARCH_RESULTS_LIMIT = 15;
 
-function renderNotSignedIn(request: Request): string {
+function renderNotSignedIn(request: Request): Promise<string> {
   return renderLayout({
-    title: "Omat · Morning Hockey",
-    headerTitle: "Omat",
-    activePage: "omat",
+    title: "Asetukset · Morning Hockey",
+    headerTitle: "Asetukset",
+    activePage: "settings",
     request,
     content: `
-<header class="page-header"><h1>⭐ Omat</h1></header>
-<p class="empty-note">Kirjaudu sisään Cloudflare Accessilla nähdäksesi ja hallitaksesi suosikkejasi.</p>`,
+<header class="page-header"><h1>⚙️ Asetukset</h1></header>
+<p class="empty-note">Kirjaudu sisään Cloudflare Accessilla hallitaksesi suosikkejasi ja asetuksiasi.</p>`,
   });
 }
 
-function renderFavoriteTeamRow(team: StandingsRow, nextGame: GameRow | null): string {
-  const nextGameHtml = nextGame
-    ? (() => {
-        const isHome = nextGame.home_abbrev === team.abbrev;
-        const opponentAbbrev = isHome ? nextGame.away_abbrev : nextGame.home_abbrev;
-        const opponentLogo = isHome ? nextGame.away_logo : nextGame.home_logo;
-        return `
-      <span class="schedule-opponent">
-        ${shortDate(nextGame.date)} ${isHome ? "vs" : "@"}
-        <img src="${escapeHtml(opponentLogo)}" alt="" class="schedule-logo" loading="lazy">
-        ${escapeHtml(opponentAbbrev)}
-      </span>`;
-      })()
-    : `<span class="schedule-opponent">Ei tiedossa olevaa ottelua</span>`;
-
+function renderFavoriteTeamRow(team: StandingsRow): string {
   return `
-    <div class="schedule-row">
-      <a href="/joukkueet/${team.abbrev.toLowerCase()}" class="schedule-opponent">
-        <img src="${escapeHtml(team.logo)}" alt="" class="schedule-logo" loading="lazy">
+    <div class="fav-row">
+      <a href="/joukkueet/${team.abbrev.toLowerCase()}" class="fav-row-info">
+        <img src="${escapeHtml(team.logo)}" alt="" loading="lazy">
         ${escapeHtml(team.name)}
       </a>
-      ${nextGameHtml}
       <form method="post" action="/omat/favorites/teams">
         <input type="hidden" name="abbrev" value="${escapeHtml(team.abbrev)}">
         <input type="hidden" name="action" value="remove">
@@ -81,12 +65,12 @@ function renderFavoritePlayerRow(
       })();
 
   return `
-    <div class="schedule-row">
-      <span class="schedule-opponent">
-        <img src="${escapeHtml(player.headshot)}" alt="" class="schedule-logo" loading="lazy" onerror="this.style.visibility='hidden'">
-        ${escapeHtml(player.name)} <span class="player-meta">${escapeHtml(player.team_abbrev)}</span>
+    <div class="fav-row">
+      <span class="fav-row-info">
+        <img src="${escapeHtml(player.headshot)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
+        ${escapeHtml(player.name)} <span class="fav-row-meta">${escapeHtml(player.team_abbrev)}</span>
       </span>
-      <span class="schedule-opponent">${statLine}</span>
+      <span class="fav-row-meta">${statLine}</span>
       <form method="post" action="/omat/favorites/players">
         <input type="hidden" name="player_id" value="${player.player_id}">
         <input type="hidden" name="is_goalie" value="${fav.isGoalie ? "1" : "0"}">
@@ -111,10 +95,10 @@ function renderTeamPicker(availableTeams: StandingsRow[]): string {
 
 function renderPlayerSearchResult(row: TeamRosterSkaterRow | TeamRosterGoalieRow, isGoalie: boolean): string {
   return `
-    <div class="schedule-row">
-      <span class="schedule-opponent">
-        <img src="${escapeHtml(row.headshot)}" alt="" class="schedule-logo" loading="lazy" onerror="this.style.visibility='hidden'">
-        ${escapeHtml(row.name)} <span class="player-meta">${escapeHtml(row.team_abbrev)}</span>
+    <div class="fav-row">
+      <span class="fav-row-info">
+        <img src="${escapeHtml(row.headshot)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
+        ${escapeHtml(row.name)} <span class="fav-row-meta">${escapeHtml(row.team_abbrev)}</span>
       </span>
       <form method="post" action="/omat/favorites/players">
         <input type="hidden" name="player_id" value="${row.player_id}">
@@ -128,7 +112,9 @@ function renderPlayerSearchResult(row: TeamRosterSkaterRow | TeamRosterGoalieRow
 export const onRequestGet: PagesFunction<Env> = async (context) => {
   const email = authenticatedEmail(context.request);
   if (!email) {
-    return new Response(renderNotSignedIn(context.request), { headers: { "content-type": "text/html; charset=utf-8" } });
+    return new Response(await renderNotSignedIn(context.request), {
+      headers: { "content-type": "text/html; charset=utf-8" },
+    });
   }
 
   const db = context.env.DB;
@@ -143,18 +129,10 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       db.prepare("SELECT * FROM standings_rows ORDER BY name").all<StandingsRow>(),
     ]);
 
-  const favoriteTeamsHtml: string[] = [];
-  for (const fav of favoriteTeamRows) {
-    const team = allTeams.find((t) => t.abbrev === fav.team_abbrev);
-    if (!team) continue;
-    const nextGame = await db
-      .prepare(
-        "SELECT * FROM games WHERE (away_abbrev = ? OR home_abbrev = ?) AND is_finished = 0 ORDER BY date ASC LIMIT 1",
-      )
-      .bind(fav.team_abbrev, fav.team_abbrev)
-      .first<GameRow>();
-    favoriteTeamsHtml.push(renderFavoriteTeamRow(team, nextGame));
-  }
+  const favoriteTeamsHtml = favoriteTeamRows
+    .map((fav) => allTeams.find((t) => t.abbrev === fav.team_abbrev))
+    .filter((t): t is StandingsRow => !!t)
+    .map(renderFavoriteTeamRow);
 
   const favoritePlayersHtml: string[] = [];
   for (const fav of favoritePlayerRows) {
@@ -194,12 +172,13 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
   const content = `
 <header class="page-header">
-  <h1>⭐ Omat</h1>
+  <h1>⚙️ Asetukset</h1>
   <p class="subtitle">${escapeHtml(email)}</p>
 </header>
 
 <section>
   <h2 class="section-title">Suosikkijoukkueet</h2>
+  <p class="standings-legend">Näkyvät sivupalkin ⭐ Omat -valikossa, linkkinä suoraan joukkueen tilastosivulle.</p>
   ${
     favoriteTeamsHtml.length
       ? `<div class="schedule-list">${favoriteTeamsHtml.join("")}</div>`
@@ -210,6 +189,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
 <section>
   <h2 class="section-title">Suosikkipelaajat</h2>
+  <p class="standings-legend">Näkyvät koottuna listana sivupalkin ⭐ Omat → Suosikkipelaajat -kohdassa.</p>
   ${
     favoritePlayersHtml.length
       ? `<div class="schedule-list">${favoritePlayersHtml.join("")}</div>`
@@ -238,11 +218,12 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 </section>
 `;
 
-  const html = renderLayout({
-    title: "Omat · Morning Hockey",
-    headerTitle: "Omat",
-    activePage: "omat",
+  const html = await renderLayout({
+    title: "Asetukset · Morning Hockey",
+    headerTitle: "Asetukset",
+    activePage: "settings",
     request: context.request,
+    env: context.env,
     content,
   });
 
