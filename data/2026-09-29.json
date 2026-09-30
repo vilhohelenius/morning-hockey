@@ -1,0 +1,106 @@
+{
+  "date": "2026-09-29",
+  "generated_at": "2026-09-30T08:47:27+00:00",
+  "games": [
+    {
+      "game_id": 2026020001,
+      "away": {
+        "abbrev": "FLA",
+        "name": "Panthers",
+        "logo": "https://assets.nhle.com/logos/nhl/svg/FLA_light.svg",
+        "score": 1
+      },
+      "home": {
+        "abbrev": "CAR",
+        "name": "Hurricanes",
+        "logo": "https://assets.nhle.com/logos/nhl/svg/CAR_light.svg",
+        "score": 0
+      },
+      "final_type": "OT",
+      "scorers": [],
+      "goalies": []
+    },
+    {
+      "game_id": 2026020002,
+      "away": {
+        "abbrev": "MTL",
+        "name": "Canadiens",
+        "logo": "https://assets.nhle.com/logos/nhl/svg/MTL_light.svg",
+        "score": 3
+      },
+      "home": {
+        "abbrev": "TOR",
+        "name": "Maple Leafs",
+        "logo": "https://assets.nhle.com/logos/nhl/svg/TOR_light.svg",
+        "score": 2
+      },
+      "final_type": "REG",
+      "scorers": [],
+      "goalies": []
+    },
+    {
+      "game_id": 2026020003,
+      "away": {
+        "abbrev": "NYR",
+        "name": "Rangers",
+        "logo": "https://assets.nhle.com/logos/nhl/svg/NYR_light.svg",
+        "score": 0
+      },
+      "home": {
+        "abbrev": "BOS",
+        "name": "Bruins",
+        "logo": "https://assets.nhle.com/logos/nhl/svg/BOS_light.svg",
+        "score": 3
+      },
+      "final_type": "REG",
+      "scorers": [],
+      "goalies": []
+    },
+    {
+      "game_id": 2026020004,
+      "away": {
+        "abbrev": "VAN",
+        "name": "Canucks",
+        "logo": "https://assets.nhle.com/logos/nhl/svg/VAN_light.svg",
+        "score": 6
+      },
+      "home": {
+        "abbrev": "EDM",
+        "name": "Oilers",
+        "logo": "https://assets.nhle.com/logos/nhl/svg/EDM_light.svg",
+        "score": 5
+      },
+      "final_type": "OT",
+      "scorers": [],
+      "goalies": [
+        {
+          "name": "Kevin Lankinen",
+          "team": "VAN",
+          "decision": "W",
+          "saves": 32,
+          "shots_against": 37,
+          "save_pct": 0.864865,
+          "toi": "61:43"
+        }
+      ]
+    },
+    {
+      "game_id": 2026020005,
+      "away": {
+        "abbrev": "CHI",
+        "name": "Blackhawks",
+        "logo": "https://assets.nhle.com/logos/nhl/svg/CHI_light.svg",
+        "score": 2
+      },
+      "home": {
+        "abbrev": "VGK",
+        "name": "Golden Knights",
+        "logo": "https://assets.nhle.com/logos/nhl/svg/VGK_light.svg",
+        "score": 5
+      },
+      "final_type": "REG",
+      "scorers": [],
+      "goalies": []
+    }
+  ]
+}
