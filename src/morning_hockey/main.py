@@ -78,10 +78,15 @@ def run(pages_base_url: str, ntfy_topic: str | None, ntfy_server: str) -> None:
     render_playoffs(bracket, SITE_DIR)
     print(f"Playoff-puu: tilanne {bracket.as_of_date}.")
 
+    team_page = None
     for team_abbrev in TEAM_ABBREVS:
-        team_page = build_team_page(client, team_abbrev, season_id)
-        render_team_page(team_page, SITE_DIR)
-        print(f"Joukkuesivu: {team_page.name}")
+        page = build_team_page(client, team_abbrev, season_id)
+        if page is None:
+            print(f"Joukkuesivu: {team_abbrev} ei löydy sarjataulukosta (kesäkausi?), ohitetaan.")
+            continue
+        team_page = page
+        render_team_page(page, SITE_DIR)
+        print(f"Joukkuesivu: {page.name}")
 
     render_dashboard(_load_archive(), fin_skaters[:5], skater_top[:5], team_page, SITE_DIR)
     print("Etusivu (dashboard) päivitetty.")

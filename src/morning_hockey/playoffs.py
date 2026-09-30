@@ -43,6 +43,12 @@ def _top_three(division: Division) -> list[StandingsRow]:
 
 
 def _conference_bracket(conference_name: str, conf_divisions: list[Division], wildcard_race: list[StandingsRow]) -> ConferenceBracket:
+    # Guard for a partially-populated conference (offseason / sparse data):
+    # without at least two divisions and two wild-card teams there is no
+    # bracket to seed, so return an empty conference rather than raising.
+    if len(conf_divisions) != 2 or len(wildcard_race) < 2:
+        return ConferenceBracket(name=conference_name, round1=[], wildcard_race=wildcard_race)
+
     div_x, div_y = conf_divisions
     top_x, top_y = _top_three(div_x), _top_three(div_y)
 

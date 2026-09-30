@@ -217,11 +217,16 @@ def _division_table(standings: dict, division_abbrev: str, team_abbrev: str) -> 
     ]
 
 
-def build_team_page(client: NHLClient, team_abbrev: str, season_id: int) -> TeamPage:
+def build_team_page(client: NHLClient, team_abbrev: str, season_id: int) -> TeamPage | None:
     standings = client.standings()
     team_row = next(
-        row for row in standings["standings"] if row["teamAbbrev"]["default"] == team_abbrev
+        (row for row in standings["standings"] if row["teamAbbrev"]["default"] == team_abbrev),
+        None,
     )
+    if team_row is None:
+        # Team not present in the current standings (e.g. NHL offseason, when
+        # the standings API returns no rows). Let the caller skip the page.
+        return None
     division_table = _division_table(standings, team_row["divisionAbbrev"], team_abbrev)
 
     schedule = client.club_schedule_season(team_abbrev)

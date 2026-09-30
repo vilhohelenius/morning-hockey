@@ -30,6 +30,7 @@
 </header>
 
 {% for conference in bracket.conferences %}
+{% if conference.round1 %}
 <section>
   <h2 class="section-title">{{ conference.name }}-konferenssi</h2>
 
@@ -68,5 +69,6 @@
     {% endfor %}
   </div>
 </section>
+{% endif %}
 {% endfor %}
 {% endblock %}
