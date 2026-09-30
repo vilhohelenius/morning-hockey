@@ -16,22 +16,50 @@ BASE_URL = "https://api-web.nhle.com/v1"
 STATS_BASE_URL = "https://api.nhle.com/stats/rest/en"
 _TIMEOUT = 15
 
-# The 32-teams-in-a-row calls (e.g. one club-schedule-season request per team
-# for the standings page's team snapshots) can trip this public API's rate
-# limiting, which answers with 429 rather than queuing the request.
+# A burst of many similar calls (e.g. one club-schedule-season request per
+# team for the standings page's team snapshots) can trip this public API's
+# rate limiting, which answers with 429 rather than queuing the request.
 _RETRYABLE_STATUSES = {429, 502, 503, 504}
 _MAX_RETRIES = 5
 _BACKOFF_SECONDS = 1.0
+
+# Once a 429 is seen, every later request (any endpoint) is paced at least
+# this far apart, doubling on each further 429 up to the cap. A single
+# retry only fixes the one rejected request; the whole burst needs to slow
+# down, or the very next call just gets rate-limited again.
+_INITIAL_THROTTLE_SECONDS = 1.0
+_MAX_THROTTLE_SECONDS = 8.0
 
 
 class NHLClient:
     def __init__(self, session: requests.Session | None = None) -> None:
         self._session = session or requests.Session()
+        self._min_interval = 0.0
+        self._last_request_at = 0.0
+
+    def _throttle(self) -> None:
+        if self._min_interval <= 0:
+            return
+        wait = self._min_interval - (time.monotonic() - self._last_request_at)
+        if wait > 0:
+            time.sleep(wait)
 
     def _request(self, url: str, params: dict | None = None) -> requests.Response:
         for attempt in range(_MAX_RETRIES + 1):
+            self._throttle()
             response = self._session.get(url, params=params, timeout=_TIMEOUT)
-            if response.status_code not in _RETRYABLE_STATUSES or attempt == _MAX_RETRIES:
+            self._last_request_at = time.monotonic()
+
+            if response.status_code not in _RETRYABLE_STATUSES:
+                response.raise_for_status()
+                return response
+
+            if response.status_code == 429:
+                self._min_interval = min(
+                    max(self._min_interval * 2, _INITIAL_THROTTLE_SECONDS), _MAX_THROTTLE_SECONDS
+                )
+
+            if attempt == _MAX_RETRIES:
                 response.raise_for_status()
                 return response
 

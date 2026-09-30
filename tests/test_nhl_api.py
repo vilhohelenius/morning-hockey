@@ -27,6 +27,16 @@ class FakeSession:
         return self.responses.pop(0)
 
 
+def _freeze_time(monkeypatch):
+    """Mock out time.sleep (record calls, don't actually wait) and pin
+    time.monotonic so _throttle()'s wait-time math is deterministic instead
+    of depending on how fast the test happens to run."""
+    sleeps = []
+    monkeypatch.setattr("morning_hockey.nhl_api.time.sleep", lambda s: sleeps.append(s))
+    monkeypatch.setattr("morning_hockey.nhl_api.time.monotonic", lambda: 0.0)
+    return sleeps
+
+
 def test_get_returns_json_on_first_success():
     session = FakeSession([FakeResponse(200, {"ok": True})])
     client = NHLClient(session=session)
@@ -36,30 +46,27 @@ def test_get_returns_json_on_first_success():
 
 
 def test_get_retries_on_429_then_succeeds(monkeypatch):
-    sleeps = []
-    monkeypatch.setattr("morning_hockey.nhl_api.time.sleep", lambda s: sleeps.append(s))
+    _freeze_time(monkeypatch)
 
     session = FakeSession([FakeResponse(429), FakeResponse(429), FakeResponse(200, {"ok": True})])
     client = NHLClient(session=session)
 
     assert client._get("/club-schedule-season/CAR/now") == {"ok": True}
     assert session.calls == 3
-    assert len(sleeps) == 2
 
 
 def test_get_honors_retry_after_header(monkeypatch):
-    sleeps = []
-    monkeypatch.setattr("morning_hockey.nhl_api.time.sleep", lambda s: sleeps.append(s))
+    sleeps = _freeze_time(monkeypatch)
 
     session = FakeSession([FakeResponse(429, headers={"Retry-After": "3"}), FakeResponse(200, {"ok": True})])
     client = NHLClient(session=session)
 
     client._get("/standings/now")
-    assert sleeps == [3.0]
+    assert sleeps[0] == 3.0
 
 
 def test_get_raises_after_exhausting_retries(monkeypatch):
-    monkeypatch.setattr("morning_hockey.nhl_api.time.sleep", lambda s: None)
+    _freeze_time(monkeypatch)
 
     session = FakeSession([FakeResponse(429) for _ in range(10)])
     client = NHLClient(session=session)
@@ -72,7 +79,7 @@ def test_get_raises_after_exhausting_retries(monkeypatch):
 
 
 def test_get_does_not_retry_non_retryable_errors(monkeypatch):
-    monkeypatch.setattr("morning_hockey.nhl_api.time.sleep", lambda s: None)
+    _freeze_time(monkeypatch)
 
     session = FakeSession([FakeResponse(404)])
     client = NHLClient(session=session)
@@ -83,3 +90,31 @@ def test_get_does_not_retry_non_retryable_errors(monkeypatch):
     except requests.exceptions.HTTPError:
         pass
     assert session.calls == 1
+
+
+def test_a_429_throttles_every_later_request_not_just_the_retry(monkeypatch):
+    """A burst of many identical calls (e.g. one schedule request per team)
+    needs to slow down as a whole once rate-limited, not just retry the one
+    rejected request while the next one fires immediately after."""
+    sleeps = _freeze_time(monkeypatch)
+
+    session = FakeSession(
+        [
+            FakeResponse(429),  # first call: rate-limited, triggers throttling
+            FakeResponse(200, {"n": 1}),  # retry of the same call succeeds
+            FakeResponse(200, {"n": 2}),  # a later, unrelated call
+        ]
+    )
+    client = NHLClient(session=session)
+
+    assert client._min_interval == 0.0
+
+    client._get("/club-schedule-season/CAR/now")
+    assert client._min_interval > 0.0
+    throttle_step = client._min_interval
+
+    sleeps_before_next_call = len(sleeps)
+    client._get("/club-schedule-season/CGY/now")
+    # the next, otherwise-unrelated request was paced by the throttle
+    assert len(sleeps) > sleeps_before_next_call
+    assert sleeps[-1] == throttle_step

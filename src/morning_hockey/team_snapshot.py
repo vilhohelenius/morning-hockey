@@ -27,11 +27,12 @@ _GOALIE_SORT = (
     '{"property":"savePct","direction":"DESC"}]'
 )
 
-# A brief pause between the 32 back-to-back club-schedule-season requests
-# (one per team), so this burst is less likely to trip the public API's
-# rate limiting in the first place. NHLClient itself retries with backoff
-# if a request gets rate-limited anyway.
-_SCHEDULE_REQUEST_PAUSE = 0.2
+# A pause between the 32 back-to-back club-schedule-season requests (one
+# per team), so this burst is less likely to trip the public API's rate
+# limiting in the first place. NHLClient's own adaptive throttling (it
+# slows itself down once it sees a 429) is the backstop if it happens
+# anyway, but avoiding it up front means fewer retries and a faster build.
+_SCHEDULE_REQUEST_PAUSE = 0.4
 
 
 @dataclass(frozen=True)
