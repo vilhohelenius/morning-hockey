@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Rookie-pörssi · Morning Hockey{% endblock %}
+{% block header_title %}Rookie-pörssi{% endblock %}
+
+{% block content %}
+<header class="page-header">
+  <h1>🐣 Rookie-pörssi</h1>
+  <p class="subtitle">Kausi {{ season_label }}</p>
+  <p class="standings-legend">Napauta sarakeotsikkoa järjestääksesi taulukon sen mukaan.</p>
+</header>
+
+<section>
+  <div class="table-filters" data-table-id="rookie-stats-table">
+    <button type="button" class="filter-btn active" data-position="all">Kaikki</button>
+    <button type="button" class="filter-btn" data-position="F">Hyökkääjät</button>
+    <button type="button" class="filter-btn" data-position="D">Puolustajat</button>
+  </div>
+  {% if rookies %}
+  <div class="stats-table-wrap">
+    <table class="stats-table" id="rookie-stats-table" data-collapse-at="25">
+      <thead>
+        <tr>
+          <th class="col-rank">#</th>
+          <th data-sort="name" data-type="text">Pelaaja</th>
+          <th data-sort="team" data-type="text">Jkk</th>
+          <th data-sort="gp">O</th>
+          <th data-sort="goals">M</th>
+          <th data-sort="assists">S</th>
+          <th data-sort="rank" data-first-dir="asc" class="sort-asc">P</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for row in rookies %}
+        <tr class="{{ 'row-fin' if row.nationality == 'FIN' }} {{ 'row-chi' if row.team == 'CHI' }}"
+            data-name="{{ row.name }}" data-team="{{ row.team }}" data-gp="{{ row.games_played }}"
+            data-goals="{{ row.goals }}" data-assists="{{ row.assists }}" data-rank="{{ loop.index }}"
+            data-position="{{ row.position }}">
+          <td class="col-rank">{{ loop.index }}</td>
+          <td>
+            <span class="player-cell">
+              <img src="{{ row.headshot }}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
+              <span class="player-name">
+                {{ row.name }}
+                <span class="player-meta">{{ row.nationality | nationality_flag }} {{ row.nationality }} · {{ row.position }}</span>
+              </span>
+            </span>
+          </td>
+          <td><img src="{{ row.logo }}" alt="" class="table-team-logo" loading="lazy">{{ row.team }}</td>
+          <td>{{ row.games_played }}</td>
+          <td>{{ row.goals }}</td>
+          <td>{{ row.assists }}</td>
+          <td class="stat-strong">{{ row.points }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if rookies | length > 25 %}
+  <button type="button" class="expand-toggle" data-table-id="rookie-stats-table"
+    data-expand-label="Näytä koko top {{ rookies | length }} →"
+    data-collapse-label="Näytä vähemmän (top 25) ↑"></button>
+  {% endif %}
+  {% else %}
+  <p class="empty-note">Ei vielä tilastoituja rookieita tällä kaudella.</p>
+  {% endif %}
+</section>
+{% endblock %}

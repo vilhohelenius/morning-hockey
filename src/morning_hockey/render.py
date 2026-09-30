@@ -72,6 +72,7 @@ def _nav(asset_prefix: str) -> dict[str, str]:
         "playoffs": f"{asset_prefix}playoffit.html",
         "primetime": f"{asset_prefix}primetime.html",
         "league_stats": f"{asset_prefix}tilastot.html",
+        "rookies": f"{asset_prefix}rookiet.html",
         "team_chi": f"{asset_prefix}joukkueet/chi.html",
         "archive": f"{asset_prefix}arkisto.html",
     }
@@ -201,6 +202,18 @@ def render_league_stats(skaters: list, goalies: list, season_id: int, output_dir
         active_page="league_stats",
     )
     (output_dir / "tilastot.html").write_text(html, encoding="utf-8")
+
+
+def render_rookies(rookies: list, season_id: int, output_dir: Path) -> None:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    html = _env.get_template("rookiet.html").render(
+        rookies=rookies,
+        season_label=season_label(season_id),
+        asset_prefix="",
+        nav=_nav(""),
+        active_page="rookies",
+    )
+    (output_dir / "rookiet.html").write_text(html, encoding="utf-8")
 
 
 def render_team_page(team, output_dir: Path) -> None:

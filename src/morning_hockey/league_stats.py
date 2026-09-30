@@ -56,28 +56,31 @@ class GoalieStatRow:
     shutouts: int
 
 
+def skater_row(row: dict, season_id: int) -> SkaterStatRow:
+    """Maps one skater/bios report row to a SkaterStatRow. Shared with
+    rookies.py, which starts from the same report but a different (rookie-
+    filtered) set of rows."""
+    return SkaterStatRow(
+        player_id=row["playerId"],
+        name=row["skaterFullName"],
+        team=row["currentTeamAbbrev"],
+        logo=TEAM_LOGO_URL.format(abbrev=row["currentTeamAbbrev"]),
+        headshot=HEADSHOT_URL.format(
+            season=season_id, abbrev=row["currentTeamAbbrev"], player_id=row["playerId"]
+        ),
+        nationality=row["nationalityCode"],
+        position=row["positionCode"],
+        games_played=row["gamesPlayed"],
+        goals=row["goals"],
+        assists=row["assists"],
+        points=row["points"],
+    )
+
+
 def build_skater_top(client: NHLClient, season_id: int, limit: int = 100) -> list[SkaterStatRow]:
     cayenne_exp = f"seasonId={season_id} and gameTypeId=2"
     rows = client.skater_bios(cayenne_exp, _SKATER_SORT, limit)
-
-    return [
-        SkaterStatRow(
-            player_id=row["playerId"],
-            name=row["skaterFullName"],
-            team=row["currentTeamAbbrev"],
-            logo=TEAM_LOGO_URL.format(abbrev=row["currentTeamAbbrev"]),
-            headshot=HEADSHOT_URL.format(
-                season=season_id, abbrev=row["currentTeamAbbrev"], player_id=row["playerId"]
-            ),
-            nationality=row["nationalityCode"],
-            position=row["positionCode"],
-            games_played=row["gamesPlayed"],
-            goals=row["goals"],
-            assists=row["assists"],
-            points=row["points"],
-        )
-        for row in rows
-    ]
+    return [skater_row(row, season_id) for row in rows]
 
 
 def _goalie_nationalities(client: NHLClient, season_id: int) -> dict[int, str]:

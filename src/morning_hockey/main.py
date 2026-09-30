@@ -19,10 +19,12 @@ from .render import (
     render_league_stats,
     render_playoffs,
     render_primetime,
+    render_rookies,
     render_standings,
     render_suomiporssi,
     render_team_page,
 )
+from .rookies import build_rookie_top
 from .standings import build_standings
 from .suomiporssi import build_goalie_leaderboard, build_leaderboard, current_season_id
 from .team import build_team_page
@@ -72,6 +74,10 @@ def run(pages_base_url: str, ntfy_topic: str | None, ntfy_server: str) -> None:
     goalie_top = build_goalie_top(client, season_id)
     render_league_stats(skater_top, goalie_top, season_id, SITE_DIR)
     print(f"Tilastot: {len(skater_top)} kenttäpelaajaa, {len(goalie_top)} maalivahtia.")
+
+    rookie_top = build_rookie_top(client, season_id)
+    render_rookies(rookie_top, season_id, SITE_DIR)
+    print(f"Rookie-pörssi: {len(rookie_top)} rookiea.")
 
     standings_page = build_standings(client)
     all_abbrevs = [row.abbrev for division in standings_page.divisions for row in division.rows]

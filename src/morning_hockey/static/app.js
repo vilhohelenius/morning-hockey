@@ -381,13 +381,36 @@
 
   function applyRowVisibility(table) {
     var limit = parseInt(table.dataset.collapseAt, 10);
-    if (!limit) return;
     var expanded = table.dataset.expanded === "true";
+    var positionFilter = table.dataset.positionFilter || "all";
     var rows = table.querySelectorAll("tbody tr");
-    rows.forEach(function (row, i) {
-      row.style.display = expanded || i < limit ? "" : "none";
+    var shownCount = 0;
+    rows.forEach(function (row) {
+      var matchesPosition =
+        positionFilter === "all" ||
+        (positionFilter === "D" ? row.dataset.position === "D" : row.dataset.position !== "D");
+      var withinCollapse = !limit || expanded || shownCount < limit;
+      row.style.display = matchesPosition && withinCollapse ? "" : "none";
+      if (matchesPosition) shownCount++;
     });
   }
+
+  document.querySelectorAll(".table-filters").forEach(function (group) {
+    var table = document.getElementById(group.dataset.tableId);
+    if (!table) return;
+    var buttons = group.querySelectorAll(".filter-btn");
+
+    buttons.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        buttons.forEach(function (b) {
+          b.classList.remove("active");
+        });
+        btn.classList.add("active");
+        table.dataset.positionFilter = btn.dataset.position;
+        applyRowVisibility(table);
+      });
+    });
+  });
 
   document.querySelectorAll(".stats-table").forEach(function (table) {
     var tbody = table.querySelector("tbody");

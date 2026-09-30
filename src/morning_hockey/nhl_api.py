@@ -142,3 +142,10 @@ class NHLClient:
         """Team-vs-team game stat comparison (shots, faceoff%, power play,
         PIM, hits, ...) for one game."""
         return self._get(f"/gamecenter/{game_id}/right-rail")
+
+    def player_landing(self, player_id: int) -> dict:
+        """Full player profile including birthDate and career seasonTotals
+        (per-season, per-league, per-game-type games played) — used to
+        evaluate NHL rookie eligibility precisely, which the bulk stats/rest
+        reports can't do since they only carry current-season totals."""
+        return self._get(f"/player/{player_id}/landing")

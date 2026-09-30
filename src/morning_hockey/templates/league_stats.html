@@ -12,6 +12,11 @@
 
 <section>
   <h2 class="section-title">🏒 Pistepörssi</h2>
+  <div class="table-filters" data-table-id="skater-stats-table">
+    <button type="button" class="filter-btn active" data-position="all">Kaikki</button>
+    <button type="button" class="filter-btn" data-position="F">Hyökkääjät</button>
+    <button type="button" class="filter-btn" data-position="D">Puolustajat</button>
+  </div>
   <div class="stats-table-wrap">
     <table class="stats-table" id="skater-stats-table" data-collapse-at="25">
       <thead>
@@ -29,7 +34,8 @@
       {% for row in skaters %}
         <tr class="{{ 'row-fin' if row.nationality == 'FIN' }} {{ 'row-chi' if row.team == 'CHI' }}"
             data-name="{{ row.name }}" data-team="{{ row.team }}" data-gp="{{ row.games_played }}"
-            data-goals="{{ row.goals }}" data-assists="{{ row.assists }}" data-rank="{{ loop.index }}">
+            data-goals="{{ row.goals }}" data-assists="{{ row.assists }}" data-rank="{{ loop.index }}"
+            data-position="{{ row.position }}">
           <td class="col-rank">{{ loop.index }}</td>
           <td>
             <span class="player-cell">

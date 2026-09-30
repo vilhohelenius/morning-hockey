@@ -4,6 +4,7 @@ from pathlib import Path
 from morning_hockey.render import (
     render_archive_pages,
     render_dashboard,
+    render_rookies,
     render_standings,
     render_suomiporssi,
     render_team_page,
@@ -222,6 +223,40 @@ def test_render_team_page_writes_under_joukkueet(tmp_path: Path):
     assert "Chicago Blackhawks" in html
     assert "Tyler Bertuzzi" in html
     assert 'href="../index.html"' in html
+
+
+def test_render_rookies_writes_the_page(tmp_path: Path):
+    output_dir = tmp_path / "site"
+    rookies = [
+        SkaterStatRow(
+            player_id=1,
+            name="Rookie One",
+            team="CHI",
+            logo="https://assets.nhle.com/logos/nhl/svg/CHI_light.svg",
+            headshot="https://assets.nhle.com/mugs/nhl/20262027/CHI/1.png",
+            nationality="USA",
+            position="C",
+            games_played=5,
+            goals=3,
+            assists=4,
+            points=7,
+        )
+    ]
+
+    render_rookies(rookies, 20262027, output_dir)
+
+    html = (output_dir / "rookiet.html").read_text(encoding="utf-8")
+    assert "Rookie One" in html
+    assert "2026" in html and "2027" in html
+
+
+def test_render_rookies_handles_no_rookies_yet(tmp_path: Path):
+    output_dir = tmp_path / "site"
+
+    render_rookies([], 20262027, output_dir)
+
+    html = (output_dir / "rookiet.html").read_text(encoding="utf-8")
+    assert "Ei vielä tilastoituja rookieita" in html
 
 
 def test_render_standings_writes_divisions_and_wildcard_race(tmp_path: Path):
