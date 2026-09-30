@@ -4,7 +4,7 @@ from pathlib import Path
 from morning_hockey.leaderboard import LeaderboardRow
 from morning_hockey.render import render_leaderboard, render_site, render_standings, render_team_page
 from morning_hockey.standings import Conference, Division, StandingsPage, StandingsRow
-from morning_hockey.team import DivisionRow, RosterPlayer, TeamPage
+from morning_hockey.team import DivisionRow, RosterSkater, TeamPage
 
 DIGEST = {
     "date": "2026-09-29",
@@ -116,19 +116,20 @@ def test_render_team_page_writes_under_joukkueet(tmp_path: Path):
                 is_team=True,
             )
         ],
-        roster={
-            "forwards": [
-                RosterPlayer(
-                    player_id=1,
-                    name="Tyler Bertuzzi",
-                    position="L",
-                    sweater_number=59,
-                    headshot="https://assets.nhle.com/mugs/nhl/20262027/CHI/1.png",
-                )
-            ],
-            "defensemen": [],
-            "goalies": [],
-        },
+        skaters=[
+            RosterSkater(
+                player_id=1,
+                name="Tyler Bertuzzi",
+                position="L",
+                sweater_number=59,
+                headshot="https://assets.nhle.com/mugs/nhl/20262027/CHI/1.png",
+                games_played=1,
+                goals=1,
+                assists=0,
+                points=1,
+            )
+        ],
+        goalies=[],
         recent_games=[],
         upcoming_games=[],
     )

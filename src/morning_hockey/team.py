@@ -12,12 +12,30 @@ _REGULAR_SEASON = 2
 
 
 @dataclass(frozen=True)
-class RosterPlayer:
+class RosterSkater:
     player_id: int
     name: str
     position: str
     sweater_number: int
     headshot: str
+    games_played: int
+    goals: int
+    assists: int
+    points: int
+
+
+@dataclass(frozen=True)
+class RosterGoalie:
+    player_id: int
+    name: str
+    sweater_number: int
+    headshot: str
+    games_played: int
+    wins: int
+    losses: int
+    ot_losses: int
+    goals_against_average: float
+    save_pct: float
 
 
 @dataclass(frozen=True)
@@ -57,32 +75,65 @@ class TeamPage:
     division_rank: int
     streak: str
     division_table: list[DivisionRow]
-    roster: dict[str, list[RosterPlayer]]
+    skaters: list[RosterSkater]
+    goalies: list[RosterGoalie]
     recent_games: list[ScheduleGame]
     upcoming_games: list[ScheduleGame]
 
 
-def _roster_group(players: list[dict]) -> list[RosterPlayer]:
-    group = [
-        RosterPlayer(
-            player_id=player["id"],
-            name=f"{player['firstName']['default']} {player['lastName']['default']}",
-            position=player["positionCode"],
-            sweater_number=player.get("sweaterNumber", 0),
-            headshot=player.get("headshot", ""),
+def _player_name(player: dict) -> str:
+    return f"{player['firstName']['default']} {player['lastName']['default']}"
+
+
+def _build_skaters(client: NHLClient, team_abbrev: str, season_id: int, raw_roster: dict) -> list[RosterSkater]:
+    cayenne_exp = f'currentTeamAbbrev="{team_abbrev}" and seasonId={season_id} and gameTypeId=2'
+    sort = '[{"property":"points","direction":"DESC"}]'
+    stats_by_id = {row["playerId"]: row for row in client.skater_bios(cayenne_exp, sort, limit=-1)}
+
+    skaters = []
+    for player in raw_roster.get("forwards", []) + raw_roster.get("defensemen", []):
+        stats = stats_by_id.get(player["id"], {})
+        skaters.append(
+            RosterSkater(
+                player_id=player["id"],
+                name=_player_name(player),
+                position=player["positionCode"],
+                sweater_number=player.get("sweaterNumber", 0),
+                headshot=player.get("headshot", ""),
+                games_played=stats.get("gamesPlayed", 0),
+                goals=stats.get("goals", 0),
+                assists=stats.get("assists", 0),
+                points=stats.get("points", 0),
+            )
         )
-        for player in players
-    ]
-    group.sort(key=lambda p: p.sweater_number)
-    return group
+    skaters.sort(key=lambda s: (-s.points, -s.goals, s.name))
+    return skaters
 
 
-def _build_roster(raw_roster: dict) -> dict[str, list[RosterPlayer]]:
-    return {
-        "forwards": _roster_group(raw_roster.get("forwards", [])),
-        "defensemen": _roster_group(raw_roster.get("defensemen", [])),
-        "goalies": _roster_group(raw_roster.get("goalies", [])),
-    }
+def _build_goalies(client: NHLClient, season_id: int, raw_roster: dict) -> list[RosterGoalie]:
+    cayenne_exp = f"seasonId={season_id} and gameTypeId=2"
+    sort = '[{"property":"savePct","direction":"DESC"}]'
+    stats_by_id = {row["playerId"]: row for row in client.goalie_summary(cayenne_exp, sort, limit=-1)}
+
+    goalies = []
+    for player in raw_roster.get("goalies", []):
+        stats = stats_by_id.get(player["id"], {})
+        goalies.append(
+            RosterGoalie(
+                player_id=player["id"],
+                name=_player_name(player),
+                sweater_number=player.get("sweaterNumber", 0),
+                headshot=player.get("headshot", ""),
+                games_played=stats.get("gamesPlayed", 0),
+                wins=stats.get("wins", 0),
+                losses=stats.get("losses", 0),
+                ot_losses=stats.get("otLosses", 0),
+                goals_against_average=stats.get("goalsAgainstAverage", 0.0),
+                save_pct=stats.get("savePct", 0.0),
+            )
+        )
+    goalies.sort(key=lambda g: -g.save_pct)
+    return goalies
 
 
 def game_result(team_score: int, opponent_score: int, final_type: str) -> str:
@@ -166,7 +217,7 @@ def _division_table(standings: dict, division_abbrev: str, team_abbrev: str) -> 
     ]
 
 
-def build_team_page(client: NHLClient, team_abbrev: str) -> TeamPage:
+def build_team_page(client: NHLClient, team_abbrev: str, season_id: int) -> TeamPage:
     standings = client.standings()
     team_row = next(
         row for row in standings["standings"] if row["teamAbbrev"]["default"] == team_abbrev
@@ -176,7 +227,9 @@ def build_team_page(client: NHLClient, team_abbrev: str) -> TeamPage:
     schedule = client.club_schedule_season(team_abbrev)
     recent_games, upcoming_games = _split_schedule(team_abbrev, schedule["games"])
 
-    roster = _build_roster(client.roster(team_abbrev))
+    raw_roster = client.roster(team_abbrev)
+    skaters = _build_skaters(client, team_abbrev, season_id, raw_roster)
+    goalies = _build_goalies(client, season_id, raw_roster)
 
     return TeamPage(
         abbrev=team_abbrev,
@@ -186,7 +239,8 @@ def build_team_page(client: NHLClient, team_abbrev: str) -> TeamPage:
         division_rank=team_row["divisionSequence"],
         streak=f"{team_row['streakCode']}{team_row['streakCount']}",
         division_table=division_table,
-        roster=roster,
+        skaters=skaters,
+        goalies=goalies,
         recent_games=recent_games,
         upcoming_games=upcoming_games,
     )

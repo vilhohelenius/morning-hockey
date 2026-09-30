@@ -652,48 +652,6 @@ main {
   margin: 12px 0 6px;
 }
 
-.roster-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
-  gap: 8px;
-}
-
-.roster-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 8px 4px;
-  gap: 2px;
-}
-
-.roster-card img {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  object-fit: cover;
-  background: var(--bg);
-}
-
-.roster-number {
-  font-size: 0.7rem;
-  color: var(--muted);
-}
-
-.roster-name {
-  font-size: 0.78rem;
-  font-weight: 600;
-  line-height: 1.15;
-}
-
-.roster-pos {
-  font-size: 0.65rem;
-  color: var(--muted);
-}
-
 .archive-date {
   font-weight: 600;
 }

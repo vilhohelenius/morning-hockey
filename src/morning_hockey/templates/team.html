@@ -85,42 +85,85 @@
 </section>
 
 <section>
-  <h2 class="section-title">Rosteri</h2>
-
-  <h3 class="roster-group-title">Hyökkääjät</h3>
-  <div class="roster-grid">
-    {% for player in team.roster.forwards %}
-    <div class="roster-card">
-      <img src="{{ player.headshot }}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
-      <span class="roster-number">{{ player.sweater_number }}</span>
-      <span class="roster-name">{{ player.name }}</span>
-      <span class="roster-pos">{{ player.position }}</span>
-    </div>
-    {% endfor %}
+  <h2 class="section-title">🏒 Pistepörssi</h2>
+  <div class="stats-table-wrap">
+    <table class="stats-table">
+      <thead>
+        <tr>
+          <th class="col-rank">#</th>
+          <th data-sort="name" data-type="text">Pelaaja</th>
+          <th data-sort="gp">O</th>
+          <th data-sort="goals">M</th>
+          <th data-sort="assists">S</th>
+          <th data-sort="rank" data-first-dir="asc" class="sort-asc">P</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for player in team.skaters %}
+        <tr data-name="{{ player.name }}" data-gp="{{ player.games_played }}"
+            data-goals="{{ player.goals }}" data-assists="{{ player.assists }}" data-rank="{{ loop.index }}">
+          <td class="col-rank">{{ loop.index }}</td>
+          <td>
+            <span class="player-cell">
+              <img src="{{ player.headshot }}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
+              <span class="player-name">
+                {{ player.name }}
+                <span class="player-meta">#{{ player.sweater_number }} · {{ player.position }}</span>
+              </span>
+            </span>
+          </td>
+          <td>{{ player.games_played }}</td>
+          <td>{{ player.goals }}</td>
+          <td>{{ player.assists }}</td>
+          <td class="stat-strong">{{ player.points }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
   </div>
+</section>
 
-  <h3 class="roster-group-title">Puolustajat</h3>
-  <div class="roster-grid">
-    {% for player in team.roster.defensemen %}
-    <div class="roster-card">
-      <img src="{{ player.headshot }}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
-      <span class="roster-number">{{ player.sweater_number }}</span>
-      <span class="roster-name">{{ player.name }}</span>
-      <span class="roster-pos">{{ player.position }}</span>
-    </div>
-    {% endfor %}
-  </div>
-
-  <h3 class="roster-group-title">Maalivahdit</h3>
-  <div class="roster-grid">
-    {% for player in team.roster.goalies %}
-    <div class="roster-card">
-      <img src="{{ player.headshot }}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
-      <span class="roster-number">{{ player.sweater_number }}</span>
-      <span class="roster-name">{{ player.name }}</span>
-      <span class="roster-pos">{{ player.position }}</span>
-    </div>
-    {% endfor %}
+<section>
+  <h2 class="section-title">🥅 Maalivahdit</h2>
+  <div class="stats-table-wrap">
+    <table class="stats-table">
+      <thead>
+        <tr>
+          <th class="col-rank">#</th>
+          <th data-sort="name" data-type="text">Pelaaja</th>
+          <th data-sort="gp">O</th>
+          <th data-sort="wins">V</th>
+          <th data-sort="losses">H</th>
+          <th data-sort="otl">JH</th>
+          <th data-sort="gaa">GAA</th>
+          <th data-sort="rank" data-first-dir="asc" class="sort-asc">SV%</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for player in team.goalies %}
+        <tr data-name="{{ player.name }}" data-gp="{{ player.games_played }}" data-wins="{{ player.wins }}"
+            data-losses="{{ player.losses }}" data-otl="{{ player.ot_losses }}"
+            data-gaa="{{ player.goals_against_average }}" data-rank="{{ loop.index }}">
+          <td class="col-rank">{{ loop.index }}</td>
+          <td>
+            <span class="player-cell">
+              <img src="{{ player.headshot }}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
+              <span class="player-name">
+                {{ player.name }}
+                <span class="player-meta">#{{ player.sweater_number }}</span>
+              </span>
+            </span>
+          </td>
+          <td>{{ player.games_played }}</td>
+          <td>{{ player.wins }}</td>
+          <td>{{ player.losses }}</td>
+          <td>{{ player.ot_losses }}</td>
+          <td>{{ "%.2f" | format(player.goals_against_average) }}</td>
+          <td class="stat-strong">{{ "%.3f" | format(player.save_pct) }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
   </div>
 </section>
 {% endblock %}

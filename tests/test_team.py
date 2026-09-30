@@ -1,5 +1,6 @@
 from morning_hockey.team import (
-    RosterPlayer,
+    RosterGoalie,
+    RosterSkater,
     TeamPage,
     build_team_page,
     game_result,
@@ -113,6 +114,29 @@ ROSTER = {
 }
 
 
+SKATER_STATS = [
+    {
+        "playerId": 1,
+        "gamesPlayed": 1,
+        "goals": 2,
+        "assists": 1,
+        "points": 3,
+    }
+]
+
+GOALIE_STATS = [
+    {
+        "playerId": 2,
+        "gamesPlayed": 1,
+        "wins": 1,
+        "losses": 0,
+        "otLosses": 0,
+        "goalsAgainstAverage": 1.5,
+        "savePct": 0.955,
+    }
+]
+
+
 class FakeClient:
     def standings(self):
         return STANDINGS
@@ -123,6 +147,12 @@ class FakeClient:
     def roster(self, team_abbrev):
         return ROSTER
 
+    def skater_bios(self, cayenne_exp, sort, limit=-1):
+        return SKATER_STATS
+
+    def goalie_summary(self, cayenne_exp, sort, limit=-1):
+        return GOALIE_STATS
+
 
 def test_game_result_classifies_wins_losses_and_ot_losses():
     assert game_result(3, 1, "REG") == "W"
@@ -132,7 +162,7 @@ def test_game_result_classifies_wins_losses_and_ot_losses():
 
 
 def test_build_team_page_assembles_division_schedule_and_roster():
-    page = build_team_page(FakeClient(), "CHI")
+    page = build_team_page(FakeClient(), "CHI", 20262027)
 
     assert isinstance(page, TeamPage)
     assert page.name == "Chicago Blackhawks"
@@ -150,7 +180,29 @@ def test_build_team_page_assembles_division_schedule_and_roster():
     assert [g.game_id for g in page.upcoming_games] == [3]
     assert page.upcoming_games[0].opponent_abbrev == "UTA"
 
-    assert len(page.roster["forwards"]) == 1
-    assert isinstance(page.roster["forwards"][0], RosterPlayer)
-    assert page.roster["forwards"][0].name == "Tyler Bertuzzi"
-    assert page.roster["goalies"][0].name == "Spencer Knight"
+    assert len(page.skaters) == 1
+    assert isinstance(page.skaters[0], RosterSkater)
+    assert page.skaters[0].name == "Tyler Bertuzzi"
+    assert page.skaters[0].points == 3
+    assert page.skaters[0].goals == 2
+
+    assert len(page.goalies) == 1
+    assert isinstance(page.goalies[0], RosterGoalie)
+    assert page.goalies[0].name == "Spencer Knight"
+    assert page.goalies[0].save_pct == 0.955
+
+
+def test_build_team_page_defaults_stats_to_zero_for_players_without_recorded_games():
+    class NoStatsClient(FakeClient):
+        def skater_bios(self, cayenne_exp, sort, limit=-1):
+            return []
+
+        def goalie_summary(self, cayenne_exp, sort, limit=-1):
+            return []
+
+    page = build_team_page(NoStatsClient(), "CHI", 20262027)
+
+    assert page.skaters[0].games_played == 0
+    assert page.skaters[0].points == 0
+    assert page.goalies[0].games_played == 0
+    assert page.goalies[0].save_pct == 0.0

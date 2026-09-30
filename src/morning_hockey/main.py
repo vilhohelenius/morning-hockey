@@ -76,7 +76,7 @@ def run(pages_base_url: str, ntfy_topic: str | None, ntfy_server: str) -> None:
     print(f"Playoff-puu: tilanne {bracket.as_of_date}.")
 
     for team_abbrev in TEAM_ABBREVS:
-        team_page = build_team_page(client, team_abbrev)
+        team_page = build_team_page(client, team_abbrev, season_id)
         render_team_page(team_page, SITE_DIR)
         print(f"Joukkuesivu: {team_page.name}")
 
