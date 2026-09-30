@@ -1,6 +1,7 @@
 from morning_hockey.formatting import (
     human_date,
     nationality_flag,
+    short_weekday_date,
     translate_decision,
     translate_final_type,
 )
@@ -8,6 +9,10 @@ from morning_hockey.formatting import (
 
 def test_human_date_uses_finnish_weekday_names():
     assert human_date("2026-09-29") == "Tiistai 29.9.2026"
+
+
+def test_short_weekday_date_uses_lowercase_weekday_abbreviation():
+    assert short_weekday_date("2026-10-01") == "to 1.10."
 
 
 def test_translate_decision():

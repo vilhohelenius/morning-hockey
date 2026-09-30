@@ -20,11 +20,13 @@ from .render import (
     render_playoffs,
     render_primetime,
     render_rookies,
+    render_schedule,
     render_standings,
     render_suomiporssi,
     render_team_page,
 )
 from .rookies import build_rookie_top
+from .schedule import build_schedule
 from .standings import build_standings
 from .suomiporssi import build_goalie_leaderboard, build_leaderboard, current_season_id
 from .team import build_team_page
@@ -99,6 +101,11 @@ def run(pages_base_url: str, ntfy_topic: str | None, ntfy_server: str) -> None:
     primetime_page = build_primetime(client)
     render_primetime(primetime_page, SITE_DIR)
     print(f"Prime time: {len(primetime_page.games)} ottelua {primetime_page.as_of_date}.")
+
+    schedule_page = build_schedule(client)
+    render_schedule(schedule_page, SITE_DIR)
+    total_scheduled = sum(len(day.games) for day in schedule_page.days)
+    print(f"Otteluohjelma: {total_scheduled} ottelua seuraavien {len(schedule_page.days)} päivän aikana.")
 
     for team_abbrev in TEAM_ABBREVS:
         team_page = build_team_page(client, team_abbrev, season_id)

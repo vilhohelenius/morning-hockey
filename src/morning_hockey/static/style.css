@@ -1243,3 +1243,37 @@ main {
   color: var(--muted);
   font-weight: 400;
 }
+
+/* ---------- Otteluohjelma ---------- */
+
+.day-picker {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 0 -16px;
+  padding: 0 16px 4px;
+}
+
+.day-pill {
+  flex-shrink: 0;
+  padding: 8px 14px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  color: var(--text);
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.day-pill.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.schedule-day-section.is-hidden {
+  display: none;
+}

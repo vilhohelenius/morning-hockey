@@ -26,6 +26,23 @@
     link.addEventListener("click", closeSidebar);
   });
 
+  document.querySelectorAll(".day-picker").forEach(function (picker) {
+    var pills = picker.querySelectorAll(".day-pill");
+    var sections = document.querySelectorAll(".schedule-day-section");
+
+    pills.forEach(function (pill) {
+      pill.addEventListener("click", function () {
+        pills.forEach(function (p) {
+          p.classList.remove("active");
+        });
+        pill.classList.add("active");
+        sections.forEach(function (section) {
+          section.classList.toggle("is-hidden", section.dataset.date !== pill.dataset.date);
+        });
+      });
+    });
+  });
+
   document.querySelectorAll(".nav-group-toggle").forEach(function (toggle) {
     toggle.addEventListener("click", function () {
       var sublist = toggle.nextElementSibling;

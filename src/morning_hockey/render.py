@@ -15,6 +15,7 @@ from .formatting import (
     nationality_flag,
     season_label,
     short_date,
+    short_weekday_date,
     translate_decision,
     translate_final_type,
 )
@@ -45,6 +46,7 @@ _env.filters["final_type_fi"] = translate_final_type
 _env.filters["short_date"] = short_date
 _env.filters["nationality_flag"] = nationality_flag
 _env.filters["finnish_time"] = finnish_time
+_env.filters["short_weekday_date"] = short_weekday_date
 _env.globals["asset_version"] = _asset_version()
 
 _MAX_ARCHIVE_LINKS = 14
@@ -71,6 +73,7 @@ def _nav(asset_prefix: str) -> dict[str, str]:
         "standings": f"{asset_prefix}sarjataulukko.html",
         "playoffs": f"{asset_prefix}playoffit.html",
         "primetime": f"{asset_prefix}primetime.html",
+        "schedule": f"{asset_prefix}otteluohjelma.html",
         "league_stats": f"{asset_prefix}tilastot.html",
         "rookies": f"{asset_prefix}rookiet.html",
         "team_chi": f"{asset_prefix}joukkueet/chi.html",
@@ -189,6 +192,17 @@ def render_primetime(page, output_dir: Path) -> None:
         active_page="primetime",
     )
     (output_dir / "primetime.html").write_text(html, encoding="utf-8")
+
+
+def render_schedule(page, output_dir: Path) -> None:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    html = _env.get_template("otteluohjelma.html").render(
+        page=page,
+        asset_prefix="",
+        nav=_nav(""),
+        active_page="schedule",
+    )
+    (output_dir / "otteluohjelma.html").write_text(html, encoding="utf-8")
 
 
 def render_league_stats(skaters: list, goalies: list, season_id: int, output_dir: Path) -> None:

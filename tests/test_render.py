@@ -446,6 +446,43 @@ def test_render_primetime_writes_games_with_finnish_times(tmp_path: Path):
     assert "20:00" in html
 
 
+def test_render_schedule_writes_a_day_picker_and_every_days_games(tmp_path: Path):
+    import datetime as dt
+
+    from morning_hockey.render import render_schedule
+    from morning_hockey.schedule import HELSINKI, ScheduleDay, ScheduleGame, SchedulePage
+
+    page = SchedulePage(
+        as_of_date="2026-01-15",
+        days=[
+            ScheduleDay(
+                date="2026-01-15",
+                games=[
+                    ScheduleGame(
+                        game_id=1,
+                        away=TeamInfo(abbrev="BOS", name="Bruins", logo="bos.svg", score=0),
+                        home=TeamInfo(abbrev="NYR", name="Rangers", logo="nyr.svg", score=0),
+                        start_local=dt.datetime(2026, 1, 15, 20, 0, tzinfo=HELSINKI),
+                        game_state="FUT",
+                        is_finished=False,
+                    )
+                ],
+            ),
+            ScheduleDay(date="2026-01-16", games=[]),
+        ],
+    )
+
+    output_dir = tmp_path / "site"
+    render_schedule(page, output_dir)
+
+    html = (output_dir / "otteluohjelma.html").read_text(encoding="utf-8")
+    assert "BOS" in html and "NYR" in html
+    assert "20:00" in html
+    assert 'data-date="2026-01-15"' in html
+    assert 'data-date="2026-01-16"' in html
+    assert "Ei otteluita tänä päivänä." in html
+
+
 def test_render_league_stats_writes_skaters_and_goalies_tables(tmp_path: Path):
     from morning_hockey.league_stats import GoalieStatRow, SkaterStatRow
     from morning_hockey.render import render_league_stats

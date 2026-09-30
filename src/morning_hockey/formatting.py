@@ -49,6 +49,13 @@ def short_date(date_str: str) -> str:
     return f"{date.day}.{date.month}."
 
 
+def short_weekday_date(date_str: str) -> str:
+    """'ke 1.10.' for a date string -- the day-picker pill label."""
+    date = dt.date.fromisoformat(date_str)
+    weekday = _WEEKDAYS_SHORT[date.weekday()]
+    return f"{weekday} {date.day}.{date.month}."
+
+
 def finnish_time(local_dt: dt.datetime) -> str:
     """'ti 2.10. klo 02:00' for a Europe/Helsinki-local datetime."""
     weekday = _WEEKDAYS_SHORT[local_dt.weekday()]

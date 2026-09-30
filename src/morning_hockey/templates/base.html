@@ -33,7 +33,18 @@
         </ul>
       </li>
       <li><a href="{{ nav.playoffs }}" class="{{ 'active' if active_page == 'playoffs' else '' }}">🏆 Playoff-bracket</a></li>
-      <li><a href="{{ nav.primetime }}" class="{{ 'active' if active_page == 'primetime' else '' }}">🌙 Prime time</a></li>
+      {% set game_pages = ['schedule', 'primetime'] %}
+      <li class="nav-group">
+        <button type="button" class="nav-group-toggle {{ 'active' if active_page in game_pages else '' }}"
+          aria-expanded="{{ 'true' if active_page in game_pages else 'false' }}">
+          📅 Ottelut
+          <span class="nav-group-chevron">▾</span>
+        </button>
+        <ul class="nav-sublist {{ 'open' if active_page in game_pages else '' }}">
+          <li><a href="{{ nav.schedule }}" class="{{ 'active' if active_page == 'schedule' else '' }}">Otteluohjelma</a></li>
+          <li><a href="{{ nav.primetime }}" class="{{ 'active' if active_page == 'primetime' else '' }}">Prime time</a></li>
+        </ul>
+      </li>
       <li><a href="{{ nav.archive }}" class="{{ 'active' if active_page == 'archive' else '' }}">🗂️ Arkisto</a></li>
     </ul>
   </nav>
