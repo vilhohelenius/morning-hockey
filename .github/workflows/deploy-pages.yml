@@ -1,9 +1,9 @@
 name: Deploy Pages (Cloudflare)
 
 on:
-  # Manual only for now, same as the sync workflows' first runs -- once a
-  # deploy has been confirmed working from the Actions log, this can move
-  # to running on every push to main that touches web/.
+  push:
+    branches: [main]
+    paths: ["web/**"]
   workflow_dispatch: {}
 
 jobs:
