@@ -4,6 +4,7 @@ from pathlib import Path
 from morning_hockey.render import (
     render_archive_pages,
     render_dashboard,
+    render_game_reports,
     render_rookies,
     render_standings,
     render_suomiporssi,
@@ -226,6 +227,97 @@ def test_render_team_page_writes_under_joukkueet(tmp_path: Path):
     assert "Chicago Blackhawks" in html
     assert "Tyler Bertuzzi" in html
     assert 'href="../index.html"' in html
+
+
+def test_render_team_page_links_only_recent_games_with_a_report(tmp_path: Path):
+    output_dir = tmp_path / "site"
+    team = TeamPage(
+        abbrev="CHI",
+        name="Chicago Blackhawks",
+        logo="https://assets.nhle.com/logos/nhl/svg/CHI_light.svg",
+        division_name="Central",
+        division_rank=2,
+        streak="L1",
+        division_table=[],
+        season_stats=None,
+        skaters=[],
+        goalies=[],
+        recent_games=[
+            ScheduleGame(
+                game_id=1,
+                date="2026-09-29",
+                is_home=False,
+                opponent_abbrev="VGK",
+                opponent_name="Golden Knights",
+                opponent_logo="https://assets.nhle.com/logos/nhl/svg/VGK_light.svg",
+                team_score=2,
+                opponent_score=5,
+                final_type="REG",
+                result="L",
+            ),
+            ScheduleGame(
+                game_id=2,
+                date="2026-09-27",
+                is_home=True,
+                opponent_abbrev="DAL",
+                opponent_name="Stars",
+                opponent_logo="https://assets.nhle.com/logos/nhl/svg/DAL_light.svg",
+                team_score=3,
+                opponent_score=1,
+                final_type="REG",
+                result="W",
+            ),
+        ],
+        upcoming_games=[],
+    )
+
+    # only game 1 got a successful report -- game 2's row must stay a plain,
+    # unlinked div rather than point at a page that was never written
+    render_team_page(team, output_dir, report_game_ids=frozenset({1}))
+
+    html = (output_dir / "joukkueet" / "chi.html").read_text(encoding="utf-8")
+    assert 'href="../ottelut/1.html"' in html
+    assert 'href="../ottelut/2.html"' not in html
+
+
+def test_render_game_reports_writes_one_page_per_game(tmp_path: Path):
+    from morning_hockey.game_report import GameReportPage
+    from morning_hockey.models import GoalEvent, TeamStatRow
+
+    reports = [
+        GameReportPage(
+            game_id=2026020001,
+            date="2026-09-29",
+            away=TeamInfo(abbrev="FLA", name="Florida Panthers", logo="fla.svg", score=1),
+            home=TeamInfo(abbrev="CHI", name="Chicago Blackhawks", logo="chi.svg", score=3),
+            final_type="REG",
+            goals=[
+                GoalEvent(
+                    period_label="1. erä",
+                    time_in_period="05:00",
+                    team_abbrev="CHI",
+                    scorer="Tyler Bertuzzi",
+                    assists=["Connor Bedard"],
+                    strength="",
+                    away_score=0,
+                    home_score=1,
+                )
+            ],
+            team_stats=[TeamStatRow(label="Laukaukset", away_value="20", home_value="30")],
+            away_skaters=[],
+            home_skaters=[],
+            away_goalies=[],
+            home_goalies=[],
+        )
+    ]
+
+    output_dir = tmp_path / "site"
+    render_game_reports(reports, "CHI", output_dir)
+
+    html = (output_dir / "ottelut" / "2026020001.html").read_text(encoding="utf-8")
+    assert "Tyler Bertuzzi" in html
+    assert "Connor Bedard" in html
+    assert "FLA" in html and "CHI" in html
 
 
 def test_render_rookies_writes_the_page(tmp_path: Path):

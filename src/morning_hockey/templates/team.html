@@ -85,6 +85,20 @@
   {% if team.recent_games %}
   <div class="schedule-list">
     {% for game in team.recent_games %}
+    {% if game.game_id in report_game_ids %}
+    <a class="schedule-row schedule-row-link" href="../ottelut/{{ game.game_id }}.html">
+      <span class="schedule-date">{{ game.date | short_date }}</span>
+      <span class="schedule-opponent">
+        {{ '@' if not game.is_home else 'vs' }}
+        <img src="{{ game.opponent_logo }}" alt="" class="schedule-logo" loading="lazy">
+        {{ game.opponent_abbrev }}
+      </span>
+      <span class="schedule-score">{{ game.team_score }}–{{ game.opponent_score }}</span>
+      <span class="schedule-result result-{{ game.result | lower }}">
+        {{ game.result }}{% if game.final_type != "REG" %}<span class="schedule-ot">{{ game.final_type }}</span>{% endif %}
+      </span>
+    </a>
+    {% else %}
     <div class="schedule-row">
       <span class="schedule-date">{{ game.date | short_date }}</span>
       <span class="schedule-opponent">
@@ -97,6 +111,7 @@
         {{ game.result }}{% if game.final_type != "REG" %}<span class="schedule-ot">{{ game.final_type }}</span>{% endif %}
       </span>
     </div>
+    {% endif %}
     {% endfor %}
   </div>
   {% else %}

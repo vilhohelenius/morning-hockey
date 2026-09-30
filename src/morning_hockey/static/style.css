@@ -620,6 +620,11 @@ main {
   font-size: 0.9rem;
 }
 
+.schedule-row-link {
+  text-decoration: none;
+  cursor: pointer;
+}
+
 .schedule-date {
   color: var(--muted);
   font-size: 0.8rem;

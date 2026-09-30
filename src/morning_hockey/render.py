@@ -242,12 +242,26 @@ def render_rookies(rookies: list, season_id: int, output_dir: Path) -> None:
     (output_dir / "rookiet.html").write_text(html, encoding="utf-8")
 
 
-def render_team_page(team, output_dir: Path) -> None:
+def render_team_page(team, output_dir: Path, report_game_ids: frozenset[int] = frozenset()) -> None:
     (output_dir / "joukkueet").mkdir(parents=True, exist_ok=True)
     html = _env.get_template("team.html").render(
         team=team,
+        report_game_ids=report_game_ids,
         asset_prefix="../",
         nav=_nav("../"),
         active_page=f"team_{team.abbrev.lower()}",
     )
     (output_dir / "joukkueet" / f"{team.abbrev.lower()}.html").write_text(html, encoding="utf-8")
+
+
+def render_game_reports(reports: list, team_abbrev: str, output_dir: Path) -> None:
+    (output_dir / "ottelut").mkdir(parents=True, exist_ok=True)
+    template = _env.get_template("game_report.html")
+    for report in reports:
+        html = template.render(
+            report=report,
+            asset_prefix="../",
+            nav=_nav("../"),
+            active_page=f"team_{team_abbrev.lower()}",
+        )
+        (output_dir / "ottelut" / f"{report.game_id}.html").write_text(html, encoding="utf-8")

@@ -8,6 +8,7 @@ from dataclasses import asdict
 from pathlib import Path
 
 from .digest import build_digest
+from .game_report import build_game_reports
 from .league_stats import build_goalie_top, build_skater_top
 from .nhl_api import NHLClient
 from .notify import send_ntfy, send_team_recap
@@ -16,6 +17,7 @@ from .primetime import build_primetime
 from .render import (
     render_archive_pages,
     render_dashboard,
+    render_game_reports,
     render_goalie_stats,
     render_league_stats,
     render_playoffs,
@@ -111,8 +113,12 @@ def run(pages_base_url: str, ntfy_topic: str | None, ntfy_server: str) -> None:
 
     for team_abbrev in TEAM_ABBREVS:
         team_page = build_team_page(client, team_abbrev, season_id)
-        render_team_page(team_page, SITE_DIR)
-        print(f"Joukkuesivu: {team_page.name}")
+        game_reports = build_game_reports(
+            client, team_page.recent_games, team_abbrev, team_page.name, team_page.logo
+        )
+        render_game_reports(game_reports, team_abbrev, SITE_DIR)
+        render_team_page(team_page, SITE_DIR, report_game_ids=frozenset(r.game_id for r in game_reports))
+        print(f"Joukkuesivu: {team_page.name} ({len(game_reports)} ottelun tarkka raportti).")
 
     render_dashboard(_load_archive(), fin_skaters[:5], skater_top[:5], team_page, SITE_DIR)
     print("Etusivu (dashboard) päivitetty.")

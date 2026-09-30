@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block title %}{{ report.away.abbrev }} – {{ report.home.abbrev }} · Morning Hockey{% endblock %}
+{% block header_title %}{{ report.away.abbrev }} – {{ report.home.abbrev }}{% endblock %}
+
+{% block content %}
+<header class="page-header">
+  <p class="subtitle">{{ report.date | human_date }}</p>
+</header>
+
+<section class="game-card">
+  <div class="score-row">
+    <div class="team away">
+      <img src="{{ report.away.logo }}" alt="" class="logo" loading="lazy">
+      <span class="abbrev">{{ report.away.abbrev }}</span>
+    </div>
+    <div class="score">
+      <span>{{ report.away.score }}</span>
+      <span class="dash">–</span>
+      <span>{{ report.home.score }}</span>
+    </div>
+    <div class="team home">
+      <img src="{{ report.home.logo }}" alt="" class="logo" loading="lazy">
+      <span class="abbrev">{{ report.home.abbrev }}</span>
+    </div>
+  </div>
+  {% if report.final_type != "REG" %}
+  <p class="ot-tag">{{ report.final_type | final_type_fi }}</p>
+  {% endif %}
+</section>
+
+<section class="team-detail">
+  <div class="team-detail-body">
+    <div class="tp-section">
+      <p class="tp-section-title">Maalit</p>
+      {% if report.goals %}
+        {% set ns = namespace(current_period=None) %}
+        {% for goal in report.goals %}
+          {% if goal.period_label != ns.current_period %}
+            {% set ns.current_period = goal.period_label %}
+            <p class="gd-period">{{ goal.period_label }}</p>
+          {% endif %}
+          <div class="gd-goal-row">
+            <div class="gd-goal-main">
+              <span class="gd-goal-time">{{ goal.time_in_period }}</span>
+              <img src="{{ report.away.logo if goal.team_abbrev == report.away.abbrev else report.home.logo }}"
+                   alt="" class="gd-goal-logo">
+              <span class="gd-goal-who">
+                <strong>{{ goal.scorer }}</strong>
+                {% if goal.strength %}<span class="gd-goal-strength">{{ goal.strength }}</span>{% endif %}
+              </span>
+              <span class="gd-goal-score">{{ goal.away_score }}–{{ goal.home_score }}</span>
+            </div>
+            {% if goal.assists %}<p class="gd-goal-assists">{{ goal.assists | join(", ") }}</p>{% endif %}
+          </div>
+        {% endfor %}
+      {% else %}
+        <p class="tp-empty">Ei maaleja.</p>
+      {% endif %}
+    </div>
+
+    <div class="tp-section">
+      <p class="tp-section-title">Ottelun tilastot</p>
+      <div class="gd-stat-header">
+        <span class="gd-stat-team">{{ report.away.abbrev }}</span>
+        <span class="gd-stat-team">{{ report.home.abbrev }}</span>
+      </div>
+      {% for stat in report.team_stats %}
+      <div class="gd-stat-row">
+        <span class="gd-stat-value">{{ stat.away_value }}</span>
+        <span class="gd-stat-label">{{ stat.label }}</span>
+        <span class="gd-stat-value">{{ stat.home_value }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+{% macro skater_table(skaters) %}
+<div class="stats-table-wrap">
+  <table class="stats-table">
+    <thead>
+      <tr>
+        <th data-type="text">Pelaaja</th>
+        <th>As</th>
+        <th>M</th>
+        <th>S</th>
+        <th>P</th>
+        <th>+/-</th>
+        <th>L</th>
+        <th>JH</th>
+        <th>Peliaika</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for p in skaters %}
+      <tr>
+        <td>{{ p.name }}</td>
+        <td>{{ p.position }}</td>
+        <td>{{ p.goals }}</td>
+        <td>{{ p.assists }}</td>
+        <td class="stat-strong">{{ p.points }}</td>
+        <td>{{ "+" if p.plus_minus > 0 }}{{ p.plus_minus }}</td>
+        <td>{{ p.shots }}</td>
+        <td>{{ p.pim }}</td>
+        <td>{{ p.toi }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endmacro %}
+
+{% macro goalie_table(goalies) %}
+<div class="stats-table-wrap">
+  <table class="stats-table">
+    <thead>
+      <tr>
+        <th data-type="text">Pelaaja</th>
+        <th>Torj.</th>
+        <th>Päästi</th>
+        <th>SV%</th>
+        <th>Peliaika</th>
+        <th>Ratkaisu</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for g in goalies %}
+      <tr>
+        <td>{{ g.name }}</td>
+        <td>{{ g.saves }}</td>
+        <td>{{ g.shots_against - g.saves }}</td>
+        <td class="stat-strong">{{ "%.3f" | format(g.save_pct) }}</td>
+        <td>{{ g.toi }}</td>
+        <td>{{ g.decision | decision_fi if g.decision else "–" }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endmacro %}
+
+<section>
+  <h2 class="section-title"><img src="{{ report.away.logo }}" alt="" class="nav-icon">{{ report.away.name }}</h2>
+  {{ skater_table(report.away_skaters) }}
+  {% if report.away_goalies %}{{ goalie_table(report.away_goalies) }}{% endif %}
+</section>
+
+<section>
+  <h2 class="section-title"><img src="{{ report.home.logo }}" alt="" class="nav-icon">{{ report.home.name }}</h2>
+  {{ skater_table(report.home_skaters) }}
+  {% if report.home_goalies %}{{ goalie_table(report.home_goalies) }}{% endif %}
+</section>
+{% endblock %}
