@@ -8,9 +8,9 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from .formatting import human_date, translate_decision, translate_final_type
 
-_REPO_ROOT = Path(__file__).resolve().parent.parent.parent
-TEMPLATES_DIR = _REPO_ROOT / "templates"
-STATIC_DIR = _REPO_ROOT / "static"
+_PACKAGE_DIR = Path(__file__).resolve().parent
+TEMPLATES_DIR = _PACKAGE_DIR / "templates"
+STATIC_DIR = _PACKAGE_DIR / "static"
 
 _env = Environment(
     loader=FileSystemLoader(str(TEMPLATES_DIR)),

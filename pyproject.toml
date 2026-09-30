@@ -22,5 +22,8 @@ dev = [
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+morning_hockey = ["templates/*.html", "static/*.css"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
