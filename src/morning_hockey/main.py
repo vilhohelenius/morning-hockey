@@ -8,9 +8,10 @@ from dataclasses import asdict
 from pathlib import Path
 
 from .digest import build_digest
+from .leaderboard import build_leaderboard, current_season_id
 from .nhl_api import NHLClient
 from .notify import send_ntfy
-from .render import render_site
+from .render import render_leaderboard, render_site
 
 DATA_DIR = Path("data")
 SITE_DIR = Path("site")
@@ -40,6 +41,11 @@ def run(pages_base_url: str, ntfy_topic: str | None, ntfy_server: str) -> None:
         print(f"{digest.date}: no completed games, nothing to record.")
 
     render_site(_load_archive(), SITE_DIR)
+
+    season_id = current_season_id(client)
+    leaderboard_rows = build_leaderboard(client, season_id)
+    render_leaderboard(leaderboard_rows, season_id, SITE_DIR)
+    print(f"Pistepörssi: {len(leaderboard_rows)} suomalaispelaajaa kaudelta {season_id}.")
 
     if digest.games and ntfy_topic:
         page_url = f"{pages_base_url.rstrip('/')}/nights/{digest.date}.html"

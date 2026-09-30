@@ -6,7 +6,7 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from .formatting import human_date, translate_decision, translate_final_type
+from .formatting import human_date, season_label, translate_decision, translate_final_type
 
 _PACKAGE_DIR = Path(__file__).resolve().parent
 TEMPLATES_DIR = _PACKAGE_DIR / "templates"
@@ -25,7 +25,11 @@ _MAX_ARCHIVE_LINKS = 14
 
 
 def _nav(asset_prefix: str) -> dict[str, str]:
-    return {"home": f"{asset_prefix}index.html", "archive": f"{asset_prefix}arkisto.html"}
+    return {
+        "home": f"{asset_prefix}index.html",
+        "leaderboard": f"{asset_prefix}pisteporssi.html",
+        "archive": f"{asset_prefix}arkisto.html",
+    }
 
 
 def render_site(archive: list[dict], output_dir: Path) -> None:
@@ -76,3 +80,15 @@ def render_site(archive: list[dict], output_dir: Path) -> None:
         dates=archive_entries, asset_prefix="", nav=_nav(""), active_page="archive"
     )
     (output_dir / "arkisto.html").write_text(archive_html, encoding="utf-8")
+
+
+def render_leaderboard(rows: list, season_id: int, output_dir: Path) -> None:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    html = _env.get_template("leaderboard.html").render(
+        rows=rows,
+        season_label=season_label(season_id),
+        asset_prefix="",
+        nav=_nav(""),
+        active_page="leaderboard",
+    )
+    (output_dir / "pisteporssi.html").write_text(html, encoding="utf-8")

@@ -28,3 +28,8 @@ def translate_decision(code: str | None) -> str:
 
 def translate_final_type(code: str) -> str:
     return _FINAL_TYPES.get(code, code)
+
+
+def season_label(season_id: int) -> str:
+    start_year, end_year = divmod(season_id, 10_000)
+    return f"{start_year}–{end_year}"

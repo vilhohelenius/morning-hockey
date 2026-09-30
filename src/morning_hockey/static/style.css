@@ -347,6 +347,109 @@ main {
   font-size: 0.95rem;
 }
 
+/* ---------- Points leaderboard ---------- */
+
+.lb-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lb-row {
+  display: grid;
+  grid-template-columns: 24px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.lb-header {
+  background: transparent;
+  border: none;
+  padding: 0 10px;
+  color: var(--muted);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.lb-rank {
+  font-weight: 700;
+  color: var(--muted);
+  text-align: center;
+}
+
+.lb-player {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.lb-avatar {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+}
+
+.lb-avatar img:first-child {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--bg);
+}
+
+.lb-badge {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  object-fit: contain;
+  padding: 1px;
+}
+
+.lb-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lb-pos {
+  margin-left: 6px;
+  color: var(--muted);
+  font-weight: 400;
+  font-size: 0.75rem;
+}
+
+.lb-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 22px);
+  gap: 4px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.9rem;
+}
+
+.lb-header .lb-stats {
+  font-size: 0.75rem;
+}
+
+.lb-points {
+  font-weight: 700;
+  color: var(--accent);
+}
+
 .archive-date {
   font-weight: 600;
 }

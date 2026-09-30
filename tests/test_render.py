@@ -1,6 +1,7 @@
 from pathlib import Path
 
-from morning_hockey.render import render_site
+from morning_hockey.leaderboard import LeaderboardRow
+from morning_hockey.render import render_leaderboard, render_site
 
 DIGEST = {
     "date": "2026-09-29",
@@ -33,6 +34,7 @@ def test_render_site_writes_index_and_night_page(tmp_path: Path):
     assert "Sebastian Aho" in index_html
     assert "FLA" in index_html and "CAR" in index_html
     assert 'href="arkisto.html"' in index_html
+    assert 'href="pisteporssi.html"' in index_html
 
     night_html = (output_dir / "nights" / "2026-09-29.html").read_text(encoding="utf-8")
     assert 'href="../arkisto.html"' in night_html
@@ -49,3 +51,38 @@ def test_render_site_handles_empty_archive(tmp_path: Path):
 
     assert "Ei vielä otteluita" in (output_dir / "index.html").read_text(encoding="utf-8")
     assert (output_dir / "arkisto.html").exists()
+
+
+def test_render_leaderboard_writes_page_with_rows(tmp_path: Path):
+    output_dir = tmp_path / "site"
+    rows = [
+        LeaderboardRow(
+            player_id=8477493,
+            name="Aleksander Barkov",
+            team="FLA",
+            logo="https://assets.nhle.com/logos/nhl/svg/FLA_light.svg",
+            headshot="https://assets.nhle.com/mugs/nhl/20262027/FLA/8477493.png",
+            position="C",
+            games_played=1,
+            goals=1,
+            assists=2,
+            points=3,
+        )
+    ]
+
+    render_leaderboard(rows, 20262027, output_dir)
+
+    html = (output_dir / "pisteporssi.html").read_text(encoding="utf-8")
+    assert "Aleksander Barkov" in html
+    assert "2026" in html and "2027" in html
+    assert 'src="https://assets.nhle.com/mugs/nhl/20262027/FLA/8477493.png"' in html
+    assert 'src="https://assets.nhle.com/logos/nhl/svg/FLA_light.svg"' in html
+
+
+def test_render_leaderboard_handles_no_rows(tmp_path: Path):
+    output_dir = tmp_path / "site"
+
+    render_leaderboard([], 20262027, output_dir)
+
+    html = (output_dir / "pisteporssi.html").read_text(encoding="utf-8")
+    assert "Ei tilastoituja" in html
