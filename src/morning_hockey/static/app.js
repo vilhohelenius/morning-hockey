@@ -25,4 +25,43 @@
   document.querySelectorAll(".sidebar a").forEach(function (link) {
     link.addEventListener("click", closeSidebar);
   });
+
+  document.querySelectorAll(".stats-table").forEach(function (table) {
+    var tbody = table.querySelector("tbody");
+    var headers = table.querySelectorAll("th[data-sort]");
+    var activeSort = null;
+    var activeDir = null;
+
+    headers.forEach(function (th) {
+      th.addEventListener("click", function () {
+        var key = th.dataset.sort;
+        var isText = th.dataset.type === "text";
+        var dir = key === activeSort && activeDir === "desc" ? "asc" : "desc";
+
+        var rows = Array.prototype.slice.call(tbody.querySelectorAll("tr"));
+        rows.sort(function (a, b) {
+          if (isText) {
+            var an = a.dataset[key] || "";
+            var bn = b.dataset[key] || "";
+            return dir === "asc" ? an.localeCompare(bn) : bn.localeCompare(an);
+          }
+          var av = parseFloat(a.dataset[key]);
+          var bv = parseFloat(b.dataset[key]);
+          return dir === "asc" ? av - bv : bv - av;
+        });
+
+        rows.forEach(function (row) {
+          tbody.appendChild(row);
+        });
+
+        headers.forEach(function (h) {
+          h.classList.remove("sort-asc", "sort-desc");
+        });
+        th.classList.add(dir === "asc" ? "sort-asc" : "sort-desc");
+
+        activeSort = key;
+        activeDir = dir;
+      });
+    });
+  });
 })();

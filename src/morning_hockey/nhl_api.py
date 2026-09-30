@@ -40,12 +40,22 @@ class NHLClient:
     def club_schedule_season(self, team_abbrev: str) -> dict:
         return self._get(f"/club-schedule-season/{team_abbrev}/now")
 
-    def skater_summary(self, cayenne_exp: str, sort: str, limit: int = -1) -> list[dict]:
-        """Query the season-long skater stats leaderboard (api.nhle.com/stats/rest)."""
+    def _stats_query(self, resource: str, cayenne_exp: str, sort: str, limit: int) -> list[dict]:
+        """Query a season-long stats report (api.nhle.com/stats/rest)."""
         response = self._session.get(
-            f"{STATS_BASE_URL}/skater/summary",
+            f"{STATS_BASE_URL}/{resource}",
             params={"cayenneExp": cayenne_exp, "sort": sort, "limit": limit},
             timeout=_TIMEOUT,
         )
         response.raise_for_status()
         return response.json()["data"]
+
+    def skater_summary(self, cayenne_exp: str, sort: str, limit: int = -1) -> list[dict]:
+        return self._stats_query("skater/summary", cayenne_exp, sort, limit)
+
+    def skater_bios(self, cayenne_exp: str, sort: str, limit: int = -1) -> list[dict]:
+        """Like skater_summary, but includes nationalityCode and currentTeamAbbrev."""
+        return self._stats_query("skater/bios", cayenne_exp, sort, limit)
+
+    def goalie_summary(self, cayenne_exp: str, sort: str, limit: int = -1) -> list[dict]:
+        return self._stats_query("goalie/summary", cayenne_exp, sort, limit)

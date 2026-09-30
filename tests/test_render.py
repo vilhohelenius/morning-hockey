@@ -233,3 +233,47 @@ def test_static_assets_are_cache_busted_with_a_content_hash(tmp_path: Path):
     match = re.search(r'style\.css\?v=([a-f0-9]{10})', html)
     assert match, "expected a versioned style.css link"
     assert f'app.js?v={match.group(1)}' in html
+
+
+def test_render_league_stats_writes_skaters_and_goalies_tables(tmp_path: Path):
+    from morning_hockey.league_stats import GoalieStatRow, SkaterStatRow
+    from morning_hockey.render import render_league_stats
+
+    skater = SkaterStatRow(
+        player_id=8478402,
+        name="Connor McDavid",
+        team="EDM",
+        logo="https://assets.nhle.com/logos/nhl/svg/EDM_light.svg",
+        headshot="https://assets.nhle.com/mugs/nhl/20262027/EDM/8478402.png",
+        nationality="CAN",
+        position="C",
+        games_played=1,
+        goals=1,
+        assists=2,
+        points=3,
+    )
+    goalie = GoalieStatRow(
+        player_id=8480280,
+        name="Jeremy Swayman",
+        team="BOS",
+        logo="https://assets.nhle.com/logos/nhl/svg/BOS_light.svg",
+        headshot="https://assets.nhle.com/mugs/nhl/20262027/BOS/8480280.png",
+        games_played=10,
+        wins=7,
+        losses=2,
+        ot_losses=1,
+        goals_against_average=2.15,
+        save_pct=0.925,
+        shutouts=1,
+    )
+
+    output_dir = tmp_path / "site"
+    render_league_stats([skater], [goalie], 20262027, output_dir)
+
+    html = (output_dir / "tilastot.html").read_text(encoding="utf-8")
+    assert "Connor McDavid" in html
+    assert "Jeremy Swayman" in html
+    assert 'data-sort="points"' in html
+    assert 'data-sort="savepct"' in html
+    assert "0.925" in html
+    assert "🇨🇦" in html

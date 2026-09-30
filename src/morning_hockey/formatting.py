@@ -13,6 +13,18 @@ _DECISIONS = {"W": "voitto", "L": "tappio"}
 
 _FINAL_TYPES = {"OT": "Jatkoaika", "SO": "Voittolaukaukset"}
 
+# NHL's nationalityCode is a 3-letter code; flag emoji need the 2-letter
+# ISO 3166-1 equivalent. Only the countries that actually show up among NHL
+# players are mapped — an unmapped code just falls back to no flag.
+_NATIONALITY_TO_ISO2 = {
+    "CAN": "CA", "USA": "US", "SWE": "SE", "FIN": "FI", "RUS": "RU",
+    "CZE": "CZ", "SVK": "SK", "CHE": "CH", "DEU": "DE", "DNK": "DK",
+    "NOR": "NO", "AUT": "AT", "LVA": "LV", "SVN": "SI", "FRA": "FR",
+    "GBR": "GB", "AUS": "AU", "BLR": "BY", "UKR": "UA", "POL": "PL",
+    "ITA": "IT", "JPN": "JP", "KAZ": "KZ", "HUN": "HU", "KOR": "KR",
+    "NLD": "NL", "BEL": "BE", "ESP": "ES", "IRL": "IE", "NZL": "NZ",
+}
+
 
 def human_date(date_str: str) -> str:
     date = dt.date.fromisoformat(date_str)
@@ -38,3 +50,10 @@ def short_date(date_str: str) -> str:
 def season_label(season_id: int) -> str:
     start_year, end_year = divmod(season_id, 10_000)
     return f"{start_year}–{end_year}"
+
+
+def nationality_flag(code: str) -> str:
+    iso2 = _NATIONALITY_TO_ISO2.get(code, "")
+    if len(iso2) != 2:
+        return ""
+    return "".join(chr(0x1F1E6 + ord(letter) - ord("A")) for letter in iso2)

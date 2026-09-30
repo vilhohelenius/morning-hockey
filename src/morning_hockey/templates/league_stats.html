@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Tilastot · Morning Hockey{% endblock %}
+{% block header_title %}Tilastot{% endblock %}
+
+{% block content %}
+<header class="page-header">
+  <h1>📈 NHL:n tilastopörssit</h1>
+  <p class="subtitle">Kausi {{ season_label }}</p>
+  <p class="standings-legend">Napauta sarakeotsikkoa järjestääksesi taulukon sen mukaan.</p>
+</header>
+
+<section>
+  <h2 class="section-title">🏒 Pistepörssi · Top {{ skaters | length }}</h2>
+  <div class="stats-table-wrap">
+    <table class="stats-table">
+      <thead>
+        <tr>
+          <th class="col-rank">#</th>
+          <th data-sort="name" data-type="text">Pelaaja</th>
+          <th data-sort="team" data-type="text">Jkk</th>
+          <th data-sort="gp">O</th>
+          <th data-sort="goals">M</th>
+          <th data-sort="assists">S</th>
+          <th data-sort="points" class="sort-desc">P</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for row in skaters %}
+        <tr data-name="{{ row.name }}" data-team="{{ row.team }}" data-gp="{{ row.games_played }}"
+            data-goals="{{ row.goals }}" data-assists="{{ row.assists }}" data-points="{{ row.points }}">
+          <td class="col-rank">{{ loop.index }}</td>
+          <td>
+            <span class="player-cell">
+              <img src="{{ row.headshot }}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
+              <span class="player-name">
+                {{ row.name }}
+                <span class="player-meta">{{ row.nationality | nationality_flag }} {{ row.nationality }} · {{ row.position }}</span>
+              </span>
+            </span>
+          </td>
+          <td><img src="{{ row.logo }}" alt="" class="table-team-logo" loading="lazy">{{ row.team }}</td>
+          <td>{{ row.games_played }}</td>
+          <td>{{ row.goals }}</td>
+          <td>{{ row.assists }}</td>
+          <td class="stat-strong">{{ row.points }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h2 class="section-title">🥅 Maalivahtipörssi · Top {{ goalies | length }}</h2>
+  <div class="stats-table-wrap">
+    <table class="stats-table">
+      <thead>
+        <tr>
+          <th class="col-rank">#</th>
+          <th data-sort="name" data-type="text">Pelaaja</th>
+          <th data-sort="team" data-type="text">Jkk</th>
+          <th data-sort="gp">O</th>
+          <th data-sort="wins">V</th>
+          <th data-sort="losses">H</th>
+          <th data-sort="otl">JH</th>
+          <th data-sort="gaa">GAA</th>
+          <th data-sort="savepct" class="sort-desc">SV%</th>
+          <th data-sort="shutouts">NP</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for row in goalies %}
+        <tr data-name="{{ row.name }}" data-team="{{ row.team }}" data-gp="{{ row.games_played }}"
+            data-wins="{{ row.wins }}" data-losses="{{ row.losses }}" data-otl="{{ row.ot_losses }}"
+            data-gaa="{{ row.goals_against_average }}" data-savepct="{{ row.save_pct }}" data-shutouts="{{ row.shutouts }}">
+          <td class="col-rank">{{ loop.index }}</td>
+          <td>
+            <span class="player-cell">
+              <img src="{{ row.headshot }}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
+              <span class="player-name">{{ row.name }}</span>
+            </span>
+          </td>
+          <td><img src="{{ row.logo }}" alt="" class="table-team-logo" loading="lazy">{{ row.team }}</td>
+          <td>{{ row.games_played }}</td>
+          <td>{{ row.wins }}</td>
+          <td>{{ row.losses }}</td>
+          <td>{{ row.ot_losses }}</td>
+          <td>{{ "%.2f" | format(row.goals_against_average) }}</td>
+          <td class="stat-strong">{{ "%.3f" | format(row.save_pct) }}</td>
+          <td>{{ row.shutouts }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="standings-legend">Ei sisällä odotettuja maaleja vastaan -tilastoa (xG-pohjainen "maaliodottama") —
+    se ei ole saatavilla NHL:n julkisesta tilasto-API:sta.</p>
+</section>
+{% endblock %}

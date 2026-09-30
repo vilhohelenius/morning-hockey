@@ -7,7 +7,14 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from .formatting import human_date, season_label, short_date, translate_decision, translate_final_type
+from .formatting import (
+    human_date,
+    nationality_flag,
+    season_label,
+    short_date,
+    translate_decision,
+    translate_final_type,
+)
 
 _PACKAGE_DIR = Path(__file__).resolve().parent
 TEMPLATES_DIR = _PACKAGE_DIR / "templates"
@@ -33,6 +40,7 @@ _env.filters["human_date"] = human_date
 _env.filters["decision_fi"] = translate_decision
 _env.filters["final_type_fi"] = translate_final_type
 _env.filters["short_date"] = short_date
+_env.filters["nationality_flag"] = nationality_flag
 _env.globals["asset_version"] = _asset_version()
 
 _MAX_ARCHIVE_LINKS = 14
@@ -44,6 +52,7 @@ def _nav(asset_prefix: str) -> dict[str, str]:
         "leaderboard": f"{asset_prefix}pisteporssi.html",
         "standings": f"{asset_prefix}sarjataulukko.html",
         "playoffs": f"{asset_prefix}playoffit.html",
+        "league_stats": f"{asset_prefix}tilastot.html",
         "team_chi": f"{asset_prefix}joukkueet/chi.html",
         "archive": f"{asset_prefix}arkisto.html",
     }
@@ -131,6 +140,19 @@ def render_playoffs(bracket, output_dir: Path) -> None:
         active_page="playoffs",
     )
     (output_dir / "playoffit.html").write_text(html, encoding="utf-8")
+
+
+def render_league_stats(skaters: list, goalies: list, season_id: int, output_dir: Path) -> None:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    html = _env.get_template("league_stats.html").render(
+        skaters=skaters,
+        goalies=goalies,
+        season_label=season_label(season_id),
+        asset_prefix="",
+        nav=_nav(""),
+        active_page="league_stats",
+    )
+    (output_dir / "tilastot.html").write_text(html, encoding="utf-8")
 
 
 def render_team_page(team, output_dir: Path) -> None:
