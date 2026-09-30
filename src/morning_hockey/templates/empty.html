@@ -1,18 +1,12 @@
-<!doctype html>
-<html lang="fi">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Morning Hockey</title>
-<link rel="stylesheet" href="style.css">
-</head>
-<body>
-<header class="site-header">
-  <span class="brand">🏒 Morning Hockey</span>
+{% extends "base.html" %}
+
+{% block title %}Morning Hockey{% endblock %}
+{% block header_title %}Etusivu{% endblock %}
+
+{% block content %}
+<header class="page-header">
+  <h1>Morning Hockey</h1>
   <p class="subtitle">Ei vielä otteluita arkistossa</p>
 </header>
-<main>
-  <p class="empty-note">Ensimmäinen yön yhteenveto ilmestyy tähän, kun seuraava NHL-kierros on pelattu loppuun.</p>
-</main>
-</body>
-</html>
+<p class="empty-note">Ensimmäinen yön yhteenveto ilmestyy tähän, kun seuraava NHL-kierros on pelattu loppuun.</p>
+{% endblock %}

@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="fi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Morning Hockey{% endblock %}</title>
+<link rel="stylesheet" href="{{ asset_prefix }}style.css">
+</head>
+<body>
+<div class="app-shell">
+  <div id="backdrop" class="backdrop"></div>
+
+  <nav id="sidebar" class="sidebar" aria-label="Päävalikko">
+    <div class="sidebar-header">
+      <span class="brand">🏒 Morning Hockey</span>
+      <button id="sidebar-close" class="icon-btn" aria-label="Sulje valikko">✕</button>
+    </div>
+    <ul class="nav-list">
+      <li><a href="{{ nav.home }}" class="{{ 'active' if active_page == 'home' else '' }}">🏠 Etusivu</a></li>
+      <li><a href="{{ nav.archive }}" class="{{ 'active' if active_page == 'archive' else '' }}">🗂️ Arkisto</a></li>
+    </ul>
+  </nav>
+
+  <div class="main-column">
+    <header class="topbar">
+      <button id="sidebar-open" class="icon-btn" aria-label="Avaa valikko">☰</button>
+      <span class="topbar-title">{% block header_title %}Morning Hockey{% endblock %}</span>
+    </header>
+
+    <main>
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+<script src="{{ asset_prefix }}app.js"></script>
+</body>
+</html>

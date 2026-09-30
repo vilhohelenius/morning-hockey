@@ -11,6 +11,7 @@ from .formatting import human_date, translate_decision, translate_final_type
 _PACKAGE_DIR = Path(__file__).resolve().parent
 TEMPLATES_DIR = _PACKAGE_DIR / "templates"
 STATIC_DIR = _PACKAGE_DIR / "static"
+STATIC_ASSETS = ("style.css", "app.js")
 
 _env = Environment(
     loader=FileSystemLoader(str(TEMPLATES_DIR)),
@@ -23,10 +24,15 @@ _env.filters["final_type_fi"] = translate_final_type
 _MAX_ARCHIVE_LINKS = 14
 
 
+def _nav(asset_prefix: str) -> dict[str, str]:
+    return {"home": f"{asset_prefix}index.html", "archive": f"{asset_prefix}arkisto.html"}
+
+
 def render_site(archive: list[dict], output_dir: Path) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     (output_dir / "nights").mkdir(exist_ok=True)
-    shutil.copy(STATIC_DIR / "style.css", output_dir / "style.css")
+    for asset in STATIC_ASSETS:
+        shutil.copy(STATIC_DIR / asset, output_dir / asset)
 
     sorted_archive = sorted(archive, key=lambda d: d["date"], reverse=True)
     dates = [d["date"] for d in sorted_archive]
@@ -36,7 +42,12 @@ def render_site(archive: list[dict], output_dir: Path) -> None:
     for digest in sorted_archive:
         other_dates = [d for d in dates if d != digest["date"]][:_MAX_ARCHIVE_LINKS]
         html = night_template.render(
-            digest=digest, other_dates=other_dates, asset_prefix="../", is_index=False
+            digest=digest,
+            other_dates=other_dates,
+            asset_prefix="../",
+            is_index=False,
+            nav=_nav("../"),
+            active_page="night",
         )
         (output_dir / "nights" / f"{digest['date']}.html").write_text(html, encoding="utf-8")
 
@@ -44,9 +55,24 @@ def render_site(archive: list[dict], output_dir: Path) -> None:
         latest = sorted_archive[0]
         other_dates = dates[1 : _MAX_ARCHIVE_LINKS + 1]
         html = night_template.render(
-            digest=latest, other_dates=other_dates, asset_prefix="", is_index=True
+            digest=latest,
+            other_dates=other_dates,
+            asset_prefix="",
+            is_index=True,
+            nav=_nav(""),
+            active_page="home",
         )
     else:
-        html = _env.get_template("empty.html").render()
+        html = _env.get_template("empty.html").render(
+            asset_prefix="", nav=_nav(""), active_page="home"
+        )
 
     (output_dir / "index.html").write_text(html, encoding="utf-8")
+
+    archive_entries = [
+        {"date": d["date"], "game_count": len(d.get("games", []))} for d in sorted_archive
+    ]
+    archive_html = _env.get_template("archive.html").render(
+        dates=archive_entries, asset_prefix="", nav=_nav(""), active_page="archive"
+    )
+    (output_dir / "arkisto.html").write_text(archive_html, encoding="utf-8")

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Arkisto · Morning Hockey{% endblock %}
+{% block header_title %}Arkisto{% endblock %}
+
+{% block content %}
+<header class="page-header">
+  <h1>Arkisto</h1>
+  <p class="subtitle">{{ dates | length }} tallennettua yötä</p>
+</header>
+
+<ul class="archive-full-list">
+{% for entry in dates %}
+  <li>
+    <a href="nights/{{ entry.date }}.html">
+      <span class="archive-date">{{ entry.date | human_date }}</span>
+      <span class="archive-count">{{ entry.game_count }} ottelua</span>
+    </a>
+  </li>
+{% endfor %}
+</ul>
+{% endblock %}
