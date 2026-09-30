@@ -17,12 +17,12 @@
     </div>
     <ul class="nav-list">
       <li><a href="{{ nav.home }}" class="{{ 'active' if active_page == 'home' else '' }}">🏠 Etusivu</a></li>
-      <li><a href="{{ nav.suomiporssi }}" class="{{ 'active' if active_page == 'suomiporssi' else '' }}">🇫🇮 Suomipörssi</a></li>
+      <li><a href="{{ nav.team_chi }}" class="{{ 'active' if active_page == 'team_chi' else '' }}"><img src="https://assets.nhle.com/logos/nhl/svg/CHI_light.svg" alt="" class="nav-icon">Blackhawks</a></li>
       <li><a href="{{ nav.standings }}" class="{{ 'active' if active_page == 'standings' else '' }}">📊 Sarjataulukko</a></li>
+      <li><a href="{{ nav.league_stats }}" class="{{ 'active' if active_page == 'league_stats' else '' }}">📈 Tilastot</a></li>
+      <li><a href="{{ nav.suomiporssi }}" class="{{ 'active' if active_page == 'suomiporssi' else '' }}">🇫🇮 Suomipörssi</a></li>
       <li><a href="{{ nav.playoffs }}" class="{{ 'active' if active_page == 'playoffs' else '' }}">🏆 Playoff-bracket</a></li>
       <li><a href="{{ nav.primetime }}" class="{{ 'active' if active_page == 'primetime' else '' }}">🌙 Prime time</a></li>
-      <li><a href="{{ nav.league_stats }}" class="{{ 'active' if active_page == 'league_stats' else '' }}">📈 Tilastot</a></li>
-      <li><a href="{{ nav.team_chi }}" class="{{ 'active' if active_page == 'team_chi' else '' }}"><img src="https://assets.nhle.com/logos/nhl/svg/CHI_light.svg" alt="" class="nav-icon">Blackhawks</a></li>
       <li><a href="{{ nav.archive }}" class="{{ 'active' if active_page == 'archive' else '' }}">🗂️ Arkisto</a></li>
     </ul>
   </nav>

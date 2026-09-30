@@ -30,7 +30,7 @@ _NATIONALITY_TO_ISO2 = {
 
 def human_date(date_str: str) -> str:
     date = dt.date.fromisoformat(date_str)
-    weekday = _WEEKDAYS[date.weekday()]
+    weekday = _WEEKDAYS[date.weekday()].capitalize()
     return f"{weekday} {date.day}.{date.month}.{date.year}"
 
 

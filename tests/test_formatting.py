@@ -7,7 +7,7 @@ from morning_hockey.formatting import (
 
 
 def test_human_date_uses_finnish_weekday_names():
-    assert human_date("2026-09-29") == "tiistai 29.9.2026"
+    assert human_date("2026-09-29") == "Tiistai 29.9.2026"
 
 
 def test_translate_decision():

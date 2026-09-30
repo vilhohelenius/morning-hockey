@@ -17,9 +17,11 @@
 {% if latest_digest %}
 <section>
   <h2 class="section-title">🏒 Viime yön ottelut</h2>
+  <div class="game-list">
   {% for game in latest_digest.games %}
     {{ macros.game_card(game) }}
   {% endfor %}
+  </div>
 </section>
 {% endif %}
 
@@ -119,6 +121,7 @@
     </div>
   </div>
 
+  <div class="team-teaser-schedule">
   {% if team.recent_games %}
   {% set g = team.recent_games[0] %}
   <div class="schedule-list">
@@ -150,6 +153,7 @@
     </div>
   </div>
   {% endif %}
+  </div>
 
   <a class="archive-link" href="{{ nav.team_chi }}">Joukkuesivulle →</a>
 </section>

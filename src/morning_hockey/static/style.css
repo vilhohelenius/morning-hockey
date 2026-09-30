@@ -208,6 +208,13 @@ main {
   padding: 16px;
 }
 
+.game-list,
+.team-teaser-schedule {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .team-teaser-header {
   display: flex;
   align-items: center;
@@ -1051,10 +1058,12 @@ main {
 }
 
 .gd-stat-header .gd-stat-team:first-child {
+  grid-column: 1;
   text-align: left;
 }
 
 .gd-stat-header .gd-stat-team:last-child {
+  grid-column: 3;
   text-align: right;
 }
 
