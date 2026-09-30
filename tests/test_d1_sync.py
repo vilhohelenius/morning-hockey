@@ -2,6 +2,7 @@ import datetime as dt
 
 from morning_hockey.d1_sync import (
     D1Client,
+    sync_digest,
     sync_finnish_goalies,
     sync_finnish_skaters,
     sync_goalie_stats,
@@ -11,7 +12,7 @@ from morning_hockey.d1_sync import (
     sync_standings,
 )
 from morning_hockey.league_stats import GoalieStatRow, SkaterStatRow
-from morning_hockey.models import TeamInfo
+from morning_hockey.models import Digest, GameResult, GoalieLine, ScorerLine, TeamInfo
 from morning_hockey.schedule import HELSINKI, ScheduleDay, ScheduleGame, SchedulePage
 from morning_hockey.standings import Conference, Division, StandingsPage, StandingsRow
 from morning_hockey.suomiporssi import GoalieLeaderboardRow, LeaderboardRow
@@ -303,3 +304,65 @@ def test_sync_standings_upserts_one_row_per_team_with_division_context():
     assert params[4] == "Western"  # conference, from the Division wrapper
     assert params[5] == "Central"  # division
     assert params[8] == 1  # qualified -> 1
+
+
+DIGEST = Digest(
+    date="2026-09-30",
+    generated_at="2026-09-30T06:00:00+00:00",
+    games=[
+        GameResult(
+            game_id=1,
+            away=TeamInfo(abbrev="CAR", name="Hurricanes", logo="car.svg", score=3),
+            home=TeamInfo(abbrev="NYR", name="Rangers", logo="nyr.svg", score=2),
+            final_type="OT",
+            scorers=[ScorerLine(name="Sebastian Aho", team="CAR", goals=2, assists=1)],
+            goalies=[
+                GoalieLine(
+                    name="Juuse Saros",
+                    team="CAR",
+                    decision="W",
+                    saves=28,
+                    shots_against=30,
+                    save_pct=0.933,
+                    toi="60:00",
+                )
+            ],
+        )
+    ],
+)
+
+
+def test_sync_digest_upserts_the_digest_row_and_each_game():
+    session = FakeSession()
+    client = D1Client("acc123", "db456", "token789", session=session)
+
+    count = sync_digest(client, DIGEST)
+
+    assert count == 1
+    calls = session.calls
+    assert calls[0]["json"]["sql"].startswith("\nINSERT INTO digests")
+    assert calls[0]["json"]["params"] == ["2026-09-30", "2026-09-30T06:00:00+00:00"]
+
+    game_params = calls[1]["json"]["params"]
+    assert game_params[0] == 1  # game_id
+    assert game_params[1] == "2026-09-30"  # digest_date
+    assert game_params[2] == "CAR"  # away_abbrev
+    assert game_params[10] == "OT"  # final_type
+
+
+def test_sync_digest_deletes_then_reinserts_scorers_and_goalies_per_game():
+    session = FakeSession()
+    client = D1Client("acc123", "db456", "token789", session=session)
+
+    sync_digest(client, DIGEST)
+
+    calls = session.calls
+    assert calls[2]["json"]["sql"] == "DELETE FROM digest_scorers WHERE game_id = ?"
+    assert calls[2]["json"]["params"] == [1]
+    scorer_params = calls[3]["json"]["params"]
+    assert scorer_params == [1, "Sebastian Aho", "CAR", 2, 1]
+
+    assert calls[4]["json"]["sql"] == "DELETE FROM digest_goalies WHERE game_id = ?"
+    assert calls[4]["json"]["params"] == [1]
+    goalie_params = calls[5]["json"]["params"]
+    assert goalie_params == [1, "Juuse Saros", "CAR", "W", 28, 30, 0.933, "60:00"]

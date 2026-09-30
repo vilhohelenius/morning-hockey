@@ -168,3 +168,65 @@ CREATE TABLE IF NOT EXISTS finnish_goalie_stats (
 );
 
 CREATE INDEX IF NOT EXISTS idx_finnish_goalie_stats_save_pct ON finnish_goalie_stats(save_pct DESC);
+
+-- Phase 4 (dashboard): last night's digest -- every league-wide finished
+-- game, with Finnish players' per-game scorer/goalie lines. Mirrors
+-- digest.py's Digest/GameResult/ScorerLine/GoalieLine shapes exactly (see
+-- build_digest, called unchanged by sync_digest.py). Deliberately does NOT
+-- include GameBoxScore (goal-by-goal detail, team stats) -- that backs the
+-- game-card's click-to-expand popup, which is the same shape as phase 5's
+-- planned on-demand game_box_scores cache and belongs there, not here.
+--
+-- Runs on its own once-daily cadence (sync-digest.yml), separate from both
+-- the 30-min fast tier and the 4-hour slow tier: last night's games don't
+-- change again until the next night, so syncing more often would just
+-- re-fetch the same already-settled data.
+CREATE TABLE IF NOT EXISTS digests (
+    date TEXT PRIMARY KEY,
+    generated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS digest_games (
+    game_id INTEGER PRIMARY KEY,
+    digest_date TEXT NOT NULL,
+    away_abbrev TEXT NOT NULL,
+    away_name TEXT NOT NULL,
+    away_logo TEXT NOT NULL,
+    away_score INTEGER NOT NULL,
+    home_abbrev TEXT NOT NULL,
+    home_name TEXT NOT NULL,
+    home_logo TEXT NOT NULL,
+    home_score INTEGER NOT NULL,
+    final_type TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_digest_games_date ON digest_games(digest_date);
+
+-- No natural primary key -- a re-run for the same night deletes a game's
+-- rows before reinserting (see sync_digest in d1_sync.py) rather than
+-- relying on a key to dedupe.
+CREATE TABLE IF NOT EXISTS digest_scorers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    game_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    team_abbrev TEXT NOT NULL,
+    goals INTEGER NOT NULL,
+    assists INTEGER NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_digest_scorers_game ON digest_scorers(game_id);
+
+CREATE TABLE IF NOT EXISTS digest_goalies (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    game_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    team_abbrev TEXT NOT NULL,
+    decision TEXT,
+    saves INTEGER NOT NULL,
+    shots_against INTEGER NOT NULL,
+    save_pct REAL,
+    toi TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_digest_goalies_game ON digest_goalies(game_id);

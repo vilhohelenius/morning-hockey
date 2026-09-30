@@ -239,3 +239,71 @@ def sync_standings(client: D1Client, page) -> int:
             client.execute(_UPSERT_STANDINGS_SQL, params)
             count += 1
     return count
+
+
+# ---------- Digest (dashboard hero: last night's games, once a day) ----------
+
+_UPSERT_DIGEST_SQL = """
+INSERT INTO digests (date, generated_at) VALUES (?, ?)
+ON CONFLICT(date) DO UPDATE SET generated_at = excluded.generated_at
+"""
+
+_UPSERT_DIGEST_GAME_SQL = """
+INSERT INTO digest_games (
+    game_id, digest_date, away_abbrev, away_name, away_logo, away_score,
+    home_abbrev, home_name, home_logo, home_score, final_type, updated_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+ON CONFLICT(game_id) DO UPDATE SET
+    away_score = excluded.away_score,
+    home_score = excluded.home_score,
+    final_type = excluded.final_type,
+    updated_at = excluded.updated_at
+"""
+
+_INSERT_DIGEST_SCORER_SQL = """
+INSERT INTO digest_scorers (game_id, name, team_abbrev, goals, assists) VALUES (?, ?, ?, ?, ?)
+"""
+
+_INSERT_DIGEST_GOALIE_SQL = """
+INSERT INTO digest_goalies (game_id, name, team_abbrev, decision, saves, shots_against, save_pct, toi)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+"""
+
+
+def sync_digest(client: D1Client, digest) -> int:
+    """Syncs one night's Digest (digest.py's build_digest() output, called
+    unchanged) into D1. Each game is upserted by game_id, safe to re-run for
+    the same night; each game's Finnish scorer/goalie lines have no natural
+    key of their own, so they're deleted and reinserted first rather than
+    left to accumulate duplicates across re-runs. Returns the game count."""
+    client.execute(_UPSERT_DIGEST_SQL, [digest.date, digest.generated_at])
+
+    for game in digest.games:
+        client.execute(
+            _UPSERT_DIGEST_GAME_SQL,
+            [
+                game.game_id, digest.date,
+                game.away.abbrev, game.away.name, game.away.logo, game.away.score,
+                game.home.abbrev, game.home.name, game.home.logo, game.home.score,
+                game.final_type, digest.generated_at,
+            ],
+        )
+
+        client.execute("DELETE FROM digest_scorers WHERE game_id = ?", [game.game_id])
+        for scorer in game.scorers:
+            client.execute(
+                _INSERT_DIGEST_SCORER_SQL,
+                [game.game_id, scorer.name, scorer.team, scorer.goals, scorer.assists],
+            )
+
+        client.execute("DELETE FROM digest_goalies WHERE game_id = ?", [game.game_id])
+        for goalie in game.goalies:
+            client.execute(
+                _INSERT_DIGEST_GOALIE_SQL,
+                [
+                    game.game_id, goalie.name, goalie.team, goalie.decision,
+                    goalie.saves, goalie.shots_against, goalie.save_pct, goalie.toi,
+                ],
+            )
+
+    return len(digest.games)
