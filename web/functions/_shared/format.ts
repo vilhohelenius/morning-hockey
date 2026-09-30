@@ -21,6 +21,24 @@ export function humanDate(dateStr: string): string {
   return `${weekday[0].toUpperCase()}${weekday.slice(1)} ${day}.${month}.${year}`;
 }
 
+const WEEKDAYS_SHORT = ["ma", "ti", "ke", "to", "pe", "la", "su"];
+
+export function shortWeekdayDate(dateStr: string): string {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  const jsDay = new Date(Date.UTC(year, month - 1, day)).getUTCDay();
+  const weekday = WEEKDAYS_SHORT[(jsDay + 6) % 7];
+  return `${weekday} ${day}.${month}.`;
+}
+
+// Adds `days` (may be negative) to a YYYY-MM-DD calendar date. Pure date
+// math in UTC -- these are calendar dates, not instants, so no timezone
+// conversion belongs here.
+export function addDays(dateStr: string, days: number): string {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  const d = new Date(Date.UTC(year, month - 1, day + days));
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+}
+
 // Europe/Helsinki-local calendar date and time-of-day for a UTC ISO
 // timestamp, the same split schedule.py/primetime.py derive with zoneinfo.
 // Intl.DateTimeFormat handles the DST transition itself, so this doesn't
