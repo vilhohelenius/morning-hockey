@@ -1,6 +1,7 @@
 """Render the archived digests into a static, mobile-friendly site."""
 from __future__ import annotations
 
+import hashlib
 import shutil
 from pathlib import Path
 
@@ -13,6 +14,17 @@ TEMPLATES_DIR = _PACKAGE_DIR / "templates"
 STATIC_DIR = _PACKAGE_DIR / "static"
 STATIC_ASSETS = ("style.css", "app.js")
 
+
+def _asset_version() -> str:
+    """A short content hash of the static assets, used to cache-bust style.css
+    and app.js so a redeploy doesn't get stuck behind a visitor's (or GitHub
+    Pages CDN's) cached copy of a same-named file."""
+    hasher = hashlib.sha256()
+    for asset in STATIC_ASSETS:
+        hasher.update((STATIC_DIR / asset).read_bytes())
+    return hasher.hexdigest()[:10]
+
+
 _env = Environment(
     loader=FileSystemLoader(str(TEMPLATES_DIR)),
     autoescape=select_autoescape(["html"]),
@@ -21,6 +33,7 @@ _env.filters["human_date"] = human_date
 _env.filters["decision_fi"] = translate_decision
 _env.filters["final_type_fi"] = translate_final_type
 _env.filters["short_date"] = short_date
+_env.globals["asset_version"] = _asset_version()
 
 _MAX_ARCHIVE_LINKS = 14
 

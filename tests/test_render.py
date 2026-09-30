@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 from morning_hockey.leaderboard import LeaderboardRow
@@ -221,3 +222,14 @@ def test_render_playoffs_writes_round1_and_placeholders(tmp_path: Path):
     assert "Villikortti 2" in html
     assert "Ottelun 1 voittaja" in html
     assert "Stanley Cup" in html
+
+
+def test_static_assets_are_cache_busted_with_a_content_hash(tmp_path: Path):
+    output_dir = tmp_path / "site"
+
+    render_site([], output_dir)
+
+    html = (output_dir / "index.html").read_text(encoding="utf-8")
+    match = re.search(r'style\.css\?v=([a-f0-9]{10})', html)
+    assert match, "expected a versioned style.css link"
+    assert f'app.js?v={match.group(1)}' in html
