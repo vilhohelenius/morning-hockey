@@ -1,7 +1,8 @@
 from pathlib import Path
 
 from morning_hockey.leaderboard import LeaderboardRow
-from morning_hockey.render import render_leaderboard, render_site
+from morning_hockey.render import render_leaderboard, render_site, render_team_page
+from morning_hockey.team import DivisionRow, RosterPlayer, TeamPage
 
 DIGEST = {
     "date": "2026-09-29",
@@ -35,6 +36,7 @@ def test_render_site_writes_index_and_night_page(tmp_path: Path):
     assert "FLA" in index_html and "CAR" in index_html
     assert 'href="arkisto.html"' in index_html
     assert 'href="pisteporssi.html"' in index_html
+    assert 'href="joukkueet/chi.html"' in index_html
 
     night_html = (output_dir / "nights" / "2026-09-29.html").read_text(encoding="utf-8")
     assert 'href="../arkisto.html"' in night_html
@@ -86,3 +88,51 @@ def test_render_leaderboard_handles_no_rows(tmp_path: Path):
 
     html = (output_dir / "pisteporssi.html").read_text(encoding="utf-8")
     assert "Ei tilastoituja" in html
+
+
+def test_render_team_page_writes_under_joukkueet(tmp_path: Path):
+    output_dir = tmp_path / "site"
+    team = TeamPage(
+        abbrev="CHI",
+        name="Chicago Blackhawks",
+        logo="https://assets.nhle.com/logos/nhl/svg/CHI_light.svg",
+        division_name="Central",
+        division_rank=2,
+        streak="L1",
+        division_table=[
+            DivisionRow(
+                abbrev="CHI",
+                name="Blackhawks",
+                logo="https://assets.nhle.com/logos/nhl/svg/CHI_light.svg",
+                rank=2,
+                games_played=1,
+                wins=0,
+                losses=1,
+                ot_losses=0,
+                points=0,
+                is_team=True,
+            )
+        ],
+        roster={
+            "forwards": [
+                RosterPlayer(
+                    player_id=1,
+                    name="Tyler Bertuzzi",
+                    position="L",
+                    sweater_number=59,
+                    headshot="https://assets.nhle.com/mugs/nhl/20262027/CHI/1.png",
+                )
+            ],
+            "defensemen": [],
+            "goalies": [],
+        },
+        recent_games=[],
+        upcoming_games=[],
+    )
+
+    render_team_page(team, output_dir)
+
+    html = (output_dir / "joukkueet" / "chi.html").read_text(encoding="utf-8")
+    assert "Chicago Blackhawks" in html
+    assert "Tyler Bertuzzi" in html
+    assert 'href="../index.html"' in html

@@ -37,6 +37,9 @@ class NHLClient:
     def standings(self, date: str = "now") -> dict:
         return self._get(f"/standings/{date}")
 
+    def club_schedule_season(self, team_abbrev: str) -> dict:
+        return self._get(f"/club-schedule-season/{team_abbrev}/now")
+
     def skater_summary(self, cayenne_exp: str, sort: str, limit: int = -1) -> list[dict]:
         """Query the season-long skater stats leaderboard (api.nhle.com/stats/rest)."""
         response = self._session.get(

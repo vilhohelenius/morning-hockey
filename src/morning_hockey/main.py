@@ -11,10 +11,15 @@ from .digest import build_digest
 from .leaderboard import build_leaderboard, current_season_id
 from .nhl_api import NHLClient
 from .notify import send_ntfy
-from .render import render_leaderboard, render_site
+from .render import render_leaderboard, render_site, render_team_page
+from .team import build_team_page
 
 DATA_DIR = Path("data")
 SITE_DIR = Path("site")
+
+# Team dashboards to build. Intentionally just one team for now rather than
+# a full 32-team selector.
+TEAM_ABBREVS = ("CHI",)
 
 
 def _archive_path(date: str) -> Path:
@@ -46,6 +51,11 @@ def run(pages_base_url: str, ntfy_topic: str | None, ntfy_server: str) -> None:
     leaderboard_rows = build_leaderboard(client, season_id)
     render_leaderboard(leaderboard_rows, season_id, SITE_DIR)
     print(f"Pistepörssi: {len(leaderboard_rows)} suomalaispelaajaa kaudelta {season_id}.")
+
+    for team_abbrev in TEAM_ABBREVS:
+        team_page = build_team_page(client, team_abbrev)
+        render_team_page(team_page, SITE_DIR)
+        print(f"Joukkuesivu: {team_page.name}")
 
     if digest.games and ntfy_topic:
         page_url = f"{pages_base_url.rstrip('/')}/nights/{digest.date}.html"

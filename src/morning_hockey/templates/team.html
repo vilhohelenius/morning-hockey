@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}{{ team.name }} · Morning Hockey{% endblock %}
+{% block header_title %}{{ team.name }}{% endblock %}
+
+{% block content %}
+<header class="page-header team-page-header">
+  <img src="{{ team.logo }}" alt="" class="team-hero-logo">
+  <h1>{{ team.name }}</h1>
+  <p class="subtitle">
+    {{ team.division_name }}: {{ team.division_rank }}. sija ({{ team.division_table | length }} joukkuetta)
+    · Putki {{ team.streak }}
+  </p>
+</header>
+
+<section>
+  <h2 class="section-title">Sarjataulukko · {{ team.division_name }}</h2>
+  <div class="division-table">
+    <div class="division-row division-header">
+      <span class="division-rank"></span>
+      <span class="division-team">Joukkue</span>
+      <span class="division-stats"><span>O</span><span>V</span><span>H</span><span>JH</span><span>P</span></span>
+    </div>
+    {% for row in team.division_table %}
+    <div class="division-row {{ 'is-team' if row.is_team else '' }}">
+      <span class="division-rank">{{ row.rank }}</span>
+      <span class="division-team">
+        <img src="{{ row.logo }}" alt="" class="division-logo" loading="lazy">
+        {{ row.abbrev }}
+      </span>
+      <span class="division-stats">
+        <span>{{ row.games_played }}</span>
+        <span>{{ row.wins }}</span>
+        <span>{{ row.losses }}</span>
+        <span>{{ row.ot_losses }}</span>
+        <span class="division-points">{{ row.points }}</span>
+      </span>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section>
+  <h2 class="section-title">Edelliset ottelut</h2>
+  {% if team.recent_games %}
+  <div class="schedule-list">
+    {% for game in team.recent_games %}
+    <div class="schedule-row">
+      <span class="schedule-date">{{ game.date | short_date }}</span>
+      <span class="schedule-opponent">
+        {{ '@' if not game.is_home else 'vs' }}
+        <img src="{{ game.opponent_logo }}" alt="" class="schedule-logo" loading="lazy">
+        {{ game.opponent_abbrev }}
+      </span>
+      <span class="schedule-score">{{ game.team_score }}–{{ game.opponent_score }}</span>
+      <span class="schedule-result result-{{ game.result | lower }}">
+        {{ game.result }}{% if game.final_type != "REG" %}<span class="schedule-ot">{{ game.final_type }}</span>{% endif %}
+      </span>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="empty-note">Ei vielä pelattuja otteluita tällä kaudella.</p>
+  {% endif %}
+</section>
+
+<section>
+  <h2 class="section-title">Tulevat ottelut</h2>
+  {% if team.upcoming_games %}
+  <div class="schedule-list">
+    {% for game in team.upcoming_games %}
+    <div class="schedule-row">
+      <span class="schedule-date">{{ game.date | short_date }}</span>
+      <span class="schedule-opponent">
+        {{ '@' if not game.is_home else 'vs' }}
+        <img src="{{ game.opponent_logo }}" alt="" class="schedule-logo" loading="lazy">
+        {{ game.opponent_abbrev }}
+      </span>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="empty-note">Ei tiedossa olevia otteluita.</p>
+  {% endif %}
+</section>
+
+<section>
+  <h2 class="section-title">Rosteri</h2>
+
+  <h3 class="roster-group-title">Hyökkääjät</h3>
+  <div class="roster-grid">
+    {% for player in team.roster.forwards %}
+    <div class="roster-card">
+      <img src="{{ player.headshot }}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
+      <span class="roster-number">{{ player.sweater_number }}</span>
+      <span class="roster-name">{{ player.name }}</span>
+      <span class="roster-pos">{{ player.position }}</span>
+    </div>
+    {% endfor %}
+  </div>
+
+  <h3 class="roster-group-title">Puolustajat</h3>
+  <div class="roster-grid">
+    {% for player in team.roster.defensemen %}
+    <div class="roster-card">
+      <img src="{{ player.headshot }}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
+      <span class="roster-number">{{ player.sweater_number }}</span>
+      <span class="roster-name">{{ player.name }}</span>
+      <span class="roster-pos">{{ player.position }}</span>
+    </div>
+    {% endfor %}
+  </div>
+
+  <h3 class="roster-group-title">Maalivahdit</h3>
+  <div class="roster-grid">
+    {% for player in team.roster.goalies %}
+    <div class="roster-card">
+      <img src="{{ player.headshot }}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
+      <span class="roster-number">{{ player.sweater_number }}</span>
+      <span class="roster-name">{{ player.name }}</span>
+      <span class="roster-pos">{{ player.position }}</span>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

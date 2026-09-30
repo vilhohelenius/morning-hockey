@@ -30,6 +30,11 @@ def translate_final_type(code: str) -> str:
     return _FINAL_TYPES.get(code, code)
 
 
+def short_date(date_str: str) -> str:
+    date = dt.date.fromisoformat(date_str)
+    return f"{date.day}.{date.month}."
+
+
 def season_label(season_id: int) -> str:
     start_year, end_year = divmod(season_id, 10_000)
     return f"{start_year}–{end_year}"
