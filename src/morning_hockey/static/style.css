@@ -188,6 +188,10 @@ main {
   font-size: 1.3rem;
 }
 
+.page-header .brand-heading {
+  font-size: 1.7rem;
+}
+
 .subtitle {
   margin: 4px 0 0;
   color: var(--muted);
@@ -401,8 +405,8 @@ main {
 }
 
 .team-hero-logo {
-  width: 56px;
-  height: 56px;
+  width: 76px;
+  height: 76px;
   object-fit: contain;
   margin-bottom: 6px;
 }
