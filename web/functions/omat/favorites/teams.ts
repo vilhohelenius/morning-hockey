@@ -1,0 +1,30 @@
+// Favorite-team toggle. Plain form POST (no client JS), redirects back to
+// /omat -- consistent with the rest of this site staying dependency-free
+// vanilla markup, and simplest to verify without a browser.
+
+import { authenticatedEmail } from "../../_shared/auth";
+import type { Env } from "../../_shared/types";
+
+export const onRequestPost: PagesFunction<Env> = async (context) => {
+  const email = authenticatedEmail(context.request);
+  if (!email) return new Response("Kirjaudu sisään ensin.", { status: 401 });
+
+  const form = await context.request.formData();
+  const abbrev = String(form.get("abbrev") ?? "").toUpperCase();
+  const action = String(form.get("action") ?? "");
+  if (!abbrev) return new Response("Puuttuva joukkue.", { status: 400 });
+
+  const db = context.env.DB;
+  if (action === "remove") {
+    await db.prepare("DELETE FROM favorite_teams WHERE email = ? AND team_abbrev = ?").bind(email, abbrev).run();
+  } else {
+    await db
+      .prepare(
+        "INSERT INTO favorite_teams (email, team_abbrev, created_at) VALUES (?, ?, ?) ON CONFLICT(email, team_abbrev) DO NOTHING",
+      )
+      .bind(email, abbrev, new Date().toISOString())
+      .run();
+  }
+
+  return new Response(null, { status: 303, headers: { Location: "/omat" } });
+};

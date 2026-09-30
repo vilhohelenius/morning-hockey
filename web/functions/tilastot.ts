@@ -34,6 +34,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     headerTitle: "Pistepörssi",
     activePage: "league_stats",
     content,
+    request: context.request,
   });
 
   return new Response(html, { headers: { "content-type": "text/html; charset=utf-8" } });

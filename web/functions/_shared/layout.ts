@@ -9,14 +9,21 @@
 // ports each page in turn, which is fine while this only runs on the
 // *.pages.dev preview domain, side by side with the live site.
 
+import { readThemeCookie } from "./auth";
+
 export interface LayoutOptions {
   title: string;
   headerTitle: string;
   activePage: string;
   content: string;
+  // Used only to read the theme cookie (see auth.ts) -- every route passes
+  // its own `context.request` here so the right data-theme attribute goes
+  // out on every page, not just /omat, without a D1 query per request.
+  request?: Request;
 }
 
 const NAV_HOME = { key: "home", href: "/", label: "🏠 Etusivu" };
+const NAV_OMAT = { key: "omat", href: "/omat", label: "⭐ Omat" };
 const NAV_STANDINGS = { key: "standings", href: "/sarjataulukko", label: "📊 Sarjataulukko" };
 const NAV_PLAYOFFS = { key: "playoffs", href: "/playoffit", label: "🏆 Playoff-bracket" };
 const NAV_ARCHIVE = { key: "archive", href: "/arkisto", label: "🗂️ Arkisto" };
@@ -64,9 +71,10 @@ function navGroup(
 }
 
 export function renderLayout(options: LayoutOptions): string {
-  const { title, headerTitle, activePage, content } = options;
+  const { title, headerTitle, activePage, content, request } = options;
+  const theme = request ? readThemeCookie(request) : null;
   return `<!doctype html>
-<html lang="fi">
+<html lang="fi"${theme ? ` data-theme="${theme}"` : ""}>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -84,6 +92,7 @@ export function renderLayout(options: LayoutOptions): string {
     </div>
     <ul class="nav-list">
       ${navLink(NAV_HOME, activePage)}
+      ${navLink(NAV_OMAT, activePage)}
       ${navLink(NAV_STANDINGS, activePage)}
       ${navGroup("stats", "📈 Tilastot", STATS_PAGES, activePage)}
       ${navLink(NAV_PLAYOFFS, activePage)}

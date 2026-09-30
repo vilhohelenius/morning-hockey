@@ -325,3 +325,38 @@ CREATE TABLE IF NOT EXISTS team_season_stats (
     shutouts INTEGER NOT NULL,
     updated_at TEXT NOT NULL
 );
+
+-- Phase 7: favorites + settings. Unlike every table above, these are
+-- written by the TypeScript Pages Functions themselves (web/functions/
+-- omat/*), in direct response to a signed-in user's own action (favorite
+-- a team/player, change theme) -- not by any Python sync, and not on a
+-- schedule. Keyed by the Cloudflare-Access-authenticated email
+-- (Cf-Access-Authenticated-User-Email; see _shared/auth.ts for why that
+-- header can be trusted once Access is actually in front of the site).
+CREATE TABLE IF NOT EXISTS favorite_teams (
+    email TEXT NOT NULL,
+    team_abbrev TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    PRIMARY KEY (email, team_abbrev)
+);
+
+-- No player name/team columns here on purpose -- team_roster_skaters/
+-- team_roster_goalies (phase 6) are the live source of that, joined by
+-- player_id at render time, so a trade shows up immediately instead of
+-- needing this row updated too. is_goalie picks which of those two tables
+-- to join against, since a player_id alone doesn't say which shape it is.
+CREATE TABLE IF NOT EXISTS favorite_players (
+    email TEXT NOT NULL,
+    player_id INTEGER NOT NULL,
+    is_goalie INTEGER NOT NULL,
+    created_at TEXT NOT NULL,
+    PRIMARY KEY (email, player_id)
+);
+
+-- One row per signed-in user. Plain upsert -- a user either has a stored
+-- preference or doesn't yet, nothing here is ever a leaderboard to prune.
+CREATE TABLE IF NOT EXISTS user_settings (
+    email TEXT PRIMARY KEY,
+    theme TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);

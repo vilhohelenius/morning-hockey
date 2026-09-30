@@ -75,6 +75,7 @@ ${games.length ? body : `<p class="empty-note">Ei klo 18–00.30 alkavia ottelui
     headerTitle: "Prime time",
     activePage: "primetime",
     content,
+    request: context.request,
   });
 
   return new Response(html, { headers: { "content-type": "text/html; charset=utf-8" } });

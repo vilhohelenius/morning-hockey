@@ -310,6 +310,7 @@ ${goalies.length ? renderGoalieTable(goalies) : ""}
     headerTitle: team.name,
     activePage: `team_${abbrev.toLowerCase()}`,
     content,
+    request: context.request,
   });
 
   return new Response(html, { headers: { "content-type": "text/html; charset=utf-8" } });

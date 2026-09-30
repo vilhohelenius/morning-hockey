@@ -148,6 +148,7 @@ ${sections}
     headerTitle: "Playoff-bracket",
     activePage: "playoffs",
     content,
+    request: context.request,
   });
 
   return new Response(html, { headers: { "content-type": "text/html; charset=utf-8" } });

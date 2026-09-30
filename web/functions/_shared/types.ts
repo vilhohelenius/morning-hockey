@@ -239,6 +239,27 @@ export interface TeamSeasonStatsRow {
   shutouts: number;
 }
 
+// ---------- Phase 7: favorites + settings ----------
+
+export interface FavoriteTeamRow {
+  email: string;
+  team_abbrev: string;
+  created_at: string;
+}
+
+export interface FavoritePlayerRow {
+  email: string;
+  player_id: number;
+  is_goalie: number; // 0 or 1
+  created_at: string;
+}
+
+export interface UserSettingsRow {
+  email: string;
+  theme: string;
+  updated_at: string;
+}
+
 export interface Env {
   DB: D1Database;
 }

@@ -8,7 +8,10 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  /* Only when no explicit choice overrides the OS/browser preference --
+     the Cloudflare-migration theme toggle (phase 7) sets data-theme="light"
+     on html to opt back out of dark mode even when the OS prefers it. */
+  :root:not([data-theme="light"]) {
     --bg: #0f1115;
     --card-bg: #191c22;
     --text: #f2f3f5;
@@ -16,6 +19,25 @@
     --accent: #5b9dff;
     --border: #2a2e37;
   }
+}
+
+/* Explicit choice wins over prefers-color-scheme either direction. */
+:root[data-theme="dark"] {
+  --bg: #0f1115;
+  --card-bg: #191c22;
+  --text: #f2f3f5;
+  --muted: #9aa1ac;
+  --accent: #5b9dff;
+  --border: #2a2e37;
+}
+
+:root[data-theme="light"] {
+  --bg: #f5f6f8;
+  --card-bg: #ffffff;
+  --text: #14171a;
+  --muted: #6b7280;
+  --accent: #1d4ed8;
+  --border: #e5e7eb;
 }
 
 * {

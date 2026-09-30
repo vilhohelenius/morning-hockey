@@ -140,6 +140,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     headerTitle: "Suomipörssi",
     activePage: "suomiporssi",
     content,
+    request: context.request,
   });
 
   return new Response(html, { headers: { "content-type": "text/html; charset=utf-8" } });
