@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% import "_macros.html" as macros %}
 
 {% block title %}{{ digest.date | human_date }} · Morning Hockey{% endblock %}
 {% block header_title %}{{ digest.date | human_date }}{% endblock %}
@@ -10,44 +11,7 @@
 </header>
 
 {% for game in digest.games %}
-  <section class="game-card">
-    <div class="score-row">
-      <div class="team away">
-        <img src="{{ game.away.logo }}" alt="" class="logo" loading="lazy">
-        <span class="abbrev">{{ game.away.abbrev }}</span>
-      </div>
-      <div class="score">
-        <span>{{ game.away.score }}</span>
-        <span class="dash">–</span>
-        <span>{{ game.home.score }}</span>
-      </div>
-      <div class="team home">
-        <span class="abbrev">{{ game.home.abbrev }}</span>
-        <img src="{{ game.home.logo }}" alt="" class="logo" loading="lazy">
-      </div>
-    </div>
-
-    {% if game.final_type != "REG" %}
-    <p class="ot-tag">{{ game.final_type | final_type_fi }}</p>
-    {% endif %}
-
-    {% if game.scorers or game.goalies %}
-    <div class="finn-stats">
-      {% for s in game.scorers %}
-      <p class="stat-line scorer">
-        <span class="flag">🇫🇮</span><strong>{{ s.name }}</strong><span class="team-tag">{{ s.team }}</span>
-        <span class="value">{{ s.line }}</span>
-      </p>
-      {% endfor %}
-      {% for g in game.goalies %}
-      <p class="stat-line goalie">
-        <span class="flag">🇫🇮</span><strong>{{ g.name }}</strong><span class="team-tag">{{ g.team }}</span>
-        <span class="value">{{ g.saves }}/{{ g.shots_against }}{% if g.decision %} · {{ g.decision | decision_fi }}{% endif %}</span>
-      </p>
-      {% endfor %}
-    </div>
-    {% endif %}
-  </section>
+  {{ macros.game_card(game) }}
 {% endfor %}
 
 {% if other_dates %}
@@ -55,7 +19,7 @@
   <h2>Aiemmat yöt</h2>
   <ul class="archive-list">
   {% for d in other_dates %}
-    <li><a href="{{ 'nights/' if is_index else '' }}{{ d }}.html">{{ d | human_date }}</a></li>
+    <li><a href="{{ d }}.html">{{ d | human_date }}</a></li>
   {% endfor %}
   </ul>
   <a class="archive-link" href="{{ nav.archive }}">Näytä koko arkisto →</a>

@@ -1,0 +1,40 @@
+{% macro game_card(game) %}
+<section class="game-card">
+  <div class="score-row">
+    <div class="team away">
+      <img src="{{ game.away.logo }}" alt="" class="logo" loading="lazy">
+      <span class="abbrev">{{ game.away.abbrev }}</span>
+    </div>
+    <div class="score">
+      <span>{{ game.away.score }}</span>
+      <span class="dash">–</span>
+      <span>{{ game.home.score }}</span>
+    </div>
+    <div class="team home">
+      <span class="abbrev">{{ game.home.abbrev }}</span>
+      <img src="{{ game.home.logo }}" alt="" class="logo" loading="lazy">
+    </div>
+  </div>
+
+  {% if game.final_type != "REG" %}
+  <p class="ot-tag">{{ game.final_type | final_type_fi }}</p>
+  {% endif %}
+
+  {% if game.scorers or game.goalies %}
+  <div class="finn-stats">
+    {% for s in game.scorers %}
+    <p class="stat-line scorer">
+      <span class="flag">🇫🇮</span><strong>{{ s.name }}</strong><span class="team-tag">{{ s.team }}</span>
+      <span class="value">{{ s.line }}</span>
+    </p>
+    {% endfor %}
+    {% for g in game.goalies %}
+    <p class="stat-line goalie">
+      <span class="flag">🇫🇮</span><strong>{{ g.name }}</strong><span class="team-tag">{{ g.team }}</span>
+      <span class="value">{{ g.saves }}/{{ g.shots_against }}{% if g.decision %} · {{ g.decision | decision_fi }}{% endif %}</span>
+    </p>
+    {% endfor %}
+  </div>
+  {% endif %}
+</section>
+{% endmacro %}

@@ -1,10 +1,17 @@
 import re
 from pathlib import Path
 
-from morning_hockey.render import render_site, render_standings, render_suomiporssi, render_team_page
+from morning_hockey.render import (
+    render_archive_pages,
+    render_dashboard,
+    render_standings,
+    render_suomiporssi,
+    render_team_page,
+)
 from morning_hockey.suomiporssi import GoalieLeaderboardRow, LeaderboardRow
+from morning_hockey.league_stats import SkaterStatRow
 from morning_hockey.standings import Conference, Division, StandingsPage, StandingsRow
-from morning_hockey.team import DivisionRow, RosterSkater, TeamPage
+from morning_hockey.team import DivisionRow, RosterSkater, ScheduleGame, TeamPage
 
 DIGEST = {
     "date": "2026-09-29",
@@ -22,26 +29,20 @@ DIGEST = {
 }
 
 
-def test_render_site_writes_index_and_night_page(tmp_path: Path):
+def test_render_archive_pages_writes_night_and_arkisto(tmp_path: Path):
     output_dir = tmp_path / "site"
 
-    render_site([DIGEST], output_dir)
+    render_archive_pages([DIGEST], output_dir)
 
     assert (output_dir / "style.css").exists()
     assert (output_dir / "app.js").exists()
-    assert (output_dir / "index.html").exists()
     assert (output_dir / "arkisto.html").exists()
     assert (output_dir / "nights" / "2026-09-29.html").exists()
-
-    index_html = (output_dir / "index.html").read_text(encoding="utf-8")
-    assert "Sebastian Aho" in index_html
-    assert "FLA" in index_html and "CAR" in index_html
-    assert 'href="arkisto.html"' in index_html
-    assert 'href="suomiporssi.html"' in index_html
-    assert 'href="sarjataulukko.html"' in index_html
-    assert 'href="joukkueet/chi.html"' in index_html
+    assert not (output_dir / "index.html").exists()
 
     night_html = (output_dir / "nights" / "2026-09-29.html").read_text(encoding="utf-8")
+    assert "Sebastian Aho" in night_html
+    assert "FLA" in night_html and "CAR" in night_html
     assert 'href="../arkisto.html"' in night_html
 
     archive_html = (output_dir / "arkisto.html").read_text(encoding="utf-8")
@@ -49,13 +50,13 @@ def test_render_site_writes_index_and_night_page(tmp_path: Path):
     assert 'href="nights/2026-09-29.html"' in archive_html
 
 
-def test_render_site_handles_empty_archive(tmp_path: Path):
+def test_render_archive_pages_handles_empty_archive(tmp_path: Path):
     output_dir = tmp_path / "site"
 
-    render_site([], output_dir)
+    render_archive_pages([], output_dir)
 
-    assert "Ei vielä otteluita" in (output_dir / "index.html").read_text(encoding="utf-8")
     assert (output_dir / "arkisto.html").exists()
+    assert not (output_dir / "index.html").exists()
 
 
 def test_render_suomiporssi_writes_skaters_and_goalies(tmp_path: Path):
@@ -252,8 +253,22 @@ def test_render_playoffs_writes_round1_and_placeholders(tmp_path: Path):
 
 def test_static_assets_are_cache_busted_with_a_content_hash(tmp_path: Path):
     output_dir = tmp_path / "site"
+    render_archive_pages([], output_dir)
 
-    render_site([], output_dir)
+    empty_team = TeamPage(
+        abbrev="CHI",
+        name="Chicago Blackhawks",
+        logo="https://assets.nhle.com/logos/nhl/svg/CHI_light.svg",
+        division_name="Central",
+        division_rank=1,
+        streak="",
+        division_table=[],
+        skaters=[],
+        goalies=[],
+        recent_games=[],
+        upcoming_games=[],
+    )
+    render_dashboard([], [], [], empty_team, output_dir)
 
     html = (output_dir / "index.html").read_text(encoding="utf-8")
     match = re.search(r'style\.css\?v=([a-f0-9]{10})', html)
@@ -305,3 +320,110 @@ def test_render_league_stats_writes_skaters_and_goalies_tables(tmp_path: Path):
     assert "🇨🇦" in html
     # goalie row is both Finnish and on Chicago
     assert 'class="row-fin row-chi"' in html
+
+
+def test_render_dashboard_shows_latest_night_and_top5_previews(tmp_path: Path):
+    output_dir = tmp_path / "site"
+    fin_skaters = [
+        LeaderboardRow(
+            player_id=1,
+            name="Sebastian Aho",
+            team="CAR",
+            logo="https://assets.nhle.com/logos/nhl/svg/CAR_light.svg",
+            headshot="https://assets.nhle.com/mugs/nhl/20262027/CAR/1.png",
+            position="C",
+            games_played=1,
+            goals=1,
+            assists=2,
+            points=3,
+        )
+    ]
+    league_skaters = [
+        SkaterStatRow(
+            player_id=2,
+            name="Connor McDavid",
+            team="EDM",
+            logo="https://assets.nhle.com/logos/nhl/svg/EDM_light.svg",
+            headshot="https://assets.nhle.com/mugs/nhl/20262027/EDM/2.png",
+            nationality="CAN",
+            position="C",
+            games_played=1,
+            goals=2,
+            assists=1,
+            points=3,
+        )
+    ]
+    team = TeamPage(
+        abbrev="CHI",
+        name="Chicago Blackhawks",
+        logo="https://assets.nhle.com/logos/nhl/svg/CHI_light.svg",
+        division_name="Central",
+        division_rank=8,
+        streak="L1",
+        division_table=[],
+        skaters=[],
+        goalies=[],
+        recent_games=[
+            ScheduleGame(
+                game_id=1,
+                date="2026-09-29",
+                is_home=False,
+                opponent_abbrev="VGK",
+                opponent_name="Golden Knights",
+                opponent_logo="https://assets.nhle.com/logos/nhl/svg/VGK_light.svg",
+                team_score=2,
+                opponent_score=5,
+                final_type="REG",
+                result="L",
+            )
+        ],
+        upcoming_games=[
+            ScheduleGame(
+                game_id=2,
+                date="2026-10-01",
+                is_home=True,
+                opponent_abbrev="UTA",
+                opponent_name="Mammoth",
+                opponent_logo="https://assets.nhle.com/logos/nhl/svg/UTA_light.svg",
+                team_score=None,
+                opponent_score=None,
+                final_type=None,
+                result=None,
+            )
+        ],
+    )
+
+    render_dashboard([DIGEST], fin_skaters, league_skaters, team, output_dir)
+
+    html = (output_dir / "index.html").read_text(encoding="utf-8")
+    assert "Sebastian Aho" in html  # last night's Finnish scorer, also the Suomipörssi top-5 row
+    assert "Connor McDavid" in html  # league top-5 row
+    assert "Chicago Blackhawks" in html
+    assert "Central: 8. sija" in html
+    assert "VGK" in html and "UTA" in html
+    assert 'href="suomiporssi.html"' in html
+    assert 'href="tilastot.html"' in html
+    assert 'href="joukkueet/chi.html"' in html
+
+
+def test_render_dashboard_handles_no_archive_yet(tmp_path: Path):
+    output_dir = tmp_path / "site"
+    team = TeamPage(
+        abbrev="CHI",
+        name="Chicago Blackhawks",
+        logo="https://assets.nhle.com/logos/nhl/svg/CHI_light.svg",
+        division_name="Central",
+        division_rank=1,
+        streak="",
+        division_table=[],
+        skaters=[],
+        goalies=[],
+        recent_games=[],
+        upcoming_games=[],
+    )
+
+    render_dashboard([], [], [], team, output_dir)
+
+    html = (output_dir / "index.html").read_text(encoding="utf-8")
+    assert "Ei vielä otteluita arkistossa" in html
+    assert "Ei tilastoituja suomalaispelaajia" in html

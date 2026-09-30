@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% import "_macros.html" as macros %}
+
+{% block title %}Morning Hockey{% endblock %}
+{% block header_title %}Etusivu{% endblock %}
+
+{% block content %}
+<header class="page-header">
+  {% if latest_digest %}
+  <h1>{{ latest_digest.date | human_date }}</h1>
+  <p class="subtitle">{{ latest_digest.games | length }} ottelua</p>
+  {% else %}
+  <h1>Morning Hockey</h1>
+  <p class="subtitle">Ei vielä otteluita arkistossa</p>
+  {% endif %}
+</header>
+
+{% if latest_digest %}
+<section>
+  <h2 class="section-title">🏒 Viime yön ottelut</h2>
+  {% for game in latest_digest.games %}
+    {{ macros.game_card(game) }}
+  {% endfor %}
+</section>
+{% endif %}
+
+<section>
+  <h2 class="section-title">🇫🇮 Suomipörssin kärki</h2>
+  {% if fin_skaters %}
+  <div class="stats-table-wrap">
+    <table class="stats-table">
+      <thead>
+        <tr>
+          <th class="col-rank">#</th>
+          <th>Pelaaja</th>
+          <th>Jkk</th>
+          <th>O</th>
+          <th>M</th>
+          <th>S</th>
+          <th>P</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for row in fin_skaters %}
+        <tr>
+          <td class="col-rank">{{ loop.index }}</td>
+          <td>
+            <span class="player-cell">
+              <img src="{{ row.headshot }}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
+              <span class="player-name">{{ row.name }}<span class="player-meta">{{ row.position }}</span></span>
+            </span>
+          </td>
+          <td><img src="{{ row.logo }}" alt="" class="table-team-logo" loading="lazy">{{ row.team }}</td>
+          <td>{{ row.games_played }}</td>
+          <td>{{ row.goals }}</td>
+          <td>{{ row.assists }}</td>
+          <td class="stat-strong">{{ row.points }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="empty-note">Ei tilastoituja suomalaispelaajia vielä.</p>
+  {% endif %}
+  <a class="archive-link" href="{{ nav.suomiporssi }}">Koko Suomipörssi →</a>
+</section>
+
+<section>
+  <h2 class="section-title">📈 NHL:n kärkipörssi</h2>
+  {% if league_skaters %}
+  <div class="stats-table-wrap">
+    <table class="stats-table">
+      <thead>
+        <tr>
+          <th class="col-rank">#</th>
+          <th>Pelaaja</th>
+          <th>Jkk</th>
+          <th>O</th>
+          <th>M</th>
+          <th>S</th>
+          <th>P</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for row in league_skaters %}
+        <tr>
+          <td class="col-rank">{{ loop.index }}</td>
+          <td>
+            <span class="player-cell">
+              <img src="{{ row.headshot }}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
+              <span class="player-name">
+                {{ row.name }}
+                <span class="player-meta">{{ row.nationality | nationality_flag }} {{ row.nationality }} · {{ row.position }}</span>
+              </span>
+            </span>
+          </td>
+          <td><img src="{{ row.logo }}" alt="" class="table-team-logo" loading="lazy">{{ row.team }}</td>
+          <td>{{ row.games_played }}</td>
+          <td>{{ row.goals }}</td>
+          <td>{{ row.assists }}</td>
+          <td class="stat-strong">{{ row.points }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="empty-note">Ei tilastoituja pelaajia vielä.</p>
+  {% endif %}
+  <a class="archive-link" href="{{ nav.league_stats }}">Koko Tilastot →</a>
+</section>
+
+<section>
+  <h2 class="section-title"><img src="{{ team.logo }}" alt="" class="nav-icon">{{ team.name }}</h2>
+  <p class="subtitle">{{ team.division_name }}: {{ team.division_rank }}. sija</p>
+
+  {% if team.recent_games %}
+  {% set g = team.recent_games[0] %}
+  <div class="schedule-list">
+    <div class="schedule-row">
+      <span class="schedule-date">{{ g.date | short_date }}</span>
+      <span class="schedule-opponent">
+        {{ '@' if not g.is_home else 'vs' }}
+        <img src="{{ g.opponent_logo }}" alt="" class="schedule-logo" loading="lazy">
+        {{ g.opponent_abbrev }}
+      </span>
+      <span class="schedule-score">{{ g.team_score }}–{{ g.opponent_score }}</span>
+      <span class="schedule-result result-{{ g.result | lower }}">
+        {{ g.result }}{% if g.final_type != "REG" %}<span class="schedule-ot">{{ g.final_type }}</span>{% endif %}
+      </span>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if team.upcoming_games %}
+  {% set g = team.upcoming_games[0] %}
+  <div class="schedule-list">
+    <div class="schedule-row">
+      <span class="schedule-date">{{ g.date | short_date }}</span>
+      <span class="schedule-opponent">
+        {{ '@' if not g.is_home else 'vs' }}
+        <img src="{{ g.opponent_logo }}" alt="" class="schedule-logo" loading="lazy">
+        {{ g.opponent_abbrev }}
+      </span>
+    </div>
+  </div>
+  {% endif %}
+
+  <a class="archive-link" href="{{ nav.team_chi }}">Joukkuesivulle →</a>
+</section>
+
+{% if other_dates %}
+<footer class="page-footer">
+  <h2>Aiemmat yöt</h2>
+  <ul class="archive-list">
+  {% for d in other_dates %}
+    <li><a href="nights/{{ d }}.html">{{ d | human_date }}</a></li>
+  {% endfor %}
+  </ul>
+  <a class="archive-link" href="{{ nav.archive }}">Näytä koko arkisto →</a>
+</footer>
+{% endif %}
+{% endblock %}

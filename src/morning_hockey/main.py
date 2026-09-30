@@ -13,9 +13,10 @@ from .nhl_api import NHLClient
 from .notify import send_ntfy, send_team_recap
 from .playoffs import build_bracket
 from .render import (
+    render_archive_pages,
+    render_dashboard,
     render_league_stats,
     render_playoffs,
-    render_site,
     render_standings,
     render_suomiporssi,
     render_team_page,
@@ -56,7 +57,7 @@ def run(pages_base_url: str, ntfy_topic: str | None, ntfy_server: str) -> None:
     else:
         print(f"{digest.date}: no completed games, nothing to record.")
 
-    render_site(_load_archive(), SITE_DIR)
+    render_archive_pages(_load_archive(), SITE_DIR)
 
     season_id = current_season_id(client)
     fin_skaters = build_leaderboard(client, season_id)
@@ -81,6 +82,9 @@ def run(pages_base_url: str, ntfy_topic: str | None, ntfy_server: str) -> None:
         team_page = build_team_page(client, team_abbrev, season_id)
         render_team_page(team_page, SITE_DIR)
         print(f"Joukkuesivu: {team_page.name}")
+
+    render_dashboard(_load_archive(), fin_skaters[:5], skater_top[:5], team_page, SITE_DIR)
+    print("Etusivu (dashboard) päivitetty.")
 
     if digest.games and ntfy_topic:
         page_url = f"{pages_base_url.rstrip('/')}/nights/{digest.date}.html"

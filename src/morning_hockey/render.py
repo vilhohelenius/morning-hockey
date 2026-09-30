@@ -58,7 +58,9 @@ def _nav(asset_prefix: str) -> dict[str, str]:
     }
 
 
-def render_site(archive: list[dict], output_dir: Path) -> None:
+def render_archive_pages(archive: list[dict], output_dir: Path) -> None:
+    """Renders nights/<date>.html for every archived night, plus arkisto.html.
+    Does not touch index.html — see render_dashboard for that."""
     output_dir.mkdir(parents=True, exist_ok=True)
     (output_dir / "nights").mkdir(exist_ok=True)
     for asset in STATIC_ASSETS:
@@ -75,29 +77,10 @@ def render_site(archive: list[dict], output_dir: Path) -> None:
             digest=digest,
             other_dates=other_dates,
             asset_prefix="../",
-            is_index=False,
             nav=_nav("../"),
             active_page="night",
         )
         (output_dir / "nights" / f"{digest['date']}.html").write_text(html, encoding="utf-8")
-
-    if sorted_archive:
-        latest = sorted_archive[0]
-        other_dates = dates[1 : _MAX_ARCHIVE_LINKS + 1]
-        html = night_template.render(
-            digest=latest,
-            other_dates=other_dates,
-            asset_prefix="",
-            is_index=True,
-            nav=_nav(""),
-            active_page="home",
-        )
-    else:
-        html = _env.get_template("empty.html").render(
-            asset_prefix="", nav=_nav(""), active_page="home"
-        )
-
-    (output_dir / "index.html").write_text(html, encoding="utf-8")
 
     archive_entries = [
         {"date": d["date"], "game_count": len(d.get("games", []))} for d in sorted_archive
@@ -106,6 +89,34 @@ def render_site(archive: list[dict], output_dir: Path) -> None:
         dates=archive_entries, asset_prefix="", nav=_nav(""), active_page="archive"
     )
     (output_dir / "arkisto.html").write_text(archive_html, encoding="utf-8")
+
+
+def render_dashboard(
+    archive: list[dict],
+    fin_skaters: list,
+    league_skaters: list,
+    team,
+    output_dir: Path,
+) -> None:
+    """Renders index.html: last night's games + top-5 previews + a Blackhawks
+    teaser, pulling from data the other render_* calls already built."""
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    sorted_archive = sorted(archive, key=lambda d: d["date"], reverse=True)
+    latest_digest = sorted_archive[0] if sorted_archive else None
+    other_dates = [d["date"] for d in sorted_archive[1 : _MAX_ARCHIVE_LINKS + 1]]
+
+    html = _env.get_template("dashboard.html").render(
+        latest_digest=latest_digest,
+        other_dates=other_dates,
+        fin_skaters=fin_skaters,
+        league_skaters=league_skaters,
+        team=team,
+        asset_prefix="",
+        nav=_nav(""),
+        active_page="home",
+    )
+    (output_dir / "index.html").write_text(html, encoding="utf-8")
 
 
 def render_suomiporssi(skaters: list, goalies: list, season_id: int, output_dir: Path) -> None:
