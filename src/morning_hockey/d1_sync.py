@@ -307,3 +307,99 @@ def sync_digest(client: D1Client, digest) -> int:
             )
 
     return len(digest.games)
+
+
+# ---------- Team rosters (all 32 teams, full roster + season stats) ----------
+
+_DELETE_ROSTER_SKATERS_SQL = "DELETE FROM team_roster_skaters"
+_INSERT_ROSTER_SKATER_SQL = """
+INSERT INTO team_roster_skaters (
+    player_id, team_abbrev, name, position, sweater_number, headshot,
+    games_played, goals, assists, points, plus_minus, avg_toi_seconds, updated_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+"""
+
+_DELETE_ROSTER_GOALIES_SQL = "DELETE FROM team_roster_goalies"
+_INSERT_ROSTER_GOALIE_SQL = """
+INSERT INTO team_roster_goalies (
+    player_id, team_abbrev, name, sweater_number, headshot,
+    games_played, wins, losses, ot_losses, goals_against_average, save_pct, updated_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+"""
+
+
+def sync_team_rosters(client: D1Client, rosters: dict) -> tuple[int, int]:
+    """Replaces the whole team_roster_skaters/team_roster_goalies tables
+    with the given {abbrev: (skaters, goalies)} map. Full delete-then-
+    reinsert, same reasoning as the other leaderboard tables: a traded or
+    waived player needs to disappear from their old team's roster, not
+    just stop getting updated. Returns (skater_count, goalie_count)."""
+    synced_at = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
+    client.execute(_DELETE_ROSTER_SKATERS_SQL)
+    client.execute(_DELETE_ROSTER_GOALIES_SQL)
+
+    skater_count = 0
+    goalie_count = 0
+    for abbrev, (skaters, goalies) in rosters.items():
+        for row in skaters:
+            client.execute(
+                _INSERT_ROSTER_SKATER_SQL,
+                [
+                    row.player_id, abbrev, row.name, row.position, row.sweater_number, row.headshot,
+                    row.games_played, row.goals, row.assists, row.points, row.plus_minus,
+                    row.avg_toi_seconds, synced_at,
+                ],
+            )
+            skater_count += 1
+        for row in goalies:
+            client.execute(
+                _INSERT_ROSTER_GOALIE_SQL,
+                [
+                    row.player_id, abbrev, row.name, row.sweater_number, row.headshot,
+                    row.games_played, row.wins, row.losses, row.ot_losses,
+                    row.goals_against_average, row.save_pct, synced_at,
+                ],
+            )
+            goalie_count += 1
+    return skater_count, goalie_count
+
+
+_UPSERT_TEAM_SEASON_STATS_SQL = """
+INSERT INTO team_season_stats (
+    team_abbrev, games_played, goals_for, goals_against, power_play_pct,
+    penalty_kill_pct, faceoff_pct, shots_for_per_game, shots_against_per_game, shutouts, updated_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+ON CONFLICT(team_abbrev) DO UPDATE SET
+    games_played = excluded.games_played,
+    goals_for = excluded.goals_for,
+    goals_against = excluded.goals_against,
+    power_play_pct = excluded.power_play_pct,
+    penalty_kill_pct = excluded.penalty_kill_pct,
+    faceoff_pct = excluded.faceoff_pct,
+    shots_for_per_game = excluded.shots_for_per_game,
+    shots_against_per_game = excluded.shots_against_per_game,
+    shutouts = excluded.shutouts,
+    updated_at = excluded.updated_at
+"""
+
+
+def sync_team_season_stats(client: D1Client, stats_by_team: dict) -> int:
+    """Upserts team_season_stats for every team with a non-None SeasonStats
+    -- a plain upsert, like standings_rows, since the set of 32 teams never
+    shrinks. A team with no stats yet (e.g. hasn't played this season) is
+    just skipped rather than writing a row of zeros."""
+    synced_at = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
+    count = 0
+    for abbrev, stats in stats_by_team.items():
+        if stats is None:
+            continue
+        client.execute(
+            _UPSERT_TEAM_SEASON_STATS_SQL,
+            [
+                abbrev, stats.games_played, stats.goals_for, stats.goals_against,
+                stats.power_play_pct, stats.penalty_kill_pct, stats.faceoff_pct,
+                stats.shots_for_per_game, stats.shots_against_per_game, stats.shutouts, synced_at,
+            ],
+        )
+        count += 1
+    return count

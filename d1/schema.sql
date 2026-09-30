@@ -258,3 +258,70 @@ CREATE TABLE IF NOT EXISTS game_box_scores (
     home_goalies_json TEXT NOT NULL,
     cached_at TEXT NOT NULL
 );
+
+-- Phase 6: full per-team rosters, for all 32 teams -- NOT derivable from
+-- skater_season_stats/goalie_season_stats above, same reasoning as
+-- finnish_skater_stats/finnish_goalie_stats: those are a global top-N cut
+-- (100 per skater position, 30 goalies league-wide), and a below-average
+-- team's actual roster, or even its own top scorers, can easily fall
+-- outside that cut entirely. Built from team.py's existing build_* roster
+-- helpers unchanged, called once per team (client.roster() has no
+-- league-wide equivalent) -- NHLClient's per-instance cache means the
+-- underlying skater_summary/goalie_summary/team_summary calls those
+-- helpers also make are still only fetched once, not once per team.
+--
+-- Delete-then-reinsert (whole table, every sync): a roster's membership
+-- changes -- trades, call-ups, waivers -- and a player who's left a team
+-- needs to disappear from it, not just stop updating.
+CREATE TABLE IF NOT EXISTS team_roster_skaters (
+    player_id INTEGER PRIMARY KEY,
+    team_abbrev TEXT NOT NULL,
+    name TEXT NOT NULL,
+    position TEXT NOT NULL,
+    sweater_number INTEGER NOT NULL,
+    headshot TEXT NOT NULL,
+    games_played INTEGER NOT NULL,
+    goals INTEGER NOT NULL,
+    assists INTEGER NOT NULL,
+    points INTEGER NOT NULL,
+    plus_minus INTEGER NOT NULL,
+    avg_toi_seconds REAL NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_team_roster_skaters_team ON team_roster_skaters(team_abbrev, points DESC);
+
+CREATE TABLE IF NOT EXISTS team_roster_goalies (
+    player_id INTEGER PRIMARY KEY,
+    team_abbrev TEXT NOT NULL,
+    name TEXT NOT NULL,
+    sweater_number INTEGER NOT NULL,
+    headshot TEXT NOT NULL,
+    games_played INTEGER NOT NULL,
+    wins INTEGER NOT NULL,
+    losses INTEGER NOT NULL,
+    ot_losses INTEGER NOT NULL,
+    goals_against_average REAL NOT NULL,
+    save_pct REAL NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_team_roster_goalies_team ON team_roster_goalies(team_abbrev, games_played DESC);
+
+-- Team-level season stats (PP%/PK%/faceoff%/shots), for the team page's
+-- "Kausitilastot" stat grid -- flagged as missing since phase 3, closed
+-- here alongside the roster sync since both come from the same per-team
+-- build_team_page pass. Plain upsert: the set of 32 teams never shrinks.
+CREATE TABLE IF NOT EXISTS team_season_stats (
+    team_abbrev TEXT PRIMARY KEY,
+    games_played INTEGER NOT NULL,
+    goals_for INTEGER NOT NULL,
+    goals_against INTEGER NOT NULL,
+    power_play_pct REAL NOT NULL,
+    penalty_kill_pct REAL NOT NULL,
+    faceoff_pct REAL NOT NULL,
+    shots_for_per_game REAL NOT NULL,
+    shots_against_per_game REAL NOT NULL,
+    shutouts INTEGER NOT NULL,
+    updated_at TEXT NOT NULL
+);

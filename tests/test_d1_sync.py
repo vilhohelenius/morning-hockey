@@ -10,9 +10,12 @@ from morning_hockey.d1_sync import (
     sync_schedule,
     sync_skater_stats,
     sync_standings,
+    sync_team_rosters,
+    sync_team_season_stats,
 )
 from morning_hockey.league_stats import GoalieStatRow, SkaterStatRow
 from morning_hockey.models import Digest, GameResult, GoalieLine, ScorerLine, TeamInfo
+from morning_hockey.team import RosterGoalie, RosterSkater, SeasonStats
 from morning_hockey.schedule import HELSINKI, ScheduleDay, ScheduleGame, SchedulePage
 from morning_hockey.standings import Conference, Division, StandingsPage, StandingsRow
 from morning_hockey.suomiporssi import GoalieLeaderboardRow, LeaderboardRow
@@ -366,3 +369,84 @@ def test_sync_digest_deletes_then_reinserts_scorers_and_goalies_per_game():
     assert calls[4]["json"]["params"] == [1]
     goalie_params = calls[5]["json"]["params"]
     assert goalie_params == [1, "Juuse Saros", "CAR", "W", 28, 30, 0.933, "60:00"]
+
+
+ROSTER_SKATER = RosterSkater(
+    player_id=5,
+    name="Connor Bedard",
+    position="C",
+    sweater_number=98,
+    headshot="bedard.png",
+    games_played=6,
+    goals=5,
+    assists=4,
+    points=9,
+    plus_minus=-2,
+    avg_toi_seconds=1080.0,
+    avg_toi="18:00",
+)
+
+ROSTER_GOALIE = RosterGoalie(
+    player_id=6,
+    name="Petr Mrazek",
+    sweater_number=34,
+    headshot="mrazek.png",
+    games_played=3,
+    wins=1,
+    losses=2,
+    ot_losses=0,
+    goals_against_average=3.2,
+    save_pct=0.889,
+)
+
+
+def test_sync_team_rosters_replaces_the_whole_table_across_every_team():
+    session = FakeSession()
+    client = D1Client("acc123", "db456", "token789", session=session)
+
+    skater_count, goalie_count = sync_team_rosters(
+        client, {"CHI": ([ROSTER_SKATER], [ROSTER_GOALIE]), "TOR": ([], [])}
+    )
+
+    assert skater_count == 1
+    assert goalie_count == 1
+    assert session.calls[0]["json"]["sql"] == "DELETE FROM team_roster_skaters"
+    assert session.calls[1]["json"]["sql"] == "DELETE FROM team_roster_goalies"
+
+    skater_params = session.calls[2]["json"]["params"]
+    assert skater_params[0] == 5  # player_id
+    assert skater_params[1] == "CHI"  # team_abbrev
+    assert skater_params[4] == 98  # sweater_number
+
+    goalie_params = session.calls[3]["json"]["params"]
+    assert goalie_params[0] == 6
+    assert goalie_params[1] == "CHI"
+    assert goalie_params[10] == 0.889  # save_pct
+
+
+SEASON_STATS = SeasonStats(
+    games_played=7,
+    goals_for=25,
+    goals_against=20,
+    goal_differential=5,
+    power_play_pct=0.22,
+    penalty_kill_pct=0.81,
+    faceoff_pct=0.51,
+    shots_for_per_game=31.4,
+    shots_against_per_game=28.9,
+    shutouts=1,
+)
+
+
+def test_sync_team_season_stats_upserts_and_skips_missing_teams():
+    session = FakeSession()
+    client = D1Client("acc123", "db456", "token789", session=session)
+
+    count = sync_team_season_stats(client, {"CHI": SEASON_STATS, "TOR": None})
+
+    assert count == 1
+    assert len(session.calls) == 1
+    params = session.calls[0]["json"]["params"]
+    assert params[0] == "CHI"
+    assert params[4] == 0.22  # power_play_pct
+    assert params[9] == 1  # shutouts

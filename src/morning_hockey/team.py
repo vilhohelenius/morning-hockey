@@ -326,3 +326,34 @@ def build_team_page(client: NHLClient, team_abbrev: str, season_id: int) -> Team
         recent_games=recent_games,
         upcoming_games=upcoming_games,
     )
+
+
+def build_all_team_rosters(
+    client: NHLClient, team_abbrevs: list[str], season_id: int
+) -> dict[str, tuple[list[RosterSkater], list[RosterGoalie]]]:
+    """Roster + season stats for every given team, reusing _build_skaters/
+    _build_goalies unchanged. One roster() call per team is unavoidable (no
+    league-wide roster endpoint exists), but the skater_summary/goalie_summary
+    calls those helpers make are identical across every call, so NHLClient's
+    per-instance cache means they're only actually fetched once, not once
+    per team."""
+    rosters = {}
+    for abbrev in team_abbrevs:
+        raw_roster = client.roster(abbrev)
+        rosters[abbrev] = (_build_skaters(client, season_id, raw_roster), _build_goalies(client, season_id, raw_roster))
+    return rosters
+
+
+def build_all_team_season_stats(
+    client: NHLClient, team_abbrevs: list[str], season_id: int
+) -> dict[str, SeasonStats | None]:
+    """Team-level season stats (PP%/PK%/faceoff%/shots) for every given
+    team, reusing _build_season_stats unchanged -- its own team_summary
+    call is cached the same way across every team."""
+    standings = client.standings()
+    name_by_abbrev = {row["teamAbbrev"]["default"]: row["teamName"]["default"] for row in standings["standings"]}
+    return {
+        abbrev: _build_season_stats(client, name_by_abbrev[abbrev], season_id)
+        for abbrev in team_abbrevs
+        if abbrev in name_by_abbrev
+    }
