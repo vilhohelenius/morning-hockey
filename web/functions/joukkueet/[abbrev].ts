@@ -12,7 +12,16 @@
 //
 // Also missing for the same reason: OT/SO badges on finished games -- the
 // games table stores game_state/is_finished but not the period-type of the
-// finish, so recent results only show plain W/L, not "W OT"/"L SO".
+// finish, so recent results only show plain W/L, not "W OT"/"L SO". (The
+// /ottelut/[gameId] report page added in phase 5 *does* show that badge --
+// it gets final_type from the NHL API's landing() response directly, not
+// from this table.)
+//
+// Phase 5 also means every finished game's row here can now link to its
+// report page -- unlike the original team.html, which only linked games
+// nightly-digest.yml happened to pre-build a report for (one team, its
+// last ~10 games). On-demand fetching removes that "pre-built" gate
+// entirely: any finished game's report exists the moment someone visits it.
 
 import { escapeHtml, shortDate } from "../_shared/format";
 import { renderLayout } from "../_shared/layout";
@@ -64,8 +73,7 @@ function renderGameRow(game: GameRow, teamAbbrev: string, played: boolean): stri
   const opponentLogo = isHome ? game.away_logo : game.home_logo;
   const result = played ? (teamScore > opponentScore ? "W" : "L") : null;
 
-  return `
-    <div class="schedule-row">
+  const inner = `
       <span class="schedule-date">${shortDate(game.date)}</span>
       <span class="schedule-opponent">
         ${isHome ? "vs" : "@"}
@@ -77,8 +85,11 @@ function renderGameRow(game: GameRow, teamAbbrev: string, played: boolean): stri
           ? `<span class="schedule-score">${teamScore}–${opponentScore}</span>
       <span class="schedule-result result-${result?.toLowerCase()}">${result}</span>`
           : ""
-      }
-    </div>`;
+      }`;
+
+  return played
+    ? `<a class="schedule-row schedule-row-link" href="/ottelut/${game.game_id}">${inner}</a>`
+    : `<div class="schedule-row">${inner}</div>`;
 }
 
 function renderSkaterTable(skaters: SkaterStatsRow[]): string {

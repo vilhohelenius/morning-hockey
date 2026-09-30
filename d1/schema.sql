@@ -230,3 +230,31 @@ CREATE TABLE IF NOT EXISTS digest_goalies (
 );
 
 CREATE INDEX IF NOT EXISTS idx_digest_goalies_game ON digest_goalies(game_id);
+
+-- Phase 5: on-demand game report cache. Unlike every table above, this one
+-- is written by the TypeScript Pages Function itself (web/functions/ottelut/
+-- [gameId].ts), not by a Python sync script -- the whole point of "on
+-- demand" is fetching a game's detailed box score from the NHL API only
+-- when someone actually visits that game's page, not pre-building all of
+-- them nightly. A cache hit skips the NHL fetch entirely.
+--
+-- Rows are written once and never updated: only finished games (games.
+-- is_finished = 1) are ever fetched/cached, and a finished game's box score
+-- doesn't change afterward. Parsed sub-objects (goal timeline, team stat
+-- comparison, per-player stat lines) are stored as JSON rather than
+-- normalized into their own tables -- they're always read and rendered
+-- whole, by game_id, never filtered or sorted at the SQL level, so
+-- normalizing them would only add join complexity with no query benefit.
+-- Team identity (abbrev/name/logo/score) and date aren't duplicated here --
+-- the games table (already synced) has those, joined by game_id.
+CREATE TABLE IF NOT EXISTS game_box_scores (
+    game_id INTEGER PRIMARY KEY,
+    final_type TEXT NOT NULL,
+    goals_json TEXT NOT NULL,
+    team_stats_json TEXT NOT NULL,
+    away_skaters_json TEXT NOT NULL,
+    home_skaters_json TEXT NOT NULL,
+    away_goalies_json TEXT NOT NULL,
+    home_goalies_json TEXT NOT NULL,
+    cached_at TEXT NOT NULL
+);

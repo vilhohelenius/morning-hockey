@@ -134,6 +134,67 @@ export interface DigestGoalieRow {
   toi: string;
 }
 
+// ---------- Phase 5: on-demand game report ----------
+
+export interface GoalEvent {
+  period_label: string;
+  time_in_period: string;
+  team_abbrev: string;
+  scorer: string;
+  assists: string[];
+  strength: string; // "" | "YV" | "AV"
+  away_score: number;
+  home_score: number;
+}
+
+export interface TeamStatRow {
+  label: string;
+  away_value: string;
+  home_value: string;
+}
+
+export interface PlayerGameStat {
+  player_id: number;
+  name: string;
+  position: string;
+  nationality: string;
+  headshot: string;
+  goals: number;
+  assists: number;
+  points: number;
+  plus_minus: number;
+  shots: number;
+  pim: number;
+  toi: string;
+}
+
+export interface GoalieGameStat {
+  player_id: number;
+  name: string;
+  nationality: string;
+  headshot: string;
+  decision: string | null;
+  saves: number;
+  shots_against: number;
+  save_pct: number;
+  toi: string;
+}
+
+// The D1 cache row: sub-objects stored as JSON text, parsed back to the
+// interfaces above on read. See d1/schema.sql for why they're not
+// normalized into their own tables.
+export interface GameBoxScoreRow {
+  game_id: number;
+  final_type: string;
+  goals_json: string;
+  team_stats_json: string;
+  away_skaters_json: string;
+  home_skaters_json: string;
+  away_goalies_json: string;
+  home_goalies_json: string;
+  cached_at: string;
+}
+
 export interface Env {
   DB: D1Database;
 }

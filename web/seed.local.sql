@@ -85,3 +85,24 @@ INSERT INTO digest_scorers (game_id, name, team_abbrev, goals, assists) VALUES
 
 INSERT INTO digest_goalies (game_id, name, team_abbrev, decision, saves, shots_against, save_pct, toi) VALUES
 (2001, 'Juuse Saros', 'CAR', 'W', 28, 30, 0.933, '60:00');
+
+-- Phase 5 game report cache test cases:
+--   1002 (MTL @ TOR, finished) -- cached game_box_scores row below, tests
+--     the cache-hit rendering path (goals, team stats, both teams' skater/
+--     goalie tables).
+--   1001 (TOR @ BOS, finished, no cache row) -- left uncached on purpose:
+--     visiting it locally exercises the cache-miss -> live NHL fetch path,
+--     which this sandbox can't reach (egress blocked), so it should fall
+--     back to the "tietoja ei juuri nyt saatu" message rather than crash.
+--   1003 (TOR @ TBL, not finished) -- already seeded above, tests the
+--     "not played yet" placeholder.
+--   9999 (doesn't exist) -- tests the 404 path.
+INSERT INTO game_box_scores (game_id, final_type, goals_json, team_stats_json, away_skaters_json, home_skaters_json, away_goalies_json, home_goalies_json, cached_at) VALUES
+(1002, 'REG',
+'[{"period_label":"1. erä","time_in_period":"05:12","team_abbrev":"MTL","scorer":"Cole Caufield","assists":["Nick Suzuki"],"strength":"","away_score":1,"home_score":0},{"period_label":"3. erä","time_in_period":"14:40","team_abbrev":"TOR","scorer":"Auston Matthews","assists":[],"strength":"YV","away_score":1,"home_score":1}]',
+'[{"label":"Laukaukset","away_value":"28","home_value":"32"},{"label":"Aloitusprosentti","away_value":"48.5 %","home_value":"51.5 %"}]',
+'[{"player_id":8481540,"name":"Cole Caufield","position":"R","nationality":"USA","headshot":"https://assets.nhle.com/mugs/nhl/20262027/MTL/8481540.png","goals":1,"assists":0,"points":1,"plus_minus":1,"shots":4,"pim":0,"toi":"18:22"}]',
+'[{"player_id":8479318,"name":"Auston Matthews","position":"C","nationality":"USA","headshot":"https://assets.nhle.com/mugs/nhl/20262027/TOR/8479318.png","goals":1,"assists":0,"points":1,"plus_minus":0,"shots":6,"pim":0,"toi":"19:40"}]',
+'[{"player_id":8478406,"name":"Sam Montembeault","nationality":"CAN","headshot":"https://assets.nhle.com/mugs/nhl/20262027/MTL/8478406.png","decision":"L","saves":27,"shots_against":32,"save_pct":0.844,"toi":"59:12"}]',
+'[{"player_id":8480313,"name":"Joseph Woll","nationality":"USA","headshot":"https://assets.nhle.com/mugs/nhl/20262027/TOR/8480313.png","decision":"W","saves":26,"shots_against":28,"save_pct":0.929,"toi":"60:00"}]',
+'2026-09-30T12:00:00Z');
