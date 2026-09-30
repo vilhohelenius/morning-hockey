@@ -84,3 +84,108 @@ def sync_schedule(client: D1Client, page: SchedulePage) -> int:
             client.execute(_UPSERT_GAME_SQL, _game_params(day.date, game, synced_at))
             count += 1
     return count
+
+
+# ---------- Slow tier (a few times a day) ----------
+
+_INSERT_SKATER_SQL = """
+INSERT INTO skater_season_stats (
+    player_id, season_id, name, team_abbrev, logo, headshot, nationality, position,
+    games_played, goals, assists, points, updated_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+"""
+
+_INSERT_GOALIE_SQL = """
+INSERT INTO goalie_season_stats (
+    player_id, season_id, name, team_abbrev, logo, headshot, nationality,
+    games_played, wins, losses, ot_losses, goals_against_average, save_pct, shutouts, updated_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+"""
+
+_INSERT_ROOKIE_SQL = """
+INSERT INTO rookie_season_stats (
+    player_id, season_id, name, team_abbrev, logo, headshot, nationality, position,
+    games_played, goals, assists, points, updated_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+"""
+
+_UPSERT_STANDINGS_SQL = """
+INSERT INTO standings_rows (
+    abbrev, as_of_date, name, logo, conference, division, division_rank, wildcard_rank,
+    qualified, games_played, wins, losses, ot_losses, points, goal_differential, updated_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+ON CONFLICT(abbrev) DO UPDATE SET
+    as_of_date = excluded.as_of_date,
+    division_rank = excluded.division_rank,
+    wildcard_rank = excluded.wildcard_rank,
+    qualified = excluded.qualified,
+    games_played = excluded.games_played,
+    wins = excluded.wins,
+    losses = excluded.losses,
+    ot_losses = excluded.ot_losses,
+    points = excluded.points,
+    goal_differential = excluded.goal_differential,
+    updated_at = excluded.updated_at
+"""
+
+
+def _skater_params(row, season_id: int, synced_at: str) -> list:
+    return [
+        row.player_id, season_id, row.name, row.team, row.logo, row.headshot,
+        row.nationality, row.position, row.games_played, row.goals, row.assists, row.points, synced_at,
+    ]
+
+
+def _goalie_params(row, season_id: int, synced_at: str) -> list:
+    return [
+        row.player_id, season_id, row.name, row.team, row.logo, row.headshot, row.nationality,
+        row.games_played, row.wins, row.losses, row.ot_losses,
+        row.goals_against_average, row.save_pct, row.shutouts, synced_at,
+    ]
+
+
+def sync_skater_stats(client: D1Client, rows: list, season_id: int) -> int:
+    """Replaces the whole skater_season_stats table with the given rows.
+    A full delete-then-reinsert (not an upsert) is deliberate: this is a
+    top-N leaderboard, so a player who drops out of it needs to disappear
+    from the table too, not just never get updated again."""
+    synced_at = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
+    client.execute("DELETE FROM skater_season_stats")
+    for row in rows:
+        client.execute(_INSERT_SKATER_SQL, _skater_params(row, season_id, synced_at))
+    return len(rows)
+
+
+def sync_goalie_stats(client: D1Client, rows: list, season_id: int) -> int:
+    synced_at = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
+    client.execute("DELETE FROM goalie_season_stats")
+    for row in rows:
+        client.execute(_INSERT_GOALIE_SQL, _goalie_params(row, season_id, synced_at))
+    return len(rows)
+
+
+def sync_rookie_stats(client: D1Client, rows: list, season_id: int) -> int:
+    synced_at = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
+    client.execute("DELETE FROM rookie_season_stats")
+    for row in rows:
+        client.execute(_INSERT_ROOKIE_SQL, _skater_params(row, season_id, synced_at))
+    return len(rows)
+
+
+def sync_standings(client: D1Client, page) -> int:
+    """Upserts every team's standings row -- unlike the leaderboards above,
+    the set of teams never shrinks, so a plain upsert (matching games) is
+    correct here, not a delete-then-reinsert."""
+    synced_at = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
+    count = 0
+    for division in page.divisions:
+        for row in division.rows:
+            params = [
+                row.abbrev, page.as_of_date, row.name, row.logo, division.conference, division.name,
+                row.division_rank, row.wildcard_rank, 1 if row.qualified else 0,
+                row.games_played, row.wins, row.losses, row.ot_losses, row.points,
+                row.goal_differential, synced_at,
+            ]
+            client.execute(_UPSERT_STANDINGS_SQL, params)
+            count += 1
+    return count

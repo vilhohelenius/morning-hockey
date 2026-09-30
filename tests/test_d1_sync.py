@@ -1,8 +1,17 @@
 import datetime as dt
 
-from morning_hockey.d1_sync import D1Client, sync_schedule
+from morning_hockey.d1_sync import (
+    D1Client,
+    sync_goalie_stats,
+    sync_rookie_stats,
+    sync_schedule,
+    sync_skater_stats,
+    sync_standings,
+)
+from morning_hockey.league_stats import GoalieStatRow, SkaterStatRow
 from morning_hockey.models import TeamInfo
 from morning_hockey.schedule import HELSINKI, ScheduleDay, ScheduleGame, SchedulePage
+from morning_hockey.standings import Conference, Division, StandingsPage, StandingsRow
 
 
 class FakeResponse:
@@ -116,3 +125,119 @@ def test_sync_schedule_converts_start_local_to_utc_iso8601():
     # 20:00 Helsinki (winter, UTC+2) -> 18:00 UTC
     start_time_utc = session.calls[0]["json"]["params"][2]
     assert start_time_utc == "2026-01-15T18:00:00+00:00"
+
+
+SKATER = SkaterStatRow(
+    player_id=1,
+    name="Connor McDavid",
+    team="EDM",
+    logo="edm.svg",
+    headshot="mcdavid.png",
+    nationality="CAN",
+    position="C",
+    games_played=1,
+    goals=1,
+    assists=2,
+    points=3,
+)
+
+GOALIE = GoalieStatRow(
+    player_id=2,
+    name="Jeremy Swayman",
+    team="BOS",
+    logo="bos.svg",
+    headshot="swayman.png",
+    nationality="USA",
+    games_played=1,
+    wins=1,
+    losses=0,
+    ot_losses=0,
+    goals_against_average=1.5,
+    save_pct=0.955,
+    shutouts=0,
+)
+
+
+def test_sync_skater_stats_deletes_then_reinserts_every_row():
+    session = FakeSession()
+    client = D1Client("acc123", "db456", "token789", session=session)
+
+    count = sync_skater_stats(client, [SKATER], 20262027)
+
+    assert count == 1
+    assert len(session.calls) == 2
+    assert session.calls[0]["json"]["sql"] == "DELETE FROM skater_season_stats"
+    insert_params = session.calls[1]["json"]["params"]
+    assert insert_params[0] == 1  # player_id
+    assert insert_params[1] == 20262027  # season_id
+    assert insert_params[2] == "Connor McDavid"
+    assert insert_params[-1] is not None  # updated_at
+
+
+def test_sync_goalie_stats_deletes_then_reinserts_every_row():
+    session = FakeSession()
+    client = D1Client("acc123", "db456", "token789", session=session)
+
+    count = sync_goalie_stats(client, [GOALIE], 20262027)
+
+    assert count == 1
+    assert session.calls[0]["json"]["sql"] == "DELETE FROM goalie_season_stats"
+    insert_params = session.calls[1]["json"]["params"]
+    assert insert_params[0] == 2
+    assert insert_params[2] == "Jeremy Swayman"
+    assert insert_params[11] == 1.5  # goals_against_average
+    assert insert_params[12] == 0.955  # save_pct
+
+
+def test_sync_rookie_stats_reuses_the_skater_shape_into_its_own_table():
+    session = FakeSession()
+    client = D1Client("acc123", "db456", "token789", session=session)
+
+    count = sync_rookie_stats(client, [SKATER], 20262027)
+
+    assert count == 1
+    assert session.calls[0]["json"]["sql"] == "DELETE FROM rookie_season_stats"
+    assert session.calls[1]["json"]["params"][2] == "Connor McDavid"
+
+
+STANDINGS_PAGE = StandingsPage(
+    as_of_date="2026-09-30",
+    divisions=[
+        Division(
+            name="Central",
+            conference="Western",
+            rows=[
+                StandingsRow(
+                    division_rank=1,
+                    wildcard_rank=0,
+                    abbrev="CHI",
+                    name="Blackhawks",
+                    logo="chi.svg",
+                    games_played=1,
+                    wins=1,
+                    losses=0,
+                    ot_losses=0,
+                    points=2,
+                    goal_differential=1,
+                    qualified=True,
+                )
+            ],
+        )
+    ],
+    conferences=[Conference(name="Western", wildcard_race=[])],
+)
+
+
+def test_sync_standings_upserts_one_row_per_team_with_division_context():
+    session = FakeSession()
+    client = D1Client("acc123", "db456", "token789", session=session)
+
+    count = sync_standings(client, STANDINGS_PAGE)
+
+    assert count == 1
+    params = session.calls[0]["json"]["params"]
+    assert params[0] == "CHI"  # abbrev
+    assert params[1] == "2026-09-30"  # as_of_date
+    assert params[4] == "Western"  # conference, from the Division wrapper
+    assert params[5] == "Central"  # division
+    assert params[8] == 1  # qualified -> 1

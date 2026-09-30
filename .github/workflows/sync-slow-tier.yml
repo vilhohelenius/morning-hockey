@@ -1,0 +1,29 @@
+name: Sync slow-tier stats to D1
+
+on:
+  schedule:
+    # Every 4 hours (6x/day). Season-long stats (points leaders, standings,
+    # rosters) don't change faster than "after a night's games settle", so
+    # this runs far less often than the fast-tier schedule sync.
+    - cron: "0 */4 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install project
+        run: pip install .
+
+      - name: Sync season stats to D1
+        env:
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          CF_D1_DATABASE_ID: ${{ secrets.CF_D1_DATABASE_ID }}
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+        run: python -m morning_hockey.sync_slow_tier
