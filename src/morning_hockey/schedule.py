@@ -47,27 +47,52 @@ def _team_info(payload: dict) -> TeamInfo:
 
 
 def build_schedule(client: NHLClient, date: str = "now") -> SchedulePage:
+    """The NHL's /schedule endpoint buckets each game under a nominal
+    US-schedule date, not the calendar date it actually falls on in Finland
+    -- a game starting late in the evening US time can already be past
+    midnight in Helsinki, while one starting in the (US) afternoon is still
+    evening of the *same* Finnish day. So every game is regrouped here under
+    its real Europe/Helsinki calendar date instead of trusting the
+    endpoint's own day buckets.
+
+    That regrouping can push a late game one calendar day past the
+    endpoint's own last day, so the local date range generated here runs one
+    day longer than the fetched window to make sure that rollover day isn't
+    silently dropped.
+    """
     schedule = client.schedule(date)
     game_week = schedule.get("gameWeek", [])
-    as_of_date = game_week[0]["date"] if game_week else date
+    if not game_week:
+        return SchedulePage(as_of_date=date, days=[])
 
-    days = []
+    first_date = dt.date.fromisoformat(game_week[0]["date"])
+    last_date = dt.date.fromisoformat(game_week[-1]["date"])
+    local_dates = [
+        (first_date + dt.timedelta(days=offset)).isoformat()
+        for offset in range((last_date - first_date).days + 2)
+    ]
+
+    games_by_date: dict[str, list[ScheduleGame]] = {local_date: [] for local_date in local_dates}
     for day in game_week:
-        games = []
         for game in day.get("games", []):
             start_utc = dt.datetime.fromisoformat(game["startTimeUTC"].replace("Z", "+00:00"))
+            start_local = start_utc.astimezone(HELSINKI)
             game_state = game.get("gameState", "")
-            games.append(
+            local_date = start_local.date().isoformat()
+            games_by_date.setdefault(local_date, []).append(
                 ScheduleGame(
                     game_id=game["id"],
                     away=_team_info(game["awayTeam"]),
                     home=_team_info(game["homeTeam"]),
-                    start_local=start_utc.astimezone(HELSINKI),
+                    start_local=start_local,
                     game_state=game_state,
                     is_finished=game_state in FINISHED_STATES,
                 )
             )
-        games.sort(key=lambda g: g.start_local)
-        days.append(ScheduleDay(date=day["date"], games=games))
 
-    return SchedulePage(as_of_date=as_of_date, days=days)
+    days = [
+        ScheduleDay(date=local_date, games=sorted(games_by_date[local_date], key=lambda g: g.start_local))
+        for local_date in sorted(games_by_date)
+    ]
+
+    return SchedulePage(as_of_date=first_date.isoformat(), days=days)

@@ -136,12 +136,15 @@
           <th data-sort="goals">M</th>
           <th data-sort="assists">S</th>
           <th data-sort="rank" data-first-dir="asc" class="sort-asc">P</th>
+          <th data-sort="plusminus">+/-</th>
+          <th data-sort="toi">KA</th>
         </tr>
       </thead>
       <tbody>
       {% for player in team.skaters %}
         <tr data-name="{{ player.name }}" data-gp="{{ player.games_played }}"
-            data-goals="{{ player.goals }}" data-assists="{{ player.assists }}" data-rank="{{ loop.index }}">
+            data-goals="{{ player.goals }}" data-assists="{{ player.assists }}" data-rank="{{ loop.index }}"
+            data-plusminus="{{ player.plus_minus }}" data-toi="{{ player.avg_toi_seconds }}">
           <td class="col-rank">{{ loop.index }}</td>
           <td>
             <span class="player-cell">
@@ -156,6 +159,8 @@
           <td>{{ player.goals }}</td>
           <td>{{ player.assists }}</td>
           <td class="stat-strong">{{ player.points }}</td>
+          <td>{{ "+" if player.plus_minus > 0 }}{{ player.plus_minus }}</td>
+          <td>{{ player.avg_toi }}</td>
         </tr>
       {% endfor %}
       </tbody>

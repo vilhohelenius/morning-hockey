@@ -210,6 +210,9 @@ def test_render_team_page_writes_under_joukkueet(tmp_path: Path):
                 goals=1,
                 assists=0,
                 points=1,
+                plus_minus=1,
+                avg_toi_seconds=900.0,
+                avg_toi="15:00",
             )
         ],
         goalies=[],

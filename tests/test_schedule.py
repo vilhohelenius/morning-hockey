@@ -5,21 +5,24 @@ SCHEDULE = {
         {
             "date": "2026-01-15",
             "games": [
-                # listed out of chronological order on purpose, to exercise the sort
-                {
-                    "id": 4,
-                    "gameState": "FUT",
-                    "startTimeUTC": "2026-01-15T22:00:00Z",
-                    "awayTeam": {"abbrev": "OTT", "name": {"default": "Senators"}, "logo": "ott.svg"},
-                    "homeTeam": {"abbrev": "MTL", "name": {"default": "Canadiens"}, "logo": "mtl.svg"},
-                },
                 {
                     "id": 3,
                     "gameState": "OFF",
+                    # 18:00 UTC -> 20:00 Finnish (winter, UTC+2): stays on the 15th
                     "startTimeUTC": "2026-01-15T18:00:00Z",
                     # /schedule (like /club-schedule-season) uses commonName
                     "awayTeam": {"abbrev": "FLA", "commonName": {"default": "Panthers"}, "logo": "fla.svg", "score": 4},
                     "homeTeam": {"abbrev": "TOR", "commonName": {"default": "Maple Leafs"}, "logo": "tor.svg", "score": 2},
+                },
+                {
+                    "id": 4,
+                    "gameState": "FUT",
+                    # 22:00 UTC -> 00:00 Finnish the *next* day -- a late US
+                    # game that's already past midnight in Finland, even
+                    # though the API still nominally dates it the 15th
+                    "startTimeUTC": "2026-01-15T22:00:00Z",
+                    "awayTeam": {"abbrev": "OTT", "name": {"default": "Senators"}, "logo": "ott.svg"},
+                    "homeTeam": {"abbrev": "MTL", "name": {"default": "Canadiens"}, "logo": "mtl.svg"},
                 },
             ],
         },
@@ -29,6 +32,7 @@ SCHEDULE = {
                 {
                     "id": 1,
                     "gameState": "FUT",
+                    # 00:00 UTC -> 02:00 Finnish, same day as the API's own bucket
                     "startTimeUTC": "2026-01-16T00:00:00Z",
                     "awayTeam": {"abbrev": "BOS", "name": {"default": "Bruins"}, "logo": "bos.svg"},
                     "homeTeam": {"abbrev": "NYR", "name": {"default": "Rangers"}, "logo": "nyr.svg"},
@@ -44,30 +48,26 @@ class FakeClient:
         return SCHEDULE
 
 
-def test_build_schedule_groups_every_game_by_day_without_time_filtering():
+def test_build_schedule_regroups_games_onto_their_finnish_calendar_day():
     page = build_schedule(FakeClient())
 
     assert isinstance(page, SchedulePage)
     assert page.as_of_date == "2026-01-15"
-    assert [d.date for d in page.days] == ["2026-01-15", "2026-01-16"]
+    # one extra trailing day is generated to catch any further rollover
+    assert [d.date for d in page.days] == ["2026-01-15", "2026-01-16", "2026-01-17"]
 
-    day_one = page.days[0]
-    # both games on this day are kept, unlike primetime's time-window filter
-    assert [g.game_id for g in day_one.games] == [3, 4]
-    assert day_one.games[0].is_finished is True
-    assert day_one.games[0].away.name == "Panthers"
-    assert day_one.games[1].is_finished is False
-    assert day_one.games[1].away.name == "Senators"
+    day_15 = page.days[0]
+    # game 4 started at 22:00 UTC (00:00 Finnish the next day) so it moves
+    # off this day, even though the API's own bucket still called it the 15th
+    assert [g.game_id for g in day_15.games] == [3]
+    assert day_15.games[0].is_finished is True
+    assert day_15.games[0].away.name == "Panthers"
 
-    day_two = page.days[1]
-    assert [g.game_id for g in day_two.games] == [1]
+    day_16 = page.days[1]
+    # game 4 (00:00 Finnish) joins game 1 (02:00 Finnish) here, sorted by start time
+    assert [g.game_id for g in day_16.games] == [4, 1]
+    assert day_16.games[0].is_finished is False
+    assert day_16.games[0].away.name == "Senators"
 
-
-def test_build_schedule_sorts_games_within_a_day_by_start_time():
-    page = build_schedule(FakeClient())
-
-    day_one = page.days[0]
-    # game 4 (22:00 UTC) starts later than game 3 (18:00 UTC), but is listed
-    # second in the fixture -- sorting must fix that up
-    assert day_one.games[0].game_id == 3
-    assert day_one.games[1].game_id == 4
+    day_17 = page.days[2]
+    assert day_17.games == []

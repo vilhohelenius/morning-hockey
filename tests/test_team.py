@@ -124,6 +124,8 @@ SKATER_STATS = [
         "goals": 2,
         "assists": 1,
         "points": 3,
+        "plusMinus": -1,
+        "timeOnIcePerGame": 1025.0,  # 17:05
     }
 ]
 
@@ -177,7 +179,7 @@ class FakeClient:
     def roster(self, team_abbrev):
         return ROSTER
 
-    def skater_bios(self, cayenne_exp, sort, limit=-1):
+    def skater_summary(self, cayenne_exp, sort, limit=-1):
         return SKATER_STATS
 
     def goalie_summary(self, cayenne_exp, sort, limit=-1):
@@ -218,6 +220,8 @@ def test_build_team_page_assembles_division_schedule_and_roster():
     assert page.skaters[0].name == "Tyler Bertuzzi"
     assert page.skaters[0].points == 3
     assert page.skaters[0].goals == 2
+    assert page.skaters[0].plus_minus == -1
+    assert page.skaters[0].avg_toi == "17:05"
 
     assert len(page.goalies) == 1
     assert isinstance(page.goalies[0], RosterGoalie)
@@ -280,7 +284,7 @@ def test_split_schedule_ignores_games_that_do_not_involve_the_team():
 
 def test_build_team_page_defaults_stats_to_zero_for_players_without_recorded_games():
     class NoStatsClient(FakeClient):
-        def skater_bios(self, cayenne_exp, sort, limit=-1):
+        def skater_summary(self, cayenne_exp, sort, limit=-1):
             return []
 
         def goalie_summary(self, cayenne_exp, sort, limit=-1):
@@ -290,5 +294,7 @@ def test_build_team_page_defaults_stats_to_zero_for_players_without_recorded_gam
 
     assert page.skaters[0].games_played == 0
     assert page.skaters[0].points == 0
+    assert page.skaters[0].plus_minus == 0
+    assert page.skaters[0].avg_toi == "0:00"
     assert page.goalies[0].games_played == 0
     assert page.goalies[0].save_pct == 0.0

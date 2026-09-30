@@ -22,6 +22,9 @@ class RosterSkater:
     goals: int
     assists: int
     points: int
+    plus_minus: int
+    avg_toi_seconds: float
+    avg_toi: str  # "MM:SS" per game, for display -- avg_toi_seconds is the sortable form
 
 
 @dataclass(frozen=True)
@@ -100,10 +103,18 @@ def _player_name(player: dict) -> str:
     return f"{player['firstName']['default']} {player['lastName']['default']}"
 
 
-def _build_skaters(client: NHLClient, team_abbrev: str, season_id: int, raw_roster: dict) -> list[RosterSkater]:
-    cayenne_exp = f'currentTeamAbbrev="{team_abbrev}" and seasonId={season_id} and gameTypeId=2'
+def _format_toi(seconds: float) -> str:
+    minutes, secs = divmod(int(round(seconds)), 60)
+    return f"{minutes}:{secs:02d}"
+
+
+def _build_skaters(client: NHLClient, season_id: int, raw_roster: dict) -> list[RosterSkater]:
+    # Unfiltered, like _build_goalies below: merging happens by player id
+    # against the roster's own player list, so team-filtering this query
+    # would only be an optimization, not something correctness depends on.
+    cayenne_exp = f"seasonId={season_id} and gameTypeId=2"
     sort = '[{"property":"points","direction":"DESC"}]'
-    stats_by_id = {row["playerId"]: row for row in client.skater_bios(cayenne_exp, sort, limit=-1)}
+    stats_by_id = {row["playerId"]: row for row in client.skater_summary(cayenne_exp, sort, limit=-1)}
 
     skaters = []
     for player in raw_roster.get("forwards", []) + raw_roster.get("defensemen", []):
@@ -119,6 +130,9 @@ def _build_skaters(client: NHLClient, team_abbrev: str, season_id: int, raw_rost
                 goals=stats.get("goals", 0),
                 assists=stats.get("assists", 0),
                 points=stats.get("points", 0),
+                plus_minus=stats.get("plusMinus", 0),
+                avg_toi_seconds=stats.get("timeOnIcePerGame", 0.0),
+                avg_toi=_format_toi(stats.get("timeOnIcePerGame", 0.0)),
             )
         )
     skaters.sort(key=lambda s: (-s.points, -s.goals, s.name))
@@ -283,7 +297,7 @@ def build_team_page(client: NHLClient, team_abbrev: str, season_id: int) -> Team
     recent_games, upcoming_games = split_schedule(team_abbrev, schedule["games"])
 
     raw_roster = client.roster(team_abbrev)
-    skaters = _build_skaters(client, team_abbrev, season_id, raw_roster)
+    skaters = _build_skaters(client, season_id, raw_roster)
     goalies = _build_goalies(client, season_id, raw_roster)
 
     return TeamPage(
