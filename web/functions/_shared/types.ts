@@ -35,9 +35,12 @@ export interface StandingsRow {
 
 export interface SkaterStatsRow {
   player_id: number;
+  season_id: number;
   name: string;
   team_abbrev: string;
+  logo: string;
   headshot: string;
+  nationality: string;
   position: string;
   games_played: number;
   goals: number;
@@ -47,9 +50,12 @@ export interface SkaterStatsRow {
 
 export interface GoalieStatsRow {
   player_id: number;
+  season_id: number;
   name: string;
   team_abbrev: string;
+  logo: string;
   headshot: string;
+  nationality: string;
   games_played: number;
   wins: number;
   losses: number;
