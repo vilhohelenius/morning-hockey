@@ -126,3 +126,19 @@ class NHLClient:
     def goalie_bios(self, cayenne_exp: str, sort: str, limit: int = -1) -> list[dict]:
         """Like goalie_summary, but includes nationalityCode (no GAA/SV%)."""
         return self._stats_query("goalie/bios", cayenne_exp, sort, limit)
+
+    def team_summary(self, cayenne_exp: str, sort: str, limit: int = -1) -> list[dict]:
+        """Season team totals: goals for/against, PP%/PK%, faceoff%, etc.
+        No abbrev/triCode field to filter by — only a numeric teamId and
+        teamFullName, so callers match on the full name instead."""
+        return self._stats_query("team/summary", cayenne_exp, sort, limit)
+
+    def landing(self, game_id: int) -> dict:
+        """Play-by-play scoring summary (full names, period, strength) plus
+        three stars, for one game."""
+        return self._get(f"/gamecenter/{game_id}/landing")
+
+    def right_rail(self, game_id: int) -> dict:
+        """Team-vs-team game stat comparison (shots, faceoff%, power play,
+        PIM, hits, ...) for one game."""
+        return self._get(f"/gamecenter/{game_id}/right-rail")

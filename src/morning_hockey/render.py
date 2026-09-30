@@ -50,6 +50,20 @@ _env.globals["asset_version"] = _asset_version()
 _MAX_ARCHIVE_LINKS = 14
 
 
+def _game_details_json(digest: dict | None) -> str:
+    """Embeddable {game_id: box_score} map for a digest dict's games that
+    have one — older archived nights predating this feature just won't be
+    keyed here, and the click handler quietly does nothing for them."""
+    if digest is None:
+        return "{}"
+    details = {
+        str(game["game_id"]): game["box_score"]
+        for game in digest.get("games", [])
+        if game.get("box_score")
+    }
+    return json.dumps(details, ensure_ascii=False).replace("</", "<\\/")
+
+
 def _nav(asset_prefix: str) -> dict[str, str]:
     return {
         "home": f"{asset_prefix}index.html",
@@ -81,6 +95,7 @@ def render_archive_pages(archive: list[dict], output_dir: Path) -> None:
         html = night_template.render(
             digest=digest,
             other_dates=other_dates,
+            game_details_json=_game_details_json(digest),
             asset_prefix="../",
             nav=_nav("../"),
             active_page="night",
@@ -114,6 +129,7 @@ def render_dashboard(
     html = _env.get_template("dashboard.html").render(
         latest_digest=latest_digest,
         other_dates=other_dates,
+        game_details_json=_game_details_json(latest_digest),
         fin_skaters=fin_skaters,
         league_skaters=league_skaters,
         team=team,

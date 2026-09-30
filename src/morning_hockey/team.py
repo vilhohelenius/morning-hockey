@@ -53,6 +53,20 @@ class ScheduleGame:
 
 
 @dataclass(frozen=True)
+class SeasonStats:
+    games_played: int
+    goals_for: int
+    goals_against: int
+    goal_differential: int
+    power_play_pct: float
+    penalty_kill_pct: float
+    faceoff_pct: float
+    shots_for_per_game: float
+    shots_against_per_game: float
+    shutouts: int
+
+
+@dataclass(frozen=True)
 class DivisionRow:
     abbrev: str
     name: str
@@ -75,6 +89,7 @@ class TeamPage:
     division_rank: int
     streak: str
     division_table: list[DivisionRow]
+    season_stats: SeasonStats | None
     skaters: list[RosterSkater]
     goalies: list[RosterGoalie]
     recent_games: list[ScheduleGame]
@@ -214,6 +229,26 @@ def split_schedule(team_abbrev: str, games: list[dict]) -> tuple[list[ScheduleGa
     return recent, upcoming
 
 
+def _build_season_stats(client: NHLClient, team_full_name: str, season_id: int) -> SeasonStats | None:
+    cayenne_exp = f"seasonId={season_id} and gameTypeId=2"
+    rows = client.team_summary(cayenne_exp, "[]", limit=-1)
+    row = next((r for r in rows if r["teamFullName"] == team_full_name), None)
+    if row is None:
+        return None
+    return SeasonStats(
+        games_played=row["gamesPlayed"],
+        goals_for=row["goalsFor"],
+        goals_against=row["goalsAgainst"],
+        goal_differential=row["goalsFor"] - row["goalsAgainst"],
+        power_play_pct=row["powerPlayPct"],
+        penalty_kill_pct=row["penaltyKillPct"],
+        faceoff_pct=row["faceoffWinPct"],
+        shots_for_per_game=row["shotsForPerGame"],
+        shots_against_per_game=row["shotsAgainstPerGame"],
+        shutouts=row["teamShutouts"],
+    )
+
+
 def _division_table(standings: dict, division_abbrev: str, team_abbrev: str) -> list[DivisionRow]:
     division_teams = sorted(
         (row for row in standings["standings"] if row["divisionAbbrev"] == division_abbrev),
@@ -242,6 +277,7 @@ def build_team_page(client: NHLClient, team_abbrev: str, season_id: int) -> Team
         row for row in standings["standings"] if row["teamAbbrev"]["default"] == team_abbrev
     )
     division_table = _division_table(standings, team_row["divisionAbbrev"], team_abbrev)
+    season_stats = _build_season_stats(client, team_row["teamName"]["default"], season_id)
 
     schedule = client.club_schedule_season(team_abbrev)
     recent_games, upcoming_games = split_schedule(team_abbrev, schedule["games"])
@@ -258,6 +294,7 @@ def build_team_page(client: NHLClient, team_abbrev: str, season_id: int) -> Team
         division_rank=team_row["divisionSequence"],
         streak=f"{team_row['streakCode']}{team_row['streakCount']}",
         division_table=division_table,
+        season_stats=season_stats,
         skaters=skaters,
         goalies=goalies,
         recent_games=recent_games,

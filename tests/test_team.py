@@ -1,6 +1,7 @@
 from morning_hockey.team import (
     RosterGoalie,
     RosterSkater,
+    SeasonStats,
     TeamPage,
     build_team_page,
     game_result,
@@ -138,6 +139,33 @@ GOALIE_STATS = [
     }
 ]
 
+TEAM_SUMMARY = [
+    {
+        "teamFullName": "Chicago Blackhawks",
+        "gamesPlayed": 1,
+        "goalsFor": 2,
+        "goalsAgainst": 5,
+        "powerPlayPct": 0.0,
+        "penaltyKillPct": 0.666667,
+        "faceoffWinPct": 0.431034,
+        "shotsForPerGame": 26.0,
+        "shotsAgainstPerGame": 37.0,
+        "teamShutouts": 0,
+    },
+    {
+        "teamFullName": "Nashville Predators",
+        "gamesPlayed": 1,
+        "goalsFor": 3,
+        "goalsAgainst": 1,
+        "powerPlayPct": 0.5,
+        "penaltyKillPct": 1.0,
+        "faceoffWinPct": 0.5,
+        "shotsForPerGame": 30.0,
+        "shotsAgainstPerGame": 20.0,
+        "teamShutouts": 0,
+    },
+]
+
 
 class FakeClient:
     def standings(self):
@@ -154,6 +182,9 @@ class FakeClient:
 
     def goalie_summary(self, cayenne_exp, sort, limit=-1):
         return GOALIE_STATS
+
+    def team_summary(self, cayenne_exp, sort, limit=-1):
+        return TEAM_SUMMARY
 
 
 def test_game_result_classifies_wins_losses_and_ot_losses():
@@ -192,6 +223,21 @@ def test_build_team_page_assembles_division_schedule_and_roster():
     assert isinstance(page.goalies[0], RosterGoalie)
     assert page.goalies[0].name == "Spencer Knight"
     assert page.goalies[0].save_pct == 0.955
+
+    assert isinstance(page.season_stats, SeasonStats)
+    assert page.season_stats.goals_for == 2
+    assert page.season_stats.goals_against == 5
+    assert page.season_stats.goal_differential == -3
+    assert page.season_stats.penalty_kill_pct == 0.666667
+
+
+def test_build_team_page_season_stats_is_none_when_team_not_found_in_report():
+    class NoTeamSummaryClient(FakeClient):
+        def team_summary(self, cayenne_exp, sort, limit=-1):
+            return [row for row in TEAM_SUMMARY if row["teamFullName"] != "Chicago Blackhawks"]
+
+    page = build_team_page(NoTeamSummaryClient(), "CHI", 20262027)
+    assert page.season_stats is None
 
 
 def test_team_display_name_prefers_common_name_then_falls_back_to_name_then_abbrev():

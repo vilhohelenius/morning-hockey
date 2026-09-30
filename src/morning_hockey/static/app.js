@@ -26,6 +26,19 @@
     link.addEventListener("click", closeSidebar);
   });
 
+  function el(tag, className, text) {
+    var node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    return node;
+  }
+
+  function section(titleText) {
+    var wrap = el("div", "tp-section");
+    wrap.appendChild(el("p", "tp-section-title", titleText));
+    return wrap;
+  }
+
   var snapshotsEl = document.getElementById("team-snapshots");
 
   if (snapshotsEl) {
@@ -38,13 +51,6 @@
 
     var openTrigger = null;
     var detailEl = null;
-
-    function el(tag, className, text) {
-      var node = document.createElement(tag);
-      if (className) node.className = className;
-      if (text !== undefined) node.textContent = text;
-      return node;
-    }
 
     function shortDate(iso) {
       var parts = iso.split("-");
@@ -63,12 +69,6 @@
       };
       wrap.appendChild(img);
       wrap.appendChild(el("span", null, label));
-      return wrap;
-    }
-
-    function section(titleText) {
-      var wrap = el("div", "tp-section");
-      wrap.appendChild(el("p", "tp-section-title", titleText));
       return wrap;
     }
 
@@ -203,6 +203,135 @@
 
     document.addEventListener("keydown", function (event) {
       if (event.key === "Escape") closeDetail();
+    });
+  }
+
+  var gameDetailsEl = document.getElementById("game-details");
+
+  if (gameDetailsEl) {
+    var gameDetails = {};
+    try {
+      gameDetails = JSON.parse(gameDetailsEl.textContent || "{}");
+    } catch (e) {
+      gameDetails = {};
+    }
+
+    var openGameTrigger = null;
+    var gameDetailEl = null;
+
+    function goalRow(goal) {
+      var row = el("div", "gd-goal-row");
+      row.appendChild(el("span", "gd-goal-time", goal.time_in_period));
+      var who = el("span", "gd-goal-who");
+      who.appendChild(el("strong", null, goal.team_abbrev + " · " + goal.scorer));
+      if (goal.strength) who.appendChild(el("span", "gd-goal-strength", goal.strength));
+      row.appendChild(who);
+      if (goal.assists.length) {
+        row.appendChild(el("span", "gd-goal-assists", goal.assists.join(", ")));
+      }
+      return row;
+    }
+
+    function renderGoals(goals) {
+      var wrap = section("Maalit");
+      if (!goals.length) {
+        wrap.appendChild(el("p", "tp-empty", "Ei maaleja."));
+        return wrap;
+      }
+      var currentPeriod = null;
+      goals.forEach(function (goal) {
+        if (goal.period_label !== currentPeriod) {
+          currentPeriod = goal.period_label;
+          wrap.appendChild(el("p", "gd-period", currentPeriod));
+        }
+        wrap.appendChild(goalRow(goal));
+      });
+      return wrap;
+    }
+
+    function renderTeamStats(stats, awayAbbrev, homeAbbrev) {
+      var wrap = section("Ottelun tilastot");
+      var header = el("div", "gd-stat-header");
+      header.appendChild(el("span", "gd-stat-team", awayAbbrev));
+      header.appendChild(el("span", "gd-stat-team", homeAbbrev));
+      wrap.appendChild(header);
+      stats.forEach(function (stat) {
+        var row = el("div", "gd-stat-row");
+        row.appendChild(el("span", "gd-stat-value", stat.away_value));
+        row.appendChild(el("span", "gd-stat-label", stat.label));
+        row.appendChild(el("span", "gd-stat-value", stat.home_value));
+        wrap.appendChild(row);
+      });
+      return wrap;
+    }
+
+    function closeGameDetail() {
+      if (gameDetailEl && gameDetailEl.parentNode) gameDetailEl.parentNode.removeChild(gameDetailEl);
+      if (openGameTrigger) openGameTrigger.setAttribute("aria-expanded", "false");
+      gameDetailEl = null;
+      openGameTrigger = null;
+    }
+
+    function openGameDetail(trigger) {
+      var data = gameDetails[trigger.dataset.gameId];
+      if (!data) return;
+
+      closeGameDetail();
+
+      var awayAbbrev = trigger.querySelector(".team.away .abbrev").textContent;
+      var homeAbbrev = trigger.querySelector(".team.home .abbrev").textContent;
+
+      var panel = el("div", "team-detail");
+
+      var header = el("div", "team-detail-header");
+      header.appendChild(el("span", "team-detail-name", awayAbbrev + " – " + homeAbbrev));
+      var closeBtn = document.createElement("button");
+      closeBtn.type = "button";
+      closeBtn.className = "icon-btn team-detail-close";
+      closeBtn.setAttribute("aria-label", "Sulje");
+      closeBtn.textContent = "✕";
+      closeBtn.addEventListener("click", closeGameDetail);
+      header.appendChild(closeBtn);
+      panel.appendChild(header);
+
+      var body = el("div", "team-detail-body");
+      body.appendChild(renderGoals(data.goals || []));
+      body.appendChild(renderTeamStats(data.team_stats || [], awayAbbrev, homeAbbrev));
+      panel.appendChild(body);
+
+      trigger.insertAdjacentElement("afterend", panel);
+
+      trigger.setAttribute("aria-expanded", "true");
+      gameDetailEl = panel;
+      openGameTrigger = trigger;
+    }
+
+    document.addEventListener("click", function (event) {
+      var trigger = event.target.closest(".game-card-trigger");
+      if (!trigger) return;
+
+      if (openGameTrigger === trigger) {
+        closeGameDetail();
+      } else {
+        openGameDetail(trigger);
+      }
+    });
+
+    document.addEventListener("keydown", function (event) {
+      var trigger = event.target.closest(".game-card-trigger");
+      if (!trigger) return;
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        if (openGameTrigger === trigger) {
+          closeGameDetail();
+        } else {
+          openGameDetail(trigger);
+        }
+      }
+    });
+
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "Escape") closeGameDetail();
     });
   }
 

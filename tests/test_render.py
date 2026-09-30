@@ -60,6 +60,67 @@ def test_render_archive_pages_handles_empty_archive(tmp_path: Path):
     assert not (output_dir / "index.html").exists()
 
 
+DIGEST_WITH_BOX_SCORE = {
+    "date": "2026-09-29",
+    "generated_at": "2026-09-30T06:00:00+00:00",
+    "games": [
+        {
+            "game_id": 2026020001,
+            "away": {"abbrev": "FLA", "name": "Panthers", "logo": "https://example.com/fla.svg", "score": 1},
+            "home": {"abbrev": "CAR", "name": "Hurricanes", "logo": "https://example.com/car.svg", "score": 3},
+            "final_type": "OT",
+            "scorers": [{"name": "Sebastian Aho", "team": "CAR", "goals": 2, "assists": 1}],
+            "goalies": [],
+            "box_score": {
+                "goals": [
+                    {
+                        "period_label": "1. erä",
+                        "time_in_period": "05:00",
+                        "team_abbrev": "FLA",
+                        "scorer": "Carter Verhaeghe",
+                        "assists": [],
+                        "strength": "",
+                    }
+                ],
+                "team_stats": [
+                    {"label": "Laukaukset", "away_value": "20", "home_value": "15"},
+                ],
+            },
+        },
+        {
+            "game_id": 2026020002,
+            "away": {"abbrev": "BOS", "name": "Bruins", "logo": "https://example.com/bos.svg", "score": 2},
+            "home": {"abbrev": "TOR", "name": "Maple Leafs", "logo": "https://example.com/tor.svg", "score": 4},
+            "final_type": "REG",
+            "scorers": [],
+            "goalies": [],
+            "box_score": None,
+        },
+    ],
+}
+
+
+def test_render_archive_pages_embeds_game_details_json_for_games_with_a_box_score(tmp_path: Path):
+    output_dir = tmp_path / "site"
+
+    render_archive_pages([DIGEST_WITH_BOX_SCORE], output_dir)
+
+    html = (output_dir / "nights" / "2026-09-29.html").read_text(encoding="utf-8")
+    assert 'id="game-details"' in html
+    assert "Carter Verhaeghe" in html
+    # game 2's box_score is None -- it must not appear as a key at all
+    assert "2026020002" not in html.split('id="game-details"')[1]
+
+
+def test_render_archive_pages_game_details_is_empty_object_for_older_digests(tmp_path: Path):
+    output_dir = tmp_path / "site"
+
+    render_archive_pages([DIGEST], output_dir)
+
+    html = (output_dir / "nights" / "2026-09-29.html").read_text(encoding="utf-8")
+    assert '<script id="game-details" type="application/json">{}</script>' in html
+
+
 def test_render_suomiporssi_writes_skaters_and_goalies(tmp_path: Path):
     output_dir = tmp_path / "site"
     skaters = [
@@ -136,6 +197,7 @@ def test_render_team_page_writes_under_joukkueet(tmp_path: Path):
                 is_team=True,
             )
         ],
+        season_stats=None,
         skaters=[
             RosterSkater(
                 player_id=1,
@@ -307,6 +369,7 @@ def test_static_assets_are_cache_busted_with_a_content_hash(tmp_path: Path):
         division_rank=1,
         streak="",
         division_table=[],
+        season_stats=None,
         skaters=[],
         goalies=[],
         recent_games=[],
@@ -433,6 +496,7 @@ def test_render_dashboard_shows_latest_night_and_top5_previews(tmp_path: Path):
         division_rank=8,
         streak="L1",
         division_table=[],
+        season_stats=None,
         skaters=[],
         goalies=[],
         recent_games=[
@@ -478,6 +542,30 @@ def test_render_dashboard_shows_latest_night_and_top5_previews(tmp_path: Path):
     assert 'href="joukkueet/chi.html"' in html
 
 
+def test_render_dashboard_embeds_game_details_json_for_the_latest_night(tmp_path: Path):
+    output_dir = tmp_path / "site"
+    team = TeamPage(
+        abbrev="CHI",
+        name="Chicago Blackhawks",
+        logo="https://assets.nhle.com/logos/nhl/svg/CHI_light.svg",
+        division_name="Central",
+        division_rank=1,
+        streak="",
+        division_table=[],
+        season_stats=None,
+        skaters=[],
+        goalies=[],
+        recent_games=[],
+        upcoming_games=[],
+    )
+
+    render_dashboard([DIGEST_WITH_BOX_SCORE], [], [], team, output_dir)
+
+    html = (output_dir / "index.html").read_text(encoding="utf-8")
+    assert 'id="game-details"' in html
+    assert "Carter Verhaeghe" in html
+
+
 def test_render_dashboard_handles_no_archive_yet(tmp_path: Path):
     output_dir = tmp_path / "site"
     team = TeamPage(
@@ -488,6 +576,7 @@ def test_render_dashboard_handles_no_archive_yet(tmp_path: Path):
         division_rank=1,
         streak="",
         division_table=[],
+        season_stats=None,
         skaters=[],
         goalies=[],
         recent_games=[],

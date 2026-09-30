@@ -3,6 +3,9 @@ from __future__ import annotations
 
 import datetime as dt
 
+import requests
+
+from .boxscore import build_box_score
 from .finnish import finnish_players_for_teams
 from .models import Digest, GameResult, GoalieLine, ScorerLine, TeamInfo
 from .nhl_api import NHLClient
@@ -96,14 +99,25 @@ def build_digest(client: NHLClient, date: str = "now") -> Digest:
             boxscore = client.boxscore(game["id"])
             goalies = goalie_lines(boxscore, finnish_index)
 
+        away = team_info(game["awayTeam"])
+        home = team_info(game["homeTeam"])
+        box_score = None
+        try:
+            box_score = build_box_score(client, game["id"], away.score, home.score)
+        except (requests.exceptions.RequestException, KeyError, TypeError) as error:
+            # Enrichment, not core data: a hiccup on one game's box score
+            # shouldn't take down the whole night's digest.
+            print(f"  huom: ottelun {game['id']} tapahtumatietoja ei saatu ({error}).")
+
         results.append(
             GameResult(
                 game_id=game["id"],
-                away=team_info(game["awayTeam"]),
-                home=team_info(game["homeTeam"]),
+                away=away,
+                home=home,
                 final_type=final_type(game),
                 scorers=scorers,
                 goalies=goalies,
+                box_score=box_score,
             )
         )
 

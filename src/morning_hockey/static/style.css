@@ -207,6 +207,17 @@ main {
   padding: 16px;
 }
 
+.game-card-trigger {
+  cursor: pointer;
+}
+
+.game-card-hint {
+  margin: 10px 0 0;
+  text-align: center;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
 .score-row {
   display: flex;
   align-items: center;
@@ -376,6 +387,38 @@ main {
   letter-spacing: 0.04em;
   color: var(--muted);
   margin: 4px 0 8px;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.stat-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 6px;
+  text-align: center;
+}
+
+.stat-tile-value {
+  font-size: 1.15rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+
+.stat-tile-label {
+  font-size: 0.68rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 .division-table {
@@ -891,6 +934,97 @@ main {
 
 .tp-empty {
   color: var(--muted);
+}
+
+.gd-period {
+  margin: 10px 0 4px;
+  color: var(--muted);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.gd-period:first-child {
+  margin-top: 0;
+}
+
+.gd-goal-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 3px 0;
+  flex-wrap: wrap;
+}
+
+.gd-goal-time {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+  width: 38px;
+}
+
+.gd-goal-who {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.gd-goal-strength {
+  color: var(--accent);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.gd-goal-assists {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.gd-stat-header {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 0.78rem;
+  padding-bottom: 4px;
+}
+
+.gd-stat-header .gd-stat-team:first-child {
+  text-align: left;
+}
+
+.gd-stat-header .gd-stat-team:last-child {
+  text-align: right;
+}
+
+.gd-stat-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 8px;
+  padding: 3px 0;
+  align-items: center;
+}
+
+.gd-stat-value {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.gd-stat-row .gd-stat-value:first-child {
+  text-align: left;
+}
+
+.gd-stat-row .gd-stat-value:last-child {
+  text-align: right;
+}
+
+.gd-stat-label {
+  color: var(--muted);
+  font-size: 0.72rem;
+  text-align: center;
+  white-space: nowrap;
 }
 
 /* ---------- Prime time ---------- */

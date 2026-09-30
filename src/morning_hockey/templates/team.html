@@ -13,6 +13,46 @@
   </p>
 </header>
 
+{% if team.season_stats %}
+<section>
+  <h2 class="section-title">Kausitilastot</h2>
+  <div class="stat-grid">
+    <div class="stat-tile">
+      <span class="stat-tile-value">{{ "%.1f" | format(team.season_stats.power_play_pct * 100) }} %</span>
+      <span class="stat-tile-label">YV%</span>
+    </div>
+    <div class="stat-tile">
+      <span class="stat-tile-value">{{ "%.1f" | format(team.season_stats.penalty_kill_pct * 100) }} %</span>
+      <span class="stat-tile-label">AV%</span>
+    </div>
+    <div class="stat-tile">
+      <span class="stat-tile-value">{{ "%.1f" | format(team.season_stats.faceoff_pct * 100) }} %</span>
+      <span class="stat-tile-label">Aloitus%</span>
+    </div>
+    <div class="stat-tile">
+      <span class="stat-tile-value">{{ team.season_stats.goals_for }}</span>
+      <span class="stat-tile-label">Tehdyt maalit</span>
+    </div>
+    <div class="stat-tile">
+      <span class="stat-tile-value">{{ team.season_stats.goals_against }}</span>
+      <span class="stat-tile-label">Päästetyt maalit</span>
+    </div>
+    <div class="stat-tile">
+      <span class="stat-tile-value">{{ '+' if team.season_stats.goal_differential > 0 }}{{ team.season_stats.goal_differential }}</span>
+      <span class="stat-tile-label">Maaliero</span>
+    </div>
+    <div class="stat-tile">
+      <span class="stat-tile-value">{{ "%.1f" | format(team.season_stats.shots_for_per_game) }}</span>
+      <span class="stat-tile-label">Laukaukset/ottelu</span>
+    </div>
+    <div class="stat-tile">
+      <span class="stat-tile-value">{{ team.season_stats.shutouts }}</span>
+      <span class="stat-tile-label">Nollapelit</span>
+    </div>
+  </div>
+</section>
+{% endif %}
+
 <section>
   <h2 class="section-title">Sarjataulukko · {{ team.division_name }}</h2>
   <div class="division-table">

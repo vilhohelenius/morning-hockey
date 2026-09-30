@@ -1,4 +1,4 @@
-from morning_hockey.digest import final_type, goalie_lines, scorer_lines, team_info
+from morning_hockey.digest import build_digest, final_type, goalie_lines, scorer_lines, team_info
 
 FINNISH_INDEX = {
     8478427: {"name": "Sebastian Aho", "team": "CAR"},
@@ -103,3 +103,84 @@ def test_goalie_lines_skips_non_finnish_and_zero_minute_appearances():
 def test_no_finnish_players_yields_empty_lines():
     assert scorer_lines(GAME, {}) == []
     assert goalie_lines(BOXSCORE, {}) == []
+
+
+SCOREBOARD = {
+    "currentDate": "2026-09-29",
+    "games": [
+        {
+            "id": 1,
+            "gameState": "OFF",
+            "gameOutcome": {"lastPeriodType": "REG"},
+            "awayTeam": {"abbrev": "FLA", "name": {"default": "Panthers"}, "logo": "fla.svg", "score": 3},
+            "homeTeam": {"abbrev": "CAR", "name": {"default": "Hurricanes"}, "logo": "car.svg", "score": 1},
+            "goals": [],
+        },
+        {
+            "id": 2,
+            "gameState": "OFF",
+            "gameOutcome": {"lastPeriodType": "REG"},
+            "awayTeam": {"abbrev": "BOS", "name": {"default": "Bruins"}, "logo": "bos.svg", "score": 2},
+            "homeTeam": {"abbrev": "TOR", "name": {"default": "Maple Leafs"}, "logo": "tor.svg", "score": 4},
+            "goals": [],
+        },
+    ],
+}
+
+EMPTY_ROSTER = {"forwards": [], "defensemen": [], "goalies": []}
+
+
+class FakeClient:
+    def scoreboard(self, date):
+        return SCOREBOARD
+
+    def roster(self, team_abbrev):
+        return EMPTY_ROSTER
+
+    def boxscore(self, game_id):
+        raise AssertionError("boxscore() should not be called when no Finnish players are on the roster")
+
+    def landing(self, game_id):
+        if game_id == 2:
+            raise KeyError("summary")
+        return {
+            "summary": {
+                "scoring": [
+                    {
+                        "periodDescriptor": {"number": 1, "periodType": "REG"},
+                        "goals": [
+                            {
+                                "firstName": {"default": "Carter"},
+                                "lastName": {"default": "Verhaeghe"},
+                                "teamAbbrev": {"default": "FLA"},
+                                "timeInPeriod": "05:00",
+                                "strength": "ev",
+                                "assists": [],
+                            }
+                        ],
+                    }
+                ]
+            }
+        }
+
+    def right_rail(self, game_id):
+        return {"teamGameStats": [{"category": "sog", "awayValue": 10, "homeValue": 8}]}
+
+
+def test_build_digest_attaches_box_score_to_every_finished_game():
+    digest = build_digest(FakeClient())
+
+    assert len(digest.games) == 2
+    assert digest.games[0].box_score is not None
+    assert len(digest.games[0].box_score.goals) == 1
+    assert digest.games[0].box_score.goals[0].scorer == "Carter Verhaeghe"
+
+
+def test_build_digest_tolerates_a_box_score_failure_on_one_game():
+    digest = build_digest(FakeClient())
+
+    # game id 2's landing() raises KeyError; the digest as a whole still
+    # builds, that one game just has no box score
+    failing_game = next(g for g in digest.games if g.game_id == 2)
+    assert failing_game.box_score is None
+    assert failing_game.away.abbrev == "BOS"  # core game data is unaffected
