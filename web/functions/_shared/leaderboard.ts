@@ -108,7 +108,7 @@ export function renderRosterSkaterTable(
             <img src="${escapeHtml(player.headshot)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
             <span class="player-name">
               ${escapeHtml(player.name)}
-              <span class="player-meta">#${player.sweater_number} · ${escapeHtml(player.position)}${showTeam ? ` · ${escapeHtml(player.team_abbrev)}` : ""}</span>
+              <span class="player-meta">#${player.sweater_number} · ${nationalityFlag(player.nationality)} ${escapeHtml(player.position)}${showTeam ? ` · ${escapeHtml(player.team_abbrev)}` : ""}</span>
             </span>
           </span>
         </td>

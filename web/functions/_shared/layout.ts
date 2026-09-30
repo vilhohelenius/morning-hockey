@@ -9,7 +9,7 @@
 // ports each page in turn, which is fine while this only runs on the
 // *.pages.dev preview domain, side by side with the live site.
 
-import { authenticatedEmail, readThemeCookie } from "./auth";
+import { currentUsername, readThemeCookie } from "./auth";
 import { escapeHtml } from "./format";
 import type { Env, StandingsRow } from "./types";
 
@@ -85,20 +85,20 @@ async function favoriteTeamNavItems(
   env: Env | undefined,
 ): Promise<{ key: string; href: string; label: string }[]> {
   if (!request || !env) return [];
-  const email = authenticatedEmail(request);
-  if (!email) return [];
+  const username = currentUsername(request);
+  if (!username) return [];
 
   const { results } = await env.DB.prepare(
     `SELECT s.* FROM favorite_teams f JOIN standings_rows s ON s.abbrev = f.team_abbrev
-     WHERE f.email = ? ORDER BY s.name`,
+     WHERE f.username = ? ORDER BY s.name`,
   )
-    .bind(email)
+    .bind(username)
     .all<StandingsRow>();
 
   return results.map((team) => ({
     key: `team_${team.abbrev.toLowerCase()}`,
     href: `/joukkueet/${team.abbrev.toLowerCase()}`,
-    label: escapeHtml(team.name),
+    label: `<img src="${escapeHtml(team.logo)}" alt="" class="nav-team-logo" loading="lazy">${escapeHtml(team.name)}`,
   }));
 }
 

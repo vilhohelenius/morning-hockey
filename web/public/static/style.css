@@ -177,7 +177,9 @@ a {
 }
 
 .nav-sublist a {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   padding: 8px 12px 8px 30px;
   border-radius: 10px;
   color: var(--muted);
@@ -189,6 +191,13 @@ a {
 .nav-sublist a.active {
   background: var(--accent);
   color: #fff;
+}
+
+.nav-team-logo {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  flex-shrink: 0;
 }
 
 .main-column {
@@ -317,8 +326,135 @@ main {
   margin: 0;
 }
 
+.fav-team-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.fav-team-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 12px;
+  text-decoration: none;
+  color: inherit;
+  min-width: 0;
+}
+
+.fav-team-card-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.fav-team-card-top > div {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.fav-team-card-logo {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.fav-team-card-name {
+  font-weight: 700;
+  font-size: 0.88rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fav-team-card-scorer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border);
+  font-size: 0.8rem;
+}
+
+.fav-team-card-photo {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--bg);
+}
+
+.fav-team-card-scorer-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.upcoming-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.upcoming-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 8px;
+  text-align: center;
+}
+
+.upcoming-teams {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.upcoming-logo {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+}
+
+.upcoming-abbrevs {
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.upcoming-time {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
 .game-card-trigger {
   cursor: pointer;
+}
+
+.game-card-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+.archive-game-card {
+  display: block;
+  text-decoration: none;
+  color: inherit;
 }
 
 .game-card-hint {
@@ -912,6 +1048,76 @@ main {
   color: #fff;
 }
 
+/* Custom-styled select/search/text inputs, used in the table-filters forms
+   (team picker, player search) and the login form -- plain native controls
+   otherwise look out of place next to the pill-shaped filter buttons. */
+.table-filters select,
+.table-filters input[type="search"],
+.table-filters input[type="text"],
+.table-filters input[type="password"],
+.login-form select,
+.login-form input[type="text"],
+.login-form input[type="password"] {
+  padding: 6px 14px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  color: var(--text);
+  font-size: 0.85rem;
+  font-family: inherit;
+}
+
+.table-filters select,
+.login-form select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 30px;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+    linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position:
+    calc(100% - 17px) calc(50% - 2px),
+    calc(100% - 12px) calc(50% - 2px);
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+
+.table-filters select:focus,
+.table-filters input:focus,
+.login-form select:focus,
+.login-form input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 320px;
+  margin: 0 auto;
+}
+
+/* Bigger breathing room on Asetukset than the rest of the site's default
+   (tighter) spacing -- this page is mostly forms/lists, not dense tables. */
+.settings-page {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.settings-page .section-title {
+  margin-bottom: 12px;
+}
+
+.fav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
 .stats-table th:nth-child(2),
 .stats-table td:nth-child(2) {
   text-align: left;
@@ -1032,6 +1238,19 @@ main {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.team-detail-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+.team-detail-link:hover .team-detail-name {
+  text-decoration: underline;
 }
 
 .team-detail-logo {

@@ -3,12 +3,12 @@
 // route reads (see _shared/auth.ts) so it applies immediately without
 // every page needing its own D1 query.
 
-import { authenticatedEmail, themeCookieHeader, type Theme } from "../_shared/auth";
+import { currentUsername, themeCookieHeader, type Theme } from "../_shared/auth";
 import type { Env } from "../_shared/types";
 
 export const onRequestPost: PagesFunction<Env> = async (context) => {
-  const email = authenticatedEmail(context.request);
-  if (!email) return new Response("Kirjaudu sisään ensin.", { status: 401 });
+  const username = currentUsername(context.request);
+  if (!username) return new Response("Kirjaudu sisään ensin.", { status: 401 });
 
   const form = await context.request.formData();
   const theme = String(form.get("theme") ?? "");
@@ -19,10 +19,10 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   const db = context.env.DB;
   await db
     .prepare(
-      `INSERT INTO user_settings (email, theme, updated_at) VALUES (?, ?, ?)
-       ON CONFLICT(email) DO UPDATE SET theme = excluded.theme, updated_at = excluded.updated_at`,
+      `INSERT INTO user_settings (username, theme, updated_at) VALUES (?, ?, ?)
+       ON CONFLICT(username) DO UPDATE SET theme = excluded.theme, updated_at = excluded.updated_at`,
     )
-    .bind(email, theme, new Date().toISOString())
+    .bind(username, theme, new Date().toISOString())
     .run();
 
   return new Response(null, {

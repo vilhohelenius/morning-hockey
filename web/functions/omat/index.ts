@@ -1,14 +1,15 @@
-// /omat: "Asetukset" -- managing favorite teams/players and the theme
-// toggle. Not the personalized view itself any more: favorite teams and a
-// favorite-players leaderboard (/omat/pelaajat) now live directly in the
-// sidebar's "⭐ Omat" dropdown (see _shared/layout.ts), so this page is only
-// for adding/removing favorites and the theme, and sits at the bottom of
-// the sidebar as its own "⚙️ Asetukset" link.
+// /omat: "Asetukset" -- managing favorite teams/players, the theme
+// toggle, and (since 2026-10-01) the account itself. Not the personalized
+// view any more: favorite teams and a favorite-players leaderboard
+// (/omat/pelaajat) now live directly in the sidebar's "⭐ Omat" dropdown
+// (see _shared/layout.ts), so this page is only for adding/removing
+// favorites, the theme, and signing in/out, and sits at the bottom of the
+// sidebar as its own "⚙️ Asetukset" link.
 //
 // Path kept as /omat (not renamed to /asetukset) so the favorites/theme
 // POST routes under omat/* don't need their redirect targets changed.
 
-import { authenticatedEmail, readThemeCookie } from "../_shared/auth";
+import { currentUsername, readThemeCookie } from "../_shared/auth";
 import { escapeHtml, formatToi } from "../_shared/format";
 import { renderLayout } from "../_shared/layout";
 import type {
@@ -31,7 +32,9 @@ function renderNotSignedIn(request: Request): Promise<string> {
     request,
     content: `
 <header class="page-header"><h1>⚙️ Asetukset</h1></header>
-<p class="empty-note">Kirjaudu sisään Cloudflare Accessilla hallitaksesi suosikkejasi ja asetuksiasi.</p>`,
+<p class="empty-note">
+  <a href="/kirjaudu?next=${encodeURIComponent("/omat")}">Kirjaudu sisään</a> hallitaksesi suosikkejasi ja asetuksiasi.
+</p>`,
   });
 }
 
@@ -110,8 +113,8 @@ function renderPlayerSearchResult(row: TeamRosterSkaterRow | TeamRosterGoalieRow
 }
 
 export const onRequestGet: PagesFunction<Env> = async (context) => {
-  const email = authenticatedEmail(context.request);
-  if (!email) {
+  const username = currentUsername(context.request);
+  if (!username) {
     return new Response(await renderNotSignedIn(context.request), {
       headers: { "content-type": "text/html; charset=utf-8" },
     });
@@ -123,9 +126,9 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
   const [{ results: favoriteTeamRows }, { results: favoritePlayerRows }, settings, { results: allTeams }] =
     await Promise.all([
-      db.prepare("SELECT * FROM favorite_teams WHERE email = ?").bind(email).all<FavoriteTeamRow>(),
-      db.prepare("SELECT * FROM favorite_players WHERE email = ?").bind(email).all<FavoritePlayerRow>(),
-      db.prepare("SELECT * FROM user_settings WHERE email = ?").bind(email).first<UserSettingsRow>(),
+      db.prepare("SELECT * FROM favorite_teams WHERE username = ?").bind(username).all<FavoriteTeamRow>(),
+      db.prepare("SELECT * FROM favorite_players WHERE username = ?").bind(username).all<FavoritePlayerRow>(),
+      db.prepare("SELECT * FROM user_settings WHERE username = ?").bind(username).first<UserSettingsRow>(),
       db.prepare("SELECT * FROM standings_rows ORDER BY name").all<StandingsRow>(),
     ]);
 
@@ -164,7 +167,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       ...goalieMatches.filter((r) => !favoritedPlayerIds.has(r.player_id)).map((r) => renderPlayerSearchResult(r, true)),
     ];
     searchResultsHtml = results.length
-      ? `<div class="schedule-list">${results.join("")}</div>`
+      ? `<div class="fav-list">${results.join("")}</div>`
       : `<p class="empty-note">Ei osumia haulle "${escapeHtml(query)}".</p>`;
   }
 
@@ -173,15 +176,26 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   const content = `
 <header class="page-header">
   <h1>⚙️ Asetukset</h1>
-  <p class="subtitle">${escapeHtml(email)}</p>
 </header>
+
+<div class="settings-page">
+
+<section>
+  <h2 class="section-title">Tili</h2>
+  <div class="fav-row">
+    <span class="fav-row-info">👤 ${escapeHtml(username)}</span>
+    <form method="post" action="/kirjaudu/ulos">
+      <button type="submit" class="filter-btn">Kirjaudu ulos</button>
+    </form>
+  </div>
+</section>
 
 <section>
   <h2 class="section-title">Suosikkijoukkueet</h2>
   <p class="standings-legend">Näkyvät sivupalkin ⭐ Omat -valikossa, linkkinä suoraan joukkueen tilastosivulle.</p>
   ${
     favoriteTeamsHtml.length
-      ? `<div class="schedule-list">${favoriteTeamsHtml.join("")}</div>`
+      ? `<div class="fav-list">${favoriteTeamsHtml.join("")}</div>`
       : `<p class="empty-note">Ei vielä suosikkijoukkueita.</p>`
   }
   ${renderTeamPicker(availableTeams)}
@@ -192,7 +206,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   <p class="standings-legend">Näkyvät koottuna listana sivupalkin ⭐ Omat → Suosikkipelaajat -kohdassa.</p>
   ${
     favoritePlayersHtml.length
-      ? `<div class="schedule-list">${favoritePlayersHtml.join("")}</div>`
+      ? `<div class="fav-list">${favoritePlayersHtml.join("")}</div>`
       : `<p class="empty-note">Ei vielä suosikkipelaajia.</p>`
   }
   <form method="get" action="/omat" class="table-filters">
@@ -216,6 +230,8 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     </form>
   </div>
 </section>
+
+</div>
 `;
 
   const html = await renderLayout({

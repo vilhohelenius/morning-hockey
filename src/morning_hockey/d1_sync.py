@@ -314,9 +314,9 @@ def sync_digest(client: D1Client, digest) -> int:
 _DELETE_ROSTER_SKATERS_SQL = "DELETE FROM team_roster_skaters"
 _INSERT_ROSTER_SKATER_SQL = """
 INSERT INTO team_roster_skaters (
-    player_id, team_abbrev, name, position, sweater_number, headshot,
+    player_id, team_abbrev, name, position, nationality, sweater_number, headshot,
     games_played, goals, assists, points, plus_minus, avg_toi_seconds, updated_at
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 """
 
 _DELETE_ROSTER_GOALIES_SQL = "DELETE FROM team_roster_goalies"
@@ -345,7 +345,8 @@ def sync_team_rosters(client: D1Client, rosters: dict) -> tuple[int, int]:
             client.execute(
                 _INSERT_ROSTER_SKATER_SQL,
                 [
-                    row.player_id, abbrev, row.name, row.position, row.sweater_number, row.headshot,
+                    row.player_id, abbrev, row.name, row.position, row.nationality,
+                    row.sweater_number, row.headshot,
                     row.games_played, row.goals, row.assists, row.points, row.plus_minus,
                     row.avg_toi_seconds, synced_at,
                 ],

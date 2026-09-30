@@ -289,6 +289,13 @@ CREATE TABLE IF NOT EXISTS team_roster_skaters (
     updated_at TEXT NOT NULL
 );
 
+-- Added 2026-10-01 for the dashboard's per-favorite-team top-scorer mini-box
+-- (nationality flag next to the name). Already present on every roster
+-- player payload as birthCountry -- no extra API call, see team.py's
+-- _build_skaters. DEFAULT '' only matters until the next slow-tier sync
+-- (delete+reinsert, every 4h) overwrites every row anyway.
+ALTER TABLE team_roster_skaters ADD COLUMN nationality TEXT NOT NULL DEFAULT '';
+
 CREATE INDEX IF NOT EXISTS idx_team_roster_skaters_team ON team_roster_skaters(team_abbrev, points DESC);
 
 CREATE TABLE IF NOT EXISTS team_roster_goalies (
@@ -330,15 +337,19 @@ CREATE TABLE IF NOT EXISTS team_season_stats (
 -- written by the TypeScript Pages Functions themselves (web/functions/
 -- omat/*), in direct response to a signed-in user's own action (favorite
 -- a team/player, change theme) -- not by any Python sync, and not on a
--- schedule. Keyed by the Cloudflare-Access-authenticated email
--- (Cf-Access-Authenticated-User-Email; see _shared/auth.ts for why that
--- header can be trusted once Access is actually in front of the site).
+-- schedule. Keyed by username -- originally the Cloudflare-Access-
+-- authenticated email, switched 2026-10-01 to a self-service username (see
+-- the `users` table + _shared/auth.ts): the RENAME COLUMN statements below
+-- preserve whatever favorites/theme rows already existed under the old
+-- email-keyed scheme, they just relabel the column.
 CREATE TABLE IF NOT EXISTS favorite_teams (
     email TEXT NOT NULL,
     team_abbrev TEXT NOT NULL,
     created_at TEXT NOT NULL,
     PRIMARY KEY (email, team_abbrev)
 );
+
+ALTER TABLE favorite_teams RENAME COLUMN email TO username;
 
 -- No player name/team columns here on purpose -- team_roster_skaters/
 -- team_roster_goalies (phase 6) are the live source of that, joined by
@@ -353,10 +364,28 @@ CREATE TABLE IF NOT EXISTS favorite_players (
     PRIMARY KEY (email, player_id)
 );
 
+ALTER TABLE favorite_players RENAME COLUMN email TO username;
+
 -- One row per signed-in user. Plain upsert -- a user either has a stored
 -- preference or doesn't yet, nothing here is ever a leaderboard to prune.
 CREATE TABLE IF NOT EXISTS user_settings (
     email TEXT PRIMARY KEY,
     theme TEXT NOT NULL,
     updated_at TEXT NOT NULL
+);
+
+ALTER TABLE user_settings RENAME COLUMN email TO username;
+
+-- Accounts for the simple username(+optional password) login (_shared/
+-- auth.ts): created on first login, not a separate signup step. No email,
+-- no password-reset flow, no salted/iterated hash -- a plain SHA-256 of the
+-- password (null if the user never set one) is enough for a handful of
+-- friends who all already have the URL; this can be swapped for Cloudflare
+-- Access or real OAuth later without any downstream code changes, since
+-- every route only ever asks _shared/auth.ts's currentUsername() for "who
+-- is this, or null".
+CREATE TABLE IF NOT EXISTS users (
+    username TEXT PRIMARY KEY,
+    password_hash TEXT,
+    created_at TEXT NOT NULL
 );

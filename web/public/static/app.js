@@ -185,12 +185,16 @@
       var panel = el("div", "team-detail");
 
       var header = el("div", "team-detail-header");
+      var teamLink = document.createElement("a");
+      teamLink.href = "/joukkueet/" + abbrev.toLowerCase();
+      teamLink.className = "team-detail-link";
       var logo = document.createElement("img");
       logo.src = logoSrc;
       logo.alt = "";
       logo.className = "team-detail-logo";
-      header.appendChild(logo);
-      header.appendChild(el("span", "team-detail-name", teamName));
+      teamLink.appendChild(logo);
+      teamLink.appendChild(el("span", "team-detail-name", teamName));
+      header.appendChild(teamLink);
       var closeBtn = document.createElement("button");
       closeBtn.type = "button";
       closeBtn.className = "icon-btn team-detail-close";

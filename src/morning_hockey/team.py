@@ -20,6 +20,7 @@ class RosterSkater:
     player_id: int
     name: str
     position: str
+    nationality: str
     sweater_number: int
     headshot: str
     games_played: int
@@ -128,6 +129,7 @@ def _build_skaters(client: NHLClient, season_id: int, raw_roster: dict) -> list[
                 player_id=player["id"],
                 name=_player_name(player),
                 position=player["positionCode"],
+                nationality=player.get("birthCountry", ""),
                 sweater_number=player.get("sweaterNumber", 0),
                 headshot=player.get("headshot", ""),
                 games_played=stats.get("gamesPlayed", 0),

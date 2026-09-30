@@ -205,6 +205,7 @@ def test_render_team_page_writes_under_joukkueet(tmp_path: Path):
                 player_id=1,
                 name="Tyler Bertuzzi",
                 position="L",
+                nationality="CAN",
                 sweater_number=59,
                 headshot="https://assets.nhle.com/mugs/nhl/20262027/CHI/1.png",
                 games_played=1,

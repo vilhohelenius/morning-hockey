@@ -6,7 +6,7 @@
 // span several teams). Adding/removing favorites happens on /omat
 // (Asetukset), not here -- this page is read-only.
 
-import { authenticatedEmail } from "../_shared/auth";
+import { currentUsername } from "../_shared/auth";
 import { renderLayout } from "../_shared/layout";
 import { renderRosterGoalieTable, renderRosterSkaterTable } from "../_shared/leaderboard";
 import type { Env, FavoritePlayerRow, TeamRosterGoalieRow, TeamRosterSkaterRow } from "../_shared/types";
@@ -19,13 +19,15 @@ function renderNotSignedIn(request: Request): Promise<string> {
     request,
     content: `
 <header class="page-header"><h1>⭐ Suosikkipelaajat</h1></header>
-<p class="empty-note">Kirjaudu sisään Cloudflare Accessilla nähdäksesi suosikkipelaajasi.</p>`,
+<p class="empty-note">
+  <a href="/kirjaudu?next=${encodeURIComponent("/omat/pelaajat")}">Kirjaudu sisään</a> nähdäksesi suosikkipelaajasi.
+</p>`,
   });
 }
 
 export const onRequestGet: PagesFunction<Env> = async (context) => {
-  const email = authenticatedEmail(context.request);
-  if (!email) {
+  const username = currentUsername(context.request);
+  if (!username) {
     return new Response(await renderNotSignedIn(context.request), {
       headers: { "content-type": "text/html; charset=utf-8" },
     });
@@ -33,8 +35,8 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
   const db = context.env.DB;
   const { results: favoritePlayerRows } = await db
-    .prepare("SELECT * FROM favorite_players WHERE email = ?")
-    .bind(email)
+    .prepare("SELECT * FROM favorite_players WHERE username = ?")
+    .bind(username)
     .all<FavoritePlayerRow>();
 
   const favoriteSkaters: TeamRosterSkaterRow[] = [];

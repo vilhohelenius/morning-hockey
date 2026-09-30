@@ -375,6 +375,7 @@ ROSTER_SKATER = RosterSkater(
     player_id=5,
     name="Connor Bedard",
     position="C",
+    nationality="CAN",
     sweater_number=98,
     headshot="bedard.png",
     games_played=6,
@@ -416,7 +417,8 @@ def test_sync_team_rosters_replaces_the_whole_table_across_every_team():
     skater_params = session.calls[2]["json"]["params"]
     assert skater_params[0] == 5  # player_id
     assert skater_params[1] == "CHI"  # team_abbrev
-    assert skater_params[4] == 98  # sweater_number
+    assert skater_params[4] == "CAN"  # nationality
+    assert skater_params[5] == 98  # sweater_number
 
     goalie_params = session.calls[3]["json"]["params"]
     assert goalie_params[0] == 6

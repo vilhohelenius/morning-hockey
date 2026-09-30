@@ -202,6 +202,7 @@ export interface TeamRosterSkaterRow {
   team_abbrev: string;
   name: string;
   position: string;
+  nationality: string;
   sweater_number: number;
   headshot: string;
   games_played: number;
@@ -242,22 +243,30 @@ export interface TeamSeasonStatsRow {
 // ---------- Phase 7: favorites + settings ----------
 
 export interface FavoriteTeamRow {
-  email: string;
+  username: string;
   team_abbrev: string;
   created_at: string;
 }
 
 export interface FavoritePlayerRow {
-  email: string;
+  username: string;
   player_id: number;
   is_goalie: number; // 0 or 1
   created_at: string;
 }
 
 export interface UserSettingsRow {
-  email: string;
+  username: string;
   theme: string;
   updated_at: string;
+}
+
+// Simple username(+optional password) login, replacing Cloudflare Access
+// 2026-10-01 -- see _shared/auth.ts.
+export interface UserRow {
+  username: string;
+  password_hash: string | null;
+  created_at: string;
 }
 
 export interface Env {
