@@ -10,8 +10,9 @@ SCHEDULE = {
                     "gameState": "OFF",
                     # 13:00 ET matinee -> 20:00 Finnish time: in window, already finished
                     "startTimeUTC": "2026-01-15T18:00:00Z",
-                    "awayTeam": {"abbrev": "FLA", "name": {"default": "Panthers"}, "logo": "fla.svg", "score": 4},
-                    "homeTeam": {"abbrev": "TOR", "name": {"default": "Maple Leafs"}, "logo": "tor.svg", "score": 2},
+                    # /schedule (like /club-schedule-season) uses commonName
+                    "awayTeam": {"abbrev": "FLA", "commonName": {"default": "Panthers"}, "logo": "fla.svg", "score": 4},
+                    "homeTeam": {"abbrev": "TOR", "commonName": {"default": "Maple Leafs"}, "logo": "tor.svg", "score": 2},
                 },
                 {
                     "id": 4,
@@ -39,6 +40,7 @@ SCHEDULE = {
                     "gameState": "FUT",
                     # 16:00 ET -> 23:00 Finnish time: in window
                     "startTimeUTC": "2026-01-16T21:00:00Z",
+                    # no commonName here, to exercise team_display_name's "name" fallback
                     "awayTeam": {"abbrev": "CAR", "name": {"default": "Hurricanes"}, "logo": "car.svg"},
                     "homeTeam": {"abbrev": "WSH", "name": {"default": "Capitals"}, "logo": "wsh.svg"},
                 },
@@ -76,4 +78,6 @@ def test_build_primetime_filters_to_window_across_the_week_and_sorts():
     matinee, evening = page.games
     assert matinee.is_finished is True
     assert matinee.away.score == 4
+    assert matinee.away.name == "Panthers"  # via commonName
     assert evening.is_finished is False
+    assert evening.away.name == "Hurricanes"  # via the name fallback

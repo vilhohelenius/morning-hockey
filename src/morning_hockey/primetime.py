@@ -8,9 +8,10 @@ import datetime as dt
 from dataclasses import dataclass
 from zoneinfo import ZoneInfo
 
-from .digest import FINISHED_STATES, team_info
+from .digest import FINISHED_STATES
 from .models import TeamInfo
 from .nhl_api import NHLClient
+from .team import team_display_name
 
 HELSINKI = ZoneInfo("Europe/Helsinki")
 
@@ -38,6 +39,15 @@ def starts_in_window(local_start: dt.datetime) -> bool:
     return _WINDOW_START_HOUR <= local_start.hour < _WINDOW_END_HOUR
 
 
+def _team_info(payload: dict) -> TeamInfo:
+    return TeamInfo(
+        abbrev=payload["abbrev"],
+        name=team_display_name(payload),
+        logo=payload["logo"],
+        score=payload.get("score", 0),
+    )
+
+
 def build_primetime(client: NHLClient, date: str = "now") -> PrimeTimePage:
     schedule = client.schedule(date)
     game_week = schedule.get("gameWeek", [])
@@ -55,8 +65,8 @@ def build_primetime(client: NHLClient, date: str = "now") -> PrimeTimePage:
             games.append(
                 PrimeTimeGame(
                     game_id=game["id"],
-                    away=team_info(game["awayTeam"]),
-                    home=team_info(game["homeTeam"]),
+                    away=_team_info(game["awayTeam"]),
+                    home=_team_info(game["homeTeam"]),
                     start_local=start_local,
                     game_state=game_state,
                     is_finished=game_state in FINISHED_STATES,

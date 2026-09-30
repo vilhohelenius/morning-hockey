@@ -1,14 +1,19 @@
 """Compact per-team snapshots for the standings page's clickable info panel:
 last 5 results, in-team scoring leaders, presumed #1 goalie, and the next
-game. Skater/goalie season stats are fetched once for the whole league and
-grouped by team, rather than once per team, since the stats REST API can
-already return every player in one call; only the schedule (for the last-5
-results and next game) is fetched per team, since there's no single
-"upcoming game" endpoint across all clubs.
+game.
+
+Skater/goalie season stats and the schedule are each fetched a small,
+fixed number of times for the whole league and then grouped/filtered by
+team locally, rather than once per team (a 32-request burst that reliably
+tripped the public NHL API's rate limiting): skater/goalie stats already
+support a single unfiltered query, and the last-5-results/next-game data
+turns out to need only a handful of weeks of the league-wide schedule
+(teams play often enough that 5 played games and the next game are always
+within a ~4-week window around "now"), fetched by walking the weekly
+schedule endpoint's previousStartDate/nextStartDate a few steps.
 """
 from __future__ import annotations
 
-import time
 from dataclasses import dataclass
 
 from .nhl_api import NHLClient
@@ -17,6 +22,8 @@ from .team import ScheduleGame, split_schedule
 
 _RECENT = 5
 _TOP_SCORERS = 3
+_WEEKS_BACK = 2
+_WEEKS_FORWARD = 1
 
 _SKATER_SORT = (
     '[{"property":"points","direction":"DESC"},'
@@ -26,13 +33,6 @@ _GOALIE_SORT = (
     '[{"property":"gamesPlayed","direction":"DESC"},'
     '{"property":"savePct","direction":"DESC"}]'
 )
-
-# A pause between the 32 back-to-back club-schedule-season requests (one
-# per team), so this burst is less likely to trip the public API's rate
-# limiting in the first place. NHLClient's own adaptive throttling (it
-# slows itself down once it sees a 429) is the backstop if it happens
-# anyway, but avoiding it up front means fewer retries and a faster build.
-_SCHEDULE_REQUEST_PAUSE = 0.4
 
 
 @dataclass(frozen=True)
@@ -84,12 +84,45 @@ def _goalies_by_team(client: NHLClient, season_id: int) -> dict[str, list[dict]]
     return by_team
 
 
+def _nearby_weeks_of_games(client: NHLClient) -> list[dict]:
+    """A few weeks of the league-wide schedule around "now" (2 back, 1
+    forward by default), merged and deduplicated by game id, sorted
+    chronologically so split_schedule's ordering assumption holds."""
+    games_by_id: dict[int, dict] = {}
+
+    def _collect(payload: dict) -> None:
+        for day in payload.get("gameWeek", []):
+            for game in day.get("games", []):
+                games_by_id[game["id"]] = game
+
+    current = client.schedule("now")
+    _collect(current)
+
+    cursor = current.get("previousStartDate")
+    for _ in range(_WEEKS_BACK):
+        if not cursor:
+            break
+        payload = client.schedule(cursor)
+        _collect(payload)
+        cursor = payload.get("previousStartDate")
+
+    cursor = current.get("nextStartDate")
+    for _ in range(_WEEKS_FORWARD):
+        if not cursor:
+            break
+        payload = client.schedule(cursor)
+        _collect(payload)
+        cursor = payload.get("nextStartDate")
+
+    return sorted(games_by_id.values(), key=lambda g: (g["gameDate"], g["id"]))
+
+
 def _team_snapshot(
-    client: NHLClient,
     abbrev: str,
     skater_rows: list[dict],
     goalie_rows: list[dict],
     season_id: int,
+    games: list[dict],
 ) -> TeamSnapshot:
     top_scorers = [
         TopScorer(
@@ -112,8 +145,7 @@ def _team_snapshot(
             save_pct=top["savePct"],
         )
 
-    schedule = client.club_schedule_season(abbrev)
-    recent_games, upcoming_games = split_schedule(abbrev, schedule["games"])
+    recent_games, upcoming_games = split_schedule(abbrev, games)
     recent_results = [
         RecentResult(result=g.result, opponent_abbrev=g.opponent_abbrev) for g in recent_games[:_RECENT]
     ]
@@ -133,12 +165,11 @@ def build_team_snapshots(
 ) -> dict[str, TeamSnapshot]:
     skaters_by_team = _skaters_by_team(client, season_id)
     goalies_by_team = _goalies_by_team(client, season_id)
+    games = _nearby_weeks_of_games(client)
 
-    snapshots = {}
-    for i, abbrev in enumerate(team_abbrevs):
-        if i > 0:
-            time.sleep(_SCHEDULE_REQUEST_PAUSE)
-        snapshots[abbrev] = _team_snapshot(
-            client, abbrev, skaters_by_team.get(abbrev, []), goalies_by_team.get(abbrev, []), season_id
+    return {
+        abbrev: _team_snapshot(
+            abbrev, skaters_by_team.get(abbrev, []), goalies_by_team.get(abbrev, []), season_id, games
         )
-    return snapshots
+        for abbrev in team_abbrevs
+    }

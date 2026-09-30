@@ -26,51 +26,80 @@ GOALIE_STATS = [
     },
 ]
 
-SCHEDULE = {
-    "games": [
+
+def _game(game_id, date, away, home, away_score, home_score, state="OFF", final_type="REG"):
+    return {
+        "id": game_id,
+        "gameType": 2,
+        "gameDate": date,
+        "gameState": state,
+        "gameOutcome": {"lastPeriodType": final_type},
+        "awayTeam": {"abbrev": away, "commonName": {"default": away}, "logo": f"{away}.svg", "score": away_score},
+        "homeTeam": {"abbrev": home, "commonName": {"default": home}, "logo": f"{home}.svg", "score": home_score},
+    }
+
+
+# Two weeks back, "now", and one week forward, as build_team_snapshots walks
+# previousStartDate/nextStartDate from the "now" response.
+WEEK_MINUS_2 = {
+    "previousStartDate": None,
+    "nextStartDate": "2026-09-15",
+    "gameWeek": [{"date": "2026-09-08", "games": [_game(1, "2026-09-08", "CHI", "MIN", 1, 4)]}],
+}
+WEEK_MINUS_1 = {
+    "previousStartDate": "2026-09-08",
+    "nextStartDate": "2026-09-22",
+    "gameWeek": [{"date": "2026-09-15", "games": [_game(2, "2026-09-15", "TOR", "CHI", 2, 5)]}],
+}
+WEEK_NOW = {
+    "previousStartDate": "2026-09-15",
+    "nextStartDate": "2026-09-29",
+    "gameWeek": [
         {
-            "id": 1,
-            "gameType": 2,
-            "gameDate": "2026-09-28",
-            "gameState": "OFF",
-            "gameOutcome": {"lastPeriodType": "REG"},
-            "awayTeam": {"abbrev": "CHI", "commonName": {"default": "Blackhawks"}, "logo": "chi.svg", "score": 5},
-            "homeTeam": {"abbrev": "MIN", "commonName": {"default": "Wild"}, "logo": "min.svg", "score": 1},
-        },
-        {
-            "id": 2,
-            "gameType": 2,
-            "gameDate": "2026-09-30",
-            "gameState": "OFF",
-            "gameOutcome": {"lastPeriodType": "OT"},
-            "awayTeam": {"abbrev": "CHI", "commonName": {"default": "Blackhawks"}, "logo": "chi.svg", "score": 2},
-            "homeTeam": {"abbrev": "VGK", "commonName": {"default": "Golden Knights"}, "logo": "vgk.svg", "score": 3},
-        },
-        {
-            "id": 3,
-            "gameType": 2,
-            "gameDate": "2026-10-02",
-            "gameState": "FUT",
-            "awayTeam": {"abbrev": "UTA", "commonName": {"default": "Mammoth"}, "logo": "uta.svg", "score": None},
-            "homeTeam": {"abbrev": "CHI", "commonName": {"default": "Blackhawks"}, "logo": "chi.svg", "score": None},
-        },
-    ]
+            "date": "2026-09-22",
+            "games": [
+                # not involving CHI at all — should never leak into CHI's snapshot
+                _game(3, "2026-09-22", "TOR", "MTL", 3, 1),
+                _game(4, "2026-09-22", "CHI", "VGK", 2, 3, final_type="OT"),
+            ],
+        }
+    ],
+}
+WEEK_PLUS_1 = {
+    "previousStartDate": "2026-09-22",
+    "nextStartDate": "2026-10-06",
+    "gameWeek": [{"date": "2026-09-29", "games": [_game(5, "2026-09-29", "UTA", "CHI", None, None, state="FUT")]}],
+}
+
+SCHEDULE_BY_DATE = {
+    "now": WEEK_NOW,
+    "2026-09-15": WEEK_MINUS_1,
+    "2026-09-08": WEEK_MINUS_2,
+    "2026-09-29": WEEK_PLUS_1,
 }
 
 
 class FakeClient:
+    def __init__(self):
+        self.schedule_calls = []
+
     def skater_bios(self, cayenne_exp, sort, limit=-1):
         return SKATER_STATS
 
     def goalie_summary(self, cayenne_exp, sort, limit=-1):
         return GOALIE_STATS
 
-    def club_schedule_season(self, team_abbrev):
-        return SCHEDULE
+    def schedule(self, date="now"):
+        self.schedule_calls.append(date)
+        return SCHEDULE_BY_DATE[date]
 
 
 def test_build_team_snapshots_ranks_top_scorers_and_starting_goalie():
-    snapshots = build_team_snapshots(FakeClient(), ["CHI"], 20262027)
+    client = FakeClient()
+    snapshots = build_team_snapshots(client, ["CHI"], 20262027)
+
+    # only 4 schedule calls total (now + 2 back + 1 forward), never one per team
+    assert client.schedule_calls == ["now", "2026-09-15", "2026-09-08", "2026-09-29"]
 
     assert set(snapshots) == {"CHI"}
     snap = snapshots["CHI"]
@@ -85,9 +114,10 @@ def test_build_team_snapshots_ranks_top_scorers_and_starting_goalie():
     assert snap.starting_goalie.games_played == 8
     assert snap.starting_goalie.headshot == "https://assets.nhle.com/mugs/nhl/20262027/CHI/10.png"
 
-    # last 5 (here: 2) results, newest first, OT loss classified correctly
-    assert [r.result for r in snap.recent_results] == ["OTL", "W"]
-    assert [r.opponent_abbrev for r in snap.recent_results] == ["VGK", "MIN"]
+    # 3 played CHI games across the merged weeks, newest first; the TOR@MTL
+    # game that doesn't involve CHI never shows up
+    assert [r.result for r in snap.recent_results] == ["OTL", "W", "L"]
+    assert [r.opponent_abbrev for r in snap.recent_results] == ["VGK", "TOR", "MIN"]
 
     assert snap.next_game.opponent_abbrev == "UTA"
 
@@ -105,3 +135,20 @@ def test_build_team_snapshots_defaults_for_team_with_no_stats():
     snap = snapshots["CHI"]
     assert snap.top_scorers == []
     assert snap.starting_goalie is None
+
+
+def test_build_team_snapshots_stops_walking_when_previous_or_next_start_date_is_missing():
+    class NoMoreWeeksClient(FakeClient):
+        def schedule(self, date="now"):
+            self.schedule_calls.append(date)
+            payload = dict(SCHEDULE_BY_DATE[date])
+            payload["previousStartDate"] = None
+            payload["nextStartDate"] = None
+            return payload
+
+    client = NoMoreWeeksClient()
+    build_team_snapshots(client, ["CHI"], 20262027)
+
+    # only the "now" week fetched; both walks stop immediately since the
+    # first response already reports no further weeks in either direction
+    assert client.schedule_calls == ["now"]

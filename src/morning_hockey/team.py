@@ -142,7 +142,22 @@ def game_result(team_score: int, opponent_score: int, final_type: str) -> str:
     return "OTL" if final_type != "REG" else "L"
 
 
+def team_display_name(payload: dict) -> str:
+    """club-schedule-season and the weekly schedule endpoint both key a
+    team's short name as "commonName"; fall back to "name" (the scoreboard
+    endpoint's field) or the abbreviation if neither is present, so feeding
+    this a slightly different schedule-shaped payload doesn't crash."""
+    for key in ("commonName", "name"):
+        if key in payload:
+            return payload[key]["default"]
+    return payload["abbrev"]
+
+
 def split_schedule(team_abbrev: str, games: list[dict]) -> tuple[list[ScheduleGame], list[ScheduleGame]]:
+    """Split a team's games into played (most recent last-N, newest first)
+    and upcoming (next-N). Assumes `games` is already in chronological
+    order, as club-schedule-season returns it; a caller merging several
+    weeks of the league-wide schedule must sort by date first."""
     recent: list[ScheduleGame] = []
     upcoming: list[ScheduleGame] = []
 
@@ -151,6 +166,10 @@ def split_schedule(team_abbrev: str, games: list[dict]) -> tuple[list[ScheduleGa
             continue
 
         is_home = game["homeTeam"]["abbrev"] == team_abbrev
+        away_is_this_team = game["awayTeam"]["abbrev"] == team_abbrev
+        if not is_home and not away_is_this_team:
+            continue
+
         team = game["homeTeam"] if is_home else game["awayTeam"]
         opponent = game["awayTeam"] if is_home else game["homeTeam"]
 
@@ -159,7 +178,7 @@ def split_schedule(team_abbrev: str, games: list[dict]) -> tuple[list[ScheduleGa
             date=game["gameDate"],
             is_home=is_home,
             opponent_abbrev=opponent["abbrev"],
-            opponent_name=opponent["commonName"]["default"],
+            opponent_name=team_display_name(opponent),
             opponent_logo=opponent["logo"],
         )
 

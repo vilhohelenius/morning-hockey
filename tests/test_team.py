@@ -4,6 +4,8 @@ from morning_hockey.team import (
     TeamPage,
     build_team_page,
     game_result,
+    split_schedule,
+    team_display_name,
 )
 
 STANDINGS = {
@@ -190,6 +192,44 @@ def test_build_team_page_assembles_division_schedule_and_roster():
     assert isinstance(page.goalies[0], RosterGoalie)
     assert page.goalies[0].name == "Spencer Knight"
     assert page.goalies[0].save_pct == 0.955
+
+
+def test_team_display_name_prefers_common_name_then_falls_back_to_name_then_abbrev():
+    assert team_display_name({"abbrev": "CHI", "commonName": {"default": "Blackhawks"}}) == "Blackhawks"
+    assert team_display_name({"abbrev": "CHI", "name": {"default": "Blackhawks"}}) == "Blackhawks"
+    assert team_display_name({"abbrev": "CHI"}) == "CHI"
+
+
+def test_split_schedule_ignores_games_that_do_not_involve_the_team():
+    # A merged, league-wide games list (e.g. several weeks of the schedule
+    # endpoint) contains plenty of games that have nothing to do with the
+    # team being queried; only NSH's own games should come back.
+    league_games = [
+        {
+            "id": 10,
+            "gameType": 2,
+            "gameDate": "2026-09-25",
+            "gameState": "OFF",
+            "gameOutcome": {"lastPeriodType": "REG"},
+            "awayTeam": {"abbrev": "TOR", "commonName": {"default": "Maple Leafs"}, "logo": "tor.svg", "score": 3},
+            "homeTeam": {"abbrev": "MTL", "commonName": {"default": "Canadiens"}, "logo": "mtl.svg", "score": 2},
+        },
+        {
+            "id": 11,
+            "gameType": 2,
+            "gameDate": "2026-09-27",
+            "gameState": "OFF",
+            "gameOutcome": {"lastPeriodType": "REG"},
+            "awayTeam": {"abbrev": "NSH", "commonName": {"default": "Predators"}, "logo": "nsh.svg", "score": 4},
+            "homeTeam": {"abbrev": "DAL", "commonName": {"default": "Stars"}, "logo": "dal.svg", "score": 1},
+        },
+    ]
+
+    recent, upcoming = split_schedule("NSH", league_games)
+
+    assert [g.game_id for g in recent] == [11]
+    assert recent[0].result == "W"
+    assert upcoming == []
 
 
 def test_build_team_page_defaults_stats_to_zero_for_players_without_recorded_games():
