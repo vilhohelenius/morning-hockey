@@ -27,7 +27,7 @@ GOALIE_STATS = [
 ]
 
 
-def _game(game_id, away, home, away_score, home_score, state="OFF", final_type="REG"):
+def _game(game_id, away, home, away_score, home_score, state="OFF", final_type="REG", start_time_utc="2026-01-01T19:00:00Z"):
     # Real /schedule/{date} responses don't repeat the date on each game the
     # way club-schedule-season does — only the enclosing day dict has it.
     return {
@@ -35,6 +35,7 @@ def _game(game_id, away, home, away_score, home_score, state="OFF", final_type="
         "gameType": 2,
         "gameState": state,
         "gameOutcome": {"lastPeriodType": final_type},
+        "startTimeUTC": start_time_utc,
         "awayTeam": {"abbrev": away, "commonName": {"default": away}, "logo": f"{away}.svg", "score": away_score},
         "homeTeam": {"abbrev": home, "commonName": {"default": home}, "logo": f"{home}.svg", "score": home_score},
     }

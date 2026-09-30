@@ -68,6 +68,7 @@ SCHEDULE = {
             "id": 1,
             "gameType": 1,
             "gameDate": "2026-09-20",
+            "startTimeUTC": "2026-09-20T23:00:00Z",
             "gameState": "OFF",
             "awayTeam": {"abbrev": "CHI", "commonName": {"default": "Blackhawks"}, "logo": "chi.svg", "score": 5},
             "homeTeam": {"abbrev": "MIN", "commonName": {"default": "Wild"}, "logo": "min.svg", "score": 1},
@@ -75,7 +76,10 @@ SCHEDULE = {
         {
             "id": 2,
             "gameType": 2,
+            # the NHL's own nominal date is the 29th, but at UTC+3 (Finland,
+            # daylight saving) this game actually starts 02:00 on the 30th
             "gameDate": "2026-09-29",
+            "startTimeUTC": "2026-09-29T23:00:00Z",
             "gameState": "OFF",
             "gameOutcome": {"lastPeriodType": "REG"},
             "awayTeam": {"abbrev": "CHI", "commonName": {"default": "Blackhawks"}, "logo": "chi.svg", "score": 2},
@@ -85,6 +89,7 @@ SCHEDULE = {
             "id": 3,
             "gameType": 2,
             "gameDate": "2026-10-01",
+            "startTimeUTC": "2026-10-01T18:00:00Z",
             "gameState": "FUT",
             "awayTeam": {"abbrev": "UTA", "commonName": {"default": "Mammoth"}, "logo": "uta.svg", "score": None},
             "homeTeam": {"abbrev": "CHI", "commonName": {"default": "Blackhawks"}, "logo": "chi.svg", "score": None},
@@ -212,6 +217,9 @@ def test_build_team_page_assembles_division_schedule_and_roster():
     # preseason (gameType 1) game is excluded; regular season split by state
     assert [g.game_id for g in page.recent_games] == [2]
     assert page.recent_games[0].result == "L"
+    # nominal API date is the 29th, but the game's real start time rolls
+    # over to the 30th in Finland -- the displayed date must reflect that
+    assert page.recent_games[0].date == "2026-09-30"
     assert [g.game_id for g in page.upcoming_games] == [3]
     assert page.upcoming_games[0].opponent_abbrev == "UTA"
 
@@ -259,6 +267,7 @@ def test_split_schedule_ignores_games_that_do_not_involve_the_team():
             "id": 10,
             "gameType": 2,
             "gameDate": "2026-09-25",
+            "startTimeUTC": "2026-09-25T23:00:00Z",
             "gameState": "OFF",
             "gameOutcome": {"lastPeriodType": "REG"},
             "awayTeam": {"abbrev": "TOR", "commonName": {"default": "Maple Leafs"}, "logo": "tor.svg", "score": 3},
@@ -268,6 +277,7 @@ def test_split_schedule_ignores_games_that_do_not_involve_the_team():
             "id": 11,
             "gameType": 2,
             "gameDate": "2026-09-27",
+            "startTimeUTC": "2026-09-27T23:00:00Z",
             "gameState": "OFF",
             "gameOutcome": {"lastPeriodType": "REG"},
             "awayTeam": {"abbrev": "NSH", "commonName": {"default": "Predators"}, "logo": "nsh.svg", "score": 4},

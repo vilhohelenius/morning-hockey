@@ -75,6 +75,7 @@ def _nav(asset_prefix: str) -> dict[str, str]:
         "primetime": f"{asset_prefix}primetime.html",
         "schedule": f"{asset_prefix}otteluohjelma.html",
         "league_stats": f"{asset_prefix}tilastot.html",
+        "goalie_stats": f"{asset_prefix}maalivahtiporssi.html",
         "rookies": f"{asset_prefix}rookiet.html",
         "team_chi": f"{asset_prefix}joukkueet/chi.html",
         "archive": f"{asset_prefix}arkisto.html",
@@ -205,17 +206,28 @@ def render_schedule(page, output_dir: Path) -> None:
     (output_dir / "otteluohjelma.html").write_text(html, encoding="utf-8")
 
 
-def render_league_stats(skaters: list, goalies: list, season_id: int, output_dir: Path) -> None:
+def render_league_stats(skaters: list, season_id: int, output_dir: Path) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     html = _env.get_template("league_stats.html").render(
         skaters=skaters,
-        goalies=goalies,
         season_label=season_label(season_id),
         asset_prefix="",
         nav=_nav(""),
         active_page="league_stats",
     )
     (output_dir / "tilastot.html").write_text(html, encoding="utf-8")
+
+
+def render_goalie_stats(goalies: list, season_id: int, output_dir: Path) -> None:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    html = _env.get_template("maalivahtiporssi.html").render(
+        goalies=goalies,
+        season_label=season_label(season_id),
+        asset_prefix="",
+        nav=_nav(""),
+        active_page="goalie_stats",
+    )
+    (output_dir / "maalivahtiporssi.html").write_text(html, encoding="utf-8")
 
 
 def render_rookies(rookies: list, season_id: int, output_dir: Path) -> None:

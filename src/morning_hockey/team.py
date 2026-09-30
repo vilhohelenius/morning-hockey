@@ -1,10 +1,14 @@
 """A single team's dashboard: roster, recent/upcoming games, division standing."""
 from __future__ import annotations
 
+import datetime as dt
 from dataclasses import dataclass
+from zoneinfo import ZoneInfo
 
 from .digest import FINISHED_STATES
 from .nhl_api import NHLClient
+
+HELSINKI = ZoneInfo("Europe/Helsinki")
 
 _RECENT_GAMES = 10
 _UPCOMING_GAMES = 10
@@ -202,9 +206,17 @@ def split_schedule(team_abbrev: str, games: list[dict]) -> tuple[list[ScheduleGa
         team = game["homeTeam"] if is_home else game["awayTeam"]
         opponent = game["awayTeam"] if is_home else game["homeTeam"]
 
+        # "gameDate" is the NHL's own nominal (US-schedule) date, not the
+        # calendar date the game actually falls on in Finland -- a game
+        # starting late enough in the US evening is already past midnight
+        # in Helsinki. Derive the displayed date from the real start time
+        # instead, same fix as schedule.py's Otteluohjelma page.
+        start_utc = dt.datetime.fromisoformat(game["startTimeUTC"].replace("Z", "+00:00"))
+        local_date = start_utc.astimezone(HELSINKI).date().isoformat()
+
         base = dict(
             game_id=game["id"],
-            date=game["gameDate"],
+            date=local_date,
             is_home=is_home,
             opponent_abbrev=opponent["abbrev"],
             opponent_name=team_display_name(opponent),

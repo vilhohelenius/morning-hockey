@@ -486,9 +486,9 @@ def test_render_schedule_writes_a_day_picker_and_every_days_games(tmp_path: Path
     assert "Ei otteluita tänä päivänä." in html
 
 
-def test_render_league_stats_writes_skaters_and_goalies_tables(tmp_path: Path):
+def test_render_league_stats_and_goalie_stats_write_separate_pages(tmp_path: Path):
     from morning_hockey.league_stats import GoalieStatRow, SkaterStatRow
-    from morning_hockey.render import render_league_stats
+    from morning_hockey.render import render_goalie_stats, render_league_stats
 
     skater = SkaterStatRow(
         player_id=8478402,
@@ -520,16 +520,20 @@ def test_render_league_stats_writes_skaters_and_goalies_tables(tmp_path: Path):
     )
 
     output_dir = tmp_path / "site"
-    render_league_stats([skater], [goalie], 20262027, output_dir)
+    render_league_stats([skater], 20262027, output_dir)
+    render_goalie_stats([goalie], 20262027, output_dir)
 
-    html = (output_dir / "tilastot.html").read_text(encoding="utf-8")
-    assert "Connor McDavid" in html
-    assert "Jeremy Swayman" in html
-    assert html.count('data-sort="rank"') == 2
-    assert "0.925" in html
-    assert "🇨🇦" in html
+    skaters_html = (output_dir / "tilastot.html").read_text(encoding="utf-8")
+    assert "Connor McDavid" in skaters_html
+    assert "Jeremy Swayman" not in skaters_html
+
+    goalies_html = (output_dir / "maalivahtiporssi.html").read_text(encoding="utf-8")
+    assert "Jeremy Swayman" in goalies_html
+    assert "Connor McDavid" not in goalies_html
+    assert "0.925" in goalies_html
+    assert "🇨🇦" in skaters_html
     # goalie row is both Finnish and on Chicago
-    assert 'class="row-fin row-chi"' in html
+    assert 'class="row-fin row-chi"' in goalies_html
 
 
 def test_render_dashboard_shows_latest_night_and_top5_previews(tmp_path: Path):

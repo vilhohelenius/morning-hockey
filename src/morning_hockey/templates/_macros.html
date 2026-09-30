@@ -11,8 +11,8 @@
       <span>{{ game.home.score }}</span>
     </div>
     <div class="team home">
-      <span class="abbrev">{{ game.home.abbrev }}</span>
       <img src="{{ game.home.logo }}" alt="" class="logo" loading="lazy">
+      <span class="abbrev">{{ game.home.abbrev }}</span>
     </div>
   </div>
 
@@ -24,13 +24,13 @@
   <div class="finn-stats">
     {% for s in game.scorers %}
     <p class="stat-line scorer">
-      <span class="flag">🇫🇮</span><strong>{{ s.name }}</strong><span class="team-tag">{{ s.team }}</span>
+      <strong>{{ s.name }}</strong><span class="flag">🇫🇮</span><span class="team-tag">{{ s.team }}</span>
       <span class="value">{{ s.line }}</span>
     </p>
     {% endfor %}
     {% for g in game.goalies %}
     <p class="stat-line goalie">
-      <span class="flag">🇫🇮</span><strong>{{ g.name }}</strong><span class="team-tag">{{ g.team }}</span>
+      <strong>{{ g.name }}</strong><span class="flag">🇫🇮</span><span class="team-tag">{{ g.team }}</span>
       <span class="value">{{ g.saves }}/{{ g.shots_against }}{% if g.decision %} · {{ g.decision | decision_fi }}{% endif %}</span>
     </p>
     {% endfor %}

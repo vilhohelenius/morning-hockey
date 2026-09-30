@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Maalivahtipörssi · Morning Hockey{% endblock %}
+{% block header_title %}Maalivahtipörssi{% endblock %}
+
+{% block content %}
+<header class="page-header">
+  <h1>🥅 Maalivahtipörssi</h1>
+  <p class="subtitle">Kausi {{ season_label }}</p>
+  <p class="standings-legend">Napauta sarakeotsikkoa järjestääksesi taulukon sen mukaan.</p>
+</header>
+
+<section>
+  <div class="stats-table-wrap">
+    <table class="stats-table" id="goalie-stats-table" data-collapse-at="10">
+      <thead>
+        <tr>
+          <th class="col-rank">#</th>
+          <th data-sort="name" data-type="text">Pelaaja</th>
+          <th data-sort="team" data-type="text">Jkk</th>
+          <th data-sort="gp">O</th>
+          <th data-sort="wins">V</th>
+          <th data-sort="losses">H</th>
+          <th data-sort="otl">JH</th>
+          <th data-sort="gaa">GAA</th>
+          <th data-sort="rank" data-first-dir="asc" class="sort-asc">SV%</th>
+          <th data-sort="shutouts">NP</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for row in goalies %}
+        <tr class="{{ 'row-fin' if row.nationality == 'FIN' }} {{ 'row-chi' if row.team == 'CHI' }}"
+            data-name="{{ row.name }}" data-team="{{ row.team }}" data-gp="{{ row.games_played }}"
+            data-wins="{{ row.wins }}" data-losses="{{ row.losses }}" data-otl="{{ row.ot_losses }}"
+            data-gaa="{{ row.goals_against_average }}" data-shutouts="{{ row.shutouts }}" data-rank="{{ loop.index }}">
+          <td class="col-rank">{{ loop.index }}</td>
+          <td>
+            <span class="player-cell">
+              <img src="{{ row.headshot }}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
+              <span class="player-name">{{ row.name }}</span>
+            </span>
+          </td>
+          <td><img src="{{ row.logo }}" alt="" class="table-team-logo" loading="lazy">{{ row.team }}</td>
+          <td>{{ row.games_played }}</td>
+          <td>{{ row.wins }}</td>
+          <td>{{ row.losses }}</td>
+          <td>{{ row.ot_losses }}</td>
+          <td>{{ "%.2f" | format(row.goals_against_average) }}</td>
+          <td class="stat-strong">{{ "%.3f" | format(row.save_pct) }}</td>
+          <td>{{ row.shutouts }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if goalies | length > 10 %}
+  <button type="button" class="expand-toggle" data-table-id="goalie-stats-table"
+    data-expand-label="Näytä koko top {{ goalies | length }} →"
+    data-collapse-label="Näytä vähemmän (top 10) ↑"></button>
+  {% endif %}
+</section>
+{% endblock %}
