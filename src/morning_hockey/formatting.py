@@ -9,6 +9,8 @@ _WEEKDAYS = [
     "perjantai", "lauantai", "sunnuntai",
 ]
 
+_WEEKDAYS_SHORT = ["ma", "ti", "ke", "to", "pe", "la", "su"]
+
 _DECISIONS = {"W": "voitto", "L": "tappio"}
 
 _FINAL_TYPES = {"OT": "Jatkoaika", "SO": "Voittolaukaukset"}
@@ -45,6 +47,12 @@ def translate_final_type(code: str) -> str:
 def short_date(date_str: str) -> str:
     date = dt.date.fromisoformat(date_str)
     return f"{date.day}.{date.month}."
+
+
+def finnish_time(local_dt: dt.datetime) -> str:
+    """'ti 2.10. klo 02:00' for a Europe/Helsinki-local datetime."""
+    weekday = _WEEKDAYS_SHORT[local_dt.weekday()]
+    return f"{weekday} {local_dt.day}.{local_dt.month}. klo {local_dt.hour:02d}:{local_dt.minute:02d}"
 
 
 def season_label(season_id: int) -> str:

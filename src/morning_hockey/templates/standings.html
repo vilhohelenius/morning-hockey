@@ -8,6 +8,8 @@
   <h1>Sarjataulukko</h1>
   <p class="subtitle">Tilanne {{ page.as_of_date | human_date }}</p>
   <p class="standings-legend"><span class="playoff-dot"></span> mahtuisi pudotuspeleihin tänään</p>
+  <p class="standings-legend">Klikkaa joukkuetta nähdäksesi sen viimeisimmät ottelut, pistepörssin
+    ja seuraavan ottelun.</p>
 </header>
 
 {% for conference in page.conferences %}
@@ -25,11 +27,11 @@
     {% for row in division.rows %}
     <div class="division-row">
       <span class="division-rank">{{ row.division_rank }}</span>
-      <span class="division-team">
+      <button type="button" class="division-team team-trigger" data-team-abbrev="{{ row.abbrev }}">
         <img src="{{ row.logo }}" alt="" class="division-logo" loading="lazy">
         {{ row.abbrev }}
         {% if row.qualified %}<span class="playoff-dot"></span>{% endif %}
-      </span>
+      </button>
       <span class="division-stats cols-6">
         <span>{{ row.games_played }}</span>
         <span>{{ row.wins }}</span>
@@ -48,11 +50,11 @@
     {% for row in conference.wildcard_race[:6] %}
     <div class="division-row">
       <span class="division-rank">VK{{ row.wildcard_rank }}</span>
-      <span class="division-team">
+      <button type="button" class="division-team team-trigger" data-team-abbrev="{{ row.abbrev }}">
         <img src="{{ row.logo }}" alt="" class="division-logo" loading="lazy">
         {{ row.abbrev }}
         {% if row.qualified %}<span class="playoff-dot"></span>{% endif %}
-      </span>
+      </button>
       <span class="division-stats cols-6">
         <span>{{ row.games_played }}</span>
         <span>{{ row.wins }}</span>
@@ -67,4 +69,14 @@
   </div>
 </section>
 {% endfor %}
+
+<div id="team-panel-backdrop" class="team-panel-backdrop"></div>
+<div id="team-panel" class="team-panel" role="dialog" aria-modal="true" aria-hidden="true">
+  <div class="team-panel-header">
+    <span id="team-panel-title" class="team-panel-title"></span>
+    <button type="button" id="team-panel-close" class="icon-btn" aria-label="Sulje">✕</button>
+  </div>
+  <div id="team-panel-body" class="team-panel-body"></div>
+</div>
+<script id="team-snapshots" type="application/json">{{ snapshots_json | safe }}</script>
 {% endblock %}

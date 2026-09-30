@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Prime time · Morning Hockey{% endblock %}
+{% block header_title %}Prime time{% endblock %}
+
+{% block content %}
+<header class="page-header">
+  <h1>🌙 Prime time</h1>
+  <p class="subtitle">Yön ottelut Suomen aikaan · {{ page.as_of_date | human_date }}</p>
+  <p class="standings-legend"><span class="primetime-dot"></span> ilta/alkuyö Suomen aikaa (klo 18–03) —
+    näihin ehtii valveilla</p>
+</header>
+
+{% if page.games %}
+<div class="schedule-list">
+  {% for game in page.games %}
+  <div class="primetime-row {{ 'is-prime' if game.is_prime_time else '' }}">
+    <span class="primetime-time">{{ game.start_local | finnish_time }}</span>
+    <span class="primetime-matchup">
+      <img src="{{ game.away.logo }}" alt="" class="schedule-logo" loading="lazy">
+      {{ game.away.abbrev }}
+      <span class="primetime-at">@</span>
+      <img src="{{ game.home.logo }}" alt="" class="schedule-logo" loading="lazy">
+      {{ game.home.abbrev }}
+      {% if game.is_prime_time %}<span class="primetime-dot"></span>{% endif %}
+    </span>
+    {% if game.is_finished %}
+    <span class="primetime-score">{{ game.away.score }}–{{ game.home.score }}</span>
+    {% else %}
+    <span class="primetime-score primetime-score-pending">–</span>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<p class="empty-note">Ei otteluita tänään.</p>
+{% endif %}
+{% endblock %}

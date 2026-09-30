@@ -2,12 +2,15 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import shutil
+from dataclasses import asdict
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from .formatting import (
+    finnish_time,
     human_date,
     nationality_flag,
     season_label,
@@ -41,6 +44,7 @@ _env.filters["decision_fi"] = translate_decision
 _env.filters["final_type_fi"] = translate_final_type
 _env.filters["short_date"] = short_date
 _env.filters["nationality_flag"] = nationality_flag
+_env.filters["finnish_time"] = finnish_time
 _env.globals["asset_version"] = _asset_version()
 
 _MAX_ARCHIVE_LINKS = 14
@@ -52,6 +56,7 @@ def _nav(asset_prefix: str) -> dict[str, str]:
         "suomiporssi": f"{asset_prefix}suomiporssi.html",
         "standings": f"{asset_prefix}sarjataulukko.html",
         "playoffs": f"{asset_prefix}playoffit.html",
+        "primetime": f"{asset_prefix}primetime.html",
         "league_stats": f"{asset_prefix}tilastot.html",
         "team_chi": f"{asset_prefix}joukkueet/chi.html",
         "archive": f"{asset_prefix}arkisto.html",
@@ -132,10 +137,14 @@ def render_suomiporssi(skaters: list, goalies: list, season_id: int, output_dir:
     (output_dir / "suomiporssi.html").write_text(html, encoding="utf-8")
 
 
-def render_standings(page, output_dir: Path) -> None:
+def render_standings(page, snapshots: dict, output_dir: Path) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
+    snapshots_json = json.dumps(
+        {abbrev: asdict(snapshot) for abbrev, snapshot in snapshots.items()}, ensure_ascii=False
+    ).replace("</", "<\\/")
     html = _env.get_template("standings.html").render(
         page=page,
+        snapshots_json=snapshots_json,
         asset_prefix="",
         nav=_nav(""),
         active_page="standings",
@@ -152,6 +161,17 @@ def render_playoffs(bracket, output_dir: Path) -> None:
         active_page="playoffs",
     )
     (output_dir / "playoffit.html").write_text(html, encoding="utf-8")
+
+
+def render_primetime(page, output_dir: Path) -> None:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    html = _env.get_template("primetime.html").render(
+        page=page,
+        asset_prefix="",
+        nav=_nav(""),
+        active_page="primetime",
+    )
+    (output_dir / "primetime.html").write_text(html, encoding="utf-8")
 
 
 def render_league_stats(skaters: list, goalies: list, season_id: int, output_dir: Path) -> None:
