@@ -22,3 +22,6 @@ INSERT INTO skater_season_stats (player_id, season_id, name, team_abbrev, logo, 
 
 INSERT INTO goalie_season_stats (player_id, season_id, name, team_abbrev, logo, headshot, nationality, games_played, wins, losses, ot_losses, goals_against_average, save_pct, shutouts, updated_at) VALUES
 (8480313, 20262027, 'Joseph Woll', 'TOR', 'https://assets.nhle.com/logos/nhl/svg/TOR_light.svg', 'https://assets.nhle.com/mugs/nhl/20262027/TOR/8480313.png', 'USA', 4, 3, 1, 0, 2.31, 0.918, 1, '2026-09-30T12:00:00Z');
+
+INSERT INTO rookie_season_stats (player_id, season_id, name, team_abbrev, logo, headshot, nationality, position, games_played, goals, assists, points, updated_at) VALUES
+(8484145, 20262027, 'Easton Cowan', 'TOR', 'https://assets.nhle.com/logos/nhl/svg/TOR_light.svg', 'https://assets.nhle.com/mugs/nhl/20262027/TOR/8484145.png', 'CAN', 'L', 6, 2, 3, 5, '2026-09-30T12:00:00Z');
