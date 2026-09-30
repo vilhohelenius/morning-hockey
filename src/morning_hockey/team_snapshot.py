@@ -8,9 +8,16 @@ results and next game) is fetched per team, since there's no single
 """
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass
 
 from .nhl_api import NHLClient
+
+# A brief pause between the 32 back-to-back club-schedule-season requests
+# (one per team), so this burst is less likely to trip the public API's
+# rate limiting in the first place. NHLClient itself retries with backoff
+# if a request gets rate-limited anyway.
+_SCHEDULE_REQUEST_PAUSE = 0.2
 from .suomiporssi import current_team
 from .team import ScheduleGame, split_schedule
 
@@ -114,9 +121,11 @@ def build_team_snapshots(
     skaters_by_team = _skaters_by_team(client, season_id)
     goalies_by_team = _goalies_by_team(client, season_id)
 
-    return {
-        abbrev: _team_snapshot(
+    snapshots = {}
+    for i, abbrev in enumerate(team_abbrevs):
+        if i > 0:
+            time.sleep(_SCHEDULE_REQUEST_PAUSE)
+        snapshots[abbrev] = _team_snapshot(
             client, abbrev, skaters_by_team.get(abbrev, []), goalies_by_team.get(abbrev, [])
         )
-        for abbrev in team_abbrevs
-    }
+    return snapshots
