@@ -25,3 +25,9 @@ INSERT INTO goalie_season_stats (player_id, season_id, name, team_abbrev, logo, 
 
 INSERT INTO rookie_season_stats (player_id, season_id, name, team_abbrev, logo, headshot, nationality, position, games_played, goals, assists, points, updated_at) VALUES
 (8484145, 20262027, 'Easton Cowan', 'TOR', 'https://assets.nhle.com/logos/nhl/svg/TOR_light.svg', 'https://assets.nhle.com/mugs/nhl/20262027/TOR/8484145.png', 'CAN', 'L', 6, 2, 3, 5, '2026-09-30T12:00:00Z');
+
+INSERT INTO finnish_skater_stats (player_id, season_id, name, team_abbrev, logo, headshot, position, games_played, goals, assists, points, updated_at) VALUES
+(8481554, 20262027, 'Kaapo Kakko', 'NYR', 'https://assets.nhle.com/logos/nhl/svg/NYR_light.svg', 'https://assets.nhle.com/mugs/nhl/20262027/NYR/8481554.png', 'R', 6, 3, 2, 5, '2026-09-30T12:00:00Z');
+
+INSERT INTO finnish_goalie_stats (player_id, season_id, name, team_abbrev, logo, headshot, games_played, wins, losses, ot_losses, goals_against_average, save_pct, shutouts, updated_at) VALUES
+(8479193, 20262027, 'Kevin Lankinen', 'FLA', 'https://assets.nhle.com/logos/nhl/svg/FLA_light.svg', 'https://assets.nhle.com/mugs/nhl/20262027/FLA/8479193.png', 5, 4, 1, 0, 2.05, 0.927, 1, '2026-09-30T12:00:00Z');

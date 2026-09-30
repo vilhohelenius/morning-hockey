@@ -64,6 +64,36 @@ export interface GoalieStatsRow {
   save_pct: number;
 }
 
+export interface FinnishSkaterRow {
+  player_id: number;
+  season_id: number;
+  name: string;
+  team_abbrev: string;
+  logo: string;
+  headshot: string;
+  position: string;
+  games_played: number;
+  goals: number;
+  assists: number;
+  points: number;
+}
+
+export interface FinnishGoalieRow {
+  player_id: number;
+  season_id: number;
+  name: string;
+  team_abbrev: string;
+  logo: string;
+  headshot: string;
+  games_played: number;
+  wins: number;
+  losses: number;
+  ot_losses: number;
+  goals_against_average: number;
+  save_pct: number;
+  shutouts: number;
+}
+
 export interface Env {
   DB: D1Database;
 }
