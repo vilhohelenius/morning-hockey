@@ -12,6 +12,15 @@ export function seasonLabel(seasonId: number): string {
   return `${startYear}–${endYear}`;
 }
 
+const WEEKDAYS = ["maanantai", "tiistai", "keskiviikko", "torstai", "perjantai", "lauantai", "sunnuntai"];
+
+export function humanDate(dateStr: string): string {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  const jsDay = new Date(Date.UTC(year, month - 1, day)).getUTCDay(); // 0=Sun..6=Sat
+  const weekday = WEEKDAYS[(jsDay + 6) % 7]; // rotate to 0=Mon..6=Sun
+  return `${weekday[0].toUpperCase()}${weekday.slice(1)} ${day}.${month}.${year}`;
+}
+
 // Mirrors formatting.py's _NATIONALITY_TO_ISO2 -- only nationality codes
 // that actually show up among NHL players are mapped; an unmapped code
 // just falls back to no flag.

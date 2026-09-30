@@ -7,7 +7,10 @@ INSERT INTO standings_rows (abbrev, as_of_date, name, logo, conference, division
 ('BOS', '2026-09-30', 'Bruins', 'https://assets.nhle.com/logos/nhl/svg/BOS_light.svg', 'Eastern', 'Atlantic', 2, 0, 1, 6, 4, 2, 0, 8, 4, '2026-09-30T12:00:00Z'),
 ('TBL', '2026-09-30', 'Lightning', 'https://assets.nhle.com/logos/nhl/svg/TBL_light.svg', 'Eastern', 'Atlantic', 3, 0, 1, 6, 3, 3, 0, 6, 1, '2026-09-30T12:00:00Z'),
 ('FLA', '2026-09-30', 'Panthers', 'https://assets.nhle.com/logos/nhl/svg/FLA_light.svg', 'Eastern', 'Atlantic', 4, 1, 1, 6, 3, 3, 0, 6, -2, '2026-09-30T12:00:00Z'),
-('MTL', '2026-09-30', 'Canadiens', 'https://assets.nhle.com/logos/nhl/svg/MTL_light.svg', 'Eastern', 'Atlantic', 5, 2, 0, 6, 1, 4, 1, 3, -6, '2026-09-30T12:00:00Z');
+('MTL', '2026-09-30', 'Canadiens', 'https://assets.nhle.com/logos/nhl/svg/MTL_light.svg', 'Eastern', 'Atlantic', 5, 2, 0, 6, 1, 4, 1, 3, -6, '2026-09-30T12:00:00Z'),
+('OTT', '2026-09-30', 'Senators', 'https://assets.nhle.com/logos/nhl/svg/OTT_light.svg', 'Eastern', 'Atlantic', 6, 3, 0, 6, 1, 4, 1, 3, -7, '2026-09-30T12:00:00Z'),
+('COL', '2026-09-30', 'Avalanche', 'https://assets.nhle.com/logos/nhl/svg/COL_light.svg', 'Western', 'Central', 1, 0, 1, 6, 5, 1, 0, 10, 8, '2026-09-30T12:00:00Z'),
+('DAL', '2026-09-30', 'Stars', 'https://assets.nhle.com/logos/nhl/svg/DAL_light.svg', 'Western', 'Central', 2, 0, 1, 6, 4, 2, 0, 8, 3, '2026-09-30T12:00:00Z');
 
 INSERT INTO games (game_id, date, start_time_utc, away_abbrev, away_name, away_logo, away_score, home_abbrev, home_name, home_logo, home_score, game_state, is_finished, updated_at) VALUES
 (1001, '2026-09-27', '2026-09-27T23:00:00Z', 'TOR', 'Maple Leafs', 'https://assets.nhle.com/logos/nhl/svg/TOR_light.svg', 4, 'BOS', 'Bruins', 'https://assets.nhle.com/logos/nhl/svg/BOS_light.svg', 2, 'OFF', 1, '2026-09-28T01:00:00Z'),

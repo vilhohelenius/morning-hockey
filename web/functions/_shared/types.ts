@@ -18,6 +18,7 @@ export interface GameRow {
 
 export interface StandingsRow {
   abbrev: string;
+  as_of_date: string;
   name: string;
   logo: string;
   conference: string;
