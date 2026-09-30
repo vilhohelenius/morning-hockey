@@ -1,6 +1,6 @@
 {
   "date": "2026-09-29",
-  "generated_at": "2026-09-30T13:42:27+00:00",
+  "generated_at": "2026-09-30T14:06:06+00:00",
   "games": [
     {
       "game_id": 2026020001,
@@ -29,7 +29,9 @@
             "assists": [
               "Carter Verhaeghe"
             ],
-            "strength": ""
+            "strength": "",
+            "away_score": 1,
+            "home_score": 0
           }
         ],
         "team_stats": [
@@ -94,7 +96,9 @@
               "Morgan Rielly",
               "Kirill Marchenko"
             ],
-            "strength": ""
+            "strength": "",
+            "away_score": 0,
+            "home_score": 1
           },
           {
             "period_label": "1. erä",
@@ -105,7 +109,9 @@
               "Alexandre Carrier",
               "Kirby Dach"
             ],
-            "strength": ""
+            "strength": "",
+            "away_score": 1,
+            "home_score": 1
           },
           {
             "period_label": "2. erä",
@@ -116,7 +122,9 @@
               "Mike Matheson",
               "Josh Anderson"
             ],
-            "strength": ""
+            "strength": "",
+            "away_score": 2,
+            "home_score": 1
           },
           {
             "period_label": "3. erä",
@@ -124,7 +132,9 @@
             "team_abbrev": "MTL",
             "scorer": "Alexandre Carrier",
             "assists": [],
-            "strength": ""
+            "strength": "",
+            "away_score": 3,
+            "home_score": 1
           },
           {
             "period_label": "3. erä",
@@ -135,7 +145,9 @@
               "Easton Cowan",
               "John Tavares"
             ],
-            "strength": ""
+            "strength": "",
+            "away_score": 3,
+            "home_score": 2
           }
         ],
         "team_stats": [
@@ -199,7 +211,9 @@
             "assists": [
               "Mason Lohrei"
             ],
-            "strength": ""
+            "strength": "",
+            "away_score": 0,
+            "home_score": 1
           },
           {
             "period_label": "3. erä",
@@ -210,7 +224,9 @@
               "Elias Lindholm",
               "Hampus Lindholm"
             ],
-            "strength": ""
+            "strength": "",
+            "away_score": 0,
+            "home_score": 2
           },
           {
             "period_label": "3. erä",
@@ -221,7 +237,9 @@
               "Fraser Minten",
               "Marat Khusnutdinov"
             ],
-            "strength": ""
+            "strength": "",
+            "away_score": 0,
+            "home_score": 3
           }
         ],
         "team_stats": [
@@ -293,7 +311,9 @@
             "team_abbrev": "VAN",
             "scorer": "Paul Cotter",
             "assists": [],
-            "strength": "AV"
+            "strength": "AV",
+            "away_score": 1,
+            "home_score": 0
           },
           {
             "period_label": "1. erä",
@@ -301,7 +321,9 @@
             "team_abbrev": "EDM",
             "scorer": "Evan Bouchard",
             "assists": [],
-            "strength": ""
+            "strength": "",
+            "away_score": 1,
+            "home_score": 1
           },
           {
             "period_label": "2. erä",
@@ -312,7 +334,9 @@
               "Liam Ohgren",
               "Filip Hronek"
             ],
-            "strength": ""
+            "strength": "",
+            "away_score": 2,
+            "home_score": 1
           },
           {
             "period_label": "2. erä",
@@ -323,7 +347,9 @@
               "Connor McDavid",
               "Alex Formenton"
             ],
-            "strength": ""
+            "strength": "",
+            "away_score": 2,
+            "home_score": 2
           },
           {
             "period_label": "3. erä",
@@ -334,7 +360,9 @@
               "Jake DeBrusk",
               "Jamie Oleksiak"
             ],
-            "strength": ""
+            "strength": "",
+            "away_score": 3,
+            "home_score": 2
           },
           {
             "period_label": "3. erä",
@@ -345,7 +373,9 @@
               "Drew O'Connor",
               "Linus Karlsson"
             ],
-            "strength": ""
+            "strength": "",
+            "away_score": 4,
+            "home_score": 2
           },
           {
             "period_label": "3. erä",
@@ -356,7 +386,9 @@
               "Filip Hronek",
               "Brock Boeser"
             ],
-            "strength": "YV"
+            "strength": "YV",
+            "away_score": 5,
+            "home_score": 2
           },
           {
             "period_label": "3. erä",
@@ -367,7 +399,9 @@
               "Evan Bouchard",
               "Ryan Shea"
             ],
-            "strength": ""
+            "strength": "",
+            "away_score": 5,
+            "home_score": 3
           },
           {
             "period_label": "3. erä",
@@ -377,7 +411,9 @@
             "assists": [
               "Connor McDavid"
             ],
-            "strength": ""
+            "strength": "",
+            "away_score": 5,
+            "home_score": 4
           },
           {
             "period_label": "3. erä",
@@ -388,7 +424,9 @@
               "Leon Draisaitl",
               "Evan Bouchard"
             ],
-            "strength": "YV"
+            "strength": "YV",
+            "away_score": 5,
+            "home_score": 5
           },
           {
             "period_label": "Jatkoaika",
@@ -398,7 +436,9 @@
             "assists": [
               "Max Sasson"
             ],
-            "strength": ""
+            "strength": "",
+            "away_score": 6,
+            "home_score": 5
           }
         ],
         "team_stats": [
@@ -463,7 +503,9 @@
               "Jack Eichel",
               "Shea Theodore"
             ],
-            "strength": "YV"
+            "strength": "YV",
+            "away_score": 0,
+            "home_score": 1
           },
           {
             "period_label": "1. erä",
@@ -474,7 +516,9 @@
               "Brayden McNabb",
               "Shea Theodore"
             ],
-            "strength": ""
+            "strength": "",
+            "away_score": 0,
+            "home_score": 2
           },
           {
             "period_label": "2. erä",
@@ -485,7 +529,9 @@
               "Ryan Greene",
               "Wyatt Kaiser"
             ],
-            "strength": ""
+            "strength": "",
+            "away_score": 1,
+            "home_score": 2
           },
           {
             "period_label": "2. erä",
@@ -496,7 +542,9 @@
               "Ivan Barbashev",
               "Brayden McNabb"
             ],
-            "strength": ""
+            "strength": "",
+            "away_score": 1,
+            "home_score": 3
           },
           {
             "period_label": "3. erä",
@@ -504,7 +552,9 @@
             "team_abbrev": "CHI",
             "scorer": "Patrick Kane",
             "assists": [],
-            "strength": ""
+            "strength": "",
+            "away_score": 2,
+            "home_score": 3
           },
           {
             "period_label": "3. erä",
@@ -515,7 +565,9 @@
               "Nic Dowd",
               "Marc Gatcomb"
             ],
-            "strength": ""
+            "strength": "",
+            "away_score": 2,
+            "home_score": 4
           },
           {
             "period_label": "3. erä",
@@ -526,7 +578,9 @@
               "Jack Eichel",
               "Ivan Barbashev"
             ],
-            "strength": ""
+            "strength": "",
+            "away_score": 2,
+            "home_score": 5
           }
         ],
         "team_stats": [
