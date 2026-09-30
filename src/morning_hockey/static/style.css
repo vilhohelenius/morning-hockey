@@ -200,11 +200,30 @@ main {
   margin-top: 32px;
 }
 
-.game-card {
+.game-card,
+.section-tile {
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 16px;
+}
+
+.team-teaser-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.team-teaser-logo {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.team-teaser-title {
+  margin: 0;
 }
 
 .game-card-trigger {
@@ -709,6 +728,19 @@ main {
   text-align: right;
 }
 
+.expand-toggle {
+  display: block;
+  margin: 10px auto 0;
+  padding: 6px 16px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  color: var(--accent);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
 .stats-table th:nth-child(2),
 .stats-table td:nth-child(2) {
   text-align: left;
@@ -937,9 +969,14 @@ main {
 }
 
 .gd-period {
+  display: inline-block;
   margin: 10px 0 4px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--bg);
   color: var(--muted);
   font-size: 0.68rem;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.03em;
 }
@@ -949,24 +986,39 @@ main {
 }
 
 .gd-goal-row {
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 6px 8px;
+  margin-bottom: 4px;
+}
+
+.gd-goal-main {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 8px;
-  padding: 3px 0;
-  flex-wrap: wrap;
 }
 
 .gd-goal-time {
   color: var(--muted);
   font-variant-numeric: tabular-nums;
+  font-size: 0.8rem;
   flex-shrink: 0;
-  width: 38px;
+  width: 34px;
+}
+
+.gd-goal-logo {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  flex-shrink: 0;
 }
 
 .gd-goal-who {
   display: flex;
   align-items: baseline;
   gap: 6px;
+  flex: 1;
+  min-width: 0;
 }
 
 .gd-goal-strength {
@@ -976,7 +1028,15 @@ main {
   text-transform: uppercase;
 }
 
+.gd-goal-score {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
 .gd-goal-assists {
+  margin: 2px 0 0 60px;
   color: var(--muted);
   font-size: 0.78rem;
 }
@@ -1010,6 +1070,10 @@ main {
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+
+.gd-stat-value.gd-stat-better {
+  color: #0a7d32;
 }
 
 .gd-stat-row .gd-stat-value:first-child {

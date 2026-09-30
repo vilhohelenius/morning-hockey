@@ -6,11 +6,10 @@
 
 {% block content %}
 <header class="page-header">
+  <h1>🏒 Morning Hockey</h1>
   {% if latest_digest %}
-  <h1>{{ latest_digest.date | human_date }}</h1>
-  <p class="subtitle">{{ latest_digest.games | length }} ottelua</p>
+  <p class="subtitle">{{ latest_digest.date | human_date }} · {{ latest_digest.games | length }} ottelua</p>
   {% else %}
-  <h1>Morning Hockey</h1>
   <p class="subtitle">Ei vielä otteluita arkistossa</p>
   {% endif %}
 </header>
@@ -24,7 +23,7 @@
 </section>
 {% endif %}
 
-<section>
+<section class="section-tile">
   <h2 class="section-title">🇫🇮 Suomipörssin kärki</h2>
   {% if fin_skaters %}
   <div class="stats-table-wrap">
@@ -66,7 +65,7 @@
   <a class="archive-link" href="{{ nav.suomiporssi }}">Koko Suomipörssi →</a>
 </section>
 
-<section>
+<section class="section-tile">
   <h2 class="section-title">📈 NHL:n kärkipörssi</h2>
   {% if league_skaters %}
   <div class="stats-table-wrap">
@@ -111,9 +110,14 @@
   <a class="archive-link" href="{{ nav.league_stats }}">Koko Tilastot →</a>
 </section>
 
-<section>
-  <h2 class="section-title"><img src="{{ team.logo }}" alt="" class="nav-icon">{{ team.name }}</h2>
-  <p class="subtitle">{{ team.division_name }}: {{ team.division_rank }}. sija</p>
+<section class="section-tile">
+  <div class="team-teaser-header">
+    <img src="{{ team.logo }}" alt="" class="team-teaser-logo">
+    <div>
+      <h2 class="section-title team-teaser-title">{{ team.name }}</h2>
+      <p class="subtitle">{{ team.division_name }}: {{ team.division_rank }}. sija</p>
+    </div>
+  </div>
 
   {% if team.recent_games %}
   {% set g = team.recent_games[0] %}

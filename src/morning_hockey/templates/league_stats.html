@@ -11,9 +11,9 @@
 </header>
 
 <section>
-  <h2 class="section-title">🏒 Pistepörssi · Top {{ skaters | length }}</h2>
+  <h2 class="section-title">🏒 Pistepörssi</h2>
   <div class="stats-table-wrap">
-    <table class="stats-table">
+    <table class="stats-table" id="skater-stats-table" data-collapse-at="25">
       <thead>
         <tr>
           <th class="col-rank">#</th>
@@ -50,12 +50,17 @@
       </tbody>
     </table>
   </div>
+  {% if skaters | length > 25 %}
+  <button type="button" class="expand-toggle" data-table-id="skater-stats-table"
+    data-expand-label="Näytä koko top {{ skaters | length }} →"
+    data-collapse-label="Näytä vähemmän (top 25) ↑"></button>
+  {% endif %}
 </section>
 
 <section>
-  <h2 class="section-title">🥅 Maalivahtipörssi · Top {{ goalies | length }}</h2>
+  <h2 class="section-title">🥅 Maalivahtipörssi</h2>
   <div class="stats-table-wrap">
-    <table class="stats-table">
+    <table class="stats-table" id="goalie-stats-table" data-collapse-at="10">
       <thead>
         <tr>
           <th class="col-rank">#</th>
@@ -96,5 +101,10 @@
       </tbody>
     </table>
   </div>
+  {% if goalies | length > 10 %}
+  <button type="button" class="expand-toggle" data-table-id="goalie-stats-table"
+    data-expand-label="Näytä koko top {{ goalies | length }} →"
+    data-collapse-label="Näytä vähemmän (top 10) ↑"></button>
+  {% endif %}
 </section>
 {% endblock %}

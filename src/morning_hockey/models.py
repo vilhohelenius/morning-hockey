@@ -46,6 +46,8 @@ class GoalEvent:
     scorer: str
     assists: list[str]
     strength: str  # "" (even strength) | "YV" | "AV"
+    away_score: int  # running score right after this goal
+    home_score: int
 
 
 @dataclass(frozen=True)

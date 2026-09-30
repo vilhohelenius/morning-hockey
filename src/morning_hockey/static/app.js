@@ -219,20 +219,34 @@
     var openGameTrigger = null;
     var gameDetailEl = null;
 
-    function goalRow(goal) {
+    function goalRow(goal, awayAbbrev, awayLogo, homeLogo) {
       var row = el("div", "gd-goal-row");
-      row.appendChild(el("span", "gd-goal-time", goal.time_in_period));
+
+      var main = el("div", "gd-goal-main");
+      main.appendChild(el("span", "gd-goal-time", goal.time_in_period));
+
+      var logo = document.createElement("img");
+      logo.src = goal.team_abbrev === awayAbbrev ? awayLogo : homeLogo;
+      logo.alt = "";
+      logo.loading = "lazy";
+      logo.className = "gd-goal-logo";
+      main.appendChild(logo);
+
       var who = el("span", "gd-goal-who");
-      who.appendChild(el("strong", null, goal.team_abbrev + " · " + goal.scorer));
+      who.appendChild(el("strong", null, goal.scorer));
       if (goal.strength) who.appendChild(el("span", "gd-goal-strength", goal.strength));
-      row.appendChild(who);
+      main.appendChild(who);
+
+      main.appendChild(el("span", "gd-goal-score", goal.away_score + "–" + goal.home_score));
+      row.appendChild(main);
+
       if (goal.assists.length) {
-        row.appendChild(el("span", "gd-goal-assists", goal.assists.join(", ")));
+        row.appendChild(el("p", "gd-goal-assists", goal.assists.join(", ")));
       }
       return row;
     }
 
-    function renderGoals(goals) {
+    function renderGoals(goals, awayAbbrev, awayLogo, homeLogo) {
       var wrap = section("Maalit");
       if (!goals.length) {
         wrap.appendChild(el("p", "tp-empty", "Ei maaleja."));
@@ -244,9 +258,16 @@
           currentPeriod = goal.period_label;
           wrap.appendChild(el("p", "gd-period", currentPeriod));
         }
-        wrap.appendChild(goalRow(goal));
+        wrap.appendChild(goalRow(goal, awayAbbrev, awayLogo, homeLogo));
       });
       return wrap;
+    }
+
+    function statNumber(value) {
+      var parenMatch = value.match(/\(([\d.]+)/);
+      if (parenMatch) return parseFloat(parenMatch[1]);
+      var match = value.match(/[\d.]+/);
+      return match ? parseFloat(match[0]) : null;
     }
 
     function renderTeamStats(stats, awayAbbrev, homeAbbrev) {
@@ -257,9 +278,20 @@
       wrap.appendChild(header);
       stats.forEach(function (stat) {
         var row = el("div", "gd-stat-row");
-        row.appendChild(el("span", "gd-stat-value", stat.away_value));
+        var awaySpan = el("span", "gd-stat-value", stat.away_value);
+        var homeSpan = el("span", "gd-stat-value", stat.home_value);
+
+        var awayNum = statNumber(stat.away_value);
+        var homeNum = statNumber(stat.home_value);
+        if (awayNum !== null && homeNum !== null && awayNum !== homeNum) {
+          var lowerIsBetter = stat.label.indexOf("Jäähyt") === 0;
+          var awayBetter = lowerIsBetter ? awayNum < homeNum : awayNum > homeNum;
+          (awayBetter ? awaySpan : homeSpan).classList.add("gd-stat-better");
+        }
+
+        row.appendChild(awaySpan);
         row.appendChild(el("span", "gd-stat-label", stat.label));
-        row.appendChild(el("span", "gd-stat-value", stat.home_value));
+        row.appendChild(homeSpan);
         wrap.appendChild(row);
       });
       return wrap;
@@ -280,11 +312,23 @@
 
       var awayAbbrev = trigger.querySelector(".team.away .abbrev").textContent;
       var homeAbbrev = trigger.querySelector(".team.home .abbrev").textContent;
+      var awayLogo = trigger.querySelector(".team.away img").src;
+      var homeLogo = trigger.querySelector(".team.home img").src;
 
       var panel = el("div", "team-detail");
 
       var header = el("div", "team-detail-header");
+      var awayHeaderLogo = document.createElement("img");
+      awayHeaderLogo.src = awayLogo;
+      awayHeaderLogo.alt = "";
+      awayHeaderLogo.className = "team-detail-logo";
+      header.appendChild(awayHeaderLogo);
       header.appendChild(el("span", "team-detail-name", awayAbbrev + " – " + homeAbbrev));
+      var homeHeaderLogo = document.createElement("img");
+      homeHeaderLogo.src = homeLogo;
+      homeHeaderLogo.alt = "";
+      homeHeaderLogo.className = "team-detail-logo";
+      header.appendChild(homeHeaderLogo);
       var closeBtn = document.createElement("button");
       closeBtn.type = "button";
       closeBtn.className = "icon-btn team-detail-close";
@@ -295,7 +339,7 @@
       panel.appendChild(header);
 
       var body = el("div", "team-detail-body");
-      body.appendChild(renderGoals(data.goals || []));
+      body.appendChild(renderGoals(data.goals || [], awayAbbrev, awayLogo, homeLogo));
       body.appendChild(renderTeamStats(data.team_stats || [], awayAbbrev, homeAbbrev));
       panel.appendChild(body);
 
@@ -335,11 +379,23 @@
     });
   }
 
+  function applyRowVisibility(table) {
+    var limit = parseInt(table.dataset.collapseAt, 10);
+    if (!limit) return;
+    var expanded = table.dataset.expanded === "true";
+    var rows = table.querySelectorAll("tbody tr");
+    rows.forEach(function (row, i) {
+      row.style.display = expanded || i < limit ? "" : "none";
+    });
+  }
+
   document.querySelectorAll(".stats-table").forEach(function (table) {
     var tbody = table.querySelector("tbody");
     var headers = table.querySelectorAll("th[data-sort]");
     var activeSort = null;
     var activeDir = null;
+
+    applyRowVisibility(table);
 
     headers.forEach(function (th) {
       th.addEventListener("click", function () {
@@ -376,7 +432,27 @@
 
         activeSort = key;
         activeDir = dir;
+
+        applyRowVisibility(table);
       });
+    });
+  });
+
+  document.querySelectorAll(".expand-toggle").forEach(function (btn) {
+    var table = document.getElementById(btn.dataset.tableId);
+    if (!table) return;
+
+    function updateLabel() {
+      var expanded = table.dataset.expanded === "true";
+      btn.textContent = expanded ? btn.dataset.collapseLabel : btn.dataset.expandLabel;
+    }
+
+    updateLabel();
+
+    btn.addEventListener("click", function () {
+      table.dataset.expanded = table.dataset.expanded === "true" ? "false" : "true";
+      applyRowVisibility(table);
+      updateLabel();
     });
   });
 })();

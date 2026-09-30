@@ -43,7 +43,7 @@ TEAM_GAME_STATS = [
 
 
 def test_build_goal_events_labels_periods_and_carries_full_names():
-    events = build_goal_events(SCORING_BY_PERIOD)
+    events = build_goal_events(SCORING_BY_PERIOD, away_abbrev="FLA", home_abbrev="CAR")
 
     assert len(events) == 2
     first, second = events
@@ -54,11 +54,15 @@ def test_build_goal_events_labels_periods_and_carries_full_names():
     assert first.scorer == "Gustav Forsling"
     assert first.assists == ["Carter Verhaeghe"]
     assert first.strength == ""  # even strength -> no tag
+    assert first.away_score == 1  # FLA (away) scored
+    assert first.home_score == 0
 
     assert second.period_label == "Jatkoaika"
     assert second.scorer == "Sebastian Aho"
     assert second.assists == []
     assert second.strength == "YV"
+    assert second.away_score == 1
+    assert second.home_score == 1  # CAR (home) tied it up
 
 
 def test_build_team_stats_computes_save_pct_from_score_and_shots():
@@ -106,7 +110,7 @@ def test_build_team_stats_shows_a_dash_for_zero_power_play_opportunities():
 
 
 def test_build_box_score_combines_goals_and_team_stats():
-    box = build_box_score(FakeClient(), game_id=1, away_score=1, home_score=2)
+    box = build_box_score(FakeClient(), game_id=1, away_abbrev="FLA", home_abbrev="CAR", away_score=1, home_score=2)
 
     assert isinstance(box, GameBoxScore)
     assert len(box.goals) == 2

@@ -28,19 +28,28 @@ def _player_name(person: dict) -> str:
     return f"{person['firstName']['default']} {person['lastName']['default']}"
 
 
-def build_goal_events(scoring_by_period: list[dict]) -> list[GoalEvent]:
+def build_goal_events(scoring_by_period: list[dict], away_abbrev: str, home_abbrev: str) -> list[GoalEvent]:
     events = []
+    away_score = 0
+    home_score = 0
     for period in scoring_by_period:
         label = _period_label(period.get("periodDescriptor", {}))
         for goal in period.get("goals", []):
+            team_abbrev = goal["teamAbbrev"]["default"]
+            if team_abbrev == away_abbrev:
+                away_score += 1
+            elif team_abbrev == home_abbrev:
+                home_score += 1
             events.append(
                 GoalEvent(
                     period_label=label,
                     time_in_period=goal["timeInPeriod"],
-                    team_abbrev=goal["teamAbbrev"]["default"],
+                    team_abbrev=team_abbrev,
                     scorer=_player_name(goal),
                     assists=[_player_name(a) for a in goal.get("assists", [])],
                     strength=_STRENGTH_LABELS.get(goal.get("strength"), ""),
+                    away_score=away_score,
+                    home_score=home_score,
                 )
             )
     return events
@@ -108,11 +117,13 @@ def build_team_stats(team_game_stats: list[dict], away_score: int, home_score: i
     ]
 
 
-def build_box_score(client: NHLClient, game_id: int, away_score: int, home_score: int) -> GameBoxScore:
+def build_box_score(
+    client: NHLClient, game_id: int, away_abbrev: str, home_abbrev: str, away_score: int, home_score: int
+) -> GameBoxScore:
     landing = client.landing(game_id)
     right_rail = client.right_rail(game_id)
 
-    goals = build_goal_events(landing.get("summary", {}).get("scoring", []))
+    goals = build_goal_events(landing.get("summary", {}).get("scoring", []), away_abbrev, home_abbrev)
     team_stats = build_team_stats(right_rail.get("teamGameStats", []), away_score, home_score)
 
     return GameBoxScore(goals=goals, team_stats=team_stats)

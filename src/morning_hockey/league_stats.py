@@ -56,7 +56,7 @@ class GoalieStatRow:
     shutouts: int
 
 
-def build_skater_top(client: NHLClient, season_id: int, limit: int = 50) -> list[SkaterStatRow]:
+def build_skater_top(client: NHLClient, season_id: int, limit: int = 100) -> list[SkaterStatRow]:
     cayenne_exp = f"seasonId={season_id} and gameTypeId=2"
     rows = client.skater_bios(cayenne_exp, _SKATER_SORT, limit)
 
