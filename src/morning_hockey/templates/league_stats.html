@@ -22,13 +22,14 @@
           <th data-sort="gp">O</th>
           <th data-sort="goals">M</th>
           <th data-sort="assists">S</th>
-          <th data-sort="points" class="sort-desc">P</th>
+          <th data-sort="rank" data-first-dir="asc" class="sort-asc">P</th>
         </tr>
       </thead>
       <tbody>
       {% for row in skaters %}
-        <tr data-name="{{ row.name }}" data-team="{{ row.team }}" data-gp="{{ row.games_played }}"
-            data-goals="{{ row.goals }}" data-assists="{{ row.assists }}" data-points="{{ row.points }}">
+        <tr class="{{ 'row-fin' if row.nationality == 'FIN' }} {{ 'row-chi' if row.team == 'CHI' }}"
+            data-name="{{ row.name }}" data-team="{{ row.team }}" data-gp="{{ row.games_played }}"
+            data-goals="{{ row.goals }}" data-assists="{{ row.assists }}" data-rank="{{ loop.index }}">
           <td class="col-rank">{{ loop.index }}</td>
           <td>
             <span class="player-cell">
@@ -65,15 +66,16 @@
           <th data-sort="losses">H</th>
           <th data-sort="otl">JH</th>
           <th data-sort="gaa">GAA</th>
-          <th data-sort="savepct" class="sort-desc">SV%</th>
+          <th data-sort="rank" data-first-dir="asc" class="sort-asc">SV%</th>
           <th data-sort="shutouts">NP</th>
         </tr>
       </thead>
       <tbody>
       {% for row in goalies %}
-        <tr data-name="{{ row.name }}" data-team="{{ row.team }}" data-gp="{{ row.games_played }}"
+        <tr class="{{ 'row-fin' if row.nationality == 'FIN' }} {{ 'row-chi' if row.team == 'CHI' }}"
+            data-name="{{ row.name }}" data-team="{{ row.team }}" data-gp="{{ row.games_played }}"
             data-wins="{{ row.wins }}" data-losses="{{ row.losses }}" data-otl="{{ row.ot_losses }}"
-            data-gaa="{{ row.goals_against_average }}" data-savepct="{{ row.save_pct }}" data-shutouts="{{ row.shutouts }}">
+            data-gaa="{{ row.goals_against_average }}" data-shutouts="{{ row.shutouts }}" data-rank="{{ loop.index }}">
           <td class="col-rank">{{ loop.index }}</td>
           <td>
             <span class="player-cell">
@@ -94,7 +96,5 @@
       </tbody>
     </table>
   </div>
-  <p class="standings-legend">Ei sisällä odotettuja maaleja vastaan -tilastoa (xG-pohjainen "maaliodottama") —
-    se ei ole saatavilla NHL:n julkisesta tilasto-API:sta.</p>
 </section>
 {% endblock %}

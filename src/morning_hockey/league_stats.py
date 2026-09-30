@@ -46,6 +46,7 @@ class GoalieStatRow:
     team: str
     logo: str
     headshot: str
+    nationality: str
     games_played: int
     wins: int
     losses: int
@@ -79,9 +80,19 @@ def build_skater_top(client: NHLClient, season_id: int, limit: int = 50) -> list
     ]
 
 
+def _goalie_nationalities(client: NHLClient, season_id: int) -> dict[int, str]:
+    """goalie/summary has no nationalityCode; goalie/bios does but lacks GAA/SV%.
+    Fetch the bios report once and index it by playerId to merge the two."""
+    cayenne_exp = f"seasonId={season_id} and gameTypeId=2"
+    sort = '[{"property":"goalieFullName","direction":"ASC"}]'
+    bios = client.goalie_bios(cayenne_exp, sort, limit=-1)
+    return {row["playerId"]: row["nationalityCode"] for row in bios}
+
+
 def build_goalie_top(client: NHLClient, season_id: int, limit: int = 30) -> list[GoalieStatRow]:
     cayenne_exp = f"seasonId={season_id} and gameTypeId=2"
     rows = client.goalie_summary(cayenne_exp, _GOALIE_SORT, limit)
+    nationalities = _goalie_nationalities(client, season_id)
 
     goalies = []
     for row in rows:
@@ -93,6 +104,7 @@ def build_goalie_top(client: NHLClient, season_id: int, limit: int = 30) -> list
                 team=team,
                 logo=TEAM_LOGO_URL.format(abbrev=team),
                 headshot=HEADSHOT_URL.format(season=season_id, abbrev=team, player_id=row["playerId"]),
+                nationality=nationalities.get(row["playerId"], ""),
                 games_played=row["gamesPlayed"],
                 wins=row["wins"],
                 losses=row["losses"],

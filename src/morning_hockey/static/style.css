@@ -705,12 +705,40 @@ main {
 
 /* ---------- Playoff bracket ---------- */
 
-.bracket-round-title {
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  color: var(--muted);
-  margin: 14px 0 6px;
+.bracket-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+@media (min-width: 860px) {
+  .bracket-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.bracket-pair {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-right: 18px;
+}
+
+.bracket-pair .matchup-card {
+  margin-bottom: 0;
+}
+
+.bracket-connector {
+  position: absolute;
+  top: 22%;
+  bottom: 22%;
+  right: 0;
+  width: 12px;
+  border: 2px solid var(--muted);
+  border-left: none;
+  border-radius: 0 8px 8px 0;
+  opacity: 0.6;
 }
 
 .matchup-card {
@@ -759,22 +787,6 @@ main {
   color: var(--muted);
   letter-spacing: 0.05em;
   padding: 2px 0;
-}
-
-.matchup-card.placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 12px 14px;
-  color: var(--muted);
-  font-size: 0.82rem;
-  font-style: italic;
-}
-
-.matchup-card.placeholder .matchup-vs {
-  font-style: normal;
-  padding: 0;
 }
 
 /* ---------- Sortable league stats tables ---------- */
@@ -881,4 +893,12 @@ main {
 .col-rank {
   color: var(--muted);
   font-weight: 600;
+}
+
+.row-fin td:first-child {
+  border-left: 3px solid var(--accent);
+}
+
+.row-chi td:first-child {
+  border-left: 3px solid #dc2626;
 }

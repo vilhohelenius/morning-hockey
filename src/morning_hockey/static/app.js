@@ -36,7 +36,13 @@
       th.addEventListener("click", function () {
         var key = th.dataset.sort;
         var isText = th.dataset.type === "text";
-        var dir = key === activeSort && activeDir === "desc" ? "asc" : "desc";
+        var firstDir = th.dataset.firstDir === "asc" ? "asc" : "desc";
+        var dir;
+        if (key === activeSort) {
+          dir = activeDir === "desc" ? "asc" : "desc";
+        } else {
+          dir = firstDir;
+        }
 
         var rows = Array.prototype.slice.call(tbody.querySelectorAll("tr"));
         rows.sort(function (a, b) {

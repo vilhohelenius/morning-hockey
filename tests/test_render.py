@@ -207,7 +207,12 @@ def test_render_playoffs_writes_round1_and_placeholders(tmp_path: Path):
         conferences=[
             ConferenceBracket(
                 name="Western",
-                round1=[Matchup("Central 1", a, "Villikortti 2", b)],
+                round1=[
+                    Matchup("Central 1", a, "Villikortti 2", b),
+                    Matchup("Central 2", a, "Central 3", b),
+                    Matchup("Pacific 1", a, "Villikortti 1", b),
+                    Matchup("Pacific 2", a, "Pacific 3", b),
+                ],
                 wildcard_race=[b],
             )
         ],
@@ -220,8 +225,10 @@ def test_render_playoffs_writes_round1_and_placeholders(tmp_path: Path):
     assert "Western-konferenssi" in html
     assert "COL" in html and "NSH" in html
     assert "Villikortti 2" in html
-    assert "Ottelun 1 voittaja" in html
-    assert "Stanley Cup" in html
+    assert html.count("matchup-card") == 4
+    assert html.count("bracket-connector") == 2
+    assert "Ottelun 1 voittaja" not in html
+    assert "Stanley Cup" not in html
 
 
 def test_static_assets_are_cache_busted_with_a_content_hash(tmp_path: Path):
@@ -255,9 +262,10 @@ def test_render_league_stats_writes_skaters_and_goalies_tables(tmp_path: Path):
     goalie = GoalieStatRow(
         player_id=8480280,
         name="Jeremy Swayman",
-        team="BOS",
-        logo="https://assets.nhle.com/logos/nhl/svg/BOS_light.svg",
-        headshot="https://assets.nhle.com/mugs/nhl/20262027/BOS/8480280.png",
+        team="CHI",
+        logo="https://assets.nhle.com/logos/nhl/svg/CHI_light.svg",
+        headshot="https://assets.nhle.com/mugs/nhl/20262027/CHI/8480280.png",
+        nationality="FIN",
         games_played=10,
         wins=7,
         losses=2,
@@ -273,7 +281,8 @@ def test_render_league_stats_writes_skaters_and_goalies_tables(tmp_path: Path):
     html = (output_dir / "tilastot.html").read_text(encoding="utf-8")
     assert "Connor McDavid" in html
     assert "Jeremy Swayman" in html
-    assert 'data-sort="points"' in html
-    assert 'data-sort="savepct"' in html
+    assert html.count('data-sort="rank"') == 2
     assert "0.925" in html
     assert "🇨🇦" in html
+    # goalie row is both Finnish and on Chicago
+    assert 'class="row-fin row-chi"' in html

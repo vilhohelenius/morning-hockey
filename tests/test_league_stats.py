@@ -7,9 +7,10 @@ from morning_hockey.league_stats import (
 
 
 class FakeClient:
-    def __init__(self, skaters=None, goalies=None):
+    def __init__(self, skaters=None, goalies=None, goalie_bios=None):
         self._skaters = skaters or []
         self._goalies = goalies or []
+        self._goalie_bios = goalie_bios or []
         self.last_skater_call = None
         self.last_goalie_call = None
 
@@ -20,6 +21,9 @@ class FakeClient:
     def goalie_summary(self, cayenne_exp, sort, limit=-1):
         self.last_goalie_call = (cayenne_exp, limit)
         return self._goalies
+
+    def goalie_bios(self, cayenne_exp, sort, limit=-1):
+        return self._goalie_bios
 
 
 def test_build_skater_top_maps_bios_fields_and_builds_asset_urls():
@@ -54,7 +58,7 @@ def test_build_skater_top_maps_bios_fields_and_builds_asset_urls():
     assert client.last_skater_call == ("seasonId=20262027 and gameTypeId=2", 50)
 
 
-def test_build_goalie_top_resolves_current_team_for_traded_players():
+def test_build_goalie_top_resolves_current_team_and_merges_nationality_from_bios():
     client = FakeClient(
         goalies=[
             {
@@ -69,7 +73,8 @@ def test_build_goalie_top_resolves_current_team_for_traded_players():
                 "savePct": 0.925,
                 "shutouts": 1,
             }
-        ]
+        ],
+        goalie_bios=[{"playerId": 8480280, "nationalityCode": "USA"}],
     )
 
     rows = build_goalie_top(client, 20262027, limit=30)
@@ -79,7 +84,32 @@ def test_build_goalie_top_resolves_current_team_for_traded_players():
     assert isinstance(row, GoalieStatRow)
     assert row.name == "Jeremy Swayman"
     assert row.team == "BOS"  # last team in the traded player's list
+    assert row.nationality == "USA"
     assert row.wins == 7
     assert row.save_pct == 0.925
     assert row.logo == "https://assets.nhle.com/logos/nhl/svg/BOS_light.svg"
     assert client.last_goalie_call == ("seasonId=20262027 and gameTypeId=2", 30)
+
+
+def test_build_goalie_top_defaults_nationality_when_missing_from_bios():
+    client = FakeClient(
+        goalies=[
+            {
+                "playerId": 999,
+                "goalieFullName": "Unknown Goalie",
+                "teamAbbrevs": "CHI",
+                "gamesPlayed": 1,
+                "wins": 0,
+                "losses": 1,
+                "otLosses": 0,
+                "goalsAgainstAverage": 3.0,
+                "savePct": 0.9,
+                "shutouts": 0,
+            }
+        ],
+        goalie_bios=[],
+    )
+
+    rows = build_goalie_top(client, 20262027, limit=30)
+
+    assert rows[0].nationality == ""

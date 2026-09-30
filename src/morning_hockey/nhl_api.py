@@ -59,3 +59,7 @@ class NHLClient:
 
     def goalie_summary(self, cayenne_exp: str, sort: str, limit: int = -1) -> list[dict]:
         return self._stats_query("goalie/summary", cayenne_exp, sort, limit)
+
+    def goalie_bios(self, cayenne_exp: str, sort: str, limit: int = -1) -> list[dict]:
+        """Like goalie_summary, but includes nationalityCode (no GAA/SV%)."""
+        return self._stats_query("goalie/bios", cayenne_exp, sort, limit)
