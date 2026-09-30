@@ -12,11 +12,13 @@ from .league_stats import build_goalie_top, build_skater_top
 from .nhl_api import NHLClient
 from .notify import send_ntfy, send_team_recap
 from .playoffs import build_bracket
+from .primetime import build_primetime
 from .render import (
     render_archive_pages,
     render_dashboard,
     render_league_stats,
     render_playoffs,
+    render_primetime,
     render_standings,
     render_suomiporssi,
     render_team_page,
@@ -25,6 +27,7 @@ from .standings import build_standings
 from .suomiporssi import build_goalie_leaderboard, build_leaderboard, current_season_id
 from .team import build_team_page
 from .team_recap import build_team_recap
+from .team_snapshot import build_team_snapshots
 
 DATA_DIR = Path("data")
 SITE_DIR = Path("site")
@@ -71,12 +74,18 @@ def run(pages_base_url: str, ntfy_topic: str | None, ntfy_server: str) -> None:
     print(f"Tilastot: {len(skater_top)} kenttäpelaajaa, {len(goalie_top)} maalivahtia.")
 
     standings_page = build_standings(client)
-    render_standings(standings_page, SITE_DIR)
-    print(f"Sarjataulukko: tilanne {standings_page.as_of_date}.")
+    all_abbrevs = [row.abbrev for division in standings_page.divisions for row in division.rows]
+    snapshots = build_team_snapshots(client, all_abbrevs, season_id)
+    render_standings(standings_page, snapshots, SITE_DIR)
+    print(f"Sarjataulukko: tilanne {standings_page.as_of_date} ({len(snapshots)} joukkuekorttia).")
 
     bracket = build_bracket(standings_page)
     render_playoffs(bracket, SITE_DIR)
-    print(f"Playoff-puu: tilanne {bracket.as_of_date}.")
+    print(f"Playoff-bracket: tilanne {bracket.as_of_date}.")
+
+    primetime_page = build_primetime(client)
+    render_primetime(primetime_page, SITE_DIR)
+    print(f"Prime time: {len(primetime_page.games)} ottelua {primetime_page.as_of_date}.")
 
     for team_abbrev in TEAM_ABBREVS:
         team_page = build_team_page(client, team_abbrev, season_id)

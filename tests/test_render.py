@@ -10,6 +10,7 @@ from morning_hockey.render import (
 )
 from morning_hockey.suomiporssi import GoalieLeaderboardRow, LeaderboardRow
 from morning_hockey.league_stats import SkaterStatRow
+from morning_hockey.models import TeamInfo
 from morning_hockey.standings import Conference, Division, StandingsPage, StandingsRow
 from morning_hockey.team import DivisionRow, RosterSkater, ScheduleGame, TeamPage
 
@@ -193,7 +194,31 @@ def test_render_standings_writes_divisions_and_wildcard_race(tmp_path: Path):
         ],
     )
 
-    render_standings(page, output_dir)
+    from morning_hockey.team import ScheduleGame
+    from morning_hockey.team_snapshot import RecentResult, SnapshotGoalie, TeamSnapshot, TopScorer
+
+    snapshots = {
+        "CHI": TeamSnapshot(
+            abbrev="CHI",
+            recent_results=[RecentResult(result="W", opponent_abbrev="NSH")],
+            top_scorers=[TopScorer(name="Tyler Bertuzzi", goals=2, assists=1, points=3)],
+            starting_goalie=SnapshotGoalie(name="Spencer Knight", games_played=5, save_pct=0.912),
+            next_game=ScheduleGame(
+                game_id=2,
+                date="2026-10-01",
+                is_home=True,
+                opponent_abbrev="UTA",
+                opponent_name="Mammoth",
+                opponent_logo="https://assets.nhle.com/logos/nhl/svg/UTA_light.svg",
+                team_score=None,
+                opponent_score=None,
+                final_type=None,
+                result=None,
+            ),
+        )
+    }
+
+    render_standings(page, snapshots, output_dir)
 
     html = (output_dir / "sarjataulukko.html").read_text(encoding="utf-8")
     assert "Central" in html
@@ -202,6 +227,10 @@ def test_render_standings_writes_divisions_and_wildcard_race(tmp_path: Path):
     assert "NSH" in html
     # legend dot + one qualified row in the division + one in the wildcard race
     assert html.count("playoff-dot") == 3
+    assert 'data-team-abbrev="CHI"' in html
+    assert "Tyler Bertuzzi" in html
+    assert "Spencer Knight" in html
+    assert '"opponent_abbrev": "UTA"' in html
 
 
 def test_render_playoffs_writes_round1_and_placeholders(tmp_path: Path):
@@ -274,6 +303,36 @@ def test_static_assets_are_cache_busted_with_a_content_hash(tmp_path: Path):
     match = re.search(r'style\.css\?v=([a-f0-9]{10})', html)
     assert match, "expected a versioned style.css link"
     assert f'app.js?v={match.group(1)}' in html
+
+
+def test_render_primetime_writes_games_with_finnish_times(tmp_path: Path):
+    import datetime as dt
+
+    from morning_hockey.primetime import HELSINKI, PrimeTimeGame, PrimeTimePage
+    from morning_hockey.render import render_primetime
+
+    page = PrimeTimePage(
+        as_of_date="2026-01-15",
+        games=[
+            PrimeTimeGame(
+                game_id=1,
+                away=TeamInfo(abbrev="BOS", name="Bruins", logo="bos.svg", score=0),
+                home=TeamInfo(abbrev="NYR", name="Rangers", logo="nyr.svg", score=0),
+                start_local=dt.datetime(2026, 1, 16, 2, 0, tzinfo=HELSINKI),
+                game_state="FUT",
+                is_prime_time=True,
+                is_finished=False,
+            )
+        ],
+    )
+
+    output_dir = tmp_path / "site"
+    render_primetime(page, output_dir)
+
+    html = (output_dir / "primetime.html").read_text(encoding="utf-8")
+    assert "BOS" in html and "NYR" in html
+    assert "02:00" in html
+    assert "primetime-dot" in html
 
 
 def test_render_league_stats_writes_skaters_and_goalies_tables(tmp_path: Path):

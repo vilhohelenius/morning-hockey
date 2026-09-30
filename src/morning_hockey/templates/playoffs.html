@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
-{% block title %}Playoff-puu · Morning Hockey{% endblock %}
-{% block header_title %}Playoff-puu{% endblock %}
+{% block title %}Playoff-bracket · Morning Hockey{% endblock %}
+{% block header_title %}Playoff-bracket{% endblock %}
 
 {% macro matchup_card(m) %}
 <div class="matchup-card">
@@ -23,7 +23,7 @@
 
 {% block content %}
 <header class="page-header">
-  <h1>🏆 Playoff-puu</h1>
+  <h1>🏆 Playoff-bracket</h1>
   <p class="subtitle">Jos pudotuspelit alkaisivat tänään · tilanne {{ bracket.as_of_date | human_date }}</p>
   <p class="standings-legend">Näytetään vain 1. kierros — seuraavat kierrokset ratkeavat vasta kun nämä
     ottelut on pelattu. Viiva yhdistää ottelut, joiden voittajat kohtaisivat toisiaan 2. kierroksella.</p>

@@ -142,7 +142,7 @@ def game_result(team_score: int, opponent_score: int, final_type: str) -> str:
     return "OTL" if final_type != "REG" else "L"
 
 
-def _split_schedule(team_abbrev: str, games: list[dict]) -> tuple[list[ScheduleGame], list[ScheduleGame]]:
+def split_schedule(team_abbrev: str, games: list[dict]) -> tuple[list[ScheduleGame], list[ScheduleGame]]:
     recent: list[ScheduleGame] = []
     upcoming: list[ScheduleGame] = []
 
@@ -225,7 +225,7 @@ def build_team_page(client: NHLClient, team_abbrev: str, season_id: int) -> Team
     division_table = _division_table(standings, team_row["divisionAbbrev"], team_abbrev)
 
     schedule = client.club_schedule_season(team_abbrev)
-    recent_games, upcoming_games = _split_schedule(team_abbrev, schedule["games"])
+    recent_games, upcoming_games = split_schedule(team_abbrev, schedule["games"])
 
     raw_roster = client.roster(team_abbrev)
     skaters = _build_skaters(client, team_abbrev, season_id, raw_roster)
