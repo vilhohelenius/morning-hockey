@@ -21,6 +21,34 @@ export function humanDate(dateStr: string): string {
   return `${weekday[0].toUpperCase()}${weekday.slice(1)} ${day}.${month}.${year}`;
 }
 
+// Europe/Helsinki-local calendar date and time-of-day for a UTC ISO
+// timestamp, the same split schedule.py/primetime.py derive with zoneinfo.
+// Intl.DateTimeFormat handles the DST transition itself, so this doesn't
+// need a manual UTC+2/UTC+3 offset table.
+export function helsinkiParts(isoUtc: string): { date: string; hour: number; minute: number } {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Helsinki",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(new Date(isoUtc));
+
+  const get = (type: string) => parts.find((p) => p.type === type)!.value;
+  return { date: `${get("year")}-${get("month")}-${get("day")}`, hour: Number(get("hour")), minute: Number(get("minute")) };
+}
+
+export function helsinkiToday(): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Helsinki",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
+
 // Mirrors formatting.py's _NATIONALITY_TO_ISO2 -- only nationality codes
 // that actually show up among NHL players are mapped; an unmapped code
 // just falls back to no flag.

@@ -4,6 +4,7 @@
 export interface GameRow {
   game_id: number;
   date: string; // YYYY-MM-DD, Europe/Helsinki calendar date
+  start_time_utc: string; // ISO 8601 UTC
   away_abbrev: string;
   away_name: string;
   away_logo: string;
