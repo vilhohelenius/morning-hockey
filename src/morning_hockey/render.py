@@ -29,6 +29,7 @@ def _nav(asset_prefix: str) -> dict[str, str]:
     return {
         "home": f"{asset_prefix}index.html",
         "leaderboard": f"{asset_prefix}pisteporssi.html",
+        "standings": f"{asset_prefix}sarjataulukko.html",
         "team_chi": f"{asset_prefix}joukkueet/chi.html",
         "archive": f"{asset_prefix}arkisto.html",
     }
@@ -94,6 +95,17 @@ def render_leaderboard(rows: list, season_id: int, output_dir: Path) -> None:
         active_page="leaderboard",
     )
     (output_dir / "pisteporssi.html").write_text(html, encoding="utf-8")
+
+
+def render_standings(page, output_dir: Path) -> None:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    html = _env.get_template("standings.html").render(
+        page=page,
+        asset_prefix="",
+        nav=_nav(""),
+        active_page="standings",
+    )
+    (output_dir / "sarjataulukko.html").write_text(html, encoding="utf-8")
 
 
 def render_team_page(team, output_dir: Path) -> None:

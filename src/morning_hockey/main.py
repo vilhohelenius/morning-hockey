@@ -11,7 +11,8 @@ from .digest import build_digest
 from .leaderboard import build_leaderboard, current_season_id
 from .nhl_api import NHLClient
 from .notify import send_ntfy
-from .render import render_leaderboard, render_site, render_team_page
+from .render import render_leaderboard, render_site, render_standings, render_team_page
+from .standings import build_standings
 from .team import build_team_page
 
 DATA_DIR = Path("data")
@@ -51,6 +52,10 @@ def run(pages_base_url: str, ntfy_topic: str | None, ntfy_server: str) -> None:
     leaderboard_rows = build_leaderboard(client, season_id)
     render_leaderboard(leaderboard_rows, season_id, SITE_DIR)
     print(f"Pistepörssi: {len(leaderboard_rows)} suomalaispelaajaa kaudelta {season_id}.")
+
+    standings_page = build_standings(client)
+    render_standings(standings_page, SITE_DIR)
+    print(f"Sarjataulukko: tilanne {standings_page.as_of_date}.")
 
     for team_abbrev in TEAM_ABBREVS:
         team_page = build_team_page(client, team_abbrev)

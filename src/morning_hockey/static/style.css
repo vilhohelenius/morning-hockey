@@ -541,9 +541,37 @@ main {
   font-variant-numeric: tabular-nums;
 }
 
+.division-stats.cols-6 {
+  grid-template-columns: repeat(6, 20px);
+}
+
 .division-points {
   font-weight: 700;
   color: var(--accent);
+}
+
+/* ---------- League standings ---------- */
+
+.standings-legend {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.playoff-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #0a7d32;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.wc-cutoff-line {
+  border-top: 2px dashed var(--muted);
+  margin: 2px 4px 6px;
+  opacity: 0.6;
 }
 
 .schedule-list {

@@ -1,7 +1,8 @@
 from pathlib import Path
 
 from morning_hockey.leaderboard import LeaderboardRow
-from morning_hockey.render import render_leaderboard, render_site, render_team_page
+from morning_hockey.render import render_leaderboard, render_site, render_standings, render_team_page
+from morning_hockey.standings import Conference, Division, StandingsPage, StandingsRow
 from morning_hockey.team import DivisionRow, RosterPlayer, TeamPage
 
 DIGEST = {
@@ -36,6 +37,7 @@ def test_render_site_writes_index_and_night_page(tmp_path: Path):
     assert "FLA" in index_html and "CAR" in index_html
     assert 'href="arkisto.html"' in index_html
     assert 'href="pisteporssi.html"' in index_html
+    assert 'href="sarjataulukko.html"' in index_html
     assert 'href="joukkueet/chi.html"' in index_html
 
     night_html = (output_dir / "nights" / "2026-09-29.html").read_text(encoding="utf-8")
@@ -136,3 +138,46 @@ def test_render_team_page_writes_under_joukkueet(tmp_path: Path):
     assert "Chicago Blackhawks" in html
     assert "Tyler Bertuzzi" in html
     assert 'href="../index.html"' in html
+
+
+def test_render_standings_writes_divisions_and_wildcard_race(tmp_path: Path):
+    output_dir = tmp_path / "site"
+    row_kwargs = dict(
+        logo="https://assets.nhle.com/logos/nhl/svg/CHI_light.svg",
+        games_played=1,
+        wins=1,
+        losses=0,
+        ot_losses=0,
+        points=2,
+        goal_differential=3,
+    )
+    page = StandingsPage(
+        as_of_date="2026-09-29",
+        divisions=[
+            Division(
+                name="Central",
+                conference="Western",
+                rows=[
+                    StandingsRow(division_rank=1, wildcard_rank=0, abbrev="CHI", name="Blackhawks", qualified=True, **row_kwargs)
+                ],
+            )
+        ],
+        conferences=[
+            Conference(
+                name="Western",
+                wildcard_race=[
+                    StandingsRow(division_rank=4, wildcard_rank=1, abbrev="NSH", name="Predators", qualified=True, **row_kwargs)
+                ],
+            )
+        ],
+    )
+
+    render_standings(page, output_dir)
+
+    html = (output_dir / "sarjataulukko.html").read_text(encoding="utf-8")
+    assert "Central" in html
+    assert "CHI" in html
+    assert "Western-konferenssi" in html
+    assert "NSH" in html
+    # legend dot + one qualified row in the division + one in the wildcard race
+    assert html.count("playoff-dot") == 3
