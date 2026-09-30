@@ -195,6 +195,50 @@ export interface GameBoxScoreRow {
   cached_at: string;
 }
 
+// ---------- Phase 6: full per-team rosters ----------
+
+export interface TeamRosterSkaterRow {
+  player_id: number;
+  team_abbrev: string;
+  name: string;
+  position: string;
+  sweater_number: number;
+  headshot: string;
+  games_played: number;
+  goals: number;
+  assists: number;
+  points: number;
+  plus_minus: number;
+  avg_toi_seconds: number;
+}
+
+export interface TeamRosterGoalieRow {
+  player_id: number;
+  team_abbrev: string;
+  name: string;
+  sweater_number: number;
+  headshot: string;
+  games_played: number;
+  wins: number;
+  losses: number;
+  ot_losses: number;
+  goals_against_average: number;
+  save_pct: number;
+}
+
+export interface TeamSeasonStatsRow {
+  team_abbrev: string;
+  games_played: number;
+  goals_for: number;
+  goals_against: number;
+  power_play_pct: number;
+  penalty_kill_pct: number;
+  faceoff_pct: number;
+  shots_for_per_game: number;
+  shots_against_per_game: number;
+  shutouts: number;
+}
+
 export interface Env {
   DB: D1Database;
 }

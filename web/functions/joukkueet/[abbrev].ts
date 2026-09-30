@@ -1,31 +1,31 @@
-// Team page, phase 3 of the Cloudflare migration: the first route that
-// reads from D1 instead of Python/Jinja2's static build.
+// Team page. Phase 3 built this against a top-N proxy (skater_season_stats/
+// goalie_season_stats, globally capped) since no per-team roster sync
+// existed yet. Phase 6 added team_roster_skaters/team_roster_goalies
+// (every team's actual current roster) and team_season_stats (PP%/PK%/
+// faceoff%/shots) -- this is the real, complete port of team.html.
 //
-// Deliberately narrower than templates/team.html: only tables the fast/slow
-// sync workflows already populate (games, standings_rows, skater/goalie
-// season stats) are used. Full roster (sweater numbers, per-game TOI,
-// +/-) and team-level season stats (PP%/PK%/faceoff%) aren't synced to D1
-// yet -- that's deferred to phase 6 alongside the "all 32 teams" rollout,
-// per the phase 2 commit. This page shows what's actually available today:
-// identity + division standing, recent/upcoming results, and the team's
-// own skater/goalie leaders.
+// Still missing: OT/SO badges on finished games here -- the games table
+// stores game_state/is_finished but not the period-type of the finish, so
+// recent results only show plain W/L, not "W OT"/"L SO". (The
+// /ottelut/[gameId] report page *does* show that badge -- it gets
+// final_type from the NHL API's landing() response directly, not from
+// this table.)
 //
-// Also missing for the same reason: OT/SO badges on finished games -- the
-// games table stores game_state/is_finished but not the period-type of the
-// finish, so recent results only show plain W/L, not "W OT"/"L SO". (The
-// /ottelut/[gameId] report page added in phase 5 *does* show that badge --
-// it gets final_type from the NHL API's landing() response directly, not
-// from this table.)
-//
-// Phase 5 also means every finished game's row here can now link to its
-// report page -- unlike the original team.html, which only linked games
-// nightly-digest.yml happened to pre-build a report for (one team, its
-// last ~10 games). On-demand fetching removes that "pre-built" gate
-// entirely: any finished game's report exists the moment someone visits it.
+// Every finished game's row links to its report page -- on-demand
+// fetching (phase 5) means any finished game's report exists the moment
+// someone visits it, unlike the original team.html, which only linked
+// games nightly-digest.yml happened to pre-build a report for.
 
-import { escapeHtml, shortDate } from "../_shared/format";
+import { escapeHtml, formatToi, shortDate } from "../_shared/format";
 import { renderLayout } from "../_shared/layout";
-import type { Env, GameRow, GoalieStatsRow, SkaterStatsRow, StandingsRow } from "../_shared/types";
+import type {
+  Env,
+  GameRow,
+  StandingsRow,
+  TeamRosterGoalieRow,
+  TeamRosterSkaterRow,
+  TeamSeasonStatsRow,
+} from "../_shared/types";
 
 const RECENT_GAMES = 10;
 const UPCOMING_GAMES = 10;
@@ -92,18 +92,46 @@ function renderGameRow(game: GameRow, teamAbbrev: string, played: boolean): stri
     : `<div class="schedule-row">${inner}</div>`;
 }
 
-function renderSkaterTable(skaters: SkaterStatsRow[]): string {
+function renderSeasonStats(stats: TeamSeasonStatsRow | null): string {
+  if (!stats) return "";
+  const goalDifferential = stats.goals_for - stats.goals_against;
+
+  const tile = (value: string, label: string) => `
+    <div class="stat-tile">
+      <span class="stat-tile-value">${value}</span>
+      <span class="stat-tile-label">${label}</span>
+    </div>`;
+
+  return `
+<section>
+  <h2 class="section-title">Kausitilastot</h2>
+  <div class="stat-grid">
+    ${tile(`${(stats.power_play_pct * 100).toFixed(1)} %`, "YV%")}
+    ${tile(`${(stats.penalty_kill_pct * 100).toFixed(1)} %`, "AV%")}
+    ${tile(`${(stats.faceoff_pct * 100).toFixed(1)} %`, "Aloitus%")}
+    ${tile(String(stats.goals_for), "Tehdyt maalit")}
+    ${tile(String(stats.goals_against), "Päästetyt maalit")}
+    ${tile(`${goalDifferential > 0 ? "+" : ""}${goalDifferential}`, "Maaliero")}
+    ${tile(stats.shots_for_per_game.toFixed(1), "Laukaukset/ottelu")}
+    ${tile(String(stats.shutouts), "Nollapelit")}
+  </div>
+</section>`;
+}
+
+function renderSkaterTable(skaters: TeamRosterSkaterRow[]): string {
   const rows = skaters
     .map(
       (player, index) => `
-      <tr>
+      <tr data-name="${escapeHtml(player.name)}" data-gp="${player.games_played}"
+          data-goals="${player.goals}" data-assists="${player.assists}" data-rank="${index + 1}"
+          data-plusminus="${player.plus_minus}" data-toi="${player.avg_toi_seconds}">
         <td class="col-rank">${index + 1}</td>
         <td>
           <span class="player-cell">
             <img src="${escapeHtml(player.headshot)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
             <span class="player-name">
               ${escapeHtml(player.name)}
-              <span class="player-meta">${escapeHtml(player.position)}</span>
+              <span class="player-meta">#${player.sweater_number} · ${escapeHtml(player.position)}</span>
             </span>
           </span>
         </td>
@@ -111,6 +139,8 @@ function renderSkaterTable(skaters: SkaterStatsRow[]): string {
         <td>${player.goals}</td>
         <td>${player.assists}</td>
         <td class="stat-strong">${player.points}</td>
+        <td>${player.plus_minus > 0 ? "+" : ""}${player.plus_minus}</td>
+        <td>${formatToi(player.avg_toi_seconds)}</td>
       </tr>`,
     )
     .join("");
@@ -123,11 +153,13 @@ function renderSkaterTable(skaters: SkaterStatsRow[]): string {
       <thead>
         <tr>
           <th class="col-rank">#</th>
-          <th>Pelaaja</th>
-          <th>O</th>
-          <th>M</th>
-          <th>S</th>
-          <th>P</th>
+          <th data-sort="name" data-type="text">Pelaaja</th>
+          <th data-sort="gp">O</th>
+          <th data-sort="goals">M</th>
+          <th data-sort="assists">S</th>
+          <th data-sort="rank" data-first-dir="asc" class="sort-asc">P</th>
+          <th data-sort="plusminus">+/-</th>
+          <th data-sort="toi">KA</th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>
@@ -136,16 +168,21 @@ function renderSkaterTable(skaters: SkaterStatsRow[]): string {
 </section>`;
 }
 
-function renderGoalieTable(goalies: GoalieStatsRow[]): string {
+function renderGoalieTable(goalies: TeamRosterGoalieRow[]): string {
   const rows = goalies
     .map(
       (player, index) => `
-      <tr>
+      <tr data-name="${escapeHtml(player.name)}" data-gp="${player.games_played}" data-wins="${player.wins}"
+          data-losses="${player.losses}" data-otl="${player.ot_losses}"
+          data-gaa="${player.goals_against_average}" data-rank="${index + 1}">
         <td class="col-rank">${index + 1}</td>
         <td>
           <span class="player-cell">
             <img src="${escapeHtml(player.headshot)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
-            <span class="player-name">${escapeHtml(player.name)}</span>
+            <span class="player-name">
+              ${escapeHtml(player.name)}
+              <span class="player-meta">#${player.sweater_number}</span>
+            </span>
           </span>
         </td>
         <td>${player.games_played}</td>
@@ -166,13 +203,13 @@ function renderGoalieTable(goalies: GoalieStatsRow[]): string {
       <thead>
         <tr>
           <th class="col-rank">#</th>
-          <th>Pelaaja</th>
-          <th>O</th>
-          <th>V</th>
-          <th>H</th>
-          <th>JH</th>
-          <th>GAA</th>
-          <th>SV%</th>
+          <th data-sort="name" data-type="text">Pelaaja</th>
+          <th data-sort="gp">O</th>
+          <th data-sort="wins">V</th>
+          <th data-sort="losses">H</th>
+          <th data-sort="otl">JH</th>
+          <th data-sort="gaa">GAA</th>
+          <th data-sort="rank" data-first-dir="asc" class="sort-asc">SV%</th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>
@@ -216,15 +253,22 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     .bind(abbrev, abbrev, UPCOMING_GAMES)
     .all<GameRow>();
 
-  const { results: skaters } = await db
-    .prepare("SELECT * FROM skater_season_stats WHERE team_abbrev = ? ORDER BY points DESC")
+  const seasonStats = await db
+    .prepare("SELECT * FROM team_season_stats WHERE team_abbrev = ?")
     .bind(abbrev)
-    .all<SkaterStatsRow>();
+    .first<TeamSeasonStatsRow>();
+
+  const { results: skaters } = await db
+    .prepare(
+      "SELECT * FROM team_roster_skaters WHERE team_abbrev = ? ORDER BY points DESC, goals DESC, name ASC",
+    )
+    .bind(abbrev)
+    .all<TeamRosterSkaterRow>();
 
   const { results: goalies } = await db
-    .prepare("SELECT * FROM goalie_season_stats WHERE team_abbrev = ? ORDER BY save_pct DESC")
+    .prepare("SELECT * FROM team_roster_goalies WHERE team_abbrev = ? ORDER BY save_pct DESC")
     .bind(abbrev)
-    .all<GoalieStatsRow>();
+    .all<TeamRosterGoalieRow>();
 
   const content = `
 <header class="page-header team-page-header">
@@ -234,6 +278,8 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     ${escapeHtml(team.division)}: ${team.division_rank}. sija · ${team.wins}-${team.losses}-${team.ot_losses} (${team.points} p)
   </p>
 </header>
+
+${renderSeasonStats(seasonStats ?? null)}
 
 ${renderDivisionTable(division, abbrev)}
 

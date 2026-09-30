@@ -106,3 +106,21 @@ INSERT INTO game_box_scores (game_id, final_type, goals_json, team_stats_json, a
 '[{"player_id":8478406,"name":"Sam Montembeault","nationality":"CAN","headshot":"https://assets.nhle.com/mugs/nhl/20262027/MTL/8478406.png","decision":"L","saves":27,"shots_against":32,"save_pct":0.844,"toi":"59:12"}]',
 '[{"player_id":8480313,"name":"Joseph Woll","nationality":"USA","headshot":"https://assets.nhle.com/mugs/nhl/20262027/TOR/8480313.png","decision":"W","saves":26,"shots_against":28,"save_pct":0.929,"toi":"60:00"}]',
 '2026-09-30T12:00:00Z');
+
+-- Phase 6: full per-team rosters + season stats, for TOR (team page's own
+-- tables) and CAR (already has a digest game from 2001 above, so its
+-- standings snapshot popup gets real recent_results too). Two TOR goalies
+-- with different games_played tests that "starting goalie" in the
+-- snapshot picks the one with MORE starts (Woll), not just the first row.
+INSERT INTO team_roster_skaters (player_id, team_abbrev, name, position, sweater_number, headshot, games_played, goals, assists, points, plus_minus, avg_toi_seconds, updated_at) VALUES
+(8479318, 'TOR', 'Auston Matthews', 'C', 34, 'https://assets.nhle.com/mugs/nhl/20262027/TOR/8479318.png', 7, 8, 5, 13, 3, 1220, '2026-09-30T12:00:00Z'),
+(8478483, 'TOR', 'Mitch Marner', 'R', 16, 'https://assets.nhle.com/mugs/nhl/20262027/TOR/8478483.png', 7, 4, 9, 13, 2, 1150, '2026-09-30T12:00:00Z'),
+(8481535, 'CAR', 'Sebastian Aho', 'C', 20, 'https://assets.nhle.com/mugs/nhl/20262027/CAR/8481535.png', 7, 6, 4, 10, 4, 1190, '2026-09-30T12:00:00Z');
+
+INSERT INTO team_roster_goalies (player_id, team_abbrev, name, sweater_number, headshot, games_played, wins, losses, ot_losses, goals_against_average, save_pct, updated_at) VALUES
+(8480313, 'TOR', 'Joseph Woll', 60, 'https://assets.nhle.com/mugs/nhl/20262027/TOR/8480313.png', 4, 3, 1, 0, 2.31, 0.918, '2026-09-30T12:00:00Z'),
+(8475831, 'TOR', 'Anthony Stolarz', 41, 'https://assets.nhle.com/mugs/nhl/20262027/TOR/8475831.png', 3, 1, 2, 0, 3.10, 0.890, '2026-09-30T12:00:00Z'),
+(8479978, 'CAR', 'Pyotr Kochetkov', 52, 'https://assets.nhle.com/mugs/nhl/20262027/CAR/8479978.png', 5, 4, 1, 0, 2.10, 0.925, '2026-09-30T12:00:00Z');
+
+INSERT INTO team_season_stats (team_abbrev, games_played, goals_for, goals_against, power_play_pct, penalty_kill_pct, faceoff_pct, shots_for_per_game, shots_against_per_game, shutouts, updated_at) VALUES
+('TOR', 7, 25, 18, 0.24, 0.82, 0.51, 32.1, 27.4, 1, '2026-09-30T12:00:00Z');

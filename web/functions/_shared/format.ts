@@ -1,6 +1,13 @@
 // Small formatting helpers mirroring src/morning_hockey/formatting.py's
 // short_date so page output reads the same as the existing Jinja2 site.
 
+export function formatToi(seconds: number): string {
+  const total = Math.round(seconds);
+  const minutes = Math.floor(total / 60);
+  const secs = total % 60;
+  return `${minutes}:${String(secs).padStart(2, "0")}`;
+}
+
 export function shortDate(dateStr: string): string {
   const [, month, day] = dateStr.split("-").map(Number);
   return `${day}.${month}.`;
