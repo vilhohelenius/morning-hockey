@@ -2368,6 +2368,24 @@ main {
   display: none;
 }
 
+/* ---------- Team page: full-season schedule button + toggle ---------- */
+
+.team-schedule-link {
+  display: inline-block;
+  text-decoration: none;
+  margin-bottom: 16px;
+}
+
+.team-games-picker {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.team-games-section.is-hidden {
+  display: none;
+}
+
 /* ---------- Tulospiilo (spoiler-free mode) ---------- */
 
 .spoiler-placeholder {

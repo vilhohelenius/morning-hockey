@@ -63,6 +63,25 @@
     });
   });
 
+  // Team schedule's past/upcoming toggle -- same pill + is-hidden pattern
+  // as the two pickers above, keyed on data-filter.
+  document.querySelectorAll(".team-games-picker").forEach(function (picker) {
+    var pills = picker.querySelectorAll(".day-pill");
+    var sections = document.querySelectorAll(".team-games-section");
+
+    pills.forEach(function (pill) {
+      pill.addEventListener("click", function () {
+        pills.forEach(function (p) {
+          p.classList.remove("active");
+        });
+        pill.classList.add("active");
+        sections.forEach(function (section) {
+          section.classList.toggle("is-hidden", section.dataset.filter !== pill.dataset.filter);
+        });
+      });
+    });
+  });
+
   // Player hero card: click (or Enter/Space, since it's a role="button")
   // flips it to reveal the bio back face. The fav-star form sits inside
   // this same element (see [playerId].ts) so its own clicks are excluded

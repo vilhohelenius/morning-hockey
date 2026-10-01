@@ -1,6 +1,8 @@
 // Small formatting helpers mirroring src/morning_hockey/formatting.py's
 // short_date so page output reads the same as the existing Jinja2 site.
 
+import type { GameRow } from "./types";
+
 export function formatToi(seconds: number): string {
   const total = Math.round(seconds);
   const minutes = Math.floor(total / 60);
@@ -69,6 +71,40 @@ export function teamHeroBackgroundStyle(abbrev: string | null | undefined, inclu
     `background-position: 0% 0%, 50% 50%, 0% 0%, 0% 0%`,
     `background-repeat: repeat, no-repeat, repeat, repeat`,
   ].join("; ");
+}
+
+// One row of a team's schedule list -- a played game links to its report
+// page and shows the final score/result, an upcoming one shows kickoff
+// time instead. Shared by the team page's own (limited) recent/upcoming
+// sections and the full-season schedule view (/joukkueet/[abbrev]/ottelut).
+export function renderGameRow(game: GameRow, teamAbbrev: string, played: boolean): string {
+  const isHome = game.home_abbrev === teamAbbrev;
+  const teamScore = isHome ? game.home_score : game.away_score;
+  const opponentScore = isHome ? game.away_score : game.home_score;
+  const opponentAbbrev = isHome ? game.away_abbrev : game.home_abbrev;
+  const opponentLogo = isHome ? game.away_logo : game.home_logo;
+  const result = played ? (teamScore > opponentScore ? "W" : game.final_type !== "REG" ? "OTL" : "L") : null;
+
+  const inner = `
+      <span class="schedule-date">${shortDate(game.date)}</span>
+      <span class="schedule-opponent">
+        ${isHome ? "vs" : "@"}
+        <img src="${escapeHtml(opponentLogo)}" alt="${escapeHtml(opponentAbbrev)}" class="schedule-logo" loading="lazy">
+        ${escapeHtml(opponentAbbrev)}
+      </span>
+      ${
+        played
+          ? `<span class="schedule-score">${teamScore}–${opponentScore}</span>
+      <span class="schedule-result result-${result?.toLowerCase()}">${result}</span>`
+          : `<span class="schedule-time">${(() => {
+              const { hour, minute } = helsinkiParts(game.start_time_utc);
+              return `${hour}:${String(minute).padStart(2, "0")}`;
+            })()}</span>`
+      }`;
+
+  return played
+    ? `<a class="schedule-row schedule-row-link" href="/ottelut/${game.game_id}">${inner}</a>`
+    : `<div class="schedule-row">${inner}</div>`;
 }
 
 // The star-shaped favorite toggle in a hero banner's top-right corner

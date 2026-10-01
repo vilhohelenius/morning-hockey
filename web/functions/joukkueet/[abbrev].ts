@@ -17,7 +17,7 @@
 // games nightly-digest.yml happened to pre-build a report for.
 
 import { currentUsername } from "../_shared/auth";
-import { escapeHtml, helsinkiParts, renderFavStar, shortDate, teamHeroBackgroundStyle } from "../_shared/format";
+import { escapeHtml, renderFavStar, renderGameRow, teamHeroBackgroundStyle } from "../_shared/format";
 import { renderRosterGoalieTable, renderRosterSkaterTable } from "../_shared/leaderboard";
 import { renderLayout } from "../_shared/layout";
 import type {
@@ -65,36 +65,6 @@ function renderDivisionTable(division: StandingsRow[], teamAbbrev: string): stri
     ${rows}
   </div>
 </section>`;
-}
-
-function renderGameRow(game: GameRow, teamAbbrev: string, played: boolean): string {
-  const isHome = game.home_abbrev === teamAbbrev;
-  const teamScore = isHome ? game.home_score : game.away_score;
-  const opponentScore = isHome ? game.away_score : game.home_score;
-  const opponentAbbrev = isHome ? game.away_abbrev : game.home_abbrev;
-  const opponentLogo = isHome ? game.away_logo : game.home_logo;
-  const result = played ? (teamScore > opponentScore ? "W" : game.final_type !== "REG" ? "OTL" : "L") : null;
-
-  const inner = `
-      <span class="schedule-date">${shortDate(game.date)}</span>
-      <span class="schedule-opponent">
-        ${isHome ? "vs" : "@"}
-        <img src="${escapeHtml(opponentLogo)}" alt="${escapeHtml(opponentAbbrev)}" class="schedule-logo" loading="lazy">
-        ${escapeHtml(opponentAbbrev)}
-      </span>
-      ${
-        played
-          ? `<span class="schedule-score">${teamScore}–${opponentScore}</span>
-      <span class="schedule-result result-${result?.toLowerCase()}">${result}</span>`
-          : `<span class="schedule-time">${(() => {
-              const { hour, minute } = helsinkiParts(game.start_time_utc);
-              return `${hour}:${String(minute).padStart(2, "0")}`;
-            })()}</span>`
-      }`;
-
-  return played
-    ? `<a class="schedule-row schedule-row-link" href="/ottelut/${game.game_id}">${inner}</a>`
-    : `<div class="schedule-row">${inner}</div>`;
 }
 
 function renderSeasonStats(stats: TeamSeasonStatsRow | null): string {
@@ -204,6 +174,8 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 ${renderSeasonStats(seasonStats ?? null)}
 
 ${renderDivisionTable(division, abbrev)}
+
+<a class="filter-btn team-schedule-link" href="/joukkueet/${abbrev.toLowerCase()}/ottelut">📅 Kaikki ottelut</a>
 
 <section>
   <h2 class="section-title">Edelliset ottelut</h2>
