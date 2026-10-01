@@ -1,18 +1,11 @@
-"""A single team's dashboard: roster, recent/upcoming games, division standing."""
+"""Per-team roster and season stats, for every team -- feeds the slow-tier
+D1 sync (sync_slow_tier.py), which syncs all 32 teams' rosters/season stats
+at once via build_all_team_rosters/build_all_team_season_stats below."""
 from __future__ import annotations
 
-import datetime as dt
 from dataclasses import dataclass
-from zoneinfo import ZoneInfo
 
-from .digest import FINISHED_STATES
 from .nhl_api import NHLClient
-
-HELSINKI = ZoneInfo("Europe/Helsinki")
-
-_RECENT_GAMES = 10
-_UPCOMING_GAMES = 10
-_REGULAR_SEASON = 2
 
 
 @dataclass(frozen=True)
@@ -49,20 +42,6 @@ class RosterGoalie:
 
 
 @dataclass(frozen=True)
-class ScheduleGame:
-    game_id: int
-    date: str
-    is_home: bool
-    opponent_abbrev: str
-    opponent_name: str
-    opponent_logo: str
-    team_score: int | None
-    opponent_score: int | None
-    final_type: str | None  # "REG" | "OT" | "SO", only for played games
-    result: str | None  # "W" | "L" | "OTL", only for played games
-
-
-@dataclass(frozen=True)
 class SeasonStats:
     games_played: int
     goals_for: int
@@ -74,36 +53,6 @@ class SeasonStats:
     shots_for_per_game: float
     shots_against_per_game: float
     shutouts: int
-
-
-@dataclass(frozen=True)
-class DivisionRow:
-    abbrev: str
-    name: str
-    logo: str
-    rank: int
-    games_played: int
-    wins: int
-    losses: int
-    ot_losses: int
-    points: int
-    is_team: bool
-
-
-@dataclass(frozen=True)
-class TeamPage:
-    abbrev: str
-    name: str
-    logo: str
-    division_name: str
-    division_rank: int
-    streak: str
-    division_table: list[DivisionRow]
-    season_stats: SeasonStats | None
-    skaters: list[RosterSkater]
-    goalies: list[RosterGoalie]
-    recent_games: list[ScheduleGame]
-    upcoming_games: list[ScheduleGame]
 
 
 def _player_name(player: dict) -> str:
@@ -175,12 +124,6 @@ def _build_goalies(client: NHLClient, season_id: int, raw_roster: dict) -> list[
     return goalies
 
 
-def game_result(team_score: int, opponent_score: int, final_type: str) -> str:
-    if team_score > opponent_score:
-        return "W"
-    return "OTL" if final_type != "REG" else "L"
-
-
 def team_display_name(payload: dict) -> str:
     """club-schedule-season and the weekly schedule endpoint both key a
     team's short name as "commonName"; fall back to "name" (the scoreboard
@@ -190,75 +133,6 @@ def team_display_name(payload: dict) -> str:
         if key in payload:
             return payload[key]["default"]
     return payload["abbrev"]
-
-
-def split_schedule(team_abbrev: str, games: list[dict]) -> tuple[list[ScheduleGame], list[ScheduleGame]]:
-    """Split a team's games into played (most recent last-N, newest first)
-    and upcoming (next-N). Assumes `games` is already in chronological
-    order, as club-schedule-season returns it; a caller merging several
-    weeks of the league-wide schedule must sort by date first."""
-    recent: list[ScheduleGame] = []
-    upcoming: list[ScheduleGame] = []
-
-    for game in games:
-        if game.get("gameType") != _REGULAR_SEASON:
-            continue
-
-        is_home = game["homeTeam"]["abbrev"] == team_abbrev
-        away_is_this_team = game["awayTeam"]["abbrev"] == team_abbrev
-        if not is_home and not away_is_this_team:
-            continue
-
-        team = game["homeTeam"] if is_home else game["awayTeam"]
-        opponent = game["awayTeam"] if is_home else game["homeTeam"]
-
-        # "gameDate" is the NHL's own nominal (US-schedule) date, not the
-        # calendar date the game actually falls on in Finland -- a game
-        # starting late enough in the US evening is already past midnight
-        # in Helsinki. Derive the displayed date from the real start time
-        # instead, same fix as schedule.py's Otteluohjelma page.
-        start_utc = dt.datetime.fromisoformat(game["startTimeUTC"].replace("Z", "+00:00"))
-        local_date = start_utc.astimezone(HELSINKI).date().isoformat()
-
-        base = dict(
-            game_id=game["id"],
-            date=local_date,
-            is_home=is_home,
-            opponent_abbrev=opponent["abbrev"],
-            opponent_name=team_display_name(opponent),
-            opponent_logo=opponent["logo"],
-        )
-
-        if game.get("gameState") in FINISHED_STATES:
-            team_score = team.get("score")
-            opponent_score = opponent.get("score")
-            if team_score is None or opponent_score is None:
-                continue
-            final_type = game.get("gameOutcome", {}).get("lastPeriodType", "REG")
-            recent.append(
-                ScheduleGame(
-                    **base,
-                    team_score=team_score,
-                    opponent_score=opponent_score,
-                    final_type=final_type,
-                    result=game_result(team_score, opponent_score, final_type),
-                )
-            )
-        else:
-            upcoming.append(
-                ScheduleGame(
-                    **base,
-                    team_score=None,
-                    opponent_score=None,
-                    final_type=None,
-                    result=None,
-                )
-            )
-
-    recent = recent[-_RECENT_GAMES:]
-    recent.reverse()
-    upcoming = upcoming[:_UPCOMING_GAMES]
-    return recent, upcoming
 
 
 def _build_season_stats(client: NHLClient, team_full_name: str, season_id: int) -> SeasonStats | None:
@@ -278,59 +152,6 @@ def _build_season_stats(client: NHLClient, team_full_name: str, season_id: int) 
         shots_for_per_game=row["shotsForPerGame"],
         shots_against_per_game=row["shotsAgainstPerGame"],
         shutouts=row["teamShutouts"],
-    )
-
-
-def _division_table(standings: dict, division_abbrev: str, team_abbrev: str) -> list[DivisionRow]:
-    division_teams = sorted(
-        (row for row in standings["standings"] if row["divisionAbbrev"] == division_abbrev),
-        key=lambda row: row["divisionSequence"],
-    )
-    return [
-        DivisionRow(
-            abbrev=row["teamAbbrev"]["default"],
-            name=row["teamCommonName"]["default"],
-            logo=row["teamLogo"],
-            rank=row["divisionSequence"],
-            games_played=row["gamesPlayed"],
-            wins=row["wins"],
-            losses=row["losses"],
-            ot_losses=row["otLosses"],
-            points=row["points"],
-            is_team=row["teamAbbrev"]["default"] == team_abbrev,
-        )
-        for row in division_teams
-    ]
-
-
-def build_team_page(client: NHLClient, team_abbrev: str, season_id: int) -> TeamPage:
-    standings = client.standings()
-    team_row = next(
-        row for row in standings["standings"] if row["teamAbbrev"]["default"] == team_abbrev
-    )
-    division_table = _division_table(standings, team_row["divisionAbbrev"], team_abbrev)
-    season_stats = _build_season_stats(client, team_row["teamName"]["default"], season_id)
-
-    schedule = client.club_schedule_season(team_abbrev)
-    recent_games, upcoming_games = split_schedule(team_abbrev, schedule["games"])
-
-    raw_roster = client.roster(team_abbrev)
-    skaters = _build_skaters(client, season_id, raw_roster)
-    goalies = _build_goalies(client, season_id, raw_roster)
-
-    return TeamPage(
-        abbrev=team_abbrev,
-        name=team_row["teamName"]["default"],
-        logo=team_row["teamLogo"],
-        division_name=team_row["divisionName"],
-        division_rank=team_row["divisionSequence"],
-        streak=f"{team_row['streakCode']}{team_row['streakCount']}",
-        division_table=division_table,
-        season_stats=season_stats,
-        skaters=skaters,
-        goalies=goalies,
-        recent_games=recent_games,
-        upcoming_games=upcoming_games,
     )
 
 

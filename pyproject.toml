@@ -5,13 +5,12 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "morning-hockey"
 version = "0.1.0"
-description = "Nightly digest of NHL results, Finnish scorers and goalies, delivered as a push notification and a mobile-friendly site."
+description = "NHL results, Finnish scorers/goalies and season stats, synced to Cloudflare D1 and served by a Cloudflare Pages app (web/)."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
 dependencies = [
     "requests>=2.31",
-    "Jinja2>=3.1",
 ]
 
 [project.optional-dependencies]
@@ -21,9 +20,6 @@ dev = [
 
 [tool.setuptools.packages.find]
 where = ["src"]
-
-[tool.setuptools.package-data]
-morning_hockey = ["templates/*.html", "static/*.css", "static/*.js"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

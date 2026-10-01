@@ -1,10 +1,10 @@
-"""Full upcoming schedule for the next 7 days. Unlike primetime.py, every
-scheduled game is included -- no time-of-day filtering.
+"""Full upcoming schedule for the next 7 days, every scheduled game included
+(no time-of-day filtering -- the web app's own Prime time page does that
+filtering itself, in TypeScript, reading straight from D1).
 
-Regular-season games only (gameType 2, same convention as team.py's
-split_schedule) -- preseason and playoff games are dropped here before
-they ever reach D1's `games` table, since the fast tier (the only thing
-that writes to it) is built on this function.
+Regular-season games only (gameType 2) -- preseason and playoff games are
+dropped here before they ever reach D1's `games` table, since the fast tier
+(the only thing that writes to it) is built on this function.
 """
 from __future__ import annotations
 

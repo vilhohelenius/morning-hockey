@@ -1,100 +1,116 @@
 # Morning Hockey
 
-Joka aamu: käy automaattisesti läpi edellisen yön NHL-ottelut, ja kertoo
-
-- lopputulokset,
-- suomalaisten pelaajien pisteet (`Nimi, maalit+syötöt`, esim. `Sebastian Aho, 2+1`),
-- pelanneet suomalaiset maalivahdit torjuntoineen,
-
-joukkueiden logoineen. Tulokset julkaistaan mobiilioptimoidulla sivulla
-(GitHub Pages), ja niistä lähtee push-ilmoitus [ntfy](https://ntfy.sh):n kautta
-puhelimeen heti kun ilmoitus on valmis.
+NHL-tulokset, suomalaisten pelaajien pisteet/torjunnat ja kausitilastot kaikille
+32 joukkueelle, selattavissa osoitteessa https://morning-hockey.pages.dev —
+ei ilmoituksia, ei yhtä kovakoodattua joukkuetta, vaan oma käyttäjätili
+suosikkijoukkueineen ja -pelaajineen.
 
 ## Miten se toimii
 
 ```
-GitHub Actions (ajastettu joka aamu)
+GitHub Actions (kolme ajastettua synkkaa)
         │
-        ├─ hakee NHL:n julkisesta API:sta (api-web.nhle.com) edellisen yön
-        │  tulokset, maalintekijät ja maalivahtien tilastot
+        ├─ sync-fast-tier.yml   (30 min välein)  → games-taulu
+        │     ottelutilanteet/-tulokset, pysyvä arkisto samalla
         │
-        ├─ suodattaa niistä suomalaiset pelaajat (roolista birthCountry == "FIN")
+        ├─ sync-slow-tier.yml   (tunneittain)     → kausitilastot
+        │     sarjataulukko, pistepörssit, rosterit, joukkueiden
+        │     kausitilastot (kaikki 32 joukkuetta)
         │
-        ├─ tallentaa yön datan JSON-tiedostoksi data/YYYY-MM-DD.json (arkisto)
+        └─ sync-digest.yml      (kerran päivässä) → suomalaiset pelaajat
+              edellisen yön suomalaisten syöttö-/maalivahtirivit
+
+Cloudflare D1 (SQLite)
         │
-        ├─ renderöi koko arkiston staattiseksi sivustoksi (site/) ja julkaisee
-        │  sen GitHub Pagesiin
-        │
-        └─ lähettää ntfy-push-ilmoituksen, joka linkittää suoraan illan sivulle
+        └─ Cloudflare Pages Functions (web/) lukee D1:stä per-pyyntö
+           ja renderöi HTML:n -- ei staattista build-vaihetta sivuston
+           puolella, data on aina niin tuore kuin viimeisin synkka
 ```
 
 Data haetaan [NHL:n julkisesta API:sta](https://github.com/Zmalski/NHL-API-Reference).
+Python (`src/morning_hockey/`) hoitaa vain datan haun ja jalostuksen; jokainen
+`sync_*.py`-skripti kutsuu valmiita `build_*`-funktioita ja kirjoittaa
+tuloksen D1:een `d1_sync.py`:n kautta. Itse sivusto on TypeScript/Cloudflare
+Pages Functions (`web/functions/`), joka lukee D1:tä suoraan Workersin omalla
+bindingillä -- ei erillistä build-vaihetta, jokainen sivulataus on tuore.
 
 ## Projektin rakenne
 
 ```
 src/morning_hockey/
-  nhl_api.py     NHL API -asiakas (score/boxscore/roster-endpointit)
-  finnish.py     Suomalaisten pelaajien tunnistus rosterdatasta
-  digest.py      Raakadatan jalostus Digest-malliksi (tulokset, pisteet, torjunnat)
-  formatting.py  Suomenkieliset päivämäärä-/tulos-apufunktiot
-  render.py      Jinja2-pohjainen staattisen sivuston generointi
-  notify.py      ntfy-ilmoituksen lähetys
-  main.py        Komentorivin ajopiste, jota GitHub Actions kutsuu
+  nhl_api.py          NHL API -asiakas (score/boxscore/roster-endpointit, cachettaa per-ajo)
+  d1_sync.py           D1:n HTTP API -kirjoitusadapteri jokaiselle synkalle
+  digest.py            Edellisen yön tulokset + suomalaiset pelaajat
+  finnish.py            Suomalaisten pelaajien tunnistus rosterdatasta
+  boxscore.py           Yksittäisen ottelun maali-/tilastoerittely
+  league_stats.py       Liigan pistepörssi/maalivahtipörssi (top-N)
+  rookies.py             Rookie-pörssi (NHL:n virallinen rookie-sääntö)
+  standings.py            Sarjataulukko divisioonittain
+  suomiporssi.py          Suomalaisten oma pistepörssi/maalivahtipörssi
+  schedule.py             Otteluohjelma (rullaava 7+ päivää)
+  team.py                 Joukkueiden rosterit + kausitilastot, kaikille 32
+  sync_fast_tier.py       CLI: ottelut → D1 (30 min välein)
+  sync_slow_tier.py       CLI: kausitilastot → D1 (tunneittain)
+  sync_digest.py          CLI: edellisen yön suomalaiset → D1 (päivittäin)
 
-templates/       Sivuston HTML-templatet (Jinja2)
-static/          Sivuston CSS
-data/            Arkistoidut yökohtaiset digestit (JSON, committed gitiin)
-tests/           Pytest-yksikkötestit
+web/
+  functions/            Cloudflare Pages Functions (TypeScript), yksi
+                         reitti/tiedosto per sivu, lukee env.DB:tä (D1)
+  functions/_shared/     Layout, muotoilu, autentikaatio, jaetut komponentit
+  public/static/         CSS + vanilla JS (app.js), ei build-stepiä
+  wrangler.toml           Pages-projektin D1-binding
+  seed.local.sql          Paikallinen testidata (wrangler pages dev)
+
+d1/schema.sql          D1:n taulurakenne (ei ajeta automaattisesti --
+                        uudet taulut/indeksit liitetään käsin Cloudflaren
+                        D1 Console -välilehdellä)
+tests/                 Pytest-yksikkötestit Python-puolelle
 .github/workflows/
-  nightly-digest.yml   Ajastettu ajo (klo 06 UTC) + Pages-julkaisu
-  tests.yml            Testit jokaisella pushilla/PR:llä
+  sync-fast-tier.yml    Ottelut D1:een, 30 min välein
+  sync-slow-tier.yml    Kausitilastot D1:een, tunneittain
+  sync-digest.yml       Suomalaiset pelaajat D1:een, kerran päivässä
+  deploy-pages.yml       web/ → Cloudflare Pages jokaisella pushilla mainiin
+  web-typecheck.yml      tsc + boxscore-parity-testit jokaisella web/-pushilla
+  tests.yml               pytest jokaisella pushilla/PR:llä
 ```
 
 ## Käyttöönotto
 
-1. **Luo ntfy-tilaus puhelimeen.** Asenna [ntfy-sovellus](https://apps.apple.com/app/ntfy/id1625396347)
-   iPhoneen ja tilaa aihe (topic), jonka saat tämän projektin ylläpitäjältä /
-   generoit itse (pitkä, satunnainen merkkijono — kuka tahansa aiheen tietävä
-   näkee ilmoitukset, joten pidä se salassa jaettavan linkin tavoin).
-2. **Aseta GitHub-secret.** Repon Settings → Secrets and variables → Actions →
-   New repository secret: `NTFY_TOPIC` = valitsemasi aihe.
-3. **Varmista GitHub Pages -asetus.** Settings → Pages → Source: **GitHub
-   Actions** (workflow tekee tämän automaattisesti ensimmäisellä ajolla, mutta
-   kannattaa tarkistaa manuaalisesti jos repo on yksityinen — katso alla oleva
-   huomio).
-4. **Aja workflow kerran käsin** (Actions → Nightly NHL digest → Run workflow),
-   niin saat heti ensimmäisen sivun ja ilmoituksen testiksi, sen sijaan että
-   odottaisit seuraavaan ajastettuun aamuun.
-
-### Huomio yksityisestä repositoriosta
-
-GitHub Pages -sivu, joka julkaistaan yksityisestä repositoriosta, on GitHubin
-ilmaistilillä oletuksena **julkisesti selattavissa ilman kirjautumista** heti
-kun Pages otetaan käyttöön "GitHub Actions" -lähteellä — itse koodi ja data
-pysyvät silti yksityisinä. Jos näin ei kuitenkaan ole (esim. tili on osa
-organisaatiota, jolla on tiukemmat oletukset), Settings → Pages kertoo
-suoraan, vaatiiko sivu kirjautumisen.
+1. **Luo Cloudflare-tili ja D1-tietokanta**, aja `d1/schema.sql` sen
+   konsolissa (taulu/indeksi kerrallaan -- D1 Console ei tue
+   multi-statement-erää).
+2. **Aseta GitHub-secretit** (Settings → Secrets and variables → Actions):
+   `CF_ACCOUNT_ID`, `CF_D1_DATABASE_ID`, `CF_API_TOKEN` (oikeudet: D1 edit +
+   Cloudflare Pages edit).
+3. **Aja synkat kerran käsin** (Actions-välilehti → kukin
+   `Sync *-tier to D1` -workflow → Run workflow), niin D1:ssä on dataa
+   ennen ensimmäistä sivulatausta.
+4. **Pushaa `web/`-hakemistoon** — `deploy-pages.yml` luo Cloudflare
+   Pages -projektin automaattisesti ensimmäisellä ajolla ja julkaisee sen.
 
 ## Ajaminen paikallisesti
 
 ```bash
+# Python-synkat
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
-
 pytest
 
-# Rakentaa data/ + site/ hakemistot ilman ntfy-ilmoitusta (NTFY_TOPIC ei asetettu):
-python -m morning_hockey.main --pages-base-url "https://example.github.io/morning-hockey"
+CF_ACCOUNT_ID=... CF_D1_DATABASE_ID=... CF_API_TOKEN=... \
+  python -m morning_hockey.sync_fast_tier
 
-# Ilmoituksen kanssa:
-NTFY_TOPIC="oma-salainen-aihe" python -m morning_hockey.main \
-  --pages-base-url "https://example.github.io/morning-hockey"
+# Web-sovellus
+cd web
+npm install
+npm run typecheck && npm test
+npx wrangler d1 execute DB --local --file=../d1/schema.sql
+npx wrangler d1 execute DB --local --file=seed.local.sql
+npx wrangler pages dev public
 ```
 
 ## Ajastuksen muuttaminen
 
-Cron-lauseke on UTC-aikaa (`.github/workflows/nightly-digest.yml`). Suomen aika
-on UTC+2 (talvi) tai UTC+3 (kesä), joten `0 6 * * *` osuu noin klo 8–9 väliin.
-Ajoa voi myös laukaista käsin milloin vain: Actions-välilehti → *Nightly NHL
-digest* → *Run workflow*.
+Cron-lausekkeet ovat UTC-aikaa, kolmessa erillisessä workflow-tiedostossa
+(`.github/workflows/sync-{fast,slow,digest}-tier.yml`). Jokaista voi myös
+laukaista käsin milloin vain: Actions-välilehti → valitse synkka → *Run
+workflow*.
