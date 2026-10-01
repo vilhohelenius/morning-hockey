@@ -58,6 +58,7 @@
   wirePillToggle(".team-games-picker", ".team-games-section", "filter");
   wirePillToggle(".player-filter-picker", ".player-filter-section", "filter");
   wirePillToggle(".division-picker", ".division-chart-section", "division");
+  wirePillToggle(".analytiikka-view-picker", ".analytiikka-view-section", "view");
 
   // Player hero card: click (or Enter/Space, since it's a role="button")
   // flips it to reveal the bio back face. The fav-star form sits inside

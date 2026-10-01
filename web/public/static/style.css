@@ -2412,20 +2412,23 @@ main {
   display: none;
 }
 
-/* ---------- Analytiikka: division points-race chart ---------- */
+/* ---------- Analytiikka: division + Pistepörssi points-race charts ---------- */
 
-.division-picker {
+.division-picker,
+.analytiikka-view-picker {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 16px;
 }
 
-.division-chart-section.is-hidden {
+.division-chart-section.is-hidden,
+.analytiikka-view-section.is-hidden {
   display: none;
 }
 
-.division-chart {
+.division-chart,
+.skater-chart {
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: 14px;
@@ -2450,6 +2453,26 @@ main {
 
 .division-chart-endpoint-logo {
   pointer-events: none;
+}
+
+.skater-chart-endpoint {
+  pointer-events: none;
+}
+
+.skater-chart-endpoint-photo {
+  stroke: var(--card-bg);
+  stroke-width: 2px;
+}
+
+.skater-chart-endpoint-badge {
+  stroke: var(--card-bg);
+  stroke-width: 1px;
+}
+
+.skater-chart-endpoint-name {
+  fill: var(--text);
+  font-size: 0.7rem;
+  font-weight: 600;
 }
 
 /* ---------- Tulospiilo (spoiler-free mode) ---------- */

@@ -221,6 +221,22 @@ export function decisionFi(code: string): string {
   return DECISIONS[code] ?? code;
 }
 
+// "Aleksander Barkov" -> "A. Barkov", for compact spaces like the
+// Pistepörssi points-race chart's logo-sized legend labels. skater_season_
+// stats.name is stored as one combined string (first+last baked in at sync
+// time, see league_stats.py), not split fields, so this just takes
+// everything up to the last space as the first name and initials it --
+// fragile for multi-word surnames (would read "A. Jong" not "A. de Jong"),
+// but no such NHL player exists today and the fallback (full name) is used
+// whenever a name has no space at all.
+export function abbreviatedName(fullName: string): string {
+  const lastSpace = fullName.trim().lastIndexOf(" ");
+  if (lastSpace <= 0) return fullName;
+  const first = fullName.slice(0, lastSpace);
+  const last = fullName.slice(lastSpace + 1);
+  return `${first[0]}. ${last}`;
+}
+
 // D1 rows are plain data, not markup -- escape anything interpolated into
 // HTML so a stray "<"/"&" in a name (or, later, a user-entered favorite)
 // can't break the page or inject markup.

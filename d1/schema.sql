@@ -433,3 +433,18 @@ CREATE TABLE IF NOT EXISTS users (
 -- theme is (see _shared/auth.ts), so every request to / can check it
 -- without a D1 round-trip.
 ALTER TABLE user_settings ADD COLUMN tulospiilo_mode INTEGER NOT NULL DEFAULT 0;
+
+-- Analytiikka's Pistepörssi points-race chart (2026-10-01): per-player
+-- game-by-game cumulative points, for the current top-20 skaters only (from
+-- skater_season_stats), fetched on demand from the NHL
+-- /player/{id}/game-log/{season}/2 endpoint -- see _shared/skaterGameLog.ts.
+-- Unlike game_box_scores (a finished game's box score never changes, so
+-- that cache is write-once), an in-season player's game log gains a new row
+-- every time they play, so this is refreshed on a TTL rather than cached
+-- forever -- see CACHE_TTL_MS there.
+CREATE TABLE IF NOT EXISTS skater_game_log_cache (
+    player_id INTEGER PRIMARY KEY,
+    season_id INTEGER NOT NULL,
+    points_json TEXT NOT NULL,
+    cached_at TEXT NOT NULL
+);
