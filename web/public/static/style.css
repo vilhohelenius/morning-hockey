@@ -1402,20 +1402,12 @@ main {
   min-width: 0;
 }
 
-/* Same affordance as the old static site's .game-card-trigger/.game-card-
-   hint (src/morning_hockey/static/style.css), ported for the player card's
-   per-game table rows -- each played game links to its report page
-   (app.js), with one hint line below the whole table rather than repeated
-   under every row. */
+/* Player card's per-game table rows: each played game links to its report
+   page (app.js). No visible hint text here -- that affordance (ported from
+   the old static site's .game-card-trigger/.game-card-hint) belongs on the
+   dashboard/Arkisto game cards (gameCard.ts) instead, not here. */
 .game-row-link {
   cursor: pointer;
-}
-
-.game-row-hint {
-  margin: 10px 0 0;
-  text-align: center;
-  font-size: 0.72rem;
-  color: var(--muted);
 }
 
 .stats-table th:first-child,

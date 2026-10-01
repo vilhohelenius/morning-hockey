@@ -297,8 +297,7 @@ function renderSkaterGameLog(games: any[]): string {
       <tbody>${rows}</tbody>
     </table>
   </div>
-  <button type="button" class="expand-toggle" data-table-id="player-game-log" data-page-size="1000"></button>
-  <p class="game-row-hint">Näytä ottelun tiedot ▾</p>`;
+  <button type="button" class="expand-toggle" data-table-id="player-game-log" data-page-size="1000"></button>`;
 }
 
 // Closest thing the public landing endpoint has to NHL.com's player-page
@@ -449,8 +448,7 @@ function renderGoalieGameLog(games: any[]): string {
       <tbody>${rows}</tbody>
     </table>
   </div>
-  <button type="button" class="expand-toggle" data-table-id="player-game-log" data-page-size="1000"></button>
-  <p class="game-row-hint">Näytä ottelun tiedot ▾</p>`;
+  <button type="button" class="expand-toggle" data-table-id="player-game-log" data-page-size="1000"></button>`;
 }
 
 export const onRequestGet: PagesFunction<Env> = async (context) => {
