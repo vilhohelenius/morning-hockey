@@ -19,7 +19,7 @@
 // game specifically when verifying this live.
 
 import { getBoxScore, type ParsedBoxScore } from "../_shared/boxScoreCache";
-import { decisionFi, escapeHtml, finalTypeFi, humanDate, nationalityFlag } from "../_shared/format";
+import { escapeHtml, finalTypeFi, humanDate, nationalityFlag } from "../_shared/format";
 import { renderLayout } from "../_shared/layout";
 import type { Env, GameRow, GoalEvent, GoalieGameStat, PlayerGameStat } from "../_shared/types";
 
@@ -117,7 +117,6 @@ function renderGoalieTable(goalies: GoalieGameStat[]): string {
         <td>${g.shots_against - g.saves}</td>
         <td class="stat-strong">${g.save_pct.toFixed(3)}</td>
         <td>${escapeHtml(g.toi)}</td>
-        <td>${g.decision ? escapeHtml(decisionFi(g.decision)) : "–"}</td>
       </tr>`,
     )
     .join("");
@@ -133,7 +132,6 @@ function renderGoalieTable(goalies: GoalieGameStat[]): string {
         <th>Päästi</th>
         <th>SV%</th>
         <th>Peliaika</th>
-        <th>Ratkaisu</th>
       </tr>
     </thead>
     <tbody>${rows}</tbody>
