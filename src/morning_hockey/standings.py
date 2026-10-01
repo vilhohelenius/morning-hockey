@@ -64,7 +64,7 @@ def _row(raw: dict) -> StandingsRow:
         division_rank=division_rank,
         wildcard_rank=wildcard_rank,
         abbrev=raw["teamAbbrev"]["default"],
-        name=raw["teamCommonName"]["default"],
+        name=raw["teamName"]["default"],
         logo=raw["teamLogo"],
         games_played=raw["gamesPlayed"],
         wins=raw["wins"],

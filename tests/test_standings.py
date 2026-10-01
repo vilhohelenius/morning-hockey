@@ -18,6 +18,7 @@ def _team(
         "wildcardSequence": wc_seq,
         "teamAbbrev": {"default": abbrev},
         "teamCommonName": {"default": abbrev.title()},
+        "teamName": {"default": f"City {abbrev.title()}"},
         "teamLogo": f"https://assets.nhle.com/logos/nhl/svg/{abbrev}_light.svg",
         "gamesPlayed": 1,
         "wins": 1 if points else 0,
