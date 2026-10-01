@@ -319,7 +319,10 @@ function renderPlayersToWatch(awaySkaters: TeamRosterSkaterRow[], homeSkaters: T
 function renderGoalieCard(g: TeamRosterGoalieRow): string {
   return `
   <div class="stat-card">
-    <div class="stat-card-header">${escapeHtml(g.name)}</div>
+    <div class="stat-card-header">
+      <img src="${escapeHtml(g.headshot)}" alt="" class="stat-card-headshot" loading="lazy" onerror="this.style.visibility='hidden'">
+      ${escapeHtml(g.name)}
+    </div>
     <div class="stat-card-table-wrap">
       <table class="stat-card-table">
         <thead>
@@ -508,11 +511,11 @@ ${
   <button type="button" class="toggle-segment" data-team="home">${escapeHtml(game.home_abbrev)}</button>
 </div>
 <div class="roster-team-section" data-team="away">
-  ${renderRosterSkaterTable(awaySkaters, `🏒 ${escapeHtml(game.away_name)} – kokoonpano`)}
+  ${renderRosterSkaterTable(awaySkaters, `<img src="${escapeHtml(game.away_logo)}" alt="" class="nav-icon"> ${escapeHtml(game.away_name)} – kokoonpano`)}
   ${awayGoalies.length ? renderRosterGoalieTable(awayGoalies, `🥅 ${escapeHtml(game.away_name)} – maalivahdit`) : ""}
 </div>
 <div class="roster-team-section is-hidden" data-team="home">
-  ${renderRosterSkaterTable(homeSkaters, `🏒 ${escapeHtml(game.home_name)} – kokoonpano`)}
+  ${renderRosterSkaterTable(homeSkaters, `<img src="${escapeHtml(game.home_logo)}" alt="" class="nav-icon"> ${escapeHtml(game.home_name)} – kokoonpano`)}
   ${homeGoalies.length ? renderRosterGoalieTable(homeGoalies, `🥅 ${escapeHtml(game.home_name)} – maalivahdit`) : ""}
 </div>`
       : `<p class="empty-note">Ottelua ei ole vielä pelattu.</p>`
