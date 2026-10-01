@@ -202,40 +202,93 @@ export function buildTeamStats(teamGameStats: RawTeamStat[], awayScore: number, 
   ];
 }
 
+// Continuous single-bar split (away + home always fill the full bar
+// together), vs. barSplit's two independent halves -- matches NHL.com's own
+// Team Stats bar, confirmed by inspecting its rendered pixel widths: e.g.
+// 20.7% vs 24.7% power play renders at ~45.7%/~54.3%, i.e. away/(away+home),
+// not "smaller side scaled to the larger one" (which barSplit does for the
+// Game Stats section elsewhere on that same page).
+function shareSplit(away: number, home: number): [number, number] {
+  const a = Math.max(away, 0);
+  const h = Math.max(home, 0);
+  const total = a + h;
+  if (total === 0) return [50, 50];
+  return [(a / total) * 100, (h / total) * 100];
+}
+
+// League rank (1 = best) for one team on one season-stats metric, among
+// every team D1 has a season_stats row for. Ties just get whichever order
+// Array.sort leaves them in -- no shared-rank handling, the same scope cut
+// standings_rows' own ranks don't need since they come pre-computed from
+// the NHL API rather than derived here.
+function computeRank(allStats: TeamSeasonStatsRow[], abbrev: string, value: (r: TeamSeasonStatsRow) => number, higherIsBetter: boolean): number {
+  const sorted = [...allStats].sort((a, b) => (higherIsBetter ? value(b) - value(a) : value(a) - value(b)));
+  const index = sorted.findIndex((r) => r.team_abbrev === abbrev);
+  return index === -1 ? 0 : index + 1;
+}
+
+function perGame(goals: number, gamesPlayed: number): number {
+  return gamesPlayed ? goals / gamesPlayed : 0;
+}
+
 // Season-long team comparison for an unplayed game's preview (vs.
 // buildTeamStats above, which compares one finished game's own box score).
-// Same bar-chart treatment, different source: team_season_stats rows
-// instead of the NHL /right-rail teamGameStats categories.
-export function buildPreviewTeamStats(away: TeamSeasonStatsRow, home: TeamSeasonStatsRow): TeamStatRow[] {
-  const awayGfPerGame = away.games_played ? away.goals_for / away.games_played : 0;
-  const homeGfPerGame = home.games_played ? home.goals_for / home.games_played : 0;
-  const awayGaPerGame = away.games_played ? away.goals_against / away.games_played : 0;
-  const homeGaPerGame = home.games_played ? home.goals_against / home.games_played : 0;
+// Same 5 fields NHL.com's own Team Stats section shows (PP%/PK%/FO%/GF per
+// game/GA per game) with its continuous share-bar + league-rank styling,
+// rather than buildTeamStats's Game Stats bar look.
+export function buildPreviewTeamStats(away: TeamSeasonStatsRow, home: TeamSeasonStatsRow, allStats: TeamSeasonStatsRow[]): TeamStatRow[] {
+  const awayGfPerGame = perGame(away.goals_for, away.games_played);
+  const homeGfPerGame = perGame(home.goals_for, home.games_played);
+  const awayGaPerGame = perGame(away.goals_against, away.games_played);
+  const homeGaPerGame = perGame(home.goals_against, home.games_played);
 
-  const [gfAwayPct, gfHomePct] = barSplit(awayGfPerGame, homeGfPerGame);
-  const [gaAwayPct, gaHomePct] = barSplit(awayGaPerGame, homeGaPerGame);
+  const gfPerGame = (r: TeamSeasonStatsRow) => perGame(r.goals_for, r.games_played);
+  const gaPerGame = (r: TeamSeasonStatsRow) => perGame(r.goals_against, r.games_played);
+
+  const rank = (value: (r: TeamSeasonStatsRow) => number, higherIsBetter: boolean) => [
+    computeRank(allStats, away.team_abbrev, value, higherIsBetter),
+    computeRank(allStats, home.team_abbrev, value, higherIsBetter),
+  ];
+
+  const [ppAwayPct, ppHomePct] = shareSplit(away.power_play_pct, home.power_play_pct);
+  const [pkAwayPct, pkHomePct] = shareSplit(away.penalty_kill_pct, home.penalty_kill_pct);
+  const [foAwayPct, foHomePct] = shareSplit(away.faceoff_pct, home.faceoff_pct);
+  const [gfAwayPct, gfHomePct] = shareSplit(awayGfPerGame, homeGfPerGame);
+  const [gaAwayPct, gaHomePct] = shareSplit(awayGaPerGame, homeGaPerGame);
+
+  const [ppAwayRank, ppHomeRank] = rank((r) => r.power_play_pct, true);
+  const [pkAwayRank, pkHomeRank] = rank((r) => r.penalty_kill_pct, true);
+  const [foAwayRank, foHomeRank] = rank((r) => r.faceoff_pct, true);
+  const [gfAwayRank, gfHomeRank] = rank(gfPerGame, true);
+  const [gaAwayRank, gaHomeRank] = rank(gaPerGame, false);
 
   return [
     {
       label: "Ylivoima (YV%)",
       away_value: percent(away.power_play_pct),
       home_value: percent(home.power_play_pct),
-      away_pct: away.power_play_pct * 100,
-      home_pct: home.power_play_pct * 100,
+      away_pct: ppAwayPct,
+      home_pct: ppHomePct,
+      away_rank: ppAwayRank,
+      home_rank: ppHomeRank,
     },
     {
       label: "Alivoima (AV%)",
       away_value: percent(away.penalty_kill_pct),
       home_value: percent(home.penalty_kill_pct),
-      away_pct: away.penalty_kill_pct * 100,
-      home_pct: home.penalty_kill_pct * 100,
+      away_pct: pkAwayPct,
+      home_pct: pkHomePct,
+      away_rank: pkAwayRank,
+      home_rank: pkHomeRank,
     },
     {
       label: "Aloitusprosentti",
       away_value: percent(away.faceoff_pct),
       home_value: percent(home.faceoff_pct),
-      away_pct: away.faceoff_pct * 100,
-      home_pct: home.faceoff_pct * 100,
+      away_pct: foAwayPct,
+      home_pct: foHomePct,
+      away_rank: foAwayRank,
+      home_rank: foHomeRank,
     },
     {
       label: "Maalia / ottelu",
@@ -243,6 +296,8 @@ export function buildPreviewTeamStats(away: TeamSeasonStatsRow, home: TeamSeason
       home_value: homeGfPerGame.toFixed(2),
       away_pct: gfAwayPct,
       home_pct: gfHomePct,
+      away_rank: gfAwayRank,
+      home_rank: gfHomeRank,
     },
     {
       label: "Päästetyt / ottelu",
@@ -250,6 +305,8 @@ export function buildPreviewTeamStats(away: TeamSeasonStatsRow, home: TeamSeason
       home_value: homeGaPerGame.toFixed(2),
       away_pct: gaAwayPct,
       home_pct: gaHomePct,
+      away_rank: gaAwayRank,
+      home_rank: gaHomeRank,
     },
   ];
 }

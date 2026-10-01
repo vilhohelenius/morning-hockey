@@ -158,6 +158,10 @@ export interface TeamStatRow {
   // sense for.
   away_pct?: number;
   home_pct?: number;
+  // League rank (1 = best) for this stat, preview team-stats rows only --
+  // NHL.com's own Team Stats section shows one under each side's bar.
+  away_rank?: number;
+  home_rank?: number;
 }
 
 export interface PlayerGameStat {

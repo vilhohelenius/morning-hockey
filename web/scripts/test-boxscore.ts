@@ -167,7 +167,7 @@ const TEAM_GAME_STATS = [
     updated_at: "2026-09-30T12:00:00Z",
   };
 
-  const rows = buildPreviewTeamStats(away, home);
+  const rows = buildPreviewTeamStats(away, home, [away, home]);
   const byLabel = Object.fromEntries(rows.map((r) => [r.label, r]));
 
   assert.equal(byLabel["Ylivoima (YV%)"].away_value, "24.0 %");
@@ -175,16 +175,26 @@ const TEAM_GAME_STATS = [
   assert.equal(byLabel["Alivoima (AV%)"].away_value, "82.0 %");
   assert.equal(byLabel["Aloitusprosentti"].home_value, "49.0 %");
 
-  // 25/7 = 3.5714..., 28/7 = 4.0 -> home is the larger goals-for/game, so
-  // its bar fills 100% and away is proportional to it.
+  // 25/7 = 3.5714..., 28/7 = 4.0 -- the bar is a continuous share-of-total
+  // split (away/(away+home)), matching NHL.com's own Team Stats bar, not
+  // the Game Stats section's "larger side fills its own half" split.
   assert.equal(byLabel["Maalia / ottelu"].away_value, "3.57");
   assert.equal(byLabel["Maalia / ottelu"].home_value, "4.00");
-  assert.equal(byLabel["Maalia / ottelu"].home_pct, 100);
-  assert.ok(Math.abs(byLabel["Maalia / ottelu"].away_pct! - (3.5714285714 / 4) * 100) < 1e-3);
+  const expectedAwayShare = (3.5714285714 / (3.5714285714 + 4)) * 100;
+  assert.ok(Math.abs(byLabel["Maalia / ottelu"].away_pct! - expectedAwayShare) < 1e-3);
+  assert.ok(Math.abs(byLabel["Maalia / ottelu"].home_pct! - (100 - expectedAwayShare)) < 1e-3);
 
   assert.equal(byLabel["Päästetyt / ottelu"].away_value, "2.57");
   assert.equal(byLabel["Päästetyt / ottelu"].home_value, "2.86");
-  console.log("ok: build_preview_team_stats computes per-game rates and reuses the percentage fields directly");
+
+  // Among just [away, home]: home (TBL) has the better (higher) GF/GP ->
+  // rank 1 for home, 2 for away. Home also has the worse (higher) GA/GP ->
+  // rank 2 for home, 1 for away there, since lower GA/GP is better.
+  assert.equal(byLabel["Maalia / ottelu"].away_rank, 2);
+  assert.equal(byLabel["Maalia / ottelu"].home_rank, 1);
+  assert.equal(byLabel["Päästetyt / ottelu"].away_rank, 1);
+  assert.equal(byLabel["Päästetyt / ottelu"].home_rank, 2);
+  console.log("ok: build_preview_team_stats computes per-game rates, a share-of-total bar split, and league ranks");
 }
 
 console.log("\nAll boxscore.ts parity tests passed.");

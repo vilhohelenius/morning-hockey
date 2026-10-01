@@ -20,8 +20,11 @@
 
 import { getBoxScore, type ParsedBoxScore } from "../_shared/boxScoreCache";
 import { buildPreviewTeamStats } from "../_shared/boxscore";
-import { escapeHtml, finalTypeFi, humanDate, nationalityFlag } from "../_shared/format";
+import { computeFormGuide, type FormGuideEntry } from "../_shared/formGuide";
+import { escapeHtml, finalTypeFi, helsinkiParts, humanDate, nationalityFlag } from "../_shared/format";
+import { isLive } from "../_shared/gameCard";
 import { renderRosterGoalieTable, renderRosterSkaterTable } from "../_shared/leaderboard";
+import { TEAM_COLORS } from "../_shared/teamColors";
 import { resolveHighlightsUrl } from "../_shared/youtube";
 import { renderLayout } from "../_shared/layout";
 import type {
@@ -35,6 +38,26 @@ import type {
   TeamSeasonStatsRow,
   TeamStatRow,
 } from "../_shared/types";
+
+const FORM_GUIDE_WINDOW = 5;
+
+// A team with no synced season_stats row yet (very early preseason) gets
+// zero-valued stats instead of hiding the whole section -- per request,
+// "tyhjät tilastot" should render as 0, not disappear.
+function emptySeasonStats(abbrev: string): TeamSeasonStatsRow {
+  return {
+    team_abbrev: abbrev,
+    games_played: 0,
+    goals_for: 0,
+    goals_against: 0,
+    power_play_pct: 0,
+    penalty_kill_pct: 0,
+    faceoff_pct: 0,
+    shots_for_per_game: 0,
+    shots_against_per_game: 0,
+    shutouts: 0,
+  };
+}
 
 function renderGoalTimeline(goals: GoalEvent[], awayAbbrev: string, awayLogo: string, homeLogo: string): string {
   if (!goals.length) return `<p class="tp-empty">Ei maaleja.</p>`;
@@ -175,6 +198,55 @@ function renderGoalieTable(goalies: GoalieGameStat[]): string {
 </div>`;
 }
 
+// Last FORM_GUIDE_WINDOW results as the same .form-chip pills sarjataulukko's
+// own Kuntopuntari table uses -- "–" when a team has no finished games yet
+// (start of season) rather than an empty row.
+function renderFormChips(entry: FormGuideEntry | undefined, align: "start" | "end"): string {
+  const endClass = align === "end" ? " form-chips-end" : "";
+  if (!entry || !entry.results.length) return `<span class="form-chips${endClass}">–</span>`;
+  const chips = entry.results.map((r) => `<span class="form-chip result-${r.toLowerCase()}">${r === "OTL" ? "OT" : r}</span>`).join("");
+  return `<span class="form-chips${endClass}">${chips}</span>`;
+}
+
+// Team-colored, continuous share-of-total bar with a diagonal seam --
+// matches the look of NHL.com's own Team Stats section (confirmed via live
+// inspection), unlike the Game Stats section's plain two-tone .gd-stat-bar
+// used by renderTeamStatRows below for finished games.
+function renderPreviewTeamStats(rows: TeamStatRow[], awayAbbrev: string, homeAbbrev: string, awayForm: FormGuideEntry | undefined, homeForm: FormGuideEntry | undefined): string {
+  const awayColor = TEAM_COLORS[awayAbbrev] ?? "var(--accent)";
+  const homeColor = TEAM_COLORS[homeAbbrev] ?? "color-mix(in srgb, var(--accent) 45%, transparent)";
+
+  const formRow = `
+      <div class="gd-stat-row">
+        ${renderFormChips(awayForm, "start")}
+        <span class="gd-stat-label">Viimeiset ${FORM_GUIDE_WINDOW} ottelua</span>
+        ${renderFormChips(homeForm, "end")}
+      </div>`;
+
+  const statRows = rows
+    .map(
+      (stat) => `
+      <div class="gd-stat-block">
+        <div class="gd-stat-row">
+          <span class="gd-stat-value">${escapeHtml(stat.away_value)}</span>
+          <span class="gd-stat-label">${escapeHtml(stat.label)}</span>
+          <span class="gd-stat-value">${escapeHtml(stat.home_value)}</span>
+        </div>
+        <div class="pts-bar">
+          <span class="pts-bar-away" style="width: ${stat.away_pct ?? 50}%; background: ${awayColor}"></span>
+          <span class="pts-bar-home" style="width: ${stat.home_pct ?? 50}%; background: ${homeColor}"></span>
+        </div>
+        <div class="pts-ranks">
+          <span>${stat.away_rank ? `${stat.away_rank}.` : "–"}</span>
+          <span>${stat.home_rank ? `${stat.home_rank}.` : "–"}</span>
+        </div>
+      </div>`,
+    )
+    .join("");
+
+  return formRow + statRows;
+}
+
 // Shared by the finished-game box-score comparison and the unplayed-game
 // season-stats comparison below -- same TeamStatRow shape, same bar-chart
 // markup, different source data.
@@ -297,8 +369,11 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   let homeSkaters: TeamRosterSkaterRow[] = [];
   let awayGoalies: TeamRosterGoalieRow[] = [];
   let homeGoalies: TeamRosterGoalieRow[] = [];
-  let awaySeasonStats: TeamSeasonStatsRow | null = null;
-  let homeSeasonStats: TeamSeasonStatsRow | null = null;
+  let awaySeasonStats: TeamSeasonStatsRow = emptySeasonStats(game.away_abbrev);
+  let homeSeasonStats: TeamSeasonStatsRow = emptySeasonStats(game.home_abbrev);
+  let allSeasonStats: TeamSeasonStatsRow[] = [];
+  let awayForm: FormGuideEntry | undefined;
+  let homeForm: FormGuideEntry | undefined;
 
   if (game.is_finished) {
     ({ box, fetchError } = await getBoxScore(db, game));
@@ -316,8 +391,13 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
         .all<TeamRosterGoalieRow>();
     const seasonStatsQuery = (abbrev: string) =>
       db.prepare("SELECT * FROM team_season_stats WHERE team_abbrev = ?").bind(abbrev).first<TeamSeasonStatsRow>();
+    const recentGamesQuery = (abbrev: string) =>
+      db
+        .prepare("SELECT * FROM games WHERE is_finished = 1 AND (away_abbrev = ? OR home_abbrev = ?) ORDER BY date DESC, game_id DESC LIMIT ?")
+        .bind(abbrev, abbrev, FORM_GUIDE_WINDOW)
+        .all<GameRow>();
 
-    const [awaySkatersRes, homeSkatersRes, awayGoaliesRes, homeGoaliesRes, awaySeasonRes, homeSeasonRes] =
+    const [awaySkatersRes, homeSkatersRes, awayGoaliesRes, homeGoaliesRes, awaySeasonRes, homeSeasonRes, allSeasonRes, awayRecentRes, homeRecentRes] =
       await Promise.all([
         skaterQuery(game.away_abbrev),
         skaterQuery(game.home_abbrev),
@@ -325,14 +405,20 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
         goalieQuery(game.home_abbrev),
         seasonStatsQuery(game.away_abbrev),
         seasonStatsQuery(game.home_abbrev),
+        db.prepare("SELECT * FROM team_season_stats").all<TeamSeasonStatsRow>(),
+        recentGamesQuery(game.away_abbrev),
+        recentGamesQuery(game.home_abbrev),
       ]);
 
     awaySkaters = awaySkatersRes.results;
     homeSkaters = homeSkatersRes.results;
     awayGoalies = awayGoaliesRes.results;
     homeGoalies = homeGoaliesRes.results;
-    awaySeasonStats = awaySeasonRes ?? null;
-    homeSeasonStats = homeSeasonRes ?? null;
+    awaySeasonStats = awaySeasonRes ?? emptySeasonStats(game.away_abbrev);
+    homeSeasonStats = homeSeasonRes ?? emptySeasonStats(game.home_abbrev);
+    allSeasonStats = allSeasonRes.results;
+    awayForm = computeFormGuide(awayRecentRes.results, [game.away_abbrev], FORM_GUIDE_WINDOW)[0];
+    homeForm = computeFormGuide(homeRecentRes.results, [game.home_abbrev], FORM_GUIDE_WINDOW)[0];
   }
 
   const hasPreviewData = awaySkaters.length > 0 && homeSkaters.length > 0;
@@ -351,9 +437,14 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       <span class="abbrev">${escapeHtml(game.away_abbrev)}</span>
     </div>
     <div class="score">
-      <span>${game.away_score}</span>
-      <span class="dash">–</span>
-      <span>${game.home_score}</span>
+      ${
+        game.is_finished || isLive(game)
+          ? `<span>${game.away_score}</span><span class="dash">–</span><span>${game.home_score}</span>`
+          : (() => {
+              const { hour, minute } = helsinkiParts(game.start_time_utc);
+              return `<span class="score-time">${hour}:${String(minute).padStart(2, "0")}</span>`;
+            })()
+      }
     </div>
     <div class="team home">
       <span class="abbrev">${escapeHtml(game.home_abbrev)}</span>
@@ -389,19 +480,14 @@ ${
         : ""
     }
 
-    ${
-      awaySeasonStats && homeSeasonStats
-        ? `
     <div class="tp-section">
       <p class="tp-section-title">Joukkuetilastot</p>
       <div class="gd-stat-header">
         <span class="gd-stat-team">${escapeHtml(game.away_abbrev)}</span>
         <span class="gd-stat-team">${escapeHtml(game.home_abbrev)}</span>
       </div>
-      ${renderTeamStatRows(buildPreviewTeamStats(awaySeasonStats, homeSeasonStats))}
-    </div>`
-        : ""
-    }
+      ${renderPreviewTeamStats(buildPreviewTeamStats(awaySeasonStats, homeSeasonStats, allSeasonStats), game.away_abbrev, game.home_abbrev, awayForm, homeForm)}
+    </div>
   </div>
 </section>
 

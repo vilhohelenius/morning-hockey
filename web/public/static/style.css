@@ -2356,6 +2356,49 @@ main {
   background: color-mix(in srgb, var(--accent) 45%, transparent);
 }
 
+/* Game preview's "Joukkuetilastot" bar: one continuous team-colored bar
+   with a diagonal seam, matching NHL.com's own Team Stats section (its
+   bars are confirmed proportional to the share of each stat, not a fixed
+   50/50 split -- away_pct + home_pct always sum to ~100 here). The
+   negative margin + matching diagonal clip-paths make the two halves
+   overlap by 8px so their cut edges line up into one seam instead of a
+   plain vertical divider. */
+.pts-bar {
+  display: flex;
+  height: 10px;
+  margin-top: 4px;
+  border-radius: 2px;
+  overflow: hidden;
+  background: var(--border);
+}
+
+.pts-bar-away,
+.pts-bar-home {
+  height: 100%;
+}
+
+.pts-bar-away {
+  clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+  margin-right: -8px;
+}
+
+.pts-bar-home {
+  clip-path: polygon(8px 0, 100% 0, 100% 100%, 0 100%);
+}
+
+.pts-ranks {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.form-chips-end {
+  justify-content: flex-end;
+}
+
 /* ---------- Players to watch (game preview) ----------
    Same 1fr-auto-1fr grid as .gd-stat-row, but a photo-forward comparison
    instead of a bare number -- the one section with no existing component
