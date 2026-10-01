@@ -50,26 +50,6 @@ export function teamHeroBackgroundStyle(abbrev: string | null | undefined): stri
   ].join("; ");
 }
 
-// Same visual language as teamHeroBackgroundStyle, for dashboard teasers
-// that aren't about a single team (NHL-wide points leaders, Suomipörssi) --
-// there's no per-entity "wires" crest or jersey texture for "the NHL" or
-// "Finland", so this substitutes a flat dark base color and blends the
-// crest into it (soft-light) instead of relying on the crest's own built-in
-// transparency the way the team version does.
-export function crestHeroBackgroundStyle(crestUrl: string, baseColor: string): string {
-  return [
-    `background-color: ${baseColor}`,
-    `background-image: radial-gradient(50% 100% at 50% 0%, rgba(0,0,0,0) 0%, rgba(0,0,0,0.65) 100%), url("${crestUrl}"), linear-gradient(rgba(0,0,0,0) 0%, rgb(0,0,0) 100%)`,
-    `background-size: auto, 220px auto, auto`,
-    `background-position: 0% 0%, 50% 50%, 0% 0%`,
-    `background-repeat: repeat, no-repeat, repeat`,
-    `background-blend-mode: normal, soft-light, normal`,
-  ].join("; ");
-}
-
-export const NHL_LOGO_URL = "https://assets.nhle.com/logos/nhl/svg/NHL_light.svg";
-export const FINLAND_FLAG_URL = "https://flagcdn.com/fi.svg";
-
 const WEEKDAYS = ["maanantai", "tiistai", "keskiviikko", "torstai", "perjantai", "lauantai", "sunnuntai"];
 
 export function humanDate(dateStr: string): string {

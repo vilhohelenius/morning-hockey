@@ -40,17 +40,7 @@ import {
   type FinnScorerLine,
 } from "./_shared/gameCard";
 import { resolveHighlightsUrl } from "./_shared/youtube";
-import {
-  crestHeroBackgroundStyle,
-  escapeHtml,
-  FINLAND_FLAG_URL,
-  helsinkiParts,
-  humanDate,
-  nationalityFlag,
-  NHL_LOGO_URL,
-  shortDate,
-  teamHeroBackgroundStyle,
-} from "./_shared/format";
+import { escapeHtml, helsinkiParts, humanDate, nationalityFlag, shortDate, teamHeroBackgroundStyle } from "./_shared/format";
 import { renderLayout } from "./_shared/layout";
 import type {
   Env,
@@ -373,6 +363,10 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   // can't close the tag early.
   const gameDetailsJson = JSON.stringify(gameDetails).replace(/<\//g, "<\\/");
 
+  // Suomipörssi/Tilastot teasers below reuse NYR's/BOS's hero background
+  // purely for the look (jersey texture + wires outline) -- neither teaser
+  // is about a single team, and there's no "wires" crest for "Finland" or
+  // "the NHL" to use instead.
   const content = `
 <header class="page-header">
   <img src="/static/banner_light.png" alt="Morning Hockey" class="brand-banner brand-banner-light">
@@ -391,9 +385,9 @@ ${
 
 ${favoriteTeamsHtml}
 
-${statTeaserTable("🇫🇮 Suomipörssin kärki", finSkaters.map((r, i) => renderFinnishSkaterRow(r, i + 1)), "Ei tilastoituja suomalaispelaajia vielä.", "/suomiporssi", "Koko Suomipörssi →", crestHeroBackgroundStyle(FINLAND_FLAG_URL, "#0a1a33"))}
+${statTeaserTable("🇫🇮 Suomipörssin kärki", finSkaters.map((r, i) => renderFinnishSkaterRow(r, i + 1)), "Ei tilastoituja suomalaispelaajia vielä.", "/suomiporssi", "Koko Suomipörssi →", teamHeroBackgroundStyle("NYR"))}
 
-${statTeaserTable("📈 NHL:n kärkipörssi", leagueSkaters.map((r, i) => renderLeagueSkaterRow(r, i + 1)), "Ei tilastoituja pelaajia vielä.", "/tilastot", "Koko Tilastot →", crestHeroBackgroundStyle(NHL_LOGO_URL, "#0d1321"))}
+${statTeaserTable("📈 NHL:n kärkipörssi", leagueSkaters.map((r, i) => renderLeagueSkaterRow(r, i + 1)), "Ei tilastoituja pelaajia vielä.", "/tilastot", "Koko Tilastot →", teamHeroBackgroundStyle("BOS"))}
 
 ${upcomingHtml}
 
