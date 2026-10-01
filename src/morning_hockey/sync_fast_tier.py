@@ -9,6 +9,7 @@ also keep a permanent game-results archive, with no separate archive table.
 from __future__ import annotations
 
 import argparse
+import datetime as dt
 import os
 
 from .d1_sync import D1Client, sync_schedule
@@ -16,17 +17,27 @@ from .nhl_api import NHLClient
 from .schedule import build_schedule
 
 
-def run(date: str = "now") -> None:
+def run(date: str = "now", weeks: int = 1) -> None:
     account_id = os.environ["CF_ACCOUNT_ID"]
     database_id = os.environ["CF_D1_DATABASE_ID"]
     api_token = os.environ["CF_API_TOKEN"]
 
     client = NHLClient()
-    page = build_schedule(client, date)
-
     d1 = D1Client(account_id, database_id, api_token)
-    count = sync_schedule(d1, page)
-    print(f"Synced {count} games across {len(page.days)} days to D1.")
+
+    current_date = date
+    total = 0
+    for week in range(weeks):
+        page = build_schedule(client, current_date)
+        count = sync_schedule(d1, page)
+        total += count
+        print(f"Synced {count} games across {len(page.days)} days to D1 (week {week + 1}/{weeks}, as_of {page.as_of_date}).")
+        if not page.days:
+            break
+        current_date = (dt.date.fromisoformat(page.as_of_date) + dt.timedelta(days=7)).isoformat()
+
+    if weeks > 1:
+        print(f"Done: synced {total} games total across {weeks} week(s).")
 
 
 def main() -> None:
@@ -39,8 +50,18 @@ def main() -> None:
         "runs against (e.g. the season's opening night, if fast-tier syncing "
         "only started after it) -- the scheduled workflow never passes this.",
     )
+    parser.add_argument(
+        "--weeks",
+        type=int,
+        default=1,
+        help="How many consecutive weeks to sync starting from --date, advancing 7 "
+        "days each time. Used for a one-time full-season backfill (e.g. "
+        "--date 2026-09-24 --weeks 30) so every future date already has rows in D1 "
+        "and the normal rolling sync just needs to update scores/states as each "
+        "date resolves -- the scheduled workflow never passes this.",
+    )
     args = parser.parse_args()
-    run(args.date)
+    run(args.date, args.weeks)
 
 
 if __name__ == "__main__":

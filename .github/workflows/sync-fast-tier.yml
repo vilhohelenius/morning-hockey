@@ -12,6 +12,10 @@ on:
         description: "YYYY-MM-DD to backfill that week from (leave blank for the current week)"
         required: false
         default: ""
+      weeks:
+        description: "How many consecutive weeks to sync from --date (for a full-season backfill)"
+        required: false
+        default: "1"
 
 jobs:
   sync:
@@ -31,4 +35,4 @@ jobs:
           CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
           CF_D1_DATABASE_ID: ${{ secrets.CF_D1_DATABASE_ID }}
           CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-        run: python -m morning_hockey.sync_fast_tier ${{ inputs.date && format('--date {0}', inputs.date) || '' }}
+        run: python -m morning_hockey.sync_fast_tier ${{ inputs.date && format('--date {0}', inputs.date) || '' }} ${{ inputs.weeks && inputs.weeks != '1' && format('--weeks {0}', inputs.weeks) || '' }}

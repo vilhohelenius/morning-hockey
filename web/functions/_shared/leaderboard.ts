@@ -28,12 +28,16 @@ function multiFilterDropdown(filterKey: string, allLabel: string, options: { val
   </details>`;
 }
 
-function teamFilterDropdown(rows: { team_abbrev: string }[]): string {
-  const teams = [...new Set(rows.map((r) => r.team_abbrev))].sort();
+function teamFilterDropdown(rows: { team_abbrev: string; logo: string }[]): string {
+  const logoByTeam = new Map(rows.map((r) => [r.team_abbrev, r.logo]));
+  const teams = [...logoByTeam.keys()].sort();
   return multiFilterDropdown(
     "team",
     "Kaikki joukkueet",
-    teams.map((t) => ({ value: t, label: escapeHtml(t) })),
+    teams.map((t) => ({
+      value: t,
+      label: `<img src="${escapeHtml(logoByTeam.get(t) ?? "")}" alt="" class="multi-filter-logo" loading="lazy">${escapeHtml(t)}`,
+    })),
   );
 }
 
@@ -135,8 +139,8 @@ function renderGoalieRow(row: GoalieStatsRow, rank: number): string {
   return `
       <tr class="${rowClasses}" data-name="${escapeHtml(row.name)}" data-team="${escapeHtml(row.team_abbrev)}"
           data-nationality="${escapeHtml(row.nationality)}"
-          data-gp="${row.games_played}" data-wins="${row.wins}" data-losses="${row.losses}"
-          data-otl="${row.ot_losses}" data-gaa="${row.goals_against_average}" data-rank="${rank}">
+          data-gp="${row.games_played}" data-wins="${row.wins}" data-shutouts="${row.shutouts}"
+          data-gaa="${row.goals_against_average}" data-rank="${rank}">
         <td class="col-rank">${rank}</td>
         <td>
           <a href="/pelaajat/${row.player_id}" class="player-cell">
@@ -150,10 +154,9 @@ function renderGoalieRow(row: GoalieStatsRow, rank: number): string {
         <td><img src="${escapeHtml(row.logo)}" alt="" class="table-team-logo" loading="lazy">${escapeHtml(row.team_abbrev)}</td>
         <td>${row.games_played}</td>
         <td>${row.wins}</td>
-        <td>${row.losses}</td>
-        <td>${row.ot_losses}</td>
         <td>${row.goals_against_average.toFixed(2)}</td>
         <td class="stat-strong">${row.save_pct.toFixed(3)}</td>
+        <td>${row.shutouts}</td>
       </tr>`;
 }
 
@@ -186,10 +189,9 @@ export function renderGoalieLeaderboard(options: GoalieLeaderboardOptions): stri
           <th data-sort="team" data-type="text">Jkk</th>
           <th data-sort="gp">O</th>
           <th data-sort="wins">V</th>
-          <th data-sort="losses">H</th>
-          <th data-sort="otl">JH</th>
           <th data-sort="gaa">GAA</th>
           <th data-sort="rank" data-first-dir="asc" class="sort-asc">SV%</th>
+          <th data-sort="shutouts">NP</th>
         </tr>
       </thead>
       <tbody>${body}</tbody>

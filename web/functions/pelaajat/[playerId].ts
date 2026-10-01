@@ -13,7 +13,7 @@
 // (confirmed -- landing() has nothing resembling it), so that part of the
 // ask is simply not available from this data source.
 
-import { escapeHtml, nationalityFlag } from "../_shared/format";
+import { escapeHtml, nationalityFlag, shortDate } from "../_shared/format";
 import { renderLayout } from "../_shared/layout";
 import type { Env } from "../_shared/types";
 
@@ -57,12 +57,18 @@ interface SeasonTotal {
   goals?: number;
   assists?: number;
   points?: number;
+  plusMinus?: number;
+  pim?: number;
+  avgToi?: string;
   wins?: number;
   losses?: number;
   otLosses?: number;
-  goalsAgainstAverage?: number;
+  goalsAgainstAvg?: number;
   savePctg?: number;
   shutouts?: number;
+  shotsAgainst?: number;
+  goalsAgainst?: number;
+  timeOnIce?: string; // cumulative, goalies -- avgToi above is skaters' per-game average
 }
 
 function seasonLabel(season: number): string {
@@ -81,12 +87,29 @@ function renderSeasonSelect(playerId: number, seasons: number[], selected: numbe
   </form>`;
 }
 
-function renderSkaterGameLog(games: any[]): string {
+function renderSkaterTotalRow(label: string, t: SeasonTotal): string {
+  return `
+      <tr class="total-row">
+        <td colspan="2">${escapeHtml(label)} (${t.gamesPlayed})</td>
+        <td>${t.goals ?? 0}</td>
+        <td>${t.assists ?? 0}</td>
+        <td class="stat-strong">${t.points ?? 0}</td>
+        <td>${(t.plusMinus ?? 0) > 0 ? "+" : ""}${t.plusMinus ?? 0}</td>
+        <td>${t.pim ?? 0}</td>
+        <td>${t.avgToi ? escapeHtml(t.avgToi) : "–"}</td>
+      </tr>`;
+}
+
+function renderSkaterGameLog(games: any[], careerTotal: SeasonTotal | null, seasonTotal: SeasonTotal | null): string {
+  const totalRows = `
+    ${careerTotal ? renderSkaterTotalRow("Ura", careerTotal) : ""}
+    ${seasonTotal ? renderSkaterTotalRow("Kausi", seasonTotal) : ""}`;
+
   const rows = games
     .map(
       (g) => `
       <tr>
-        <td>${escapeHtml(g.gameDate)}</td>
+        <td>${escapeHtml(shortDate(g.gameDate))}</td>
         <td>${g.homeRoadFlag === "H" ? "vs" : "@"} ${escapeHtml(g.opponentAbbrev)}</td>
         <td>${g.goals}</td>
         <td>${g.assists}</td>
@@ -100,7 +123,7 @@ function renderSkaterGameLog(games: any[]): string {
 
   return `
   <div class="stats-table-wrap">
-    <table class="stats-table">
+    <table class="stats-table game-log-table">
       <thead>
         <tr>
           <th>Pvm</th>
@@ -113,18 +136,35 @@ function renderSkaterGameLog(games: any[]): string {
           <th>Peliaika</th>
         </tr>
       </thead>
-      <tbody>${rows}</tbody>
+      <tbody>${totalRows}${rows}</tbody>
     </table>
   </div>`;
 }
 
-function renderGoalieGameLog(games: any[]): string {
+function renderGoalieTotalRow(label: string, t: SeasonTotal): string {
+  const saves = (t.shotsAgainst ?? 0) - (t.goalsAgainst ?? 0);
+  return `
+      <tr class="total-row">
+        <td colspan="2">${escapeHtml(label)} (${t.gamesPlayed})</td>
+        <td>${t.wins ?? 0}-${t.losses ?? 0}-${t.otLosses ?? 0}</td>
+        <td>${saves}/${t.shotsAgainst ?? 0}</td>
+        <td class="stat-strong">${(t.savePctg ?? 0).toFixed(3)}</td>
+        <td>${t.shutouts ?? 0}</td>
+        <td>${t.timeOnIce ? escapeHtml(t.timeOnIce) : "–"}</td>
+      </tr>`;
+}
+
+function renderGoalieGameLog(games: any[], careerTotal: SeasonTotal | null, seasonTotal: SeasonTotal | null): string {
+  const totalRows = `
+    ${careerTotal ? renderGoalieTotalRow("Ura", careerTotal) : ""}
+    ${seasonTotal ? renderGoalieTotalRow("Kausi", seasonTotal) : ""}`;
+
   const rows = games
     .map((g) => {
       const saves = (g.shotsAgainst ?? 0) - (g.goalsAgainst ?? 0);
       return `
       <tr>
-        <td>${escapeHtml(g.gameDate)}</td>
+        <td>${escapeHtml(shortDate(g.gameDate))}</td>
         <td>${g.homeRoadFlag === "H" ? "vs" : "@"} ${escapeHtml(g.opponentAbbrev)}</td>
         <td>${g.decision ? escapeHtml(GOALIE_DECISION_FI[g.decision] ?? g.decision) : "–"}</td>
         <td>${saves}/${g.shotsAgainst ?? 0}</td>
@@ -137,7 +177,7 @@ function renderGoalieGameLog(games: any[]): string {
 
   return `
   <div class="stats-table-wrap">
-    <table class="stats-table">
+    <table class="stats-table game-log-table">
       <thead>
         <tr>
           <th>Pvm</th>
@@ -149,7 +189,7 @@ function renderGoalieGameLog(games: any[]): string {
           <th>Peliaika</th>
         </tr>
       </thead>
-      <tbody>${rows}</tbody>
+      <tbody>${totalRows}${rows}</tbody>
     </table>
   </div>`;
 }
@@ -183,26 +223,22 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   const requestedSeason = Number(url.searchParams.get("season"));
   const selectedSeason = seasons.includes(requestedSeason) ? requestedSeason : (seasons[0] ?? currentSeasonId());
 
+  const seasonTotal = seasonTotals.find((s) => s.season === selectedSeason) ?? null;
+  const careerTotal: SeasonTotal | null = landing.careerTotals?.regularSeason ?? null;
+
   let gameLogHtml = "";
   try {
     const gameLog = await fetchJson(`/player/${playerId}/game-log/${selectedSeason}/2`);
     const games = gameLog.gameLog ?? [];
     gameLogHtml = games.length
       ? isGoalie
-        ? renderGoalieGameLog(games)
-        : renderSkaterGameLog(games)
+        ? renderGoalieGameLog(games, careerTotal, seasonTotal)
+        : renderSkaterGameLog(games, careerTotal, seasonTotal)
       : `<p class="empty-note">Ei pelattuja otteluita tälle kaudelle.</p>`;
   } catch (error) {
     console.error(`Player game log fetch failed for ${playerId}/${selectedSeason}:`, error);
     gameLogHtml = `<p class="empty-note">Ottelukohtaisia tilastoja ei juuri nyt saatu.</p>`;
   }
-
-  const seasonSummary = seasonTotals.find((s) => s.season === selectedSeason);
-  const summaryLine = seasonSummary
-    ? isGoalie
-      ? `${seasonSummary.gamesPlayed} ottelua, ${seasonSummary.wins ?? 0}-${seasonSummary.losses ?? 0}-${seasonSummary.otLosses ?? 0}, ${(seasonSummary.savePctg ?? 0).toFixed(3)} SV%`
-      : `${seasonSummary.gamesPlayed} ottelua, ${seasonSummary.goals ?? 0}+${seasonSummary.assists ?? 0}=${seasonSummary.points ?? 0} p`
-    : "";
 
   const age = landing.birthDate ? ageFromBirthDate(landing.birthDate) : null;
   const handedness = landing.shootsCatches ? (HANDEDNESS_FI[landing.shootsCatches] ?? landing.shootsCatches) : null;
@@ -234,7 +270,6 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 <section>
   <h2 class="section-title">Kauden tilastot</h2>
   ${renderSeasonSelect(playerId, seasons.length ? seasons : [currentSeasonId()], selectedSeason)}
-  ${summaryLine ? `<p class="subtitle">${escapeHtml(summaryLine)}</p>` : ""}
   ${gameLogHtml}
 </section>
 `;
