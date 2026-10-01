@@ -55,10 +55,10 @@ function renderFinnishSkaterRow(row: FinnishSkaterRow, rank: number): string {
       <tr>
         <td class="col-rank">${rank}</td>
         <td>
-          <span class="player-cell">
+          <a href="/pelaajat/${row.player_id}" class="player-cell">
             <img src="${escapeHtml(row.headshot)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
             <span class="player-name">${escapeHtml(row.name)}<span class="player-meta">${escapeHtml(row.position)}</span></span>
-          </span>
+          </a>
         </td>
         <td><img src="${escapeHtml(row.logo)}" alt="" class="table-team-logo" loading="lazy">${escapeHtml(row.team_abbrev)}</td>
         <td>${row.games_played}</td>
@@ -73,13 +73,13 @@ function renderLeagueSkaterRow(row: SkaterStatsRow, rank: number): string {
       <tr>
         <td class="col-rank">${rank}</td>
         <td>
-          <span class="player-cell">
+          <a href="/pelaajat/${row.player_id}" class="player-cell">
             <img src="${escapeHtml(row.headshot)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
             <span class="player-name">
               ${escapeHtml(row.name)}
               <span class="player-meta">${nationalityFlag(row.nationality)} ${escapeHtml(row.nationality)} · ${escapeHtml(row.position)}</span>
             </span>
-          </span>
+          </a>
         </td>
         <td><img src="${escapeHtml(row.logo)}" alt="" class="table-team-logo" loading="lazy">${escapeHtml(row.team_abbrev)}</td>
         <td>${row.games_played}</td>
@@ -217,6 +217,12 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       // play (see _shared/boxScoreCache's fetchLiveBoxScore).
       const box = game.is_finished ? (await getBoxScore(db, game)).box : isLive(game) ? await fetchLiveBoxScore(game) : null;
 
+      // The card's own score otherwise only updates every ~30 min (the
+      // fast tier's own sync cadence) -- for a live game, the box score
+      // fetched above is already current (fetched fresh this request), so
+      // use its running tally instead of waiting on the next fast-tier sync.
+      let displayGame = game;
+
       if (box) {
         gameDetails[game.game_id] = { goals: box.goals, team_stats: box.teamStats };
         scorers = [
@@ -227,9 +233,13 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
           ...finnishGoalieLines(box.awayGoalies, game.away_abbrev),
           ...finnishGoalieLines(box.homeGoalies, game.home_abbrev),
         ];
+        if (isLive(game) && box.goals.length) {
+          const lastGoal = box.goals[box.goals.length - 1];
+          displayGame = { ...game, away_score: lastGoal.away_score, home_score: lastGoal.home_score };
+        }
       }
 
-      gameCardsHtml += renderGameCard(game, scorers, goalies, box?.live ?? null);
+      gameCardsHtml += renderGameCard(displayGame, scorers, goalies, box?.live ?? null);
     }
   }
 

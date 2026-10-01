@@ -20,13 +20,13 @@ function renderSkaterTable(rows: FinnishSkaterRow[]): string {
           data-gp="${row.games_played}" data-goals="${row.goals}" data-assists="${row.assists}" data-rank="${index + 1}">
         <td class="col-rank">${index + 1}</td>
         <td>
-          <span class="player-cell">
+          <a href="/pelaajat/${row.player_id}" class="player-cell">
             <img src="${escapeHtml(row.headshot)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
             <span class="player-name">
               ${escapeHtml(row.name)}
               <span class="player-meta">${escapeHtml(row.position)}</span>
             </span>
-          </span>
+          </a>
         </td>
         <td><img src="${escapeHtml(row.logo)}" alt="" class="table-team-logo" loading="lazy">${escapeHtml(row.team_abbrev)}</td>
         <td>${row.games_played}</td>
@@ -65,10 +65,10 @@ function renderGoalieTable(rows: FinnishGoalieRow[]): string {
           data-gaa="${row.goals_against_average}" data-shutouts="${row.shutouts}" data-rank="${index + 1}">
         <td class="col-rank">${index + 1}</td>
         <td>
-          <span class="player-cell">
+          <a href="/pelaajat/${row.player_id}" class="player-cell">
             <img src="${escapeHtml(row.headshot)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
             <span class="player-name">${escapeHtml(row.name)}</span>
-          </span>
+          </a>
         </td>
         <td><img src="${escapeHtml(row.logo)}" alt="" class="table-team-logo" loading="lazy">${escapeHtml(row.team_abbrev)}</td>
         <td>${row.games_played}</td>

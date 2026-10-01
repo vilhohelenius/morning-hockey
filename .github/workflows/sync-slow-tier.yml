@@ -2,10 +2,13 @@ name: Sync slow-tier stats to D1
 
 on:
   schedule:
-    # Every 4 hours (6x/day). Season-long stats (points leaders, standings,
-    # rosters) don't change faster than "after a night's games settle", so
-    # this runs far less often than the fast-tier schedule sync.
-    - cron: "0 */4 * * *"
+    # Hourly. Was every 4 hours; tightened 2026-10-01 so Pistepörssi/
+    # Maalivahtipörssi feel current without a full re-fetch of every page
+    # view -- triggering this (several minutes, ~32 teams' worth of NHL
+    # API calls) on every visit doesn't scale and risks overlapping runs;
+    # an hourly cron is the standard, safe way to get "current enough"
+    # instead.
+    - cron: "0 * * * *"
   workflow_dispatch: {}
 
 jobs:

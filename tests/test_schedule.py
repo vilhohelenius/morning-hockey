@@ -8,6 +8,7 @@ SCHEDULE = {
                 {
                     "id": 3,
                     "gameState": "OFF",
+                    "gameType": 2,
                     # 18:00 UTC -> 20:00 Finnish (winter, UTC+2): stays on the 15th
                     "startTimeUTC": "2026-01-15T18:00:00Z",
                     # /schedule (like /club-schedule-season) uses commonName
@@ -17,12 +18,21 @@ SCHEDULE = {
                 {
                     "id": 4,
                     "gameState": "FUT",
+                    "gameType": 2,
                     # 22:00 UTC -> 00:00 Finnish the *next* day -- a late US
                     # game that's already past midnight in Finland, even
                     # though the API still nominally dates it the 15th
                     "startTimeUTC": "2026-01-15T22:00:00Z",
                     "awayTeam": {"abbrev": "OTT", "name": {"default": "Senators"}, "logo": "ott.svg"},
                     "homeTeam": {"abbrev": "MTL", "name": {"default": "Canadiens"}, "logo": "mtl.svg"},
+                },
+                {
+                    "id": 99,
+                    "gameState": "OFF",
+                    "gameType": 1,  # preseason -- must never show up in build_schedule's output
+                    "startTimeUTC": "2026-01-15T15:00:00Z",
+                    "awayTeam": {"abbrev": "CHI", "name": {"default": "Blackhawks"}, "logo": "chi.svg", "score": 1},
+                    "homeTeam": {"abbrev": "STL", "name": {"default": "Blues"}, "logo": "stl.svg", "score": 2},
                 },
             ],
         },
@@ -32,6 +42,7 @@ SCHEDULE = {
                 {
                     "id": 1,
                     "gameState": "FUT",
+                    "gameType": 2,
                     # 00:00 UTC -> 02:00 Finnish, same day as the API's own bucket
                     "startTimeUTC": "2026-01-16T00:00:00Z",
                     "awayTeam": {"abbrev": "BOS", "name": {"default": "Bruins"}, "logo": "bos.svg"},
@@ -58,7 +69,8 @@ def test_build_schedule_regroups_games_onto_their_finnish_calendar_day():
 
     day_15 = page.days[0]
     # game 4 started at 22:00 UTC (00:00 Finnish the next day) so it moves
-    # off this day, even though the API's own bucket still called it the 15th
+    # off this day, even though the API's own bucket still called it the 15th.
+    # game 99 is preseason (gameType 1) and must never appear at all.
     assert [g.game_id for g in day_15.games] == [3]
     assert day_15.games[0].is_finished is True
     assert day_15.games[0].away.name == "Panthers"

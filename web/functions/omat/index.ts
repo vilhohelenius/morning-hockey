@@ -69,10 +69,10 @@ function renderFavoritePlayerRow(
 
   return `
     <div class="fav-row">
-      <span class="fav-row-info">
+      <a href="/pelaajat/${player.player_id}" class="fav-row-info">
         <img src="${escapeHtml(player.headshot)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
         ${escapeHtml(player.name)} <span class="fav-row-meta">${escapeHtml(player.team_abbrev)}</span>
-      </span>
+      </a>
       <span class="fav-row-meta">${statLine}</span>
       <form method="post" action="/omat/favorites/players">
         <input type="hidden" name="player_id" value="${player.player_id}">
@@ -99,10 +99,10 @@ function renderTeamPicker(availableTeams: StandingsRow[]): string {
 function renderPlayerSearchResult(row: TeamRosterSkaterRow | TeamRosterGoalieRow, isGoalie: boolean): string {
   return `
     <div class="fav-row">
-      <span class="fav-row-info">
+      <a href="/pelaajat/${row.player_id}" class="fav-row-info">
         <img src="${escapeHtml(row.headshot)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
         ${escapeHtml(row.name)} <span class="fav-row-meta">${escapeHtml(row.team_abbrev)}</span>
-      </span>
+      </a>
       <form method="post" action="/omat/favorites/players">
         <input type="hidden" name="player_id" value="${row.player_id}">
         <input type="hidden" name="is_goalie" value="${isGoalie ? "1" : "0"}">

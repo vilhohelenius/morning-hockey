@@ -58,13 +58,13 @@ function renderSkaterTable(skaters: PlayerGameStat[]): string {
       <tr>
         <td class="col-rank">${i + 1}</td>
         <td>
-          <span class="player-cell">
+          <a href="/pelaajat/${p.player_id}" class="player-cell">
             <img src="${escapeHtml(p.headshot)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
             <span class="player-name">
               ${escapeHtml(p.name)}
               <span class="player-meta">${nationalityFlag(p.nationality)} ${escapeHtml(p.nationality)} · ${escapeHtml(p.position)}</span>
             </span>
-          </span>
+          </a>
         </td>
         <td>${p.goals}</td>
         <td>${p.assists}</td>
@@ -105,13 +105,13 @@ function renderGoalieTable(goalies: GoalieGameStat[]): string {
       <tr>
         <td class="col-rank">${i + 1}</td>
         <td>
-          <span class="player-cell">
+          <a href="/pelaajat/${g.player_id}" class="player-cell">
             <img src="${escapeHtml(g.headshot)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
             <span class="player-name">
               ${escapeHtml(g.name)}
               <span class="player-meta">${nationalityFlag(g.nationality)} ${escapeHtml(g.nationality)}</span>
             </span>
-          </span>
+          </a>
         </td>
         <td>${g.saves}</td>
         <td>${g.shots_against - g.saves}</td>

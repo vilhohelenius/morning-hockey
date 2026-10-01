@@ -1,5 +1,10 @@
 """Full upcoming schedule for the next 7 days. Unlike primetime.py, every
 scheduled game is included -- no time-of-day filtering.
+
+Regular-season games only (gameType 2, same convention as team.py's
+split_schedule) -- preseason and playoff games are dropped here before
+they ever reach D1's `games` table, since the fast tier (the only thing
+that writes to it) is built on this function.
 """
 from __future__ import annotations
 
@@ -13,6 +18,8 @@ from .nhl_api import NHLClient
 from .team import team_display_name
 
 HELSINKI = ZoneInfo("Europe/Helsinki")
+
+_REGULAR_SEASON = 2  # same convention as team.py's split_schedule
 
 
 @dataclass(frozen=True)
@@ -76,6 +83,8 @@ def build_schedule(client: NHLClient, date: str = "now") -> SchedulePage:
     games_by_date: dict[str, list[ScheduleGame]] = {local_date: [] for local_date in local_dates}
     for day in game_week:
         for game in day.get("games", []):
+            if game.get("gameType") != _REGULAR_SEASON:
+                continue
             start_utc = dt.datetime.fromisoformat(game["startTimeUTC"].replace("Z", "+00:00"))
             start_local = start_utc.astimezone(HELSINKI)
             game_state = game.get("gameState", "")

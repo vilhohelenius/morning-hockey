@@ -12,22 +12,47 @@ import type { GoalieStatsRow, SkaterStatsRow, TeamRosterGoalieRow, TeamRosterSka
 const COLLAPSE_AT = 25;
 const PAGE_SIZE = 25;
 
-function teamFilterOptions(rows: { team_abbrev: string }[]): string {
+// A checkbox-panel dropdown (not a <select>, which can't do multi-choice
+// in a mobile-friendly way) -- any number of boxes can be checked at once,
+// AND'd with every other active filter. <details>/<summary> gives this for
+// free: no open/close JS needed, just reading which boxes are checked.
+function multiFilterDropdown(filterKey: string, allLabel: string, options: { value: string; label: string }[]): string {
+  return `
+  <details class="multi-filter" data-filter="${filterKey}">
+    <summary data-all-label="${escapeHtml(allLabel)}">${escapeHtml(allLabel)}</summary>
+    <div class="multi-filter-panel">
+      ${options
+        .map((o) => `<label><input type="checkbox" value="${escapeHtml(o.value)}">${o.label}</label>`)
+        .join("")}
+    </div>
+  </details>`;
+}
+
+function teamFilterDropdown(rows: { team_abbrev: string }[]): string {
   const teams = [...new Set(rows.map((r) => r.team_abbrev))].sort();
-  return (
-    `<option value="all">Kaikki joukkueet</option>` +
-    teams.map((t) => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join("")
+  return multiFilterDropdown(
+    "team",
+    "Kaikki joukkueet",
+    teams.map((t) => ({ value: t, label: escapeHtml(t) })),
   );
 }
 
-function nationalityFilterOptions(rows: { nationality: string }[]): string {
+function nationalityFilterDropdown(rows: { nationality: string }[]): string {
   const nationalities = [...new Set(rows.map((r) => r.nationality))].filter(Boolean).sort();
-  return (
-    `<option value="all">Kaikki maat</option>` +
-    nationalities
-      .map((n) => `<option value="${escapeHtml(n)}">${nationalityFlag(n)} ${escapeHtml(n)}</option>`)
-      .join("")
+  return multiFilterDropdown(
+    "nationality",
+    "Kaikki maat",
+    nationalities.map((n) => ({ value: n, label: `${nationalityFlag(n)} ${escapeHtml(n)}` })),
   );
+}
+
+function positionFilterSelect(): string {
+  return `
+  <select data-filter="position">
+    <option value="all">Kaikki pelipaikat</option>
+    <option value="F">Hyökkääjät</option>
+    <option value="D">Puolustajat</option>
+  </select>`;
 }
 
 function expandToggle(tableId: string, totalRows: number): string {
@@ -48,13 +73,13 @@ function renderRow(row: SkaterStatsRow, rank: number): string {
           data-rank="${rank}" data-position="${escapeHtml(row.position)}">
         <td class="col-rank">${rank}</td>
         <td>
-          <span class="player-cell">
+          <a href="/pelaajat/${row.player_id}" class="player-cell">
             <img src="${escapeHtml(row.headshot)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
             <span class="player-name">
               ${escapeHtml(row.name)}
               <span class="player-meta">${nationalityFlag(row.nationality)} ${escapeHtml(row.nationality)} · ${escapeHtml(row.position)}</span>
             </span>
-          </span>
+          </a>
         </td>
         <td><img src="${escapeHtml(row.logo)}" alt="" class="table-team-logo" loading="lazy">${escapeHtml(row.team_abbrev)}</td>
         <td>${row.games_played}</td>
@@ -81,11 +106,9 @@ export function renderSkaterLeaderboard(options: LeaderboardOptions): string {
 
   return `
   <div class="table-filters" data-table-id="${tableId}">
-    <button type="button" class="filter-btn active" data-position="all">Kaikki</button>
-    <button type="button" class="filter-btn" data-position="F">Hyökkääjät</button>
-    <button type="button" class="filter-btn" data-position="D">Puolustajat</button>
-    <select data-filter="team">${teamFilterOptions(rows)}</select>
-    <select data-filter="nationality">${nationalityFilterOptions(rows)}</select>
+    ${positionFilterSelect()}
+    ${teamFilterDropdown(rows)}
+    ${nationalityFilterDropdown(rows)}
   </div>
   <div class="stats-table-wrap">
     <table class="stats-table" id="${tableId}" data-collapse-at="${COLLAPSE_AT}">
@@ -116,13 +139,13 @@ function renderGoalieRow(row: GoalieStatsRow, rank: number): string {
           data-otl="${row.ot_losses}" data-gaa="${row.goals_against_average}" data-rank="${rank}">
         <td class="col-rank">${rank}</td>
         <td>
-          <span class="player-cell">
+          <a href="/pelaajat/${row.player_id}" class="player-cell">
             <img src="${escapeHtml(row.headshot)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
             <span class="player-name">
               ${escapeHtml(row.name)}
               <span class="player-meta">${nationalityFlag(row.nationality)} ${escapeHtml(row.nationality)}</span>
             </span>
-          </span>
+          </a>
         </td>
         <td><img src="${escapeHtml(row.logo)}" alt="" class="table-team-logo" loading="lazy">${escapeHtml(row.team_abbrev)}</td>
         <td>${row.games_played}</td>
@@ -151,8 +174,8 @@ export function renderGoalieLeaderboard(options: GoalieLeaderboardOptions): stri
 
   return `
   <div class="table-filters" data-table-id="${tableId}">
-    <select data-filter="team">${teamFilterOptions(rows)}</select>
-    <select data-filter="nationality">${nationalityFilterOptions(rows)}</select>
+    ${teamFilterDropdown(rows)}
+    ${nationalityFilterDropdown(rows)}
   </div>
   <div class="stats-table-wrap">
     <table class="stats-table" id="${tableId}" data-collapse-at="${COLLAPSE_AT}">
@@ -196,13 +219,13 @@ export function renderRosterSkaterTable(
           data-plusminus="${player.plus_minus}" data-toi="${player.avg_toi_seconds}">
         <td class="col-rank">${index + 1}</td>
         <td>
-          <span class="player-cell">
+          <a href="/pelaajat/${player.player_id}" class="player-cell">
             <img src="${escapeHtml(player.headshot)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
             <span class="player-name">
               ${escapeHtml(player.name)}
               <span class="player-meta">#${player.sweater_number} · ${nationalityFlag(player.nationality)} ${escapeHtml(player.position)}${showTeam ? ` · ${escapeHtml(player.team_abbrev)}` : ""}</span>
             </span>
-          </span>
+          </a>
         </td>
         <td>${player.games_played}</td>
         <td>${player.goals}</td>
@@ -250,13 +273,13 @@ export function renderRosterGoalieTable(
           data-gaa="${player.goals_against_average}" data-rank="${index + 1}">
         <td class="col-rank">${index + 1}</td>
         <td>
-          <span class="player-cell">
+          <a href="/pelaajat/${player.player_id}" class="player-cell">
             <img src="${escapeHtml(player.headshot)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
             <span class="player-name">
               ${escapeHtml(player.name)}
               <span class="player-meta">#${player.sweater_number}${showTeam ? ` · ${escapeHtml(player.team_abbrev)}` : ""}</span>
             </span>
-          </span>
+          </a>
         </td>
         <td>${player.games_played}</td>
         <td>${player.wins}</td>

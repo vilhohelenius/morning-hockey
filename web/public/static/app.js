@@ -431,10 +431,13 @@
     });
   }
 
-  // Position (buttons) + team/nationality (dropdowns) filters all combine
-  // with AND logic -- a row has to match every active one. Goalie tables
-  // never set data-position on their rows, so the position check is a
-  // no-op there (positionFilter stays "all", nothing ever toggles it).
+  // Position (single-select dropdown) + team/nationality (multi-select
+  // checkbox dropdowns) filters all combine with AND logic -- a row has to
+  // match every active one. Goalie tables never set data-position on their
+  // rows, so the position check is a no-op there. Team/nationality filter
+  // values are comma-joined lists of checked values (or "all"): a row
+  // matches if its own value is anywhere in that list, so checking several
+  // boxes means "any of these", same as a normal multi-select.
   function rowMatchesFilters(row, table) {
     var positionFilter = table.dataset.positionFilter || "all";
     var teamFilter = table.dataset.teamFilter || "all";
@@ -446,8 +449,10 @@
     ) {
       return false;
     }
-    if (teamFilter !== "all" && row.dataset.team !== teamFilter) return false;
-    if (nationalityFilter !== "all" && row.dataset.nationality !== nationalityFilter) return false;
+    if (teamFilter !== "all" && teamFilter.split(",").indexOf(row.dataset.team) === -1) return false;
+    if (nationalityFilter !== "all" && nationalityFilter.split(",").indexOf(row.dataset.nationality) === -1) {
+      return false;
+    }
     return true;
   }
 
@@ -528,27 +533,44 @@
   document.querySelectorAll(".table-filters").forEach(function (group) {
     var table = document.getElementById(group.dataset.tableId);
     if (!table) return;
-    var buttons = group.querySelectorAll(".filter-btn[data-position]");
 
     refreshTable(table);
-
-    buttons.forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        buttons.forEach(function (b) {
-          b.classList.remove("active");
-        });
-        btn.classList.add("active");
-        table.dataset.positionFilter = btn.dataset.position;
-        table.dataset.visibleCount = table.dataset.collapseAt;
-        refreshTable(table);
-      });
-    });
 
     group.querySelectorAll("select[data-filter]").forEach(function (select) {
       select.addEventListener("change", function () {
         table.dataset[select.dataset.filter + "Filter"] = select.value;
         table.dataset.visibleCount = table.dataset.collapseAt;
         refreshTable(table);
+      });
+    });
+
+    // Multi-select checkbox dropdowns (team/nationality): any number of
+    // boxes checked, joined into one comma list for rowMatchesFilters.
+    // <details>/<summary> gives the open/close behavior for free -- this
+    // only needs to react to the checkboxes inside.
+    group.querySelectorAll(".multi-filter").forEach(function (details) {
+      var filterKey = details.dataset.filter;
+      var summary = details.querySelector("summary");
+      var allLabel = summary.dataset.allLabel;
+      var checkboxes = details.querySelectorAll('input[type="checkbox"]');
+
+      checkboxes.forEach(function (checkbox) {
+        checkbox.addEventListener("change", function () {
+          var checked = Array.prototype.slice.call(checkboxes).filter(function (cb) {
+            return cb.checked;
+          });
+          if (!checked.length) {
+            summary.textContent = allLabel;
+            table.dataset[filterKey + "Filter"] = "all";
+          } else {
+            summary.textContent = checked.length <= 2
+              ? checked.map(function (cb) { return cb.value; }).join(", ")
+              : checked.length + " valittu";
+            table.dataset[filterKey + "Filter"] = checked.map(function (cb) { return cb.value; }).join(",");
+          }
+          table.dataset.visibleCount = table.dataset.collapseAt;
+          refreshTable(table);
+        });
       });
     });
   });
