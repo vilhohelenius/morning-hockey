@@ -227,6 +227,7 @@ export interface TeamRosterGoalieRow {
   ot_losses: number;
   goals_against_average: number;
   save_pct: number;
+  shutouts: number;
 }
 
 export interface TeamSeasonStatsRow {

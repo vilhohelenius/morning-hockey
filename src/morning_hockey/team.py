@@ -44,6 +44,7 @@ class RosterGoalie:
     ot_losses: int
     goals_against_average: float
     save_pct: float
+    shutouts: int
 
 
 @dataclass(frozen=True)
@@ -165,6 +166,7 @@ def _build_goalies(client: NHLClient, season_id: int, raw_roster: dict) -> list[
                 ot_losses=stats.get("otLosses", 0),
                 goals_against_average=stats.get("goalsAgainstAverage", 0.0),
                 save_pct=stats.get("savePct", 0.0),
+                shutouts=stats.get("shutouts", 0),
             )
         )
     goalies.sort(key=lambda g: -g.save_pct)

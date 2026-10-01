@@ -401,6 +401,7 @@ ROSTER_GOALIE = RosterGoalie(
     ot_losses=0,
     goals_against_average=3.2,
     save_pct=0.889,
+    shutouts=1,
 )
 
 
@@ -427,6 +428,7 @@ def test_sync_team_rosters_replaces_the_whole_table_across_every_team():
     assert goalie_params[0] == 6
     assert goalie_params[1] == "CHI"
     assert goalie_params[10] == 0.889  # save_pct
+    assert goalie_params[11] == 1  # shutouts
 
 
 SEASON_STATS = SeasonStats(

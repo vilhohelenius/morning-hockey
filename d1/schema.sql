@@ -323,6 +323,13 @@ CREATE TABLE IF NOT EXISTS team_roster_goalies (
 
 CREATE INDEX IF NOT EXISTS idx_team_roster_goalies_team ON team_roster_goalies(team_abbrev, games_played DESC);
 
+-- Added 2026-10-01 for the team page's goalie roster table (replaces
+-- losses/ot_losses there with shutouts). Already present on the same
+-- goalie_summary API response team.py's _build_goalies already queries for
+-- wins/save_pct/etc -- no extra API call. DEFAULT 0 only matters until the
+-- next slow-tier sync (delete+reinsert, every 4h) overwrites every row.
+ALTER TABLE team_roster_goalies ADD COLUMN shutouts INTEGER NOT NULL DEFAULT 0;
+
 -- Team-level season stats (PP%/PK%/faceoff%/shots), for the team page's
 -- "Kausitilastot" stat grid -- flagged as missing since phase 3, closed
 -- here alongside the roster sync since both come from the same per-team

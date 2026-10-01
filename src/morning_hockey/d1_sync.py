@@ -325,8 +325,8 @@ _DELETE_ROSTER_GOALIES_SQL = "DELETE FROM team_roster_goalies"
 _INSERT_ROSTER_GOALIE_SQL = """
 INSERT INTO team_roster_goalies (
     player_id, team_abbrev, name, sweater_number, headshot,
-    games_played, wins, losses, ot_losses, goals_against_average, save_pct, updated_at
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    games_played, wins, losses, ot_losses, goals_against_average, save_pct, shutouts, updated_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 """
 
 
@@ -360,7 +360,7 @@ def sync_team_rosters(client: D1Client, rosters: dict) -> tuple[int, int]:
                 [
                     row.player_id, abbrev, row.name, row.sweater_number, row.headshot,
                     row.games_played, row.wins, row.losses, row.ot_losses,
-                    row.goals_against_average, row.save_pct, synced_at,
+                    row.goals_against_average, row.save_pct, row.shutouts, synced_at,
                 ],
             )
             goalie_count += 1

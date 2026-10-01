@@ -139,10 +139,10 @@ INSERT INTO team_roster_skaters (player_id, team_abbrev, name, position, nationa
 (8478483, 'TOR', 'Mitch Marner', 'R', 'CAN', 16, 'https://assets.nhle.com/mugs/nhl/20262027/TOR/8478483.png', 7, 4, 9, 13, 2, 1150, '2026-09-30T12:00:00Z'),
 (8481535, 'CAR', 'Sebastian Aho', 'C', 'FIN', 20, 'https://assets.nhle.com/mugs/nhl/20262027/CAR/8481535.png', 7, 6, 4, 10, 4, 1190, '2026-09-30T12:00:00Z');
 
-INSERT INTO team_roster_goalies (player_id, team_abbrev, name, sweater_number, headshot, games_played, wins, losses, ot_losses, goals_against_average, save_pct, updated_at) VALUES
-(8480313, 'TOR', 'Joseph Woll', 60, 'https://assets.nhle.com/mugs/nhl/20262027/TOR/8480313.png', 4, 3, 1, 0, 2.31, 0.918, '2026-09-30T12:00:00Z'),
-(8475831, 'TOR', 'Anthony Stolarz', 41, 'https://assets.nhle.com/mugs/nhl/20262027/TOR/8475831.png', 3, 1, 2, 0, 3.10, 0.890, '2026-09-30T12:00:00Z'),
-(8479978, 'CAR', 'Pyotr Kochetkov', 52, 'https://assets.nhle.com/mugs/nhl/20262027/CAR/8479978.png', 5, 4, 1, 0, 2.10, 0.925, '2026-09-30T12:00:00Z');
+INSERT INTO team_roster_goalies (player_id, team_abbrev, name, sweater_number, headshot, games_played, wins, losses, ot_losses, goals_against_average, save_pct, shutouts, updated_at) VALUES
+(8480313, 'TOR', 'Joseph Woll', 60, 'https://assets.nhle.com/mugs/nhl/20262027/TOR/8480313.png', 4, 3, 1, 0, 2.31, 0.918, 1, '2026-09-30T12:00:00Z'),
+(8475831, 'TOR', 'Anthony Stolarz', 41, 'https://assets.nhle.com/mugs/nhl/20262027/TOR/8475831.png', 3, 1, 2, 0, 3.10, 0.890, 0, '2026-09-30T12:00:00Z'),
+(8479978, 'CAR', 'Pyotr Kochetkov', 52, 'https://assets.nhle.com/mugs/nhl/20262027/CAR/8479978.png', 5, 4, 1, 0, 2.10, 0.925, 2, '2026-09-30T12:00:00Z');
 
 INSERT INTO team_season_stats (team_abbrev, games_played, goals_for, goals_against, power_play_pct, penalty_kill_pct, faceoff_pct, shots_for_per_game, shots_against_per_game, shutouts, updated_at) VALUES
 ('TOR', 7, 25, 18, 0.24, 0.82, 0.51, 32.1, 27.4, 1, '2026-09-30T12:00:00Z');

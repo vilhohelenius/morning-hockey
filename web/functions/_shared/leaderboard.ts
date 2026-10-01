@@ -294,7 +294,7 @@ export function renderRosterGoalieTable(
     .map(
       (player, index) => `
       <tr data-name="${escapeHtml(player.name)}" data-gp="${player.games_played}" data-wins="${player.wins}"
-          data-losses="${player.losses}" data-otl="${player.ot_losses}"
+          data-shutouts="${player.shutouts}"
           data-gaa="${player.goals_against_average}" data-rank="${index + 1}">
         <td class="col-rank">${index + 1}</td>
         <td>
@@ -308,8 +308,7 @@ export function renderRosterGoalieTable(
         </td>
         <td>${player.games_played}</td>
         <td>${player.wins}</td>
-        <td>${player.losses}</td>
-        <td>${player.ot_losses}</td>
+        <td>${player.shutouts}</td>
         <td>${player.goals_against_average.toFixed(2)}</td>
         <td class="stat-strong">${player.save_pct.toFixed(3)}</td>
       </tr>`,
@@ -327,8 +326,7 @@ export function renderRosterGoalieTable(
           <th data-sort="name" data-type="text">Pelaaja</th>
           <th data-sort="gp">O</th>
           <th data-sort="wins">V</th>
-          <th data-sort="losses">H</th>
-          <th data-sort="otl">JH</th>
+          <th data-sort="shutouts">NP</th>
           <th data-sort="gaa">GAA</th>
           <th data-sort="rank" data-first-dir="asc" class="sort-asc">SV%</th>
         </tr>

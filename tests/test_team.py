@@ -143,6 +143,7 @@ GOALIE_STATS = [
         "otLosses": 0,
         "goalsAgainstAverage": 1.5,
         "savePct": 0.955,
+        "shutouts": 1,
     }
 ]
 
@@ -235,6 +236,7 @@ def test_build_team_page_assembles_division_schedule_and_roster():
     assert isinstance(page.goalies[0], RosterGoalie)
     assert page.goalies[0].name == "Spencer Knight"
     assert page.goalies[0].save_pct == 0.955
+    assert page.goalies[0].shutouts == 1
 
     assert isinstance(page.season_stats, SeasonStats)
     assert page.season_stats.goals_for == 2
@@ -308,3 +310,4 @@ def test_build_team_page_defaults_stats_to_zero_for_players_without_recorded_gam
     assert page.skaters[0].avg_toi == "0:00"
     assert page.goalies[0].games_played == 0
     assert page.goalies[0].save_pct == 0.0
+    assert page.goalies[0].shutouts == 0
