@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types scripts/test-boxscore.ts",
+    "test": "node --experimental-strip-types scripts/test-boxscore.ts && node --experimental-strip-types scripts/test-division-points.ts",
     "dev": "wrangler pages dev public",
     "deploy": "wrangler pages deploy public --project-name=morning-hockey"
   },
