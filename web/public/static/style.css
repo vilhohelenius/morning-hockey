@@ -2373,7 +2373,9 @@ main {
 .team-schedule-link {
   display: inline-block;
   text-decoration: none;
-  margin-bottom: 16px;
+  margin: 4px 0 16px;
+  padding: 10px 18px;
+  font-size: 0.95rem;
 }
 
 .team-games-picker {

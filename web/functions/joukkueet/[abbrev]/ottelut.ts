@@ -39,7 +39,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 <header class="page-header team-page-header hero-banner" style="${escapeHtml(teamHeroBackgroundStyle(abbrev))}">
   <img src="${escapeHtml(team.logo)}" alt="" class="team-hero-logo">
   <h1>${escapeHtml(team.name)}</h1>
-  <p class="subtitle">Kauden kaikki ottelut</p>
+  <p class="subtitle">${team.wins}-${team.losses}-${team.ot_losses} (${team.points} p) · Kauden kaikki ottelut</p>
 </header>
 
 <div class="team-games-picker">
