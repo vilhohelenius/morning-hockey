@@ -431,57 +431,106 @@
     });
   }
 
-  function applyRowVisibility(table) {
-    var limit = parseInt(table.dataset.collapseAt, 10);
-    var expanded = table.dataset.expanded === "true";
+  // Position (buttons) + team/nationality (dropdowns) filters all combine
+  // with AND logic -- a row has to match every active one. Goalie tables
+  // never set data-position on their rows, so the position check is a
+  // no-op there (positionFilter stays "all", nothing ever toggles it).
+  function rowMatchesFilters(row, table) {
     var positionFilter = table.dataset.positionFilter || "all";
+    var teamFilter = table.dataset.teamFilter || "all";
+    var nationalityFilter = table.dataset.nationalityFilter || "all";
+
+    if (
+      positionFilter !== "all" &&
+      (positionFilter === "D" ? row.dataset.position !== "D" : row.dataset.position === "D")
+    ) {
+      return false;
+    }
+    if (teamFilter !== "all" && row.dataset.team !== teamFilter) return false;
+    if (nationalityFilter !== "all" && row.dataset.nationality !== nationalityFilter) return false;
+    return true;
+  }
+
+  // Incremental "show 25 more" instead of a one-shot "show everything" --
+  // table.dataset.visibleCount is how many *matching* rows are currently
+  // shown; the expand-toggle button adds another page-size's worth each
+  // click until every matching row is visible.
+  function applyRowVisibility(table) {
+    var visibleCount = parseInt(table.dataset.visibleCount, 10) || 0;
     var rows = table.querySelectorAll("tbody tr");
     var shownCount = 0;
     rows.forEach(function (row) {
-      var matchesPosition =
-        positionFilter === "all" ||
-        (positionFilter === "D" ? row.dataset.position === "D" : row.dataset.position !== "D");
-      var withinCollapse = !limit || expanded || shownCount < limit;
-      row.style.display = matchesPosition && withinCollapse ? "" : "none";
-      if (matchesPosition) shownCount++;
+      var matches = rowMatchesFilters(row, table);
+      var withinLimit = !visibleCount || shownCount < visibleCount;
+      row.style.display = matches && withinLimit ? "" : "none";
+      if (matches) shownCount++;
     });
+    return shownCount;
   }
 
   function applyRanks(table) {
-    var positionFilter = table.dataset.positionFilter || "all";
     var rows = Array.prototype.slice.call(table.querySelectorAll("tbody tr"));
     rows.sort(function (a, b) {
       return parseInt(a.dataset.rank, 10) - parseInt(b.dataset.rank, 10);
     });
     var visible = rows.filter(function (row) {
-      return (
-        positionFilter === "all" ||
-        (positionFilter === "D" ? row.dataset.position === "D" : row.dataset.position !== "D")
-      );
+      return rowMatchesFilters(row, table);
     });
 
     var rank = 0;
     var prevGoals = null;
     var prevAssists = null;
+    var hasPoints = visible.length && visible[0].dataset.goals !== undefined;
     visible.forEach(function (row, i) {
-      var goals = row.dataset.goals;
-      var assists = row.dataset.assists;
-      if (i === 0 || goals !== prevGoals || assists !== prevAssists) {
+      if (hasPoints) {
+        var goals = row.dataset.goals;
+        var assists = row.dataset.assists;
+        if (i === 0 || goals !== prevGoals || assists !== prevAssists) {
+          rank = i + 1;
+        }
+        prevGoals = goals;
+        prevAssists = assists;
+      } else {
         rank = i + 1;
       }
       var cell = row.querySelector(".col-rank");
       if (cell) cell.textContent = rank;
-      prevGoals = goals;
-      prevAssists = assists;
     });
+  }
+
+  function updateExpandButton(table) {
+    var btn = document.querySelector('.expand-toggle[data-table-id="' + table.id + '"]');
+    if (!btn) return;
+    var totalMatching = Array.prototype.slice
+      .call(table.querySelectorAll("tbody tr"))
+      .filter(function (row) {
+        return rowMatchesFilters(row, table);
+      }).length;
+    var visibleCount = parseInt(table.dataset.visibleCount, 10) || 0;
+    if (visibleCount >= totalMatching) {
+      btn.style.display = "none";
+    } else {
+      btn.style.display = "";
+      var remaining = Math.min(parseInt(btn.dataset.pageSize, 10) || 25, totalMatching - visibleCount);
+      btn.textContent = "Näytä " + remaining + " lisää (" + visibleCount + "/" + totalMatching + ") →";
+    }
+  }
+
+  function refreshTable(table) {
+    if (table.dataset.visibleCount === undefined) {
+      table.dataset.visibleCount = table.dataset.collapseAt || "0";
+    }
+    applyRowVisibility(table);
+    applyRanks(table);
+    updateExpandButton(table);
   }
 
   document.querySelectorAll(".table-filters").forEach(function (group) {
     var table = document.getElementById(group.dataset.tableId);
     if (!table) return;
-    var buttons = group.querySelectorAll(".filter-btn");
+    var buttons = group.querySelectorAll(".filter-btn[data-position]");
 
-    applyRanks(table);
+    refreshTable(table);
 
     buttons.forEach(function (btn) {
       btn.addEventListener("click", function () {
@@ -490,8 +539,16 @@
         });
         btn.classList.add("active");
         table.dataset.positionFilter = btn.dataset.position;
-        applyRowVisibility(table);
-        applyRanks(table);
+        table.dataset.visibleCount = table.dataset.collapseAt;
+        refreshTable(table);
+      });
+    });
+
+    group.querySelectorAll("select[data-filter]").forEach(function (select) {
+      select.addEventListener("change", function () {
+        table.dataset[select.dataset.filter + "Filter"] = select.value;
+        table.dataset.visibleCount = table.dataset.collapseAt;
+        refreshTable(table);
       });
     });
   });
@@ -502,7 +559,13 @@
     var activeSort = null;
     var activeDir = null;
 
-    applyRowVisibility(table);
+    // Tables with their own .table-filters group (Pistepörssi, Maalivahti-
+    // pörssi, Rookie-pörssi) already got this from the group loop above --
+    // this only needs to initialize the ones without one (team page's
+    // always-show-everything roster tables).
+    if (!document.querySelector('.table-filters[data-table-id="' + table.id + '"]')) {
+      refreshTable(table);
+    }
 
     headers.forEach(function (th) {
       th.addEventListener("click", function () {
@@ -549,17 +612,10 @@
     var table = document.getElementById(btn.dataset.tableId);
     if (!table) return;
 
-    function updateLabel() {
-      var expanded = table.dataset.expanded === "true";
-      btn.textContent = expanded ? btn.dataset.collapseLabel : btn.dataset.expandLabel;
-    }
-
-    updateLabel();
-
     btn.addEventListener("click", function () {
-      table.dataset.expanded = table.dataset.expanded === "true" ? "false" : "true";
-      applyRowVisibility(table);
-      updateLabel();
+      var pageSize = parseInt(btn.dataset.pageSize, 10) || 25;
+      table.dataset.visibleCount = (parseInt(table.dataset.visibleCount, 10) || 0) + pageSize;
+      refreshTable(table);
     });
   });
 })();

@@ -90,7 +90,11 @@ def cap_per_position(rows: list[dict], limit: int) -> list[dict]:
     return sorted(forwards + defensemen, key=lambda r: (-r["points"], -r["goals"], r["skaterFullName"]))
 
 
-def build_skater_top(client: NHLClient, season_id: int, limit: int = 100) -> list[SkaterStatRow]:
+def build_skater_top(client: NHLClient, season_id: int, limit: int = 1000) -> list[SkaterStatRow]:
+    """Default limit is effectively "no cap" (there are nowhere near 1000
+    NHL forwards or defensemen in a season) -- Pistepörssi shows every
+    synced player, paged 25 at a time client-side, rather than being
+    pre-truncated at the source the way it used to be."""
     cayenne_exp = f"seasonId={season_id} and gameTypeId=2"
     rows = client.skater_bios(cayenne_exp, _SKATER_SORT, limit=-1)
     return [skater_row(row, season_id) for row in cap_per_position(rows, limit)]
@@ -105,7 +109,7 @@ def _goalie_nationalities(client: NHLClient, season_id: int) -> dict[int, str]:
     return {row["playerId"]: row["nationalityCode"] for row in bios}
 
 
-def build_goalie_top(client: NHLClient, season_id: int, limit: int = 30) -> list[GoalieStatRow]:
+def build_goalie_top(client: NHLClient, season_id: int, limit: int = -1) -> list[GoalieStatRow]:
     cayenne_exp = f"seasonId={season_id} and gameTypeId=2"
     rows = client.goalie_summary(cayenne_exp, _GOALIE_SORT, limit)
     nationalities = _goalie_nationalities(client, season_id)
