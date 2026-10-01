@@ -1002,6 +1002,12 @@ main {
   font-weight: 700;
 }
 
+.schedule-time {
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
 .schedule-result {
   font-weight: 700;
   font-size: 0.8rem;

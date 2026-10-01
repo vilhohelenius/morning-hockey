@@ -128,7 +128,10 @@ function renderTeamGameLine(team: StandingsRow, game: GameRow, played: boolean):
         const opponentScore = isHome ? game.away_score : game.home_score;
         return `<span class="fav-row-meta">${teamScore}–${opponentScore} ${teamScore > opponentScore ? "V" : "H"}</span>`;
       })()
-    : "";
+    : (() => {
+        const { hour, minute } = helsinkiParts(game.start_time_utc);
+        return `<span class="fav-row-meta">${hour}:${String(minute).padStart(2, "0")}</span>`;
+      })();
   return `
   <div class="fav-team-card-game">
     <span>${shortDate(game.date)}</span>

@@ -44,7 +44,7 @@ function renderSpoilerGame(game: GameRow, youtubeUrl: string | null): string {
     <span class="spoiler-check-text">Merkitse nähdyksi, kun olet katsonut highlightit</span>
   </label>
 
-  <div class="score-row spoiler-score-row game-card-trigger" data-game-id="${game.game_id}" tabindex="-1" role="button" aria-expanded="false">
+  <div class="score-row spoiler-score-row game-card-trigger" data-game-id="${game.game_id}" data-away-score="${game.away_score}" data-home-score="${game.home_score}" tabindex="-1" role="button" aria-expanded="false">
     <div class="team away">
       <img src="${escapeHtml(game.away_logo)}" alt="" class="logo" loading="lazy">
       <span class="abbrev">${escapeHtml(game.away_abbrev)}</span>
@@ -151,6 +151,24 @@ ${
     });
   });
   recomputeAllRevealed();
+
+  // Clicking/activating the row opens the shared goal-timeline/team-stats
+  // box (app.js's own delegated .game-card-trigger listener, unaffected by
+  // this) -- this separate listener only swaps the "?-?" placeholder for
+  // the actual score at the same moment, since the checkbox gate already
+  // keeps this row unreachable (pointer-events/tabindex) until revealed.
+  function revealScore(row) {
+    var placeholder = row.querySelector(".spoiler-placeholder");
+    if (!placeholder) return;
+    placeholder.textContent = row.dataset.awayScore + "–" + row.dataset.homeScore;
+  }
+
+  Array.prototype.slice.call(document.querySelectorAll(".spoiler-score-row")).forEach(function (row) {
+    row.addEventListener("click", function () { revealScore(row); });
+    row.addEventListener("keydown", function (event) {
+      if (event.key === "Enter" || event.key === " ") revealScore(row);
+    });
+  });
 
   var modal = document.getElementById("tulospiilo-exit-modal");
   var stayBtn = document.getElementById("tp-exit-stay");

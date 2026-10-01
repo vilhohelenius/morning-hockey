@@ -16,7 +16,7 @@
 // someone visits it, unlike the original team.html, which only linked
 // games nightly-digest.yml happened to pre-build a report for.
 
-import { escapeHtml, shortDate } from "../_shared/format";
+import { escapeHtml, helsinkiParts, shortDate } from "../_shared/format";
 import { renderRosterGoalieTable, renderRosterSkaterTable } from "../_shared/leaderboard";
 import { renderLayout } from "../_shared/layout";
 import type {
@@ -85,7 +85,10 @@ function renderGameRow(game: GameRow, teamAbbrev: string, played: boolean): stri
         played
           ? `<span class="schedule-score">${teamScore}–${opponentScore}</span>
       <span class="schedule-result result-${result?.toLowerCase()}">${result}</span>`
-          : ""
+          : `<span class="schedule-time">${(() => {
+              const { hour, minute } = helsinkiParts(game.start_time_utc);
+              return `${hour}:${String(minute).padStart(2, "0")}`;
+            })()}</span>`
       }`;
 
   return played
