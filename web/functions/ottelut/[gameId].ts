@@ -503,10 +503,18 @@ ${
   </div>
 </section>
 
-${renderRosterSkaterTable(awaySkaters, `🏒 ${escapeHtml(game.away_name)} – kokoonpano`)}
-${awayGoalies.length ? renderRosterGoalieTable(awayGoalies, `🥅 ${escapeHtml(game.away_name)} – maalivahdit`) : ""}
-${renderRosterSkaterTable(homeSkaters, `🏒 ${escapeHtml(game.home_name)} – kokoonpano`)}
-${homeGoalies.length ? renderRosterGoalieTable(homeGoalies, `🥅 ${escapeHtml(game.home_name)} – maalivahdit`) : ""}`
+<div class="roster-team-picker toggle-group">
+  <button type="button" class="toggle-segment active" data-team="away">${escapeHtml(game.away_abbrev)}</button>
+  <button type="button" class="toggle-segment" data-team="home">${escapeHtml(game.home_abbrev)}</button>
+</div>
+<div class="roster-team-section" data-team="away">
+  ${renderRosterSkaterTable(awaySkaters, `🏒 ${escapeHtml(game.away_name)} – kokoonpano`)}
+  ${awayGoalies.length ? renderRosterGoalieTable(awayGoalies, `🥅 ${escapeHtml(game.away_name)} – maalivahdit`) : ""}
+</div>
+<div class="roster-team-section is-hidden" data-team="home">
+  ${renderRosterSkaterTable(homeSkaters, `🏒 ${escapeHtml(game.home_name)} – kokoonpano`)}
+  ${homeGoalies.length ? renderRosterGoalieTable(homeGoalies, `🥅 ${escapeHtml(game.home_name)} – maalivahdit`) : ""}
+</div>`
       : `<p class="empty-note">Ottelua ei ole vielä pelattu.</p>`
     : fetchError
       ? `<p class="empty-note">Ottelun tarkkoja tietoja ei juuri nyt saatu. Yritä myöhemmin uudelleen.</p>`

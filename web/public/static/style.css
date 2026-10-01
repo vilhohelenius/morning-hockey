@@ -1628,7 +1628,8 @@ main {
   display: flex;
 }
 
-.toggle-group form + form {
+.toggle-group form + form,
+.toggle-group button + button {
   border-left: 1px solid var(--border);
 }
 
@@ -2615,6 +2616,10 @@ main {
 
 .division-chart-section.is-hidden,
 .analytiikka-view-section.is-hidden {
+  display: none;
+}
+
+.roster-team-section.is-hidden {
   display: none;
 }
 

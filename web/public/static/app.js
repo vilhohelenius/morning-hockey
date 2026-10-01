@@ -29,14 +29,16 @@
   // Every pill-group filter on the site (day-picker, player card's season/
   // playoffs toggle, team schedule's past/upcoming, Pistepörssi's kaikki
   // pelaajat/rookiet, Analytiikka's division picker) follows the same
-  // shape: a row of .day-pill buttons and a set of sections that are
+  // shape: a row of pill/segment buttons and a set of sections that are
   // already fully rendered server-side, switched with is-hidden rather
   // than refetched. datasetKey is the camelCased data-* attribute (e.g.
   // "date" for data-date, "gameType" for data-game-type) both the pill and
-  // its matching section carry.
-  function wirePillToggle(pickerSelector, sectionSelector, datasetKey) {
+  // its matching section carry. pillSelector defaults to the usual
+  // .day-pill row but can be overridden (e.g. the game preview's
+  // .toggle-segment away/home switch, styled like Asetukset's toggles).
+  function wirePillToggle(pickerSelector, sectionSelector, datasetKey, pillSelector) {
     document.querySelectorAll(pickerSelector).forEach(function (picker) {
-      var pills = picker.querySelectorAll(".day-pill");
+      var pills = picker.querySelectorAll(pillSelector || ".day-pill");
       var sections = document.querySelectorAll(sectionSelector);
 
       pills.forEach(function (pill) {
@@ -60,6 +62,7 @@
   wirePillToggle(".division-picker", ".division-chart-section", "division");
   wirePillToggle(".analytiikka-view-picker", ".analytiikka-view-section", "view");
   wirePillToggle(".sarjataulukko-view-picker", ".sarjataulukko-view-section", "view");
+  wirePillToggle(".roster-team-picker", ".roster-team-section", "team", ".toggle-segment");
 
   // Player hero card: click (or Enter/Space, since it's a role="button")
   // flips it to reveal the bio back face. The fav-star form sits inside
