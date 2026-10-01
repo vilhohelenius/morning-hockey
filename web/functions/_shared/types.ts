@@ -153,6 +153,11 @@ export interface TeamStatRow {
   label: string;
   away_value: string;
   home_value: string;
+  // Bar-chart fill, 0-100 scale, relative within this row only (the NHL.com
+  // "Game Stats" look) -- omitted for rows a two-sided bar wouldn't make
+  // sense for.
+  away_pct?: number;
+  home_pct?: number;
 }
 
 export interface PlayerGameStat {
@@ -166,6 +171,11 @@ export interface PlayerGameStat {
   points: number;
   plus_minus: number;
   shots: number;
+  blocked_shots: number;
+  hits: number;
+  giveaways: number;
+  takeaways: number;
+  faceoff_pct: number | null;
   pim: number;
   toi: string;
 }
@@ -179,6 +189,9 @@ export interface GoalieGameStat {
   saves: number;
   shots_against: number;
   save_pct: number;
+  ev_goals_against: number;
+  pp_goals_against: number;
+  sh_goals_against: number;
   toi: string;
 }
 

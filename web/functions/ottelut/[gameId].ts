@@ -72,6 +72,11 @@ function renderSkaterTable(skaters: PlayerGameStat[]): string {
         <td class="stat-strong">${p.points}</td>
         <td>${p.plus_minus > 0 ? "+" : ""}${p.plus_minus}</td>
         <td>${p.shots}</td>
+        <td>${p.blocked_shots}</td>
+        <td>${p.hits}</td>
+        <td>${p.giveaways}</td>
+        <td>${p.takeaways}</td>
+        <td>${p.faceoff_pct !== null ? `${(p.faceoff_pct * 100).toFixed(0)} %` : "–"}</td>
         <td>${p.pim}</td>
         <td>${escapeHtml(p.toi)}</td>
       </tr>`,
@@ -90,6 +95,11 @@ function renderSkaterTable(skaters: PlayerGameStat[]): string {
         <th>P</th>
         <th>+/-</th>
         <th>L</th>
+        <th>Torj.</th>
+        <th>Tak.</th>
+        <th>Men.</th>
+        <th>Riis.</th>
+        <th>Al.%</th>
         <th>JH</th>
         <th>Peliaika</th>
       </tr>
@@ -97,6 +107,17 @@ function renderSkaterTable(skaters: PlayerGameStat[]): string {
     <tbody>${rows}</tbody>
   </table>
 </div>`;
+}
+
+// e.g. "2 (1 YV)" -- the base goals-against total, plus a parenthetical
+// breakdown only for the special-teams goals within it (even-strength ones
+// need no tag, same convention as the goal timeline's own strength labels).
+function goalsAgainstBreakdown(g: GoalieGameStat): string {
+  const total = g.shots_against - g.saves;
+  const tags: string[] = [];
+  if (g.pp_goals_against > 0) tags.push(`${g.pp_goals_against} YV`);
+  if (g.sh_goals_against > 0) tags.push(`${g.sh_goals_against} AV`);
+  return tags.length ? `${total} (${tags.join(", ")})` : String(total);
 }
 
 function renderGoalieTable(goalies: GoalieGameStat[]): string {
@@ -114,8 +135,9 @@ function renderGoalieTable(goalies: GoalieGameStat[]): string {
             </span>
           </a>
         </td>
+        <td>${g.shots_against}</td>
         <td>${g.saves}</td>
-        <td>${g.shots_against - g.saves}</td>
+        <td>${goalsAgainstBreakdown(g)}</td>
         <td class="stat-strong">${g.save_pct.toFixed(3)}</td>
         <td>${escapeHtml(g.toi)}</td>
       </tr>`,
@@ -129,6 +151,7 @@ function renderGoalieTable(goalies: GoalieGameStat[]): string {
       <tr>
         <th class="col-rank">#</th>
         <th>Pelaaja</th>
+        <th>Lauk.</th>
         <th>Torj.</th>
         <th>Päästi</th>
         <th>SV%</th>
@@ -214,10 +237,20 @@ ${
       ${box.teamStats
         .map(
           (stat) => `
-      <div class="gd-stat-row">
-        <span class="gd-stat-value">${escapeHtml(stat.away_value)}</span>
-        <span class="gd-stat-label">${escapeHtml(stat.label)}</span>
-        <span class="gd-stat-value">${escapeHtml(stat.home_value)}</span>
+      <div class="gd-stat-block">
+        <div class="gd-stat-row">
+          <span class="gd-stat-value">${escapeHtml(stat.away_value)}</span>
+          <span class="gd-stat-label">${escapeHtml(stat.label)}</span>
+          <span class="gd-stat-value">${escapeHtml(stat.home_value)}</span>
+        </div>
+        ${
+          stat.away_pct !== undefined && stat.home_pct !== undefined
+            ? `<div class="gd-stat-bar">
+          <span class="gd-stat-bar-away" style="width: ${stat.away_pct}%"></span>
+          <span class="gd-stat-bar-home" style="width: ${stat.home_pct}%"></span>
+        </div>`
+            : ""
+        }
       </div>`,
         )
         .join("")}

@@ -47,12 +47,20 @@ interface RawBoxscorePlayer {
   points?: number;
   plusMinus?: number;
   sog?: number;
+  blockedShots?: number;
+  hits?: number;
+  giveaways?: number;
+  takeaways?: number;
+  faceoffWinningPctg?: number;
   pim?: number;
   toi?: string;
   decision?: string | null;
   saves?: number;
   shotsAgainst?: number;
   savePctg?: number;
+  evenStrengthGoalsAgainst?: number;
+  powerPlayGoalsAgainst?: number;
+  shorthandedGoalsAgainst?: number;
 }
 
 function skaterStat(row: RawBoxscorePlayer, teamAbbrev: string, seasonId: number, nationalities: Map<number, string>): PlayerGameStat {
@@ -68,6 +76,11 @@ function skaterStat(row: RawBoxscorePlayer, teamAbbrev: string, seasonId: number
     points: row.points ?? 0,
     plus_minus: row.plusMinus ?? 0,
     shots: row.sog ?? 0,
+    blocked_shots: row.blockedShots ?? 0,
+    hits: row.hits ?? 0,
+    giveaways: row.giveaways ?? 0,
+    takeaways: row.takeaways ?? 0,
+    faceoff_pct: row.faceoffWinningPctg ?? null,
     pim: row.pim ?? 0,
     toi: row.toi ?? "0:00",
   };
@@ -84,6 +97,9 @@ function goalieStat(row: RawBoxscorePlayer, teamAbbrev: string, seasonId: number
     saves: row.saves ?? 0,
     shots_against: row.shotsAgainst ?? 0,
     save_pct: row.savePctg ?? 0,
+    ev_goals_against: row.evenStrengthGoalsAgainst ?? 0,
+    pp_goals_against: row.powerPlayGoalsAgainst ?? 0,
+    sh_goals_against: row.shorthandedGoalsAgainst ?? 0,
     toi: row.toi ?? "0:00",
   };
 }

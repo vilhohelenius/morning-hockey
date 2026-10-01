@@ -78,6 +78,10 @@ const TEAM_GAME_STATS = [
   { category: "powerPlay", awayValue: "0/7", homeValue: "1/6" },
   { category: "powerPlayPctg", awayValue: 0.0, homeValue: 0.166667 },
   { category: "pim", awayValue: 17, homeValue: 19 },
+  { category: "hits", awayValue: 24, homeValue: 19 },
+  { category: "blockedShots", awayValue: 11, homeValue: 21 },
+  { category: "giveaways", awayValue: 12, homeValue: 15 },
+  { category: "takeaways", awayValue: 4, homeValue: 4 },
 ];
 
 {
@@ -94,7 +98,32 @@ const TEAM_GAME_STATS = [
   assert.equal(byLabel["Alivoima (AV%)"].home_value, "100.0 %");
   assert.equal(byLabel["Aloitusprosentti"].away_value, "41.4 %");
   assert.equal(byLabel["Jäähyt (min)"].home_value, "19");
-  console.log("ok: build_team_stats computes save pct from score and shots");
+  assert.equal(byLabel["Taklaukset"].away_value, "24");
+  assert.equal(byLabel["Taklaukset"].home_value, "19");
+  assert.equal(byLabel["Torjutut laukaukset"].away_value, "11");
+  assert.equal(byLabel["Torjutut laukaukset"].home_value, "21");
+  assert.equal(byLabel["Menetetyt kiekot"].away_value, "12");
+  assert.equal(byLabel["Menetetyt kiekot"].home_value, "15");
+  assert.equal(byLabel["Riistetyt kiekot"].away_value, "4");
+  assert.equal(byLabel["Riistetyt kiekot"].home_value, "4");
+  console.log("ok: build_team_stats computes save pct from score and shots, and carries hits/blocks/giveaways/takeaways");
+}
+
+{
+  const rows = buildTeamStats(TEAM_GAME_STATS, 1, 2);
+  const byLabel = Object.fromEntries(rows.map((r) => [r.label, r]));
+
+  // Larger side of each count-based row fills its full half; the other is
+  // proportional to it. Blocked shots: away 11, home 21 -> home is max.
+  assert.equal(byLabel["Torjutut laukaukset"].home_pct, 100);
+  assert.ok(Math.abs(byLabel["Torjutut laukaukset"].away_pct! - (11 / 21) * 100) < 1e-6);
+  // Equal takeaways (4/4) both fill 100%.
+  assert.equal(byLabel["Riistetyt kiekot"].away_pct, 100);
+  assert.equal(byLabel["Riistetyt kiekot"].home_pct, 100);
+  // Percentage rows use the percentage itself, not a relative split.
+  assert.ok(Math.abs(byLabel["Aloitusprosentti"].away_pct! - 41.3793) < 1e-3);
+  assert.ok(Math.abs(byLabel["Aloitusprosentti"].home_pct! - 58.6207) < 1e-3);
+  console.log("ok: build_team_stats bar percentages scale count rows by their max and percentage rows directly");
 }
 
 {

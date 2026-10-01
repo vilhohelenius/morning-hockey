@@ -2315,6 +2315,36 @@ main {
   white-space: nowrap;
 }
 
+.gd-stat-block {
+  margin-bottom: 8px;
+}
+
+.gd-stat-bar {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  height: 6px;
+  margin-top: 3px;
+}
+
+.gd-stat-bar-away,
+.gd-stat-bar-home {
+  height: 100%;
+  border-radius: 2px;
+  min-width: 2px;
+  background: var(--border);
+}
+
+.gd-stat-bar-away {
+  justify-self: end;
+  background: var(--accent);
+}
+
+.gd-stat-bar-home {
+  justify-self: start;
+  background: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
 /* ---------- Prime time ---------- */
 
 .primetime-day {

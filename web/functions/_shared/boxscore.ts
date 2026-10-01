@@ -88,6 +88,17 @@ function powerPlayDisplay(attempts: string, pct: number): string {
   return `${attempts} (${percent(pct)})`;
 }
 
+// Two-sided bar fill (0-100 each), scaled so the larger of the pair fills
+// its full half -- matches the look of NHL.com's own "Game Stats" bars.
+// Pass already-0-100-scale numbers for percentage rows.
+function barSplit(away: number | undefined, home: number | undefined): [number, number] {
+  const a = Math.max(away ?? 0, 0);
+  const h = Math.max(home ?? 0, 0);
+  const max = Math.max(a, h);
+  if (max === 0) return [0, 0];
+  return [(a / max) * 100, (h / max) * 100];
+}
+
 export function buildTeamStats(teamGameStats: RawTeamStat[], awayScore: number, homeScore: number): TeamStatRow[] {
   const byCategory = new Map(teamGameStats.map((row) => [row.category, row]));
   const raw = (category: string): [string | number | undefined, string | number | undefined] => {
@@ -100,16 +111,93 @@ export function buildTeamStats(teamGameStats: RawTeamStat[], awayScore: number, 
   const [awayPp, homePp] = raw("powerPlay") as [string | undefined, string | undefined];
   const [awayFaceoff, homeFaceoff] = raw("faceoffWinningPctg") as [number | undefined, number | undefined];
   const [awayPim, homePim] = raw("pim") as [number | undefined, number | undefined];
+  const [awayHits, homeHits] = raw("hits") as [number | undefined, number | undefined];
+  const [awayBlocked, homeBlocked] = raw("blockedShots") as [number | undefined, number | undefined];
+  const [awayGiveaways, homeGiveaways] = raw("giveaways") as [number | undefined, number | undefined];
+  const [awayTakeaways, homeTakeaways] = raw("takeaways") as [number | undefined, number | undefined];
 
   const awaySavePct = homeSog ? 1 - homeScore / homeSog : undefined;
   const homeSavePct = awaySog ? 1 - awayScore / awaySog : undefined;
+  const awayPkPct = homePpPct !== undefined ? 1 - homePpPct : undefined;
+  const homePkPct = awayPpPct !== undefined ? 1 - awayPpPct : undefined;
+
+  const [sogAwayPct, sogHomePct] = barSplit(awaySog, homeSog);
+  const [pimAwayPct, pimHomePct] = barSplit(awayPim, homePim);
+  const [hitsAwayPct, hitsHomePct] = barSplit(awayHits, homeHits);
+  const [blockedAwayPct, blockedHomePct] = barSplit(awayBlocked, homeBlocked);
+  const [giveawaysAwayPct, giveawaysHomePct] = barSplit(awayGiveaways, homeGiveaways);
+  const [takeawaysAwayPct, takeawaysHomePct] = barSplit(awayTakeaways, homeTakeaways);
 
   return [
-    { label: "Laukaukset", away_value: awaySog !== undefined ? String(awaySog) : "–", home_value: homeSog !== undefined ? String(homeSog) : "–" },
-    { label: "Torjuntaprosentti", away_value: awaySavePct !== undefined ? percent(awaySavePct) : "–", home_value: homeSavePct !== undefined ? percent(homeSavePct) : "–" },
-    { label: "Ylivoima (YV%)", away_value: awayPp !== undefined ? powerPlayDisplay(awayPp, awayPpPct ?? 0) : "–", home_value: homePp !== undefined ? powerPlayDisplay(homePp, homePpPct ?? 0) : "–" },
-    { label: "Alivoima (AV%)", away_value: homePpPct !== undefined ? percent(1 - homePpPct) : "–", home_value: awayPpPct !== undefined ? percent(1 - awayPpPct) : "–" },
-    { label: "Aloitusprosentti", away_value: awayFaceoff !== undefined ? percent(awayFaceoff) : "–", home_value: homeFaceoff !== undefined ? percent(homeFaceoff) : "–" },
-    { label: "Jäähyt (min)", away_value: awayPim !== undefined ? String(awayPim) : "–", home_value: homePim !== undefined ? String(homePim) : "–" },
+    {
+      label: "Laukaukset",
+      away_value: awaySog !== undefined ? String(awaySog) : "–",
+      home_value: homeSog !== undefined ? String(homeSog) : "–",
+      away_pct: sogAwayPct,
+      home_pct: sogHomePct,
+    },
+    {
+      label: "Torjuntaprosentti",
+      away_value: awaySavePct !== undefined ? percent(awaySavePct) : "–",
+      home_value: homeSavePct !== undefined ? percent(homeSavePct) : "–",
+      away_pct: awaySavePct !== undefined ? awaySavePct * 100 : 0,
+      home_pct: homeSavePct !== undefined ? homeSavePct * 100 : 0,
+    },
+    {
+      label: "Aloitusprosentti",
+      away_value: awayFaceoff !== undefined ? percent(awayFaceoff) : "–",
+      home_value: homeFaceoff !== undefined ? percent(homeFaceoff) : "–",
+      away_pct: awayFaceoff !== undefined ? awayFaceoff * 100 : 0,
+      home_pct: homeFaceoff !== undefined ? homeFaceoff * 100 : 0,
+    },
+    {
+      label: "Ylivoima (YV%)",
+      away_value: awayPp !== undefined ? powerPlayDisplay(awayPp, awayPpPct ?? 0) : "–",
+      home_value: homePp !== undefined ? powerPlayDisplay(homePp, homePpPct ?? 0) : "–",
+      away_pct: awayPpPct !== undefined ? awayPpPct * 100 : 0,
+      home_pct: homePpPct !== undefined ? homePpPct * 100 : 0,
+    },
+    {
+      label: "Alivoima (AV%)",
+      away_value: awayPkPct !== undefined ? percent(awayPkPct) : "–",
+      home_value: homePkPct !== undefined ? percent(homePkPct) : "–",
+      away_pct: awayPkPct !== undefined ? awayPkPct * 100 : 0,
+      home_pct: homePkPct !== undefined ? homePkPct * 100 : 0,
+    },
+    {
+      label: "Jäähyt (min)",
+      away_value: awayPim !== undefined ? String(awayPim) : "–",
+      home_value: homePim !== undefined ? String(homePim) : "–",
+      away_pct: pimAwayPct,
+      home_pct: pimHomePct,
+    },
+    {
+      label: "Taklaukset",
+      away_value: awayHits !== undefined ? String(awayHits) : "–",
+      home_value: homeHits !== undefined ? String(homeHits) : "–",
+      away_pct: hitsAwayPct,
+      home_pct: hitsHomePct,
+    },
+    {
+      label: "Torjutut laukaukset",
+      away_value: awayBlocked !== undefined ? String(awayBlocked) : "–",
+      home_value: homeBlocked !== undefined ? String(homeBlocked) : "–",
+      away_pct: blockedAwayPct,
+      home_pct: blockedHomePct,
+    },
+    {
+      label: "Menetetyt kiekot",
+      away_value: awayGiveaways !== undefined ? String(awayGiveaways) : "–",
+      home_value: homeGiveaways !== undefined ? String(homeGiveaways) : "–",
+      away_pct: giveawaysAwayPct,
+      home_pct: giveawaysHomePct,
+    },
+    {
+      label: "Riistetyt kiekot",
+      away_value: awayTakeaways !== undefined ? String(awayTakeaways) : "–",
+      home_value: homeTakeaways !== undefined ? String(homeTakeaways) : "–",
+      away_pct: takeawaysAwayPct,
+      home_pct: takeawaysHomePct,
+    },
   ];
 }

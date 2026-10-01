@@ -467,6 +467,7 @@
       header.appendChild(el("span", "gd-stat-team", homeAbbrev));
       wrap.appendChild(header);
       stats.forEach(function (stat) {
+        var block = el("div", "gd-stat-block");
         var row = el("div", "gd-stat-row");
         var awaySpan = el("span", "gd-stat-value", stat.away_value);
         var homeSpan = el("span", "gd-stat-value", stat.home_value);
@@ -482,7 +483,20 @@
         row.appendChild(awaySpan);
         row.appendChild(el("span", "gd-stat-label", stat.label));
         row.appendChild(homeSpan);
-        wrap.appendChild(row);
+        block.appendChild(row);
+
+        if (stat.away_pct !== undefined && stat.home_pct !== undefined) {
+          var bar = el("div", "gd-stat-bar");
+          var awayBar = el("span", "gd-stat-bar-away");
+          awayBar.style.width = stat.away_pct + "%";
+          var homeBar = el("span", "gd-stat-bar-home");
+          homeBar.style.width = stat.home_pct + "%";
+          bar.appendChild(awayBar);
+          bar.appendChild(homeBar);
+          block.appendChild(bar);
+        }
+
+        wrap.appendChild(block);
       });
       return wrap;
     }
