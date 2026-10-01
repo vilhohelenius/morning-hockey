@@ -74,6 +74,20 @@
     });
   });
 
+  // Prime time defaults to the next 5 days with games; this reveals the
+  // rest in one click. Not table rows (see primetime.ts), so the generic
+  // .expand-toggle/data-table-id handler further down doesn't apply here --
+  // separate id-based handler instead.
+  var primetimeExpand = document.getElementById("primetime-expand");
+  if (primetimeExpand) {
+    primetimeExpand.addEventListener("click", function () {
+      document.querySelectorAll(".primetime-day-group.is-hidden").forEach(function (group) {
+        group.classList.remove("is-hidden");
+      });
+      primetimeExpand.style.display = "none";
+    });
+  }
+
   // "Back" buttons on pages reached by navigating forward from somewhere
   // else: prefer real browser history over a fixed destination, since a
   // page can be reached from several different places (e.g. a game report

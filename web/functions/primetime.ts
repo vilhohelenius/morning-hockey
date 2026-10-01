@@ -13,6 +13,7 @@ import { renderLayout } from "./_shared/layout";
 import type { Env, GameRow } from "./_shared/types";
 
 const WINDOW_START_HOUR = 18;
+const DEFAULT_DAYS_SHOWN = 5;
 
 function startsInWindow(hour: number, minute: number): boolean {
   if (hour >= WINDOW_START_HOUR) return true;
@@ -32,11 +33,20 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     .map((game) => ({ game, local: helsinkiParts(game.start_time_utc) }))
     .filter(({ local }) => startsInWindow(local.hour, local.minute));
 
+  // One <div> per calendar day with games, rather than a flat list -- lets
+  // the "next 5 days" default collapse whole days at once (CSS is-hidden,
+  // see app.js) without needing to count individual games, and without the
+  // table-row-oriented collapse/expand JS used elsewhere (this isn't a
+  // <table>, so that logic doesn't apply here).
   let body = "";
   let currentDate: string | null = null;
+  let dayIndex = -1;
   for (const { game, local } of games) {
     if (local.date !== currentDate) {
       currentDate = local.date;
+      dayIndex++;
+      if (dayIndex > 0) body += `</div>`;
+      body += `<div class="primetime-day-group${dayIndex >= DEFAULT_DAYS_SHOWN ? " is-hidden" : ""}" data-day-index="${dayIndex}">`;
       body += `<h2 class="roster-group-title primetime-day">${escapeHtml(humanDate(local.date))}</h2>`;
     }
 
@@ -58,6 +68,13 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     ${score}
   </div>`;
   }
+  if (dayIndex >= 0) body += `</div>`;
+
+  const totalDays = dayIndex + 1;
+  const expandButton =
+    totalDays > DEFAULT_DAYS_SHOWN
+      ? `<button type="button" id="primetime-expand" class="expand-toggle">Näytä kaikki ${totalDays} päivää →</button>`
+      : "";
 
   const content = `
 <header class="page-header">
@@ -68,6 +85,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 </header>
 
 ${games.length ? body : `<p class="empty-note">Ei klo 18–00.30 alkavia otteluita tulevalla viikolla.</p>`}
+${expandButton}
 `;
 
   const html = await renderLayout({
