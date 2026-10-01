@@ -102,10 +102,31 @@ async function favoriteTeamNavItems(
   }));
 }
 
+// Home-page-only player search (see app.js's ".player-search" handler and
+// haku/pelaajat.ts). Rendered twice -- once in .topbar (mobile, where it's
+// the only header besides the hamburger+title) and once in .sidebar-header
+// (desktop, which has no .topbar at all -- see style.css's 860px media
+// query). Both instances share this exact markup; app.js finds them with
+// querySelectorAll and drives each independently, so no unique ids needed.
+function renderPlayerSearch(): string {
+  return `
+      <div class="player-search" data-player-search>
+        <div class="player-search-field">
+          <input type="text" class="player-search-input" placeholder="Hae pelaajaa..." autocomplete="off" aria-label="Hae pelaajaa">
+        </div>
+        <button type="button" class="icon-btn player-search-toggle" aria-label="Hae pelaajaa" aria-expanded="false">
+          <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <svg class="close-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+        <div class="player-search-results"></div>
+      </div>`;
+}
+
 export async function renderLayout(options: LayoutOptions): Promise<string> {
   const { title, headerTitle, activePage, content, request, env } = options;
   const theme = request ? readThemeCookie(request) : null;
   const omatItems = [...(await favoriteTeamNavItems(request, env)), OMAT_PLAYERS_ITEM];
+  const playerSearch = activePage === "home" ? renderPlayerSearch() : "";
 
   return `<!doctype html>
 <html lang="fi"${theme ? ` data-theme="${theme}"` : ""}>
@@ -129,6 +150,7 @@ export async function renderLayout(options: LayoutOptions): Promise<string> {
     <div class="sidebar-header">
       <img src="/static/banner_light.png" alt="Morning Hockey" class="brand-banner brand-banner-light sidebar-banner">
       <img src="/static/banner_dark.png" alt="Morning Hockey" class="brand-banner brand-banner-dark sidebar-banner">
+      ${playerSearch}
       <button id="sidebar-close" class="icon-btn" aria-label="Sulje valikko">✕</button>
     </div>
     <ul class="nav-list">
@@ -147,6 +169,7 @@ export async function renderLayout(options: LayoutOptions): Promise<string> {
     <header class="topbar">
       <button id="sidebar-open" class="icon-btn" aria-label="Avaa valikko">☰</button>
       <span class="topbar-title">${headerTitle}</span>
+      ${playerSearch}
     </header>
 
     <main>

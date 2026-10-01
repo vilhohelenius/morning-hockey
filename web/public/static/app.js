@@ -103,6 +103,66 @@
     });
   });
 
+  // Home-page player search (topbar on mobile, sidebar-header on desktop --
+  // see _shared/layout.ts's renderPlayerSearch). Each instance is driven
+  // independently; "hideWithSearch" is whichever of the title text/banner
+  // images is its own immediate sibling, so opening one instance doesn't
+  // touch the other.
+  document.querySelectorAll(".player-search").forEach(function (container) {
+    var toggleBtn = container.querySelector(".player-search-toggle");
+    var input = container.querySelector(".player-search-input");
+    var results = container.querySelector(".player-search-results");
+    var hideWithSearch = container.parentElement.querySelectorAll(".topbar-title, .sidebar-banner");
+    var requestId = 0;
+
+    function setActive(active) {
+      container.classList.toggle("active", active);
+      toggleBtn.setAttribute("aria-expanded", active ? "true" : "false");
+      hideWithSearch.forEach(function (el) {
+        el.classList.toggle("is-hidden", active);
+      });
+      if (active) {
+        input.focus();
+      } else {
+        input.value = "";
+        results.innerHTML = "";
+      }
+    }
+
+    toggleBtn.addEventListener("click", function () {
+      setActive(!container.classList.contains("active"));
+    });
+
+    input.addEventListener("input", function () {
+      var query = input.value.trim();
+      if (query.length < 3) {
+        results.innerHTML = "";
+        return;
+      }
+      var thisRequest = ++requestId;
+      fetch("/haku/pelaajat?q=" + encodeURIComponent(query))
+        .then(function (response) {
+          return response.text();
+        })
+        .then(function (html) {
+          if (thisRequest !== requestId) return;
+          results.innerHTML = html;
+        });
+    });
+
+    document.addEventListener("click", function (event) {
+      if (container.classList.contains("active") && !container.contains(event.target)) {
+        setActive(false);
+      }
+    });
+
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "Escape" && container.classList.contains("active")) {
+        setActive(false);
+      }
+    });
+  });
+
   document.querySelectorAll(".nav-group-toggle").forEach(function (toggle) {
     toggle.addEventListener("click", function () {
       var sublist = toggle.nextElementSibling;
