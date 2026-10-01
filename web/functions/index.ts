@@ -29,7 +29,7 @@
 // The "Aiemmat yöt" archive footer linking to nights/<date>.html isn't
 // ported -- superseded by /arkisto, a real route here.
 
-import { currentUsername } from "./_shared/auth";
+import { currentUsername, readTulospiiloCookie } from "./_shared/auth";
 import { fetchLiveBoxScore, getBoxScore } from "./_shared/boxScoreCache";
 import {
   finnishGoalieLines,
@@ -189,6 +189,16 @@ function renderUpcomingCell(game: GameRow): string {
 }
 
 export const onRequestGet: PagesFunction<Env> = async (context) => {
+  // Tulospiilo mode: jump straight to the spoiler-free view instead of the
+  // normal dashboard. ?tulospiilo=ohita (set by that page's "Poistu
+  // tulospiilosta" button) bypasses this once, without touching the user's
+  // saved preference -- otherwise that button would just redirect right
+  // back here.
+  const url = new URL(context.request.url);
+  if (readTulospiiloCookie(context.request) && url.searchParams.get("tulospiilo") !== "ohita") {
+    return new Response(null, { status: 302, headers: { Location: "/tulospiilo" } });
+  }
+
   const db = context.env.DB;
   const username = currentUsername(context.request);
 

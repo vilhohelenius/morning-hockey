@@ -64,6 +64,19 @@ export function themeCookieHeader(theme: Theme): string {
   return `${THEME_COOKIE}=${theme}; Path=/; Max-Age=31536000; SameSite=Lax`;
 }
 
+// Tulospiilo ("spoiler-free") mode, same cookie-mirrors-D1 pattern as
+// theme above: index.ts's / route reads this on every request to decide
+// whether to redirect straight to /tulospiilo, without a D1 query.
+const TULOSPIILO_COOKIE = "tulospiilo";
+
+export function readTulospiiloCookie(request: Request): boolean {
+  return readCookie(request, TULOSPIILO_COOKIE) === "1";
+}
+
+export function tulospiiloCookieHeader(enabled: boolean): string {
+  return `${TULOSPIILO_COOKIE}=${enabled ? "1" : "0"}; Path=/; Max-Age=31536000; SameSite=Lax`;
+}
+
 // The signed-in user's favorite team abbrevs, for highlighting their rows
 // in the leaderboard tables (Pistepörssi/Maalivahtipörssi/Rookie-pörssi --
 // see _shared/leaderboard.ts's row-team-fav class). Not logged in -> empty

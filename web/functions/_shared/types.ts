@@ -261,6 +261,7 @@ export interface FavoritePlayerRow {
 export interface UserSettingsRow {
   username: string;
   theme: string;
+  tulospiilo_mode: number;
   updated_at: string;
 }
 

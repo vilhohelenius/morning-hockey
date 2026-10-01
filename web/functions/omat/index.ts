@@ -172,6 +172,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   }
 
   const currentTheme = settings?.theme ?? readThemeCookie(context.request) ?? "system (selaimen oma)";
+  const tulospiiloEnabled = !!settings?.tulospiilo_mode;
 
   const content = `
 <header class="page-header">
@@ -226,6 +227,25 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     <form method="post" action="/omat/theme">
       <input type="hidden" name="theme" value="dark">
       <button type="submit" class="filter-btn ${currentTheme === "dark" ? "active" : ""}">🌙 Tumma</button>
+    </form>
+  </div>
+</section>
+
+<section>
+  <h2 class="section-title">🙈 Tulospiilo</h2>
+  <p class="standings-legend">
+    Päällä ollessaan etusivu avautuu suoraan Tulospiilo-näkymään, jossa edellisen kierroksen
+    ottelut ja YouTube-highlightit näkyvät ilman tuloksia -- tulos paljastuu ottelukohtaisesti
+    ruksimalla.
+  </p>
+  <div class="table-filters">
+    <form method="post" action="/omat/tulospiilo">
+      <input type="hidden" name="enabled" value="1">
+      <button type="submit" class="filter-btn ${tulospiiloEnabled ? "active" : ""}">🙈 Päällä</button>
+    </form>
+    <form method="post" action="/omat/tulospiilo">
+      <input type="hidden" name="enabled" value="0">
+      <button type="submit" class="filter-btn ${tulospiiloEnabled ? "" : "active"}">Pois päältä</button>
     </form>
   </div>
 </section>

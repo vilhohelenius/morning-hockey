@@ -418,3 +418,10 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash TEXT,
     created_at TEXT NOT NULL
 );
+
+-- Tulospiilo ("spoiler-free") mode: when on, / redirects straight to
+-- /tulospiilo instead of showing the dashboard, so highlight videos can be
+-- watched before seeing any score. Mirrored into a cookie the same way
+-- theme is (see _shared/auth.ts), so every request to / can check it
+-- without a D1 round-trip.
+ALTER TABLE user_settings ADD COLUMN tulospiilo_mode INTEGER NOT NULL DEFAULT 0;
