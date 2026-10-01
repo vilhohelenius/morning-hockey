@@ -11,6 +11,7 @@
 // obvious approach doesn't scale the same way through the HTTP API the
 // Python sync side uses.
 
+import { computeFormGuide, type FormGuideEntry } from "./_shared/formGuide";
 import { escapeHtml, humanDate } from "./_shared/format";
 import { renderLayout } from "./_shared/layout";
 import type { Env, GameRow, StandingsRow, TeamRosterGoalieRow, TeamRosterSkaterRow } from "./_shared/types";
@@ -20,6 +21,7 @@ const WILDCARD_CUTOFF = 2;
 const RECENT_RESULTS = 5;
 const TOP_SCORERS = 3;
 const GAMES_QUERY_LIMIT = 500; // generous window; see module comment
+const FORM_GUIDE_WINDOW = 10;
 
 interface TeamSnapshot {
   recent_results: { result: "W" | "L" | "OTL"; opponent_abbrev: string }[];
@@ -28,7 +30,14 @@ interface TeamSnapshot {
   next_game: { date: string; is_home: boolean; opponent_logo: string; opponent_abbrev: string } | null;
 }
 
-async function buildSnapshots(db: D1Database, abbrevs: string[]): Promise<Record<string, TeamSnapshot>> {
+interface SnapshotsResult {
+  snapshots: Record<string, TeamSnapshot>;
+  // Exposed so the caller can also feed it into computeFormGuide without a
+  // second identical D1 query.
+  recentGames: GameRow[];
+}
+
+async function buildSnapshots(db: D1Database, abbrevs: string[]): Promise<SnapshotsResult> {
   const [{ results: recentGames }, { results: upcomingGames }, { results: skaters }, { results: goalies }] =
     await Promise.all([
       db
@@ -88,7 +97,7 @@ async function buildSnapshots(db: D1Database, abbrevs: string[]): Promise<Record
     snapshots[abbrev] = { recent_results, top_scorers, starting_goalie, next_game };
   }
 
-  return snapshots;
+  return { snapshots, recentGames };
 }
 
 function renderTeamRow(row: StandingsRow, rankLabel: string): string {
@@ -134,6 +143,50 @@ function renderWildcardRace(rows: StandingsRow[]): string {
   <div class="division-table">${rowsHtml}</div>`;
 }
 
+// Kuntopuntari ("form guide"): one league-wide table ranked by points
+// percentage over each team's last FORM_GUIDE_WINDOW games -- momentum cuts
+// across divisions/conferences, so unlike the standings above this isn't
+// split by them. Rows reuse .division-row/.team-trigger so clicking a team
+// here opens the exact same snapshot popup as the standings tables, for
+// free (app.js's click handler just looks for the nearest .division-row).
+function renderFormGuideRow(entry: FormGuideEntry, rank: number, team: StandingsRow): string {
+  const chips = entry.results
+    .map((r) => `<span class="form-chip result-${r.toLowerCase()}">${r === "OTL" ? "OT" : r}</span>`)
+    .join("");
+
+  return `
+    <div class="division-row">
+      <span class="division-rank">${rank}</span>
+      <button type="button" class="division-team team-trigger" data-team-abbrev="${escapeHtml(team.abbrev)}" data-team-name="${escapeHtml(team.name)}">
+        <img src="${escapeHtml(team.logo)}" alt="${escapeHtml(team.abbrev)}" class="division-logo" loading="lazy">
+        <span class="division-name">${escapeHtml(team.name)}</span>
+      </button>
+      <span class="form-row-stats">
+        <span class="form-chips">${chips || "–"}</span>
+        <span class="form-record">${entry.wins}-${entry.losses}-${entry.otLosses}</span>
+      </span>
+    </div>`;
+}
+
+function renderFormGuide(entries: FormGuideEntry[], teamsByAbbrev: Map<string, StandingsRow>): string {
+  const rowsHtml = entries
+    .map((entry, index) => {
+      const team = teamsByAbbrev.get(entry.abbrev);
+      return team ? renderFormGuideRow(entry, index + 1, team) : "";
+    })
+    .join("");
+
+  return `
+  <div class="division-table">
+    <div class="division-row division-header">
+      <span class="division-rank"></span>
+      <span class="division-team">Joukkue</span>
+      <span class="form-row-stats"><span>Viimeiset ${FORM_GUIDE_WINDOW} ottelua</span></span>
+    </div>
+    ${rowsHtml}
+  </div>`;
+}
+
 export const onRequestGet: PagesFunction<Env> = async (context) => {
   const db = context.env.DB;
 
@@ -172,21 +225,38 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     })
     .join("");
 
-  const snapshots = await buildSnapshots(db, rows.map((r) => r.abbrev));
+  const { snapshots, recentGames } = await buildSnapshots(db, rows.map((r) => r.abbrev));
   // Same defensive escape render.py's _game_details_json already applies:
   // a stray "</script" inside embedded JSON (team/player names are NHL
   // data, not user input, but this costs nothing) can't close the tag early.
   const snapshotsJson = JSON.stringify(snapshots).replace(/<\//g, "<\\/");
 
+  const teamsByAbbrev = new Map(rows.map((r) => [r.abbrev, r]));
+  const formGuideEntries = computeFormGuide(recentGames, rows.map((r) => r.abbrev), FORM_GUIDE_WINDOW);
+
   const content = `
 <header class="page-header">
   <h1>Sarjataulukko</h1>
   <p class="subtitle">Tilanne ${asOfDate ? escapeHtml(humanDate(asOfDate)) : ""}</p>
+</header>
+
+<div class="sarjataulukko-view-picker">
+  <button type="button" class="day-pill active" data-view="standings">Sarjataulukko</button>
+  <button type="button" class="day-pill" data-view="form">Kuntopuntari</button>
+</div>
+
+<section class="sarjataulukko-view-section" data-view="standings">
   <p class="standings-legend"><span class="playoff-dot"></span> mahtuisi pudotuspeleihin tänään</p>
   <p class="standings-legend">Klikkaa joukkuetta nähdäksesi sen viimeisimmät ottelut, pistepörssin
     ja seuraavan ottelun.</p>
-</header>
-${sections}
+  ${sections}
+</section>
+
+<section class="sarjataulukko-view-section is-hidden" data-view="form">
+  <p class="standings-legend">Joukkueet järjestetty pisteprosentin mukaan viimeisten ${FORM_GUIDE_WINDOW} ottelun
+    ajalta. Klikkaa joukkuetta nähdäksesi sen viimeisimmät ottelut, pistepörssin ja seuraavan ottelun.</p>
+  ${renderFormGuide(formGuideEntries, teamsByAbbrev)}
+</section>
 
 <script id="team-snapshots" type="application/json">${snapshotsJson}</script>
 `;

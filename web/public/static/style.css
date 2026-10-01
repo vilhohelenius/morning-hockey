@@ -1282,6 +1282,49 @@ main {
   opacity: 0.6;
 }
 
+/* ---------- Kuntopuntari (form guide) ---------- */
+
+.sarjataulukko-view-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.sarjataulukko-view-section.is-hidden {
+  display: none;
+}
+
+.form-row-stats {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.form-chips {
+  display: flex;
+  gap: 3px;
+}
+
+.form-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 18px;
+  padding: 0 3px;
+  border-radius: 4px;
+  font-size: 0.6rem;
+  font-weight: 700;
+}
+
+.form-record {
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
 .schedule-list {
   display: flex;
   flex-direction: column;
