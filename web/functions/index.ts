@@ -29,7 +29,7 @@
 // The "Aiemmat yöt" archive footer linking to nights/<date>.html isn't
 // ported -- superseded by /arkisto, a real route here.
 
-import { currentUsername, readTulospiiloCookie } from "./_shared/auth";
+import { currentUsername, readTulospiiloBypassDate, readTulospiiloCookie } from "./_shared/auth";
 import { fetchLiveBoxScore, getBoxScore } from "./_shared/boxScoreCache";
 import {
   finnishGoalieLines,
@@ -189,24 +189,31 @@ function renderUpcomingCell(game: GameRow): string {
 }
 
 export const onRequestGet: PagesFunction<Env> = async (context) => {
-  // Tulospiilo mode: jump straight to the spoiler-free view instead of the
-  // normal dashboard. ?tulospiilo=ohita (set by that page's "Poistu
-  // tulospiilosta" button) bypasses this once, without touching the user's
-  // saved preference -- otherwise that button would just redirect right
-  // back here.
   const url = new URL(context.request.url);
-  if (readTulospiiloCookie(context.request) && url.searchParams.get("tulospiilo") !== "ohita") {
-    return new Response(null, { status: 302, headers: { Location: "/tulospiilo" } });
-  }
-
   const db = context.env.DB;
-  const username = currentUsername(context.request);
 
   // ---------- Last night's (or tonight's) games ----------
 
   const currentRound = await db
     .prepare("SELECT date FROM games WHERE game_state != 'FUT' ORDER BY date DESC LIMIT 1")
     .first<{ date: string }>();
+
+  // Tulospiilo mode: jump straight to the spoiler-free view instead of the
+  // normal dashboard. ?tulospiilo=ohita (set by that page's "Poistu
+  // tulospiilosta" button) bypasses this once, without touching the user's
+  // saved preference -- otherwise that button would just redirect right
+  // back here. tulospiilo_bypass_date (set by /tulospiilo's own inline
+  // script once every game in the round has been checked off) bypasses it
+  // for that specific round's date, same reasoning but automatic.
+  if (
+    readTulospiiloCookie(context.request) &&
+    url.searchParams.get("tulospiilo") !== "ohita" &&
+    readTulospiiloBypassDate(context.request) !== currentRound?.date
+  ) {
+    return new Response(null, { status: 302, headers: { Location: "/tulospiilo" } });
+  }
+
+  const username = currentUsername(context.request);
 
   let roundGames: GameRow[] = [];
   let gameCardsHtml = "";

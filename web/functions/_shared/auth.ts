@@ -77,6 +77,16 @@ export function tulospiiloCookieHeader(enabled: boolean): string {
   return `${TULOSPIILO_COOKIE}=${enabled ? "1" : "0"}; Path=/; Max-Age=31536000; SameSite=Lax`;
 }
 
+// Set client-side (document.cookie) by /tulospiilo's own inline script,
+// once every game in a round has been checked off -- lets that round "turn
+// itself off" for index.ts's redirect without touching the user's saved
+// tulospiilo_mode preference above, so the next round still opens there.
+const TULOSPIILO_BYPASS_COOKIE = "tulospiilo_bypass_date";
+
+export function readTulospiiloBypassDate(request: Request): string | null {
+  return readCookie(request, TULOSPIILO_BYPASS_COOKIE);
+}
+
 // The signed-in user's favorite team abbrevs, for highlighting their rows
 // in the leaderboard tables (Pistepörssi/Maalivahtipörssi/Rookie-pörssi --
 // see _shared/leaderboard.ts's row-team-fav class). Not logged in -> empty

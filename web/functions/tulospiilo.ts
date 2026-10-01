@@ -1,7 +1,11 @@
 // Tulospiilo ("spoiler-free") view: the previous round's finished games,
 // shown as bare matchups + a YouTube highlights link, with the actual
-// score/stats hidden behind a per-game checkbox. Lets someone watch last
-// night's highlight videos before finding out who won.
+// result hidden behind a two-step gate -- a checkbox ("I've watched the
+// highlights") that, once checked, reveals a "Näytä tulos" button, which
+// in turn opens the exact same goal-timeline + team-stats box the
+// dashboard uses (app.js's existing .game-card-trigger / #game-details
+// mechanism -- see _shared/gameCard.ts and index.ts), not a separate
+// tulospiilo-only rendering of the result.
 //
 // Only ever shows the same round index.ts's dashboard calls "currentRound"
 // (the most recent date with any started game), filtered down to games
@@ -12,51 +16,35 @@
 // cookie is on, see _shared/auth.ts + omat/tulospiilo.ts) or by visiting
 // /tulospiilo directly; not in the sidebar nav, since the redirect is the
 // intended entry point.
+//
+// Once every game on the page has been checked, this page's own inline
+// script sets a tulospiilo_bypass_date cookie for the round's date --
+// index.ts's redirect then skips itself for that date only, without
+// touching the user's saved tulospiilo_mode preference (so the next
+// round still opens here). Leaving early -- the sidebar or the "Poistu
+// tulospiilosta" link -- is guarded by an in-page confirmation modal
+// (never a native confirm(), to match the rest of the app's look and
+// because it can't be blocked by browsers requiring a user gesture
+// first); that guard is skipped once everything's already been revealed,
+// since there's nothing left to spoil at that point.
 
-import { finnishGoalieLines, finnishScorerLines, type FinnGoalieLine, type FinnScorerLine } from "./_shared/gameCard";
 import { getBoxScore } from "./_shared/boxScoreCache";
 import { resolveHighlightsUrl } from "./_shared/youtube";
-import { escapeHtml, finalTypeFi, humanDate } from "./_shared/format";
+import { escapeHtml, humanDate } from "./_shared/format";
 import { renderLayout } from "./_shared/layout";
 import type { Env, GameRow } from "./_shared/types";
 
-function renderFinnStats(scorers: FinnScorerLine[], goalies: FinnGoalieLine[]): string {
-  if (!scorers.length && !goalies.length) return "";
-  return `
-  <div class="finn-stats">
-    ${scorers
-      .map(
-        (s) => `
-    <p class="stat-line scorer">
-      <span class="flag">🇫🇮</span><strong>${escapeHtml(s.name)}</strong><span class="team-tag">${escapeHtml(s.team_abbrev)}</span>
-      <span class="value">${s.goals}+${s.assists}</span>
-    </p>`,
-      )
-      .join("")}
-    ${goalies
-      .map(
-        (g) => `
-    <p class="stat-line goalie">
-      <span class="flag">🇫🇮</span><strong>${escapeHtml(g.name)}</strong><span class="team-tag">${escapeHtml(g.team_abbrev)}</span>
-      <span class="value">${g.saves}/${g.shots_against}</span>
-    </p>`,
-      )
-      .join("")}
-  </div>`;
-}
-
-function renderSpoilerGame(
-  game: GameRow,
-  scorers: FinnScorerLine[],
-  goalies: FinnGoalieLine[],
-  youtubeUrl: string | null,
-): string {
-  const checkboxId = `spoiler-reveal-${game.game_id}`;
-  const badge = game.final_type !== "REG" ? `<p class="ot-tag">${escapeHtml(finalTypeFi(game.final_type))}</p>` : "";
+function renderSpoilerGame(game: GameRow, youtubeUrl: string | null): string {
+  const checkboxId = `spoiler-check-${game.game_id}`;
 
   return `
 <div class="game-card spoiler-game">
-  <div class="score-row">
+  <input type="checkbox" id="${checkboxId}" class="spoiler-reveal-toggle">
+  <label class="spoiler-check-label" for="${checkboxId}">
+    <span class="spoiler-check-text">Merkitse nähdyksi, kun olet katsonut highlightit</span>
+  </label>
+
+  <div class="score-row spoiler-score-row game-card-trigger" data-game-id="${game.game_id}" tabindex="-1" role="button" aria-expanded="false">
     <div class="team away">
       <img src="${escapeHtml(game.away_logo)}" alt="" class="logo" loading="lazy">
       <span class="abbrev">${escapeHtml(game.away_abbrev)}</span>
@@ -67,14 +55,9 @@ function renderSpoilerGame(
       <img src="${escapeHtml(game.home_logo)}" alt="" class="logo" loading="lazy">
     </div>
   </div>
+  <p class="game-card-hint spoiler-reveal-hint">Näytä tulos ▾</p>
+
   ${youtubeUrl ? `<a class="game-card-youtube" href="${escapeHtml(youtubeUrl)}" target="_blank" rel="noopener">▶ Highlightit (YouTube)</a>` : ""}
-  <input type="checkbox" id="${checkboxId}" class="spoiler-reveal-toggle">
-  <label class="spoiler-reveal-label" for="${checkboxId}">Näytä tulos ▾</label>
-  <div class="spoiler-result">
-    <p class="spoiler-result-score">${game.away_score}–${game.home_score}</p>
-    ${badge}
-    ${renderFinnStats(scorers, goalies)}
-  </div>
 </div>`;
 }
 
@@ -87,6 +70,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
   let gamesHtml = "";
   let roundDate: string | null = null;
+  const gameDetails: Record<number, { goals?: unknown; team_stats?: unknown; youtube_url?: string }> = {};
 
   if (currentRound) {
     const { results: games } = await db
@@ -102,23 +86,19 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
           resolveHighlightsUrl(db, context.env, game),
         ]);
 
-        const scorers = box
-          ? [
-              ...finnishScorerLines(box.awaySkaters, game.away_abbrev),
-              ...finnishScorerLines(box.homeSkaters, game.home_abbrev),
-            ].sort((a, b) => b.goals + b.assists - (a.goals + a.assists))
-          : [];
-        const goalies = box
-          ? [
-              ...finnishGoalieLines(box.awayGoalies, game.away_abbrev),
-              ...finnishGoalieLines(box.homeGoalies, game.home_abbrev),
-            ]
-          : [];
+        gameDetails[game.game_id] = {
+          youtube_url: youtubeUrl ?? undefined,
+          ...(box ? { goals: box.goals, team_stats: box.teamStats } : {}),
+        };
 
-        gamesHtml += renderSpoilerGame(game, scorers, goalies, youtubeUrl);
+        gamesHtml += renderSpoilerGame(game, youtubeUrl);
       }
     }
   }
+
+  // Same defensive escape index.ts's own #game-details tag applies: a
+  // stray "</script" inside embedded JSON can't close the tag early.
+  const gameDetailsJson = JSON.stringify(gameDetails).replace(/<\//g, "<\\/");
 
   const content = `
 <header class="page-header">
@@ -133,6 +113,85 @@ ${
 }
 
 <a class="spoiler-exit" href="/?tulospiilo=ohita">Poistu tulospiilosta</a>
+
+<div id="tulospiilo-exit-modal" class="tp-exit-modal" hidden>
+  <div class="tp-exit-modal-box">
+    <p class="tp-exit-modal-text">Tulokset saattavat näkyä muualla sivustolla. Haluatko silti poistua tulospiilosta?</p>
+    <div class="tp-exit-modal-actions">
+      <button type="button" class="filter-btn" id="tp-exit-stay">Pysy tulospiilossa</button>
+      <button type="button" class="filter-btn active" id="tp-exit-confirm">Poistu tulospiilosta</button>
+    </div>
+  </div>
+</div>
+
+<script id="game-details" type="application/json">${gameDetailsJson}</script>
+<script>
+(function () {
+  var ROUND_DATE = ${JSON.stringify(roundDate)};
+  var checkboxes = Array.prototype.slice.call(document.querySelectorAll(".spoiler-reveal-toggle"));
+  var allRevealed = false;
+
+  function syncRow(checkbox) {
+    var row = checkbox.parentElement.querySelector(".spoiler-score-row");
+    if (row) row.tabIndex = checkbox.checked ? 0 : -1;
+  }
+
+  function recomputeAllRevealed() {
+    allRevealed = checkboxes.length > 0 && checkboxes.every(function (cb) { return cb.checked; });
+    if (allRevealed && ROUND_DATE) {
+      document.cookie = "tulospiilo_bypass_date=" + encodeURIComponent(ROUND_DATE) + "; path=/; max-age=259200; samesite=lax";
+    }
+  }
+
+  checkboxes.forEach(function (cb) {
+    syncRow(cb);
+    cb.addEventListener("change", function () {
+      syncRow(cb);
+      recomputeAllRevealed();
+    });
+  });
+  recomputeAllRevealed();
+
+  var modal = document.getElementById("tulospiilo-exit-modal");
+  var stayBtn = document.getElementById("tp-exit-stay");
+  var confirmBtn = document.getElementById("tp-exit-confirm");
+  var pendingHref = null;
+
+  function closeModal() {
+    modal.hidden = true;
+    pendingHref = null;
+  }
+
+  function guardNavigation(event, href) {
+    if (allRevealed) return;
+    event.preventDefault();
+    pendingHref = href;
+    modal.hidden = false;
+  }
+
+  var exitLink = document.querySelector(".spoiler-exit");
+  if (exitLink) {
+    exitLink.addEventListener("click", function (event) {
+      guardNavigation(event, exitLink.href);
+    });
+  }
+
+  Array.prototype.slice.call(document.querySelectorAll("#sidebar .nav-list a")).forEach(function (link) {
+    link.addEventListener("click", function (event) {
+      guardNavigation(event, link.href);
+    });
+  });
+
+  if (stayBtn) stayBtn.addEventListener("click", closeModal);
+  if (confirmBtn) {
+    confirmBtn.addEventListener("click", function () {
+      var href = pendingHref;
+      closeModal();
+      if (href) window.location.href = href;
+    });
+  }
+})();
+</script>
 `;
 
   const html = await renderLayout({
