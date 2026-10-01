@@ -8,7 +8,8 @@
 // live check once deployed.
 
 import assert from "node:assert/strict";
-import { buildGoalEvents, buildTeamStats } from "../functions/_shared/boxscore.ts";
+import { buildGoalEvents, buildPreviewTeamStats, buildTeamStats } from "../functions/_shared/boxscore.ts";
+import type { TeamSeasonStatsRow } from "../functions/_shared/types.ts";
 
 const SCORING_BY_PERIOD = [
   { periodDescriptor: { number: 1, periodType: "REG" }, goals: [] },
@@ -136,6 +137,54 @@ const TEAM_GAME_STATS = [
   assert.equal(byLabel["Ylivoima (YV%)"].away_value, "–");
   assert.equal(byLabel["Ylivoima (YV%)"].home_value, "2/5 (40.0 %)");
   console.log("ok: build_team_stats shows a dash for zero power play opportunities");
+}
+
+{
+  const away: TeamSeasonStatsRow = {
+    team_abbrev: "TOR",
+    games_played: 7,
+    goals_for: 25,
+    goals_against: 18,
+    power_play_pct: 0.24,
+    penalty_kill_pct: 0.82,
+    faceoff_pct: 0.51,
+    shots_for_per_game: 32.1,
+    shots_against_per_game: 27.4,
+    shutouts: 1,
+    updated_at: "2026-09-30T12:00:00Z",
+  };
+  const home: TeamSeasonStatsRow = {
+    team_abbrev: "TBL",
+    games_played: 7,
+    goals_for: 28,
+    goals_against: 20,
+    power_play_pct: 0.27,
+    penalty_kill_pct: 0.79,
+    faceoff_pct: 0.49,
+    shots_for_per_game: 33.4,
+    shots_against_per_game: 29.0,
+    shutouts: 1,
+    updated_at: "2026-09-30T12:00:00Z",
+  };
+
+  const rows = buildPreviewTeamStats(away, home);
+  const byLabel = Object.fromEntries(rows.map((r) => [r.label, r]));
+
+  assert.equal(byLabel["Ylivoima (YV%)"].away_value, "24.0 %");
+  assert.equal(byLabel["Ylivoima (YV%)"].home_value, "27.0 %");
+  assert.equal(byLabel["Alivoima (AV%)"].away_value, "82.0 %");
+  assert.equal(byLabel["Aloitusprosentti"].home_value, "49.0 %");
+
+  // 25/7 = 3.5714..., 28/7 = 4.0 -> home is the larger goals-for/game, so
+  // its bar fills 100% and away is proportional to it.
+  assert.equal(byLabel["Maalia / ottelu"].away_value, "3.57");
+  assert.equal(byLabel["Maalia / ottelu"].home_value, "4.00");
+  assert.equal(byLabel["Maalia / ottelu"].home_pct, 100);
+  assert.ok(Math.abs(byLabel["Maalia / ottelu"].away_pct! - (3.5714285714 / 4) * 100) < 1e-3);
+
+  assert.equal(byLabel["Päästetyt / ottelu"].away_value, "2.57");
+  assert.equal(byLabel["Päästetyt / ottelu"].home_value, "2.86");
+  console.log("ok: build_preview_team_stats computes per-game rates and reuses the percentage fields directly");
 }
 
 console.log("\nAll boxscore.ts parity tests passed.");

@@ -105,8 +105,9 @@ INSERT INTO digest_goalies (game_id, name, team_abbrev, decision, saves, shots_a
 --     visiting it locally exercises the cache-miss -> live NHL fetch path,
 --     which this sandbox can't reach (egress blocked), so it should fall
 --     back to the "tietoja ei juuri nyt saatu" message rather than crash.
---   1003 (TOR @ TBL, not finished) -- already seeded above, tests the
---     "not played yet" placeholder.
+--   1003 (TOR @ TBL, not finished) -- already seeded above; now that both
+--     teams have roster/season-stats rows (added below), tests the game
+--     preview view instead of the old "not played yet" placeholder.
 --   9999 (doesn't exist) -- tests the 404 path.
 INSERT INTO game_box_scores (game_id, final_type, goals_json, team_stats_json, away_skaters_json, home_skaters_json, away_goalies_json, home_goalies_json, cached_at) VALUES
 (1002, 'REG',
@@ -137,15 +138,22 @@ INSERT INTO game_box_scores (game_id, final_type, goals_json, team_stats_json, a
 INSERT INTO team_roster_skaters (player_id, team_abbrev, name, position, nationality, sweater_number, headshot, games_played, goals, assists, points, plus_minus, avg_toi_seconds, updated_at) VALUES
 (8479318, 'TOR', 'Auston Matthews', 'C', 'USA', 34, 'https://assets.nhle.com/mugs/nhl/20262027/TOR/8479318.png', 7, 8, 5, 13, 3, 1220, '2026-09-30T12:00:00Z'),
 (8478483, 'TOR', 'Mitch Marner', 'R', 'CAN', 16, 'https://assets.nhle.com/mugs/nhl/20262027/TOR/8478483.png', 7, 4, 9, 13, 2, 1150, '2026-09-30T12:00:00Z'),
-(8481535, 'CAR', 'Sebastian Aho', 'C', 'FIN', 20, 'https://assets.nhle.com/mugs/nhl/20262027/CAR/8481535.png', 7, 6, 4, 10, 4, 1190, '2026-09-30T12:00:00Z');
+(8481535, 'CAR', 'Sebastian Aho', 'C', 'FIN', 20, 'https://assets.nhle.com/mugs/nhl/20262027/CAR/8481535.png', 7, 6, 4, 10, 4, 1190, '2026-09-30T12:00:00Z'),
+-- Game-preview feature (1003, TOR @ TBL) needs TBL rows too -- TOR's and
+-- CAR's above predate this feature and were never meant to cover it.
+(8474564, 'TBL', 'Nikita Kucherov', 'R', 'RUS', 86, 'https://assets.nhle.com/mugs/nhl/20262027/TBL/8474564.png', 7, 5, 11, 16, 5, 1260, '2026-09-30T12:00:00Z'),
+(8476453, 'TBL', 'Brayden Point', 'C', 'CAN', 21, 'https://assets.nhle.com/mugs/nhl/20262027/TBL/8476453.png', 7, 7, 4, 11, 3, 1180, '2026-09-30T12:00:00Z');
 
 INSERT INTO team_roster_goalies (player_id, team_abbrev, name, nationality, sweater_number, headshot, games_played, wins, losses, ot_losses, goals_against_average, save_pct, shutouts, updated_at) VALUES
 (8480313, 'TOR', 'Joseph Woll', 'USA', 60, 'https://assets.nhle.com/mugs/nhl/20262027/TOR/8480313.png', 4, 3, 1, 0, 2.31, 0.918, 1, '2026-09-30T12:00:00Z'),
 (8475831, 'TOR', 'Anthony Stolarz', 'USA', 41, 'https://assets.nhle.com/mugs/nhl/20262027/TOR/8475831.png', 3, 1, 2, 0, 3.10, 0.890, 0, '2026-09-30T12:00:00Z'),
-(8479978, 'CAR', 'Pyotr Kochetkov', 'RUS', 52, 'https://assets.nhle.com/mugs/nhl/20262027/CAR/8479978.png', 5, 4, 1, 0, 2.10, 0.925, 2, '2026-09-30T12:00:00Z');
+(8479978, 'CAR', 'Pyotr Kochetkov', 'RUS', 52, 'https://assets.nhle.com/mugs/nhl/20262027/CAR/8479978.png', 5, 4, 1, 0, 2.10, 0.925, 2, '2026-09-30T12:00:00Z'),
+(8479973, 'TBL', 'Andrei Vasilevskiy', 'RUS', 88, 'https://assets.nhle.com/mugs/nhl/20262027/TBL/8479973.png', 6, 4, 2, 0, 2.48, 0.912, 1, '2026-09-30T12:00:00Z'),
+(8480382, 'TBL', 'Jonas Johansson', 'SWE', 31, 'https://assets.nhle.com/mugs/nhl/20262027/TBL/8480382.png', 2, 1, 1, 0, 2.95, 0.901, 0, '2026-09-30T12:00:00Z');
 
 INSERT INTO team_season_stats (team_abbrev, games_played, goals_for, goals_against, power_play_pct, penalty_kill_pct, faceoff_pct, shots_for_per_game, shots_against_per_game, shutouts, updated_at) VALUES
-('TOR', 7, 25, 18, 0.24, 0.82, 0.51, 32.1, 27.4, 1, '2026-09-30T12:00:00Z');
+('TOR', 7, 25, 18, 0.24, 0.82, 0.51, 32.1, 27.4, 1, '2026-09-30T12:00:00Z'),
+('TBL', 7, 28, 20, 0.27, 0.79, 0.49, 33.4, 29.0, 1, '2026-09-30T12:00:00Z');
 
 -- Phase 7: one local test user's favorites/theme, for exercising the
 -- sidebar's Omat dropdown and /omat/pelaajat/ /omat (Asetukset) without a

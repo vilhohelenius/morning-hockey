@@ -4,7 +4,7 @@
 // Pure functions, no D1/fetch involved, so they're plain-node testable
 // (see scripts/test-boxscore.mjs).
 
-import type { GoalEvent, TeamStatRow } from "./types";
+import type { GoalEvent, TeamSeasonStatsRow, TeamStatRow } from "./types";
 
 const PERIOD_NUMBER_LABELS: Record<number, string> = { 1: "1. erä", 2: "2. erä", 3: "3. erä" };
 const STRENGTH_LABELS: Record<string, string> = { pp: "YV", sh: "AV" };
@@ -198,6 +198,58 @@ export function buildTeamStats(teamGameStats: RawTeamStat[], awayScore: number, 
       home_value: homeTakeaways !== undefined ? String(homeTakeaways) : "–",
       away_pct: takeawaysAwayPct,
       home_pct: takeawaysHomePct,
+    },
+  ];
+}
+
+// Season-long team comparison for an unplayed game's preview (vs.
+// buildTeamStats above, which compares one finished game's own box score).
+// Same bar-chart treatment, different source: team_season_stats rows
+// instead of the NHL /right-rail teamGameStats categories.
+export function buildPreviewTeamStats(away: TeamSeasonStatsRow, home: TeamSeasonStatsRow): TeamStatRow[] {
+  const awayGfPerGame = away.games_played ? away.goals_for / away.games_played : 0;
+  const homeGfPerGame = home.games_played ? home.goals_for / home.games_played : 0;
+  const awayGaPerGame = away.games_played ? away.goals_against / away.games_played : 0;
+  const homeGaPerGame = home.games_played ? home.goals_against / home.games_played : 0;
+
+  const [gfAwayPct, gfHomePct] = barSplit(awayGfPerGame, homeGfPerGame);
+  const [gaAwayPct, gaHomePct] = barSplit(awayGaPerGame, homeGaPerGame);
+
+  return [
+    {
+      label: "Ylivoima (YV%)",
+      away_value: percent(away.power_play_pct),
+      home_value: percent(home.power_play_pct),
+      away_pct: away.power_play_pct * 100,
+      home_pct: home.power_play_pct * 100,
+    },
+    {
+      label: "Alivoima (AV%)",
+      away_value: percent(away.penalty_kill_pct),
+      home_value: percent(home.penalty_kill_pct),
+      away_pct: away.penalty_kill_pct * 100,
+      home_pct: home.penalty_kill_pct * 100,
+    },
+    {
+      label: "Aloitusprosentti",
+      away_value: percent(away.faceoff_pct),
+      home_value: percent(home.faceoff_pct),
+      away_pct: away.faceoff_pct * 100,
+      home_pct: home.faceoff_pct * 100,
+    },
+    {
+      label: "Maalia / ottelu",
+      away_value: awayGfPerGame.toFixed(2),
+      home_value: homeGfPerGame.toFixed(2),
+      away_pct: gfAwayPct,
+      home_pct: gfHomePct,
+    },
+    {
+      label: "Päästetyt / ottelu",
+      away_value: awayGaPerGame.toFixed(2),
+      home_value: homeGaPerGame.toFixed(2),
+      away_pct: gaAwayPct,
+      home_pct: gaHomePct,
     },
   ];
 }

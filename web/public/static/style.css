@@ -1171,6 +1171,17 @@ main {
   }
 }
 
+/* Goaltending preview: up to 4 goalie cards (2 per team) -- too many to
+   force into one row at the team-detail card's ~800px width, so this
+   variant wraps instead of squeezing every card down to unreadable. */
+.stat-card-grid-wrap {
+  flex-wrap: wrap;
+}
+
+.stat-card-grid-wrap .stat-card {
+  flex: 1 1 220px;
+}
+
 .division-table {
   display: flex;
   flex-direction: column;
@@ -2343,6 +2354,81 @@ main {
 .gd-stat-bar-home {
   justify-self: start;
   background: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+/* ---------- Players to watch (game preview) ----------
+   Same 1fr-auto-1fr grid as .gd-stat-row, but a photo-forward comparison
+   instead of a bare number -- the one section with no existing component
+   to reuse, since every other table in the app is list-shaped, not a
+   single head-to-head pairing. */
+.pw-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+}
+
+.pw-row:first-child {
+  border-top: none;
+}
+
+.pw-player {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: inherit;
+  min-width: 0;
+}
+
+.pw-row .pw-player:last-child {
+  flex-direction: row-reverse;
+  text-align: right;
+}
+
+.pw-headshot {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--bg);
+  flex-shrink: 0;
+}
+
+.pw-player-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.pw-row .pw-player:last-child .pw-player-info {
+  align-items: flex-end;
+}
+
+.pw-value {
+  display: block;
+  font-size: 1.1rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+  line-height: 1.2;
+}
+
+.pw-name {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--muted);
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pw-player-empty {
+  color: var(--muted);
 }
 
 /* ---------- Prime time ---------- */
