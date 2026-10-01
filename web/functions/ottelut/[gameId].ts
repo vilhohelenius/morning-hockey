@@ -314,9 +314,8 @@ function renderPlayersToWatch(awaySkaters: TeamRosterSkaterRow[], homeSkaters: T
     ${renderPlayerWatchRow("Maalit", awayGoals, homeGoals, awayGoals?.goals ?? 0, homeGoals?.goals ?? 0)}`;
 }
 
-// Top 2 goalies by games played per team, each as its own compact stat
-// card (reuses the .stat-card component from the team page's Kausitilastot
-// box) -- W-L-OTL/GAA/SV%/SO, matching what the user asked for.
+// One compact stat card per team's presumed starter (reuses the .stat-card
+// component from the team page's Kausitilastot box) -- W-L-OTL/GAA/SV%/SO.
 function renderGoalieCard(g: TeamRosterGoalieRow): string {
   return `
   <div class="stat-card">
@@ -340,9 +339,22 @@ function renderGoalieCard(g: TeamRosterGoalieRow): string {
   </div>`;
 }
 
+// Presumed starter: most games played this season. Ties fall back to save
+// pct (the query's own sort order) rather than career games played, since
+// no career-games data is synced for goalies -- the user's own phrasing
+// ("...jos kaikilla sama niin uralla eniten pelejä ehkä sitten") treated
+// that tiebreak as a soft nice-to-have, not a hard requirement.
+function pickStarter(goalies: TeamRosterGoalieRow[]): TeamRosterGoalieRow | undefined {
+  return goalies.reduce<TeamRosterGoalieRow | undefined>(
+    (best, g) => (!best || g.games_played > best.games_played ? g : best),
+    undefined,
+  );
+}
+
 function renderGoaltending(awayGoalies: TeamRosterGoalieRow[], homeGoalies: TeamRosterGoalieRow[]): string {
-  const cards = [...awayGoalies.slice(0, 2), ...homeGoalies.slice(0, 2)].map(renderGoalieCard).join("");
-  return `<div class="stat-card-grid stat-card-grid-wrap">${cards}</div>`;
+  const starters = [pickStarter(awayGoalies), pickStarter(homeGoalies)].filter((g): g is TeamRosterGoalieRow => !!g);
+  const cards = starters.map(renderGoalieCard).join("");
+  return `<div class="stat-card-grid">${cards}</div>`;
 }
 
 export const onRequestGet: PagesFunction<Env> = async (context) => {

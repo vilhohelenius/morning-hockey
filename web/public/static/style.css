@@ -1171,17 +1171,6 @@ main {
   }
 }
 
-/* Goaltending preview: up to 4 goalie cards (2 per team) -- too many to
-   force into one row at the team-detail card's ~800px width, so this
-   variant wraps instead of squeezing every card down to unreadable. */
-.stat-card-grid-wrap {
-  flex-wrap: wrap;
-}
-
-.stat-card-grid-wrap .stat-card {
-  flex: 1 1 220px;
-}
-
 .division-table {
   display: flex;
   flex-direction: column;
