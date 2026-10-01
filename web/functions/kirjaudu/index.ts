@@ -18,6 +18,8 @@ function safeNext(value: string | null): string {
 
 function renderForm(next: string, error: string | null): string {
   return `
+<a class="back-link js-back" href="/">← Takaisin</a>
+
 <header class="page-header"><h1>🔑 Kirjaudu sisään</h1></header>
 <p class="standings-legend">
   Valitse käyttäjänimi. Jos se on uusi, tunnus luodaan automaattisesti. Salasana on valinnainen --

@@ -18,88 +18,10 @@
 // back to "REG" if that assumption turns out wrong; worth checking an OT/SO
 // game specifically when verifying this live.
 
-import { buildGoalEvents, buildTeamStats } from "../_shared/boxscore";
+import { getBoxScore, type ParsedBoxScore } from "../_shared/boxScoreCache";
 import { decisionFi, escapeHtml, finalTypeFi, humanDate, nationalityFlag } from "../_shared/format";
-import { rosterNationalities, teamPlayerStats } from "../_shared/gameReport";
 import { renderLayout } from "../_shared/layout";
-import type {
-  Env,
-  GameBoxScoreRow,
-  GameRow,
-  GoalEvent,
-  GoalieGameStat,
-  PlayerGameStat,
-  TeamStatRow,
-} from "../_shared/types";
-
-function seasonIdForDate(dateStr: string): number {
-  const [year, month] = dateStr.split("-").map(Number);
-  const startYear = month >= 8 ? year : year - 1;
-  return startYear * 10_000 + (startYear + 1);
-}
-
-const NHL_BASE = "https://api-web.nhle.com/v1";
-
-async function fetchJson(path: string): Promise<any> {
-  const response = await fetch(`${NHL_BASE}${path}`);
-  if (!response.ok) throw new Error(`NHL API ${path} returned ${response.status}`);
-  return response.json();
-}
-
-interface ParsedBoxScore {
-  finalType: string;
-  goals: GoalEvent[];
-  teamStats: TeamStatRow[];
-  awaySkaters: PlayerGameStat[];
-  homeSkaters: PlayerGameStat[];
-  awayGoalies: GoalieGameStat[];
-  homeGoalies: GoalieGameStat[];
-}
-
-async function fetchAndParseBoxScore(game: GameRow): Promise<ParsedBoxScore> {
-  const seasonId = seasonIdForDate(game.date);
-
-  const [landing, rightRail, boxscore, awayRoster, homeRoster] = await Promise.all([
-    fetchJson(`/gamecenter/${game.game_id}/landing`),
-    fetchJson(`/gamecenter/${game.game_id}/right-rail`),
-    fetchJson(`/gamecenter/${game.game_id}/boxscore`),
-    fetchJson(`/roster/${game.away_abbrev}/current`),
-    fetchJson(`/roster/${game.home_abbrev}/current`),
-  ]);
-
-  const finalType: string = landing?.gameOutcome?.lastPeriodType ?? "REG";
-
-  const finnishIds = new Set<number>();
-  const awayNationalities = rosterNationalities(awayRoster);
-  const homeNationalities = rosterNationalities(homeRoster);
-  for (const [id, country] of awayNationalities) if (country === "FIN") finnishIds.add(id);
-  for (const [id, country] of homeNationalities) if (country === "FIN") finnishIds.add(id);
-  const nationalities = new Map([...awayNationalities, ...homeNationalities]);
-
-  const goals = buildGoalEvents(
-    landing?.summary?.scoring ?? [],
-    game.away_abbrev,
-    game.home_abbrev,
-    finnishIds,
-  );
-  const teamStats = buildTeamStats(rightRail?.teamGameStats ?? [], game.away_score, game.home_score);
-
-  const playerStats = boxscore?.playerByGameStats ?? {};
-  const { skaters: awaySkaters, goalies: awayGoalies } = teamPlayerStats(
-    playerStats.awayTeam ?? {},
-    game.away_abbrev,
-    seasonId,
-    nationalities,
-  );
-  const { skaters: homeSkaters, goalies: homeGoalies } = teamPlayerStats(
-    playerStats.homeTeam ?? {},
-    game.home_abbrev,
-    seasonId,
-    nationalities,
-  );
-
-  return { finalType, goals, teamStats, awaySkaters, homeSkaters, awayGoalies, homeGoalies };
-}
+import type { Env, GameRow, GoalEvent, GoalieGameStat, PlayerGameStat } from "../_shared/types";
 
 function renderGoalTimeline(goals: GoalEvent[], awayAbbrev: string, awayLogo: string, homeLogo: string): string {
   if (!goals.length) return `<p class="tp-empty">Ei maaleja.</p>`;
@@ -237,54 +159,12 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
   let box: ParsedBoxScore | null = null;
   let fetchError = false;
-
   if (game.is_finished) {
-    const cached = await db
-      .prepare("SELECT * FROM game_box_scores WHERE game_id = ?")
-      .bind(gameId)
-      .first<GameBoxScoreRow>();
-
-    if (cached) {
-      box = {
-        finalType: cached.final_type,
-        goals: JSON.parse(cached.goals_json),
-        teamStats: JSON.parse(cached.team_stats_json),
-        awaySkaters: JSON.parse(cached.away_skaters_json),
-        homeSkaters: JSON.parse(cached.home_skaters_json),
-        awayGoalies: JSON.parse(cached.away_goalies_json),
-        homeGoalies: JSON.parse(cached.home_goalies_json),
-      };
-    } else {
-      try {
-        box = await fetchAndParseBoxScore(game);
-        await db
-          .prepare(
-            `INSERT INTO game_box_scores (
-              game_id, final_type, goals_json, team_stats_json,
-              away_skaters_json, home_skaters_json, away_goalies_json, home_goalies_json, cached_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          )
-          .bind(
-            gameId,
-            box.finalType,
-            JSON.stringify(box.goals),
-            JSON.stringify(box.teamStats),
-            JSON.stringify(box.awaySkaters),
-            JSON.stringify(box.homeSkaters),
-            JSON.stringify(box.awayGoalies),
-            JSON.stringify(box.homeGoalies),
-            new Date().toISOString(),
-          )
-          .run();
-      } catch (error) {
-        fetchError = true;
-        console.error(`Box score fetch failed for game ${gameId}:`, error);
-      }
-    }
+    ({ box, fetchError } = await getBoxScore(db, game));
   }
 
   const content = `
-<a class="back-link" href="/joukkueet/${game.away_abbrev.toLowerCase()}">← Takaisin joukkuesivulle</a>
+<a class="back-link js-back" href="/">← Takaisin</a>
 
 <header class="page-header">
   <p class="subtitle">${escapeHtml(humanDate(game.date))}</p>

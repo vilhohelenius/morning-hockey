@@ -61,6 +61,8 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   favoriteGoalies.sort((a, b) => b.save_pct - a.save_pct);
 
   const content = `
+<a class="back-link js-back" href="/">← Takaisin</a>
+
 <header class="page-header">
   <h1>⭐ Suosikkipelaajat</h1>
 </header>

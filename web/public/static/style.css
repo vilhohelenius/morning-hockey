@@ -373,6 +373,26 @@ main {
   white-space: nowrap;
 }
 
+.fav-team-card-schedule {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fav-team-card-game {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.76rem;
+  color: var(--muted);
+}
+
+.fav-team-card-game-logo {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+}
+
 .fav-team-card-scorer {
   display: flex;
   align-items: center;

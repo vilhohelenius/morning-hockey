@@ -1,7 +1,8 @@
 // Dashboard (homepage). Combines: last night's (or tonight's, once it's
-// started) results with Finnish highlights, top-5 Suomipörssi, top-5
-// Tilastot, the signed-in user's favorite-team mini-boxes, and the next
-// upcoming round of games.
+// started) results with Finnish highlights and a click-to-expand goal/
+// team-stats info box, top-5 Suomipörssi, top-5 Tilastot, the signed-in
+// user's favorite-team mini-boxes (recent/next game + current top scorer),
+// and the next upcoming round of games.
 //
 // "Last night's games" used to be keyed off the once-daily digest sync
 // job's own `digests` table, which meant the section could only ever
@@ -17,24 +18,25 @@
 // appear immediately from the fast tier, and the Finnish stat lines fill
 // in themselves whenever the daily digest job next catches up.
 //
-// Two things templates/dashboard.html has are deliberately NOT ported:
-//   - The box-score click-to-expand popup (#game-details JSON) -- same
-//     data shape as phase 5's planned game_box_scores cache, not synced
-//     yet. app.js only wires up that click handler when #game-details
-//     exists, so omitting it is a clean no-op (same pattern as the
-//     #team-snapshots and #team-trigger gaps in earlier pages).
-//   - The "Aiemmat yöt" archive footer linking to nights/<date>.html --
-//     superseded by /arkisto, a real route here.
+// The click-to-expand info box (#game-details, same mechanism as the
+// original static site and as sarjataulukko.ts's team snapshot) reuses
+// _shared/boxScoreCache's getBoxScore -- same cache /ottelut/[gameId] reads
+// and writes, so a game already visited there (or by an earlier dashboard
+// load) opens instantly; a brand new one fetches+caches it on this page
+// load instead. Only attempted for finished games.
+//
+// The "Aiemmat yöt" archive footer linking to nights/<date>.html isn't
+// ported -- superseded by /arkisto, a real route here.
 
+import { getBoxScore } from "./_shared/boxScoreCache";
 import { currentUsername } from "./_shared/auth";
-import { decisionFi, escapeHtml, finalTypeFi, helsinkiParts, humanDate, nationalityFlag } from "./_shared/format";
+import { decisionFi, escapeHtml, finalTypeFi, helsinkiParts, humanDate, nationalityFlag, shortDate } from "./_shared/format";
 import { renderLayout } from "./_shared/layout";
 import type {
   DigestGameRow,
   DigestGoalieRow,
   DigestScorerRow,
   Env,
-  FavoriteTeamRow,
   FinnishSkaterRow,
   GameRow,
   SkaterStatsRow,
@@ -73,7 +75,7 @@ function renderGameCard(game: GameRow, finalType: string, scorers: DigestScorerR
       : "";
 
   return `
-<a class="game-card game-card-link" href="/ottelut/${game.game_id}">
+<section class="game-card game-card-trigger" data-game-id="${game.game_id}" tabindex="0" role="button" aria-expanded="false">
   <div class="score-row">
     <div class="team away">
       <img src="${escapeHtml(game.away_logo)}" alt="" class="logo" loading="lazy">
@@ -91,7 +93,7 @@ function renderGameCard(game: GameRow, finalType: string, scorers: DigestScorerR
   </div>
   ${game.is_finished && finalType !== "REG" ? `<p class="ot-tag">${escapeHtml(finalTypeFi(finalType))}</p>` : ""}
   ${finnStats}
-</a>`;
+</section>`;
 }
 
 function renderFinnishSkaterRow(row: FinnishSkaterRow, rank: number): string {
@@ -161,7 +163,33 @@ function statTeaserTable(title: string, rows: string[], emptyMessage: string, ar
 </section>`;
 }
 
-function renderFavoriteTeamCard(team: StandingsRow, topSkater: TeamRosterSkaterRow | null): string {
+function renderTeamGameLine(team: StandingsRow, game: GameRow, played: boolean): string {
+  const isHome = game.home_abbrev === team.abbrev;
+  const opponentAbbrev = isHome ? game.away_abbrev : game.home_abbrev;
+  const opponentLogo = isHome ? game.away_logo : game.home_logo;
+  const scoreHtml = played
+    ? (() => {
+        const teamScore = isHome ? game.home_score : game.away_score;
+        const opponentScore = isHome ? game.away_score : game.home_score;
+        return `<span class="fav-row-meta">${teamScore}–${opponentScore} ${teamScore > opponentScore ? "V" : "H"}</span>`;
+      })()
+    : "";
+  return `
+  <div class="fav-team-card-game">
+    <span>${shortDate(game.date)}</span>
+    <span>${isHome ? "vs" : "@"}</span>
+    <img src="${escapeHtml(opponentLogo)}" alt="" class="fav-team-card-game-logo" loading="lazy">
+    <span>${escapeHtml(opponentAbbrev)}</span>
+    ${scoreHtml}
+  </div>`;
+}
+
+function renderFavoriteTeamCard(
+  team: StandingsRow,
+  recentGame: GameRow | null,
+  upcomingGame: GameRow | null,
+  topSkater: TeamRosterSkaterRow | null,
+): string {
   const scorerHtml = topSkater
     ? `
   <div class="fav-team-card-scorer">
@@ -181,6 +209,10 @@ function renderFavoriteTeamCard(team: StandingsRow, topSkater: TeamRosterSkaterR
       <span class="fav-team-card-name">${escapeHtml(team.name)}</span>
       <span class="fav-row-meta">${escapeHtml(team.division)}: ${team.division_rank}. sija</span>
     </div>
+  </div>
+  <div class="fav-team-card-schedule">
+    ${recentGame ? renderTeamGameLine(team, recentGame, true) : ""}
+    ${upcomingGame ? renderTeamGameLine(team, upcomingGame, false) : ""}
   </div>
   ${scorerHtml}
 </a>`;
@@ -213,6 +245,8 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
   let roundGames: GameRow[] = [];
   let gameCardsHtml = "";
+  const gameDetails: Record<number, { goals: unknown; team_stats: unknown }> = {};
+
   if (currentRound) {
     const { results } = await db
       .prepare("SELECT * FROM games WHERE date = ? ORDER BY start_time_utc ASC")
@@ -238,6 +272,11 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
         scorersByGame.get(game.game_id) ?? [],
         goaliesByGame.get(game.game_id) ?? [],
       );
+
+      if (game.is_finished) {
+        const { box } = await getBoxScore(db, game);
+        if (box) gameDetails[game.game_id] = { goals: box.goals, team_stats: box.teamStats };
+      }
     }
   }
 
@@ -266,13 +305,25 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     if (favoriteTeams.length) {
       const cards: string[] = [];
       for (const team of favoriteTeams) {
-        const topSkater = await db
-          .prepare(
-            "SELECT * FROM team_roster_skaters WHERE team_abbrev = ? ORDER BY points DESC, goals DESC LIMIT 1",
-          )
-          .bind(team.abbrev)
-          .first<TeamRosterSkaterRow>();
-        cards.push(renderFavoriteTeamCard(team, topSkater ?? null));
+        const [topSkater, recentGame, upcomingGame] = await Promise.all([
+          db
+            .prepare("SELECT * FROM team_roster_skaters WHERE team_abbrev = ? ORDER BY points DESC, goals DESC LIMIT 1")
+            .bind(team.abbrev)
+            .first<TeamRosterSkaterRow>(),
+          db
+            .prepare(
+              "SELECT * FROM games WHERE (away_abbrev = ? OR home_abbrev = ?) AND is_finished = 1 ORDER BY date DESC LIMIT 1",
+            )
+            .bind(team.abbrev, team.abbrev)
+            .first<GameRow>(),
+          db
+            .prepare(
+              "SELECT * FROM games WHERE (away_abbrev = ? OR home_abbrev = ?) AND is_finished = 0 ORDER BY date ASC LIMIT 1",
+            )
+            .bind(team.abbrev, team.abbrev)
+            .first<GameRow>(),
+        ]);
+        cards.push(renderFavoriteTeamCard(team, recentGame ?? null, upcomingGame ?? null, topSkater ?? null));
       }
       favoriteTeamsHtml = `
 <section>
@@ -304,6 +355,11 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 </section>`;
   }
 
+  // Same defensive escape render.py's _game_details_json / sarjataulukko.ts's
+  // #team-snapshots already apply: a stray "</script" inside embedded JSON
+  // can't close the tag early.
+  const gameDetailsJson = JSON.stringify(gameDetails).replace(/<\//g, "<\\/");
+
   const content = `
 <header class="page-header">
   <h1 class="brand-heading">🏒 Yön änärit</h1>
@@ -330,6 +386,8 @@ ${statTeaserTable("🇫🇮 Suomipörssin kärki", finSkaters.map((r, i) => rend
 ${statTeaserTable("📈 NHL:n kärkipörssi", leagueSkaters.map((r, i) => renderLeagueSkaterRow(r, i + 1)), "Ei tilastoituja pelaajia vielä.", "/tilastot", "Koko Tilastot →")}
 
 ${upcomingHtml}
+
+<script id="game-details" type="application/json">${gameDetailsJson}</script>
 `;
 
   const html = await renderLayout({

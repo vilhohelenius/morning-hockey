@@ -43,6 +43,21 @@
     });
   });
 
+  // "Back" buttons on pages reached by navigating forward from somewhere
+  // else: prefer real browser history over a fixed destination, since a
+  // page can be reached from several different places (e.g. a game report
+  // from the dashboard, Arkisto, or a team page) and a hardcoded link can
+  // only ever guess one of them. The href is a plain fallback for when
+  // there's no history to go back to (opened directly/in a new tab).
+  document.querySelectorAll(".js-back").forEach(function (link) {
+    link.addEventListener("click", function (event) {
+      if (window.history.length > 1) {
+        event.preventDefault();
+        history.back();
+      }
+    });
+  });
+
   document.querySelectorAll(".nav-group-toggle").forEach(function (toggle) {
     toggle.addEventListener("click", function () {
       var sublist = toggle.nextElementSibling;
@@ -373,6 +388,12 @@
       body.appendChild(renderGoals(data.goals || [], awayAbbrev, awayLogo, homeLogo));
       body.appendChild(renderTeamStats(data.team_stats || [], awayAbbrev, homeAbbrev));
       panel.appendChild(body);
+
+      var fullLink = document.createElement("a");
+      fullLink.className = "archive-link";
+      fullLink.href = "/ottelut/" + trigger.dataset.gameId;
+      fullLink.textContent = "Koko ottelun tilastot →";
+      panel.appendChild(fullLink);
 
       trigger.insertAdjacentElement("afterend", panel);
 

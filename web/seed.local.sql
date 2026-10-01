@@ -105,6 +105,14 @@ INSERT INTO game_box_scores (game_id, final_type, goals_json, team_stats_json, a
 '[{"player_id":8479318,"name":"Auston Matthews","position":"C","nationality":"USA","headshot":"https://assets.nhle.com/mugs/nhl/20262027/TOR/8479318.png","goals":1,"assists":0,"points":1,"plus_minus":0,"shots":6,"pim":0,"toi":"19:40"}]',
 '[{"player_id":8478406,"name":"Sam Montembeault","nationality":"CAN","headshot":"https://assets.nhle.com/mugs/nhl/20262027/MTL/8478406.png","decision":"L","saves":27,"shots_against":32,"save_pct":0.844,"toi":"59:12"}]',
 '[{"player_id":8480313,"name":"Joseph Woll","nationality":"USA","headshot":"https://assets.nhle.com/mugs/nhl/20262027/TOR/8480313.png","decision":"W","saves":26,"shots_against":28,"save_pct":0.929,"toi":"60:00"}]',
+'2026-09-30T12:00:00Z'),
+-- 2001 (CAR @ NYR, part of the digest seed above and of whichever date
+-- ends up as the dashboard's "currentRound") -- cached so the dashboard's
+-- click-to-expand info box has something to show without a live NHL fetch.
+(2001, 'OT',
+'[{"period_label":"3. erä","time_in_period":"11:05","team_abbrev":"CAR","scorer":"Sebastian Aho","assists":["Andrei Svechnikov"],"strength":"","away_score":2,"home_score":2},{"period_label":"Jatkoaika","time_in_period":"02:14","team_abbrev":"CAR","scorer":"Sebastian Aho","assists":[],"strength":"","away_score":3,"home_score":2}]',
+'[{"label":"Laukaukset","away_value":"30","home_value":"28"},{"label":"Aloitusprosentti","away_value":"52.0 %","home_value":"48.0 %"}]',
+'[]', '[]', '[]', '[]',
 '2026-09-30T12:00:00Z');
 
 -- Phase 6: full per-team rosters + season stats, for TOR (team page's own

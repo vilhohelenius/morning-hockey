@@ -172,6 +172,8 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     .all<TeamRosterGoalieRow>();
 
   const content = `
+<a class="back-link js-back" href="/sarjataulukko">← Takaisin</a>
+
 <header class="page-header team-page-header">
   <img src="${escapeHtml(team.logo)}" alt="" class="team-hero-logo">
   <h1>${escapeHtml(team.name)}</h1>
