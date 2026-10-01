@@ -54,6 +54,13 @@ function ageFromBirthDate(birthDate: string): number {
 }
 
 const HANDEDNESS_FI: Record<string, string> = { L: "Vasen", R: "Oikea" };
+const POSITION_FI: Record<string, string> = {
+  C: "Keskushyökkääjä",
+  L: "Vasen laitahyökkääjä",
+  R: "Oikea laitahyökkääjä",
+  D: "Puolustaja",
+  G: "Maalivahti",
+};
 const GOALIE_DECISION_FI: Record<string, string> = { W: "V", L: "H", O: "JH" };
 
 interface SeasonTotal {
@@ -523,15 +530,16 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 <a class="back-link js-back" href="/">← Takaisin</a>
 
 <header class="page-header player-card-header hero-banner" style="${escapeHtml(teamHeroBackgroundStyle(landing.currentTeamAbbrev))}">
-  <img src="${escapeHtml(landing.headshot ?? "")}" alt="" class="player-card-photo" onerror="this.style.visibility='hidden'">
   <h1>${escapeHtml(name)}</h1>
-  ${landing.birthCountry ? `<p class="subtitle">${nationalityFlag(landing.birthCountry)} ${escapeHtml(landing.birthCity?.default ?? "")}, ${escapeHtml(landing.birthCountry)}</p>` : ""}
-  <p class="subtitle">
-    <img src="${escapeHtml(landing.teamLogo ?? "")}" alt="" class="table-team-logo" loading="lazy">
-    ${escapeHtml(landing.fullTeamName?.default ?? landing.currentTeamAbbrev ?? "")}
-    ${landing.sweaterNumber ? ` · #${landing.sweaterNumber}` : ""}
-    ${landing.position ? ` · ${escapeHtml(landing.position)}` : ""}
+  <p class="player-hero-meta">
+    ${landing.birthCountry ? `<span>${nationalityFlag(landing.birthCountry)}</span>` : ""}
+    ${landing.sweaterNumber ? `<span>#${landing.sweaterNumber}</span>` : ""}
+    ${landing.position ? `<span>${escapeHtml(POSITION_FI[landing.position] ?? landing.position)}</span>` : ""}
   </p>
+  <div class="player-hero-footer">
+    <img src="${escapeHtml(landing.headshot ?? "")}" alt="" class="player-hero-photo" onerror="this.style.visibility='hidden'">
+    ${landing.teamLogo ? `<img src="${escapeHtml(landing.teamLogo)}" alt="" class="player-hero-team-logo" loading="lazy">` : ""}
+  </div>
 </header>
 
 <section>
