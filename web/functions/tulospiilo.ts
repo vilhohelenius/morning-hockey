@@ -148,6 +148,10 @@ ${
     cb.addEventListener("change", function () {
       syncRow(cb);
       recomputeAllRevealed();
+      // One-way: once watched-and-checked, locked so it can't be
+      // unchecked again (by the box itself or its <label>) -- nothing
+      // should be able to re-hide an already-revealed result.
+      if (cb.checked) cb.disabled = true;
     });
   });
   recomputeAllRevealed();
