@@ -38,10 +38,22 @@ export function teamLogoUrl(abbrev: string): string {
 // background-color layer is needed on top. Both asset URLs are general,
 // abbrev-keyed CDN paths (verified 200 OK for several teams), same style
 // as teamLogoUrl above.
-export function teamHeroBackgroundStyle(abbrev: string | null | undefined): string {
+// `includeCrest: false` drops the wires layer, leaving just the vignette +
+// fade + jersey texture -- for a team's own pages the wires crest is the
+// point, but the dashboard's non-team teasers borrow a team's background
+// purely for its look, where that team's own crest doesn't belong.
+export function teamHeroBackgroundStyle(abbrev: string | null | undefined, includeCrest = true): string {
   if (!abbrev) return "";
-  const wires = `https://assets.nhle.com/logos/nhl/wires/${abbrev}.svg`;
   const texture = `https://assets.nhle.com/textures/nhl/jersey/png/${abbrev}.png`;
+  if (!includeCrest) {
+    return [
+      `background-image: radial-gradient(50% 100% at 50% 0%, rgba(0,0,0,0) 0%, rgba(0,0,0,0.65) 100%), linear-gradient(rgba(0,0,0,0) 0%, rgb(0,0,0) 100%), url("${texture}")`,
+      `background-size: auto, auto, 42px 42px`,
+      `background-position: 0% 0%, 0% 0%, 0% 0%`,
+      `background-repeat: repeat, repeat, repeat`,
+    ].join("; ");
+  }
+  const wires = `https://assets.nhle.com/logos/nhl/wires/${abbrev}.svg`;
   return [
     `background-image: radial-gradient(50% 100% at 50% 0%, rgba(0,0,0,0) 0%, rgba(0,0,0,0.65) 100%), url("${wires}"), linear-gradient(rgba(0,0,0,0) 0%, rgb(0,0,0) 100%), url("${texture}")`,
     `background-size: auto, 400px auto, auto, 42px 42px`,
