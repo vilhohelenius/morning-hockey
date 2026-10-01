@@ -747,9 +747,16 @@ main {
 .player-hero-meta {
   display: flex;
   align-items: center;
-  gap: 10px;
+  flex-wrap: wrap;
+  gap: 4px 10px;
   margin: 4px 0 14px;
   font-size: 0.95rem;
+}
+
+.player-hero-meta span + span::before {
+  content: "·";
+  margin-right: 10px;
+  opacity: 0.6;
 }
 
 .player-hero-footer {
@@ -834,16 +841,41 @@ main {
   letter-spacing: 0.02em;
 }
 
-/* Draft tile (bio .stat-grid): logo sits inline with the year on the
-   value line, same baseline trick as .table-team-logo elsewhere. The
-   label line (round + overall pick) is the longest text any tile here
-   carries, so it's allowed to wrap instead of being forced onto one
-   line -- .stat-tile has no fixed height, it just grows. */
-.stat-tile-draft-logo {
-  height: 18px;
-  width: auto;
-  vertical-align: -3px;
-  margin-right: 3px;
+/* Draft box: its own full-width section at the bottom of the player card
+   (see renderDraftSection), not a .stat-tile any more now that it no
+   longer shares a 2-col grid with Ikä/Pituus/Paino/Kätisyys (those moved
+   up into the hero header's player-hero-meta line). */
+.draft-box {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+
+.draft-box-logo {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.draft-box-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.draft-box-year {
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.draft-box-detail {
+  color: var(--muted);
+  font-size: 0.85rem;
 }
 
 /* Player card's tile-grid stat sections -- "Uran tilastot" (career totals,
@@ -1731,6 +1763,66 @@ main {
 
 .tp-empty {
   color: var(--muted);
+}
+
+/* Team-colored background (sarjataulukko's click-a-team panel): the
+   background-image itself comes from an inline style (see app.js's
+   applyTeamHeroBackground), scoped to .hero-tinted -- since the texture/
+   crest colors vary by team and this panel's text runs the full height
+   (not just along the top/bottom edges the way the player/team hero
+   banners do), a flat dark scrim behind every child guarantees contrast
+   regardless of team color, rather than relying on the background's own
+   gradients alone. */
+.team-detail.hero-tinted {
+  position: relative;
+  border: none;
+  color: #fff;
+}
+
+.team-detail.hero-tinted::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: rgba(0, 0, 0, 0.45);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.team-detail.hero-tinted > * {
+  position: relative;
+  z-index: 1;
+}
+
+.team-detail.hero-tinted .icon-btn {
+  color: #fff;
+}
+
+.team-detail.hero-tinted .tp-section {
+  border-top-color: rgba(255, 255, 255, 0.25);
+}
+
+.team-detail.hero-tinted .tp-section-title,
+.team-detail.hero-tinted .tp-next-date,
+.team-detail.hero-tinted .tp-scorer-line,
+.team-detail.hero-tinted .tp-empty {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.team-detail.hero-tinted .tp-result-chip {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.team-detail.hero-tinted .result-w {
+  color: #86efac;
+}
+
+.team-detail.hero-tinted .result-l {
+  color: #fca5a5;
+}
+
+.team-detail.hero-tinted .result-otl {
+  color: #fde68a;
 }
 
 .gd-period {

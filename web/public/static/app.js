@@ -225,6 +225,24 @@
       return wrap;
     }
 
+    // Same 4-layer composite as teamHeroBackgroundStyle() in
+    // _shared/format.ts (team "wires" crest + jersey texture, both
+    // already team-colored) -- duplicated here in plain JS since this
+    // panel is built client-side and app.js has no build step to import
+    // the TS helper from. Keep the two in sync if the recipe ever changes.
+    function applyTeamHeroBackground(node, abbrev) {
+      var wires = "https://assets.nhle.com/logos/nhl/wires/" + abbrev + ".svg";
+      var texture = "https://assets.nhle.com/textures/nhl/jersey/png/" + abbrev + ".png";
+      node.style.backgroundImage =
+        'radial-gradient(50% 100% at 50% 0%, rgba(0,0,0,0) 0%, rgba(0,0,0,0.65) 100%), ' +
+        'url("' + wires + '"), ' +
+        'linear-gradient(rgba(0,0,0,0) 0%, rgb(0,0,0) 100%), ' +
+        'url("' + texture + '")';
+      node.style.backgroundSize = "auto, 400px auto, auto, 42px 42px";
+      node.style.backgroundPosition = "0% 0%, 50% 50%, 0% 0%, 0% 0%";
+      node.style.backgroundRepeat = "repeat, no-repeat, repeat, repeat";
+    }
+
     function closeDetail() {
       if (detailEl && detailEl.parentNode) detailEl.parentNode.removeChild(detailEl);
       if (openTrigger) openTrigger.setAttribute("aria-expanded", "false");
@@ -242,7 +260,8 @@
       var logoSrc = trigger.querySelector("img") ? trigger.querySelector("img").src : "";
       var teamName = trigger.dataset.teamName || abbrev;
 
-      var panel = el("div", "team-detail");
+      var panel = el("div", "team-detail hero-tinted");
+      applyTeamHeroBackground(panel, abbrev);
 
       var header = el("div", "team-detail-header");
       var teamLink = document.createElement("a");

@@ -53,14 +53,7 @@ function ageFromBirthDate(birthDate: string): number {
   return age;
 }
 
-const HANDEDNESS_FI: Record<string, string> = { L: "Vasen", R: "Oikea" };
-const POSITION_FI: Record<string, string> = {
-  C: "Keskushyökkääjä",
-  L: "Vasen laitahyökkääjä",
-  R: "Oikea laitahyökkääjä",
-  D: "Puolustaja",
-  G: "Maalivahti",
-};
+const POSITION_ABBR: Record<string, string> = { C: "C", L: "LW", R: "RW", D: "D", G: "G" };
 const GOALIE_DECISION_FI: Record<string, string> = { W: "V", L: "H", O: "JH" };
 
 interface SeasonTotal {
@@ -320,27 +313,32 @@ function renderSkaterGameLog(games: any[]): string {
 // API as far as this project's existing NHL API usage goes -- it's sourced
 // from NHL.com's own editorial CMS, not api-web.nhle.com. Every field is
 // read defensively so an undrafted player (no draftDetails at all) or an
-// unexpected shape just skips the tile instead of rendering "undefined".
+// unexpected shape just skips the section instead of rendering "undefined".
 //
-// Lives in the bio .stat-tile-grid as one more tile alongside Ikä/Pituus/
-// Paino/Kätisyys (not its own section) -- year + team logo on the value
-// line, round + overall pick on the label line. Packing four pieces of info
-// into one tile-sized box is tight and the label line will wrap on narrow
-// screens; that's accepted as a known trade-off, not a bug.
-function renderDraftTile(draft: any): string {
+// Its own full-width section at the very bottom of the page (not a
+// .stat-tile-grid tile any more, now that Ikä/Pituus/Paino/Kätisyys moved
+// up into the header's player-hero-meta line) -- wide enough for the
+// team logo, draft year and round/pick detail to sit comfortably in a row.
+function renderDraftSection(draft: any): string {
   if (!draft?.year) return "";
   const logo = draft.teamAbbrev
-    ? `<img src="${escapeHtml(teamLogoUrl(draft.teamAbbrev))}" alt="" class="stat-tile-draft-logo" onerror="this.style.visibility='hidden'">`
+    ? `<img src="${escapeHtml(teamLogoUrl(draft.teamAbbrev))}" alt="" class="draft-box-logo" onerror="this.style.visibility='hidden'">`
     : "";
   const detailParts: string[] = [];
   if (draft.round) detailParts.push(`kierros ${draft.round}`);
   if (draft.overallPick) detailParts.push(`${draft.overallPick}. kok.`);
 
   return `
-    <div class="stat-tile stat-tile-draft">
-      <span class="stat-tile-value">${logo}${draft.year}</span>
-      <span class="stat-tile-label">${detailParts.length ? escapeHtml(detailParts.join(" · ")) : "Draft"}</span>
-    </div>`;
+<section>
+  <h2 class="section-title">Draft</h2>
+  <div class="draft-box">
+    ${logo}
+    <div class="draft-box-text">
+      <span class="draft-box-year">${draft.year}</span>
+      <span class="draft-box-detail">${detailParts.length ? escapeHtml(detailParts.join(" · ")) : "Draft"}</span>
+    </div>
+  </div>
+</section>`;
 }
 
 // total: the API-computed career total for this tab (careerTotals.
@@ -524,7 +522,6 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   }
 
   const age = landing.birthDate ? ageFromBirthDate(landing.birthDate) : null;
-  const handedness = landing.shootsCatches ? (HANDEDNESS_FI[landing.shootsCatches] ?? landing.shootsCatches) : null;
 
   const content = `
 <a class="back-link js-back" href="/">← Takaisin</a>
@@ -534,23 +531,17 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   <p class="player-hero-meta">
     ${landing.birthCountry ? `<span>${nationalityFlag(landing.birthCountry)}</span>` : ""}
     ${landing.sweaterNumber ? `<span>#${landing.sweaterNumber}</span>` : ""}
-    ${landing.position ? `<span>${escapeHtml(POSITION_FI[landing.position] ?? landing.position)}</span>` : ""}
+    ${landing.position ? `<span>${escapeHtml(POSITION_ABBR[landing.position] ?? landing.position)}</span>` : ""}
+    ${age !== null ? `<span>${age} v.</span>` : ""}
+    ${landing.heightInCentimeters ? `<span>${landing.heightInCentimeters} cm</span>` : ""}
+    ${landing.weightInKilograms ? `<span>${landing.weightInKilograms} kg</span>` : ""}
+    ${landing.shootsCatches ? `<span>${escapeHtml(landing.shootsCatches)}</span>` : ""}
   </p>
   <div class="player-hero-footer">
     <img src="${escapeHtml(landing.headshot ?? "")}" alt="" class="player-hero-photo" onerror="this.style.visibility='hidden'">
     ${landing.teamLogo ? `<img src="${escapeHtml(landing.teamLogo)}" alt="" class="player-hero-team-logo" loading="lazy">` : ""}
   </div>
 </header>
-
-<section>
-  <div class="stat-tile-grid">
-    ${age !== null ? `<div class="stat-tile"><span class="stat-tile-value">${age}</span><span class="stat-tile-label">Ikä</span></div>` : ""}
-    ${landing.heightInCentimeters ? `<div class="stat-tile"><span class="stat-tile-value">${landing.heightInCentimeters} cm</span><span class="stat-tile-label">Pituus</span></div>` : ""}
-    ${landing.weightInKilograms ? `<div class="stat-tile"><span class="stat-tile-value">${landing.weightInKilograms} kg</span><span class="stat-tile-label">Paino</span></div>` : ""}
-    ${handedness ? `<div class="stat-tile"><span class="stat-tile-value">${escapeHtml(handedness)}</span><span class="stat-tile-label">Kätisyys</span></div>` : ""}
-    ${renderDraftTile(landing.draftDetails)}
-  </div>
-</section>
 
 ${renderPeriodStatsSection(
   isGoalie,
@@ -574,6 +565,8 @@ ${renderSeasonHistorySection(isGoalie, regularSeasonHistory, playoffHistory, car
   }
   ${gameLogHtml}
 </section>
+
+${renderDraftSection(landing.draftDetails)}
 `;
 
   const html = await renderLayout({
