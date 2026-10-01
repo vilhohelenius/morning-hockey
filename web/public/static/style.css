@@ -1089,74 +1089,14 @@ main {
   margin: 4px 0 8px;
 }
 
-.stat-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
-}
-
-.stat-tile {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 10px 6px;
-  text-align: center;
-}
-
-.stat-tile-value {
-  font-size: 1.15rem;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  color: var(--accent);
-}
-
-.stat-tile-label {
-  font-size: 0.68rem;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-}
-
-/* Player card's tile-grid stat sections -- "Uran tilastot" (career totals,
-   skaters/goalies) and the goalie season total (which has its own tile
-   section instead of a game-log table row, see renderGoalieStatTiles).
-   Reuses .stat-tile unchanged (same card look as the bio grid above it),
-   just a different wrapper: tile counts vary (5-6), and .stat-grid's fixed
-   2 columns was sized for the bio grid's always-4. auto-fit instead of a
-   fixed column count so there's never an awkward half-empty last row. */
-.stat-tile-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
-  gap: 8px;
-}
-
-/* "Kausi <newest>"/"Uran tilastot" each render twice (renderPeriodStatsSection):
-   tile grids (above) under ~860px, one combined table over it -- same
-   breakpoint the sidebar already switches to a permanent rail at, so the
-   whole page's "mobile vs. wide" line stays in one place. Default to the
-   tile grids; the table only takes over once there's room for it to read
-   as an actual table instead of a cramped single-row squeeze. */
-.stat-period-table {
-  display: none;
-}
-
-@media (min-width: 860px) {
-  .stat-period-tiles {
-    display: none;
-  }
-
-  .stat-period-table {
-    display: block;
-  }
-
-  .stat-period-table .stats-table td:first-child,
-  .stat-period-table .stats-table th:first-child {
-    text-align: left;
-  }
+/* "Kausi <newest>"/"Uran tilastot" (renderPeriodStatsSection): same
+   .stats-table look as every other stats table, just with the row label
+   left-aligned instead of the default first-column center-align, since
+   it's a word ("Kausi 2026-2027", "Uran tilastot") rather than a short
+   rank/season number. */
+.player-period-stats .stats-table td:first-child,
+.player-period-stats .stats-table th:first-child {
+  text-align: left;
 }
 
 .division-table {
@@ -1766,6 +1706,22 @@ main {
    opponent, not a player name -- revert the wide-left-aligned override. */
 .game-log-table th:nth-child(2),
 .game-log-table td:nth-child(2) {
+  text-align: right;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+/* Team page's Kausitilastot: every column is a plain number/percentage,
+   none is a player name or rank -- revert both the 2nd-column
+   left-align and the 1st-column center-align the leaderboard-flavored
+   defaults above assume. */
+.team-season-stats-table th:first-child,
+.team-season-stats-table td:first-child {
+  text-align: right;
+}
+
+.team-season-stats-table th:nth-child(2),
+.team-season-stats-table td:nth-child(2) {
   text-align: right;
   white-space: nowrap;
   min-width: 0;

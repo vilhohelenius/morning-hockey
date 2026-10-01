@@ -102,42 +102,6 @@ function renderSeasonSelect(playerId: number, seasons: number[], selected: numbe
 // per-game table below still keeps its own "Kausi" total row too (as a
 // <tfoot>, see renderSkaterGameLog) -- this tile section doesn't replace
 // it, just adds a higher-up summary.
-function renderSkaterStatTiles(t: SeasonTotal): string {
-  const tile = (value: string, label: string) =>
-    `<div class="stat-tile"><span class="stat-tile-value">${value}</span><span class="stat-tile-label">${label}</span></div>`;
-
-  return `
-  <div class="stat-tile-grid">
-    ${tile(String(t.gamesPlayed), "Ottelut")}
-    ${tile(String(t.goals ?? 0), "Maalit")}
-    ${tile(String(t.assists ?? 0), "Syötöt")}
-    ${tile(String(t.points ?? 0), "Pisteet")}
-    ${tile(`${(t.plusMinus ?? 0) > 0 ? "+" : ""}${t.plusMinus ?? 0}`, "+/-")}
-    ${tile(String(t.pim ?? 0), "Jäähyminuutit")}
-    ${tile(t.avgToi ? escapeHtml(t.avgToi) : "–", "TOI/GP")}
-  </div>`;
-}
-
-// Shared by the goalie career section and the goalie season total (pulled
-// out of the per-game game-log table into its own section -- save count,
-// W-L-OTL and cumulative TOI, which the per-game table's columns did carry,
-// aren't relevant to a summary the way GAA and win count are). Both use the
-// same Ottelut/Voitot/Torjunta-%/GAA/Nollapelit tile shape, just fed a
-// different SeasonTotal (career vs. the selected season).
-function renderGoalieStatTiles(t: SeasonTotal): string {
-  const tile = (value: string, label: string) =>
-    `<div class="stat-tile"><span class="stat-tile-value">${value}</span><span class="stat-tile-label">${label}</span></div>`;
-
-  return `
-  <div class="stat-tile-grid">
-    ${tile(String(t.gamesPlayed), "Ottelut")}
-    ${tile(String(t.wins ?? 0), "Voitot")}
-    ${tile((t.savePctg ?? 0).toFixed(3), "Torjunta-%")}
-    ${tile((t.goalsAgainstAvg ?? 0).toFixed(2), "GAA")}
-    ${tile(String(t.shutouts ?? 0), "Nollapelit")}
-  </div>`;
-}
-
 // Shared row shape for every place a skater's SeasonTotal needs to be one
 // table row: each row (and the total row) of the season-history table, and
 // the one-row "Ottelut" summary. rowClass defaults to "total-row" (the
@@ -174,37 +138,23 @@ function renderGoalieStatRow(label: string, t: SeasonTotal, rowClass = "total-ro
       </tr>`;
 }
 
-// "Kausi <newest>" and "Uran tilastot" together, rendered twice: a tile
-// grid per period (unchanged look, shown under ~860px -- same breakpoint
-// the sidebar already switches on) and, for wider screens, ONE combined
-// table with a row per period sharing one set of column headers -- closer
-// to how NHL.com's own player page lays these two out side by side on
-// desktop. Both renderings read the exact same tile/row helpers used
-// elsewhere on this page, so the numbers can't drift between the two.
-// Pure CSS toggle (.stat-period-tiles/.stat-period-table), no JS.
+// "Kausi <newest>" and "Uran tilastot" together, as one small table with a
+// row per period sharing one set of column headers -- same .stats-table
+// look (and the same horizontal-scroll-on-mobile behavior via
+// .stats-table-wrap) as every other stats table on this page, instead of
+// the big-number tile grid this used to be.
 function renderPeriodStatsSection(isGoalie: boolean, periods: { label: string; total: SeasonTotal }[]): string {
   if (!periods.length) return "";
 
-  const tileFn = isGoalie ? renderGoalieStatTiles : renderSkaterStatTiles;
   const rowFn = isGoalie ? renderGoalieStatRow : renderSkaterTotalRow;
   const headerCells = isGoalie
     ? `<th>Ottelut</th><th>Voitot</th><th>SV%</th><th>GAA</th><th>NP</th>`
     : `<th>Ottelut</th><th>M</th><th>S</th><th>P</th><th>+/-</th><th>JH</th><th>TOI/GP</th>`;
 
-  const tileSections = periods
-    .map(
-      (p) => `
-<section class="stat-period-tiles">
-  <h2 class="section-title">${escapeHtml(p.label)}</h2>
-  ${tileFn(p.total)}
-</section>`,
-    )
-    .join("");
-
   const tableRows = periods.map((p) => rowFn(p.label, p.total, "")).join("");
 
-  return `${tileSections}
-<section class="stat-period-table">
+  return `
+<section class="player-period-stats">
   <div class="stats-table-wrap">
     <table class="stats-table">
       <thead>

@@ -67,28 +67,43 @@ function renderDivisionTable(division: StandingsRow[], teamAbbrev: string): stri
 </section>`;
 }
 
+// One-row .stats-table, same component every other stats table on the
+// site uses (incl. this page's own roster/division tables right below
+// it), instead of the big-number tile grid this used to be.
 function renderSeasonStats(stats: TeamSeasonStatsRow | null): string {
   if (!stats) return "";
   const goalDifferential = stats.goals_for - stats.goals_against;
 
-  const tile = (value: string, label: string) => `
-    <div class="stat-tile">
-      <span class="stat-tile-value">${value}</span>
-      <span class="stat-tile-label">${label}</span>
-    </div>`;
-
   return `
 <section>
   <h2 class="section-title">Kausitilastot</h2>
-  <div class="stat-grid">
-    ${tile(`${(stats.power_play_pct * 100).toFixed(1)} %`, "YV%")}
-    ${tile(`${(stats.penalty_kill_pct * 100).toFixed(1)} %`, "AV%")}
-    ${tile(`${(stats.faceoff_pct * 100).toFixed(1)} %`, "Aloitus%")}
-    ${tile(String(stats.goals_for), "Tehdyt maalit")}
-    ${tile(String(stats.goals_against), "Päästetyt maalit")}
-    ${tile(`${goalDifferential > 0 ? "+" : ""}${goalDifferential}`, "Maaliero")}
-    ${tile(stats.shots_for_per_game.toFixed(1), "Laukaukset/ottelu")}
-    ${tile(String(stats.shutouts), "Nollapelit")}
+  <div class="stats-table-wrap">
+    <table class="stats-table team-season-stats-table">
+      <thead>
+        <tr>
+          <th>YV%</th>
+          <th>AV%</th>
+          <th>Aloitus%</th>
+          <th>Tehdyt maalit</th>
+          <th>Päästetyt maalit</th>
+          <th>Maaliero</th>
+          <th>Laukaukset/ottelu</th>
+          <th>Nollapelit</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>${(stats.power_play_pct * 100).toFixed(1)} %</td>
+          <td>${(stats.penalty_kill_pct * 100).toFixed(1)} %</td>
+          <td>${(stats.faceoff_pct * 100).toFixed(1)} %</td>
+          <td>${stats.goals_for}</td>
+          <td>${stats.goals_against}</td>
+          <td>${goalDifferential > 0 ? "+" : ""}${goalDifferential}</td>
+          <td>${stats.shots_for_per_game.toFixed(1)}</td>
+          <td>${stats.shutouts}</td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 </section>`;
 }
