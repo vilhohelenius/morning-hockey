@@ -22,7 +22,7 @@ function renderGameRow(game: GameRow): string {
     : `<span class="primetime-score primetime-score-pending">–</span>`;
 
   return `
-    <div class="primetime-row ${game.is_finished ? "is-finished" : ""}">
+    <a class="primetime-row ${game.is_finished ? "is-finished" : ""}" href="/ottelut/${game.game_id}">
       <span class="primetime-time">${time}</span>
       <span class="primetime-matchup">
         <img src="${escapeHtml(game.away_logo)}" alt="" class="schedule-logo" loading="lazy">
@@ -32,7 +32,7 @@ function renderGameRow(game: GameRow): string {
         ${escapeHtml(game.home_abbrev)}
       </span>
       ${score}
-    </div>`;
+    </a>`;
 }
 
 export const onRequestGet: PagesFunction<Env> = async (context) => {

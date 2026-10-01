@@ -73,10 +73,11 @@ export function teamHeroBackgroundStyle(abbrev: string | null | undefined, inclu
   ].join("; ");
 }
 
-// One row of a team's schedule list -- a played game links to its report
-// page and shows the final score/result, an upcoming one shows kickoff
-// time instead. Shared by the team page's own (limited) recent/upcoming
-// sections and the full-season schedule view (/joukkueet/[abbrev]/ottelut).
+// One row of a team's schedule list, linking to that game's /ottelut/[id]
+// page -- a played game shows the final score/result there, an upcoming one
+// gets the preview page instead (both served by the same route). Shared by
+// the team page's own (limited) recent/upcoming sections and the
+// full-season schedule view (/joukkueet/[abbrev]/ottelut).
 export function renderGameRow(game: GameRow, teamAbbrev: string, played: boolean): string {
   const isHome = game.home_abbrev === teamAbbrev;
   const teamScore = isHome ? game.home_score : game.away_score;
@@ -102,9 +103,7 @@ export function renderGameRow(game: GameRow, teamAbbrev: string, played: boolean
             })()}</span>`
       }`;
 
-  return played
-    ? `<a class="schedule-row schedule-row-link" href="/ottelut/${game.game_id}">${inner}</a>`
-    : `<div class="schedule-row">${inner}</div>`;
+  return `<a class="schedule-row schedule-row-link" href="/ottelut/${game.game_id}">${inner}</a>`;
 }
 
 // The star-shaped favorite toggle in a hero banner's top-right corner

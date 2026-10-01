@@ -187,7 +187,7 @@ function renderUpcomingCell(game: GameRow): string {
   const { hour, minute } = helsinkiParts(game.start_time_utc);
   const time = `${hour}:${String(minute).padStart(2, "0")}`;
   return `
-<div class="upcoming-cell">
+<a class="upcoming-cell" href="/ottelut/${game.game_id}">
   <div class="upcoming-teams">
     <img src="${escapeHtml(game.away_logo)}" alt="" class="upcoming-logo" loading="lazy">
     <span class="dash">–</span>
@@ -195,7 +195,7 @@ function renderUpcomingCell(game: GameRow): string {
   </div>
   <div class="upcoming-abbrevs">${escapeHtml(game.away_abbrev)} – ${escapeHtml(game.home_abbrev)}</div>
   <div class="upcoming-time">${time}</div>
-</div>`;
+</a>`;
 }
 
 export const onRequestGet: PagesFunction<Env> = async (context) => {

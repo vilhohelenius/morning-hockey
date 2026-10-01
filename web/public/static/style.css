@@ -604,6 +604,8 @@ main {
   border-radius: 12px;
   padding: 10px 8px;
   text-align: center;
+  text-decoration: none;
+  cursor: pointer;
 }
 
 .upcoming-teams {
@@ -2489,6 +2491,8 @@ main {
   border-radius: 12px;
   font-size: 0.9rem;
   margin-bottom: 6px;
+  text-decoration: none;
+  cursor: pointer;
 }
 
 .primetime-row.is-finished {

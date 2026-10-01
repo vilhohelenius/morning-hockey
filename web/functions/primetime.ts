@@ -56,7 +56,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       : `<span class="primetime-score primetime-score-pending">–</span>`;
 
     body += `
-  <div class="primetime-row ${game.is_finished ? "is-finished" : ""}">
+  <a class="primetime-row ${game.is_finished ? "is-finished" : ""}" href="/ottelut/${game.game_id}">
     <span class="primetime-time">${time}</span>
     <span class="primetime-matchup">
       <img src="${escapeHtml(game.away_logo)}" alt="" class="schedule-logo" loading="lazy">
@@ -66,7 +66,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       ${escapeHtml(game.home_abbrev)}
     </span>
     ${score}
-  </div>`;
+  </a>`;
   }
   if (dayIndex >= 0) body += `</div>`;
 
