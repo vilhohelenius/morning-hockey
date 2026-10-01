@@ -1957,8 +1957,12 @@ main {
 }
 
 .spoiler-score-row {
+  display: block;
   pointer-events: none;
   opacity: 0.6;
+  padding: 8px 6px;
+  margin: 0 -6px;
+  border-radius: 10px;
 }
 
 .spoiler-reveal-toggle:checked ~ .spoiler-score-row {
@@ -1966,11 +1970,24 @@ main {
   opacity: 1;
 }
 
+.spoiler-reveal-toggle:checked ~ .spoiler-score-row:hover,
+.spoiler-reveal-toggle:checked ~ .spoiler-score-row:focus-visible {
+  background: var(--bg);
+}
+
 .spoiler-reveal-hint {
   display: none;
 }
 
-.spoiler-reveal-toggle:checked ~ .spoiler-reveal-hint {
+.spoiler-score-row .spoiler-reveal-hint {
+  margin: 10px 0 10px;
+  padding: 6px 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.spoiler-reveal-toggle:checked ~ .spoiler-score-row .spoiler-reveal-hint {
   display: block;
 }
 

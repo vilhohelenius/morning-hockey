@@ -44,18 +44,20 @@ function renderSpoilerGame(game: GameRow, youtubeUrl: string | null): string {
     <span class="spoiler-check-text">Merkitse nähdyksi, kun olet katsonut highlightit</span>
   </label>
 
-  <div class="score-row spoiler-score-row game-card-trigger" data-game-id="${game.game_id}" data-away-score="${game.away_score}" data-home-score="${game.home_score}" tabindex="-1" role="button" aria-expanded="false">
-    <div class="team away">
-      <img src="${escapeHtml(game.away_logo)}" alt="" class="logo" loading="lazy">
-      <span class="abbrev">${escapeHtml(game.away_abbrev)}</span>
+  <div class="spoiler-score-row game-card-trigger" data-game-id="${game.game_id}" data-away-score="${game.away_score}" data-home-score="${game.home_score}" tabindex="-1" role="button" aria-expanded="false">
+    <div class="score-row">
+      <div class="team away">
+        <img src="${escapeHtml(game.away_logo)}" alt="" class="logo" loading="lazy">
+        <span class="abbrev">${escapeHtml(game.away_abbrev)}</span>
+      </div>
+      <div class="score spoiler-placeholder">?–?</div>
+      <div class="team home">
+        <span class="abbrev">${escapeHtml(game.home_abbrev)}</span>
+        <img src="${escapeHtml(game.home_logo)}" alt="" class="logo" loading="lazy">
+      </div>
     </div>
-    <div class="score spoiler-placeholder">?–?</div>
-    <div class="team home">
-      <span class="abbrev">${escapeHtml(game.home_abbrev)}</span>
-      <img src="${escapeHtml(game.home_logo)}" alt="" class="logo" loading="lazy">
-    </div>
+    <p class="game-card-hint spoiler-reveal-hint">Näytä tulos ▾</p>
   </div>
-  <p class="game-card-hint spoiler-reveal-hint">Näytä tulos ▾</p>
 
   ${youtubeUrl ? `<a class="game-card-youtube" href="${escapeHtml(youtubeUrl)}" target="_blank" rel="noopener">▶ Highlightit (YouTube)</a>` : ""}
 </div>`;
