@@ -13,7 +13,14 @@
 // (confirmed -- landing() has nothing resembling it), so that part of the
 // ask is simply not available from this data source.
 
-import { escapeHtml, nationalityFlag, seasonLabel, shortDate, teamLogoUrl } from "../_shared/format";
+import {
+  escapeHtml,
+  nationalityFlag,
+  seasonLabel,
+  shortDate,
+  teamHeroBackgroundStyle,
+  teamLogoUrl,
+} from "../_shared/format";
 import { renderLayout } from "../_shared/layout";
 import type { Env } from "../_shared/types";
 
@@ -515,7 +522,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   const content = `
 <a class="back-link js-back" href="/">← Takaisin</a>
 
-<header class="page-header player-card-header">
+<header class="page-header player-card-header hero-banner" style="${escapeHtml(teamHeroBackgroundStyle(landing.currentTeamAbbrev))}">
   <img src="${escapeHtml(landing.headshot ?? "")}" alt="" class="player-card-photo" onerror="this.style.visibility='hidden'">
   <h1>${escapeHtml(name)}</h1>
   ${landing.birthCountry ? `<p class="subtitle">${nationalityFlag(landing.birthCountry)} ${escapeHtml(landing.birthCity?.default ?? "")}, ${escapeHtml(landing.birthCountry)}</p>` : ""}

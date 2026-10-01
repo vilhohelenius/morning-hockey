@@ -27,6 +27,29 @@ export function teamLogoUrl(abbrev: string): string {
   return `https://assets.nhle.com/logos/nhl/svg/${abbrev}_light.svg`;
 }
 
+// The header background NHL.com's own player pages use behind the
+// headshot -- confirmed via live DOM inspection of nhl.com, not guessed:
+// a darkening vignette, the team's "wires" crest (an outline-style
+// secondary/alternate logo, e.g. Chicago's crossed tomahawks rather than
+// the primary Indian-head logo -- already team-colored and semi-
+// transparent via its own SVG stroke/opacity attributes), a fade-to-black,
+// and a tileable jersey-texture PNG that is itself already solid team
+// color (confirmed by inspecting its pixels) -- so no separate CSS
+// background-color layer is needed on top. Both asset URLs are general,
+// abbrev-keyed CDN paths (verified 200 OK for several teams), same style
+// as teamLogoUrl above.
+export function teamHeroBackgroundStyle(abbrev: string | null | undefined): string {
+  if (!abbrev) return "";
+  const wires = `https://assets.nhle.com/logos/nhl/wires/${abbrev}.svg`;
+  const texture = `https://assets.nhle.com/textures/nhl/jersey/png/${abbrev}.png`;
+  return [
+    `background-image: radial-gradient(50% 100% at 50% 0%, rgba(0,0,0,0) 0%, rgba(0,0,0,0.65) 100%), url("${wires}"), linear-gradient(rgba(0,0,0,0) 0%, rgb(0,0,0) 100%), url("${texture}")`,
+    `background-size: auto, 400px auto, auto, 42px 42px`,
+    `background-position: 0% 0%, 50% 50%, 0% 0%, 0% 0%`,
+    `background-repeat: repeat, no-repeat, repeat, repeat`,
+  ].join("; ");
+}
+
 const WEEKDAYS = ["maanantai", "tiistai", "keskiviikko", "torstai", "perjantai", "lauantai", "sunnuntai"];
 
 export function humanDate(dateStr: string): string {

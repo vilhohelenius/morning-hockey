@@ -755,6 +755,25 @@ main {
   margin-bottom: 8px;
 }
 
+/* ---------- Team-colored hero background (player card + team page) ----------
+   The background-image/size/position/repeat declarations themselves come
+   from an inline style="" attribute (teamHeroBackgroundStyle() in
+   _shared/format.ts), since they're keyed by team abbreviation -- this
+   class only carries the fixed layout, which is the same regardless of
+   team. The composite background is always dark by construction (it ends
+   in a fade to black), so headings/subtitles inside it are pinned to
+   white rather than the theme's --text/--muted, in both light and dark
+   mode. */
+.hero-banner {
+  border-radius: 16px;
+  padding: 18px 12px 14px;
+}
+
+.hero-banner h1,
+.hero-banner .subtitle {
+  color: #fff;
+}
+
 .section-title {
   font-size: 0.85rem;
   text-transform: uppercase;
