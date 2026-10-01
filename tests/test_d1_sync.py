@@ -393,6 +393,7 @@ ROSTER_SKATER = RosterSkater(
 ROSTER_GOALIE = RosterGoalie(
     player_id=6,
     name="Petr Mrazek",
+    nationality="CZE",
     sweater_number=34,
     headshot="mrazek.png",
     games_played=3,
@@ -427,8 +428,9 @@ def test_sync_team_rosters_replaces_the_whole_table_across_every_team():
     goalie_params = session.calls[3]["json"]["params"]
     assert goalie_params[0] == 6
     assert goalie_params[1] == "CHI"
-    assert goalie_params[10] == 0.889  # save_pct
-    assert goalie_params[11] == 1  # shutouts
+    assert goalie_params[3] == "CZE"  # nationality
+    assert goalie_params[11] == 0.889  # save_pct
+    assert goalie_params[12] == 1  # shutouts
 
 
 SEASON_STATS = SeasonStats(

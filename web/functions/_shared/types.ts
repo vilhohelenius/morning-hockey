@@ -219,6 +219,7 @@ export interface TeamRosterGoalieRow {
   player_id: number;
   team_abbrev: string;
   name: string;
+  nationality: string;
   sweater_number: number;
   headshot: string;
   games_played: number;

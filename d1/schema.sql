@@ -344,6 +344,14 @@ CREATE INDEX IF NOT EXISTS idx_team_roster_goalies_team ON team_roster_goalies(t
 -- next slow-tier sync (delete+reinsert, every 4h) overwrites every row.
 ALTER TABLE team_roster_goalies ADD COLUMN shutouts INTEGER NOT NULL DEFAULT 0;
 
+-- Added 2026-10-01 for the home page search results (haku/pelaajat.ts) and
+-- the team page's goalie roster table, matching team_roster_skaters'
+-- nationality column above. Same source (birthCountry on the roster payload
+-- team.py's _build_goalies already reads) -- no extra API call. DEFAULT ''
+-- only matters until the next slow-tier sync (delete+reinsert, every 4h)
+-- overwrites every row.
+ALTER TABLE team_roster_goalies ADD COLUMN nationality TEXT NOT NULL DEFAULT '';
+
 -- Team-level season stats (PP%/PK%/faceoff%/shots), for the team page's
 -- "Kausitilastot" stat grid -- flagged as missing since phase 3, closed
 -- here alongside the roster sync since both come from the same per-team

@@ -59,27 +59,15 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       .all<TeamRosterGoalieRow>(),
   ]);
 
-  // Goalies carry no nationality column (see d1/schema.sql) -- their flag
-  // is just left off rather than faked; nationalityFlag("") already
-  // returns "" for an unmapped code, so renderResult needs no extra branch.
-  const results: SearchResult[] = [
-    ...skaters.map((r) => ({
+  const results: SearchResult[] = [...skaters, ...goalies]
+    .map((r) => ({
       player_id: r.player_id,
       team_abbrev: r.team_abbrev,
       name: r.name,
       sweater_number: r.sweater_number,
       headshot: r.headshot,
       nationality: r.nationality,
-    })),
-    ...goalies.map((r) => ({
-      player_id: r.player_id,
-      team_abbrev: r.team_abbrev,
-      name: r.name,
-      sweater_number: r.sweater_number,
-      headshot: r.headshot,
-      nationality: "",
-    })),
-  ]
+    }))
     .sort((a, b) => a.name.localeCompare(b.name, "fi"))
     .slice(0, RESULTS_LIMIT);
 
