@@ -43,6 +43,26 @@
     });
   });
 
+  // Player card's regular season/playoffs toggle -- same pill + is-hidden
+  // pattern as the day-picker above, just keyed on data-game-type instead
+  // of data-date.
+  document.querySelectorAll(".season-type-picker").forEach(function (picker) {
+    var pills = picker.querySelectorAll(".day-pill");
+    var sections = document.querySelectorAll(".season-history-section");
+
+    pills.forEach(function (pill) {
+      pill.addEventListener("click", function () {
+        pills.forEach(function (p) {
+          p.classList.remove("active");
+        });
+        pill.classList.add("active");
+        sections.forEach(function (section) {
+          section.classList.toggle("is-hidden", section.dataset.gameType !== pill.dataset.gameType);
+        });
+      });
+    });
+  });
+
   // "Back" buttons on pages reached by navigating forward from somewhere
   // else: prefer real browser history over a fixed destination, since a
   // page can be reached from several different places (e.g. a game report

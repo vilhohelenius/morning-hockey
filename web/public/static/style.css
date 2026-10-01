@@ -1842,3 +1842,15 @@ main {
 .schedule-day-section.is-hidden {
   display: none;
 }
+
+/* ---------- Player card: season-by-season history toggle ---------- */
+
+.season-type-picker {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.season-history-section.is-hidden {
+  display: none;
+}

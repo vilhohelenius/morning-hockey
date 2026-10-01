@@ -112,6 +112,7 @@ function renderSkaterCareerStats(t: SeasonTotal): string {
     ${tile(String(t.points ?? 0), "Pisteet")}
     ${tile(`${(t.plusMinus ?? 0) > 0 ? "+" : ""}${t.plusMinus ?? 0}`, "+/-")}
     ${tile(String(t.pim ?? 0), "Jäähyminuutit")}
+    ${tile(t.avgToi ? escapeHtml(t.avgToi) : "–", "TOI/GP")}
   </div>`;
 }
 
@@ -188,6 +189,122 @@ function renderSkaterGameLog(games: any[], seasonTotal: SeasonTotal | null): str
   </div>`;
 }
 
+// Closest thing the public landing endpoint has to NHL.com's player-page
+// "Notes & Transactions" section: draftDetails (year/team/round/pick). The
+// real transaction/news feed (signings, trades, waivers) isn't part of this
+// API as far as this project's existing NHL API usage goes -- it's sourced
+// from NHL.com's own editorial CMS, not api-web.nhle.com. Every field is
+// read defensively so an undrafted player (no draftDetails at all) or an
+// unexpected shape just skips the section instead of rendering "undefined".
+function renderDraftInfo(draft: any): string {
+  if (!draft?.year) return "";
+  const parts = [String(draft.year)];
+  if (draft.teamAbbrev) parts.push(escapeHtml(draft.teamAbbrev));
+  if (draft.round && draft.pickInRound) parts.push(`kierros ${draft.round}, valinta ${draft.pickInRound}`);
+  if (draft.overallPick) parts.push(`${draft.overallPick}. kokonaisuudessaan`);
+
+  return `
+<section>
+  <h2 class="section-title">Draft</h2>
+  <p class="subtitle">${parts.join(" · ")}</p>
+</section>`;
+}
+
+function renderSkaterSeasonHistory(rows: SeasonTotal[]): string {
+  if (!rows.length) return `<p class="empty-note">Ei NHL-kausia.</p>`;
+
+  const trs = rows
+    .map(
+      (t) => `
+      <tr>
+        <td>${escapeHtml(seasonLabel(t.season))}</td>
+        <td>${t.gamesPlayed}</td>
+        <td>${t.goals ?? 0}</td>
+        <td>${t.assists ?? 0}</td>
+        <td class="stat-strong">${t.points ?? 0}</td>
+        <td>${(t.plusMinus ?? 0) > 0 ? "+" : ""}${t.plusMinus ?? 0}</td>
+        <td>${t.pim ?? 0}</td>
+        <td>${t.avgToi ? escapeHtml(t.avgToi) : "–"}</td>
+      </tr>`,
+    )
+    .join("");
+
+  return `
+  <div class="stats-table-wrap">
+    <table class="stats-table">
+      <thead>
+        <tr>
+          <th>Kausi</th>
+          <th>Ottelut</th>
+          <th>M</th>
+          <th>S</th>
+          <th>P</th>
+          <th>+/-</th>
+          <th>JH</th>
+          <th>TOI/GP</th>
+        </tr>
+      </thead>
+      <tbody>${trs}</tbody>
+    </table>
+  </div>`;
+}
+
+function renderGoalieSeasonHistory(rows: SeasonTotal[]): string {
+  if (!rows.length) return `<p class="empty-note">Ei NHL-kausia.</p>`;
+
+  const trs = rows
+    .map(
+      (t) => `
+      <tr>
+        <td>${escapeHtml(seasonLabel(t.season))}</td>
+        <td>${t.gamesPlayed}</td>
+        <td>${t.wins ?? 0}</td>
+        <td class="stat-strong">${(t.savePctg ?? 0).toFixed(3)}</td>
+        <td>${(t.goalsAgainstAvg ?? 0).toFixed(2)}</td>
+        <td>${t.shutouts ?? 0}</td>
+      </tr>`,
+    )
+    .join("");
+
+  return `
+  <div class="stats-table-wrap">
+    <table class="stats-table">
+      <thead>
+        <tr>
+          <th>Kausi</th>
+          <th>Ottelut</th>
+          <th>Voitot</th>
+          <th>SV%</th>
+          <th>GAA</th>
+          <th>NP</th>
+        </tr>
+      </thead>
+      <tbody>${trs}</tbody>
+    </table>
+  </div>`;
+}
+
+// Regular season/playoffs toggle: same pill-button + is-hidden pattern as
+// Otteluohjelma's day-picker (app.js), just targeting .season-history-
+// section instead of .schedule-day-section. Both tables render server-side
+// up front; the toggle only ever flips which one is visible, no re-fetch.
+function renderSeasonHistorySection(isGoalie: boolean, regularSeasonRows: SeasonTotal[], playoffRows: SeasonTotal[]): string {
+  if (!regularSeasonRows.length && !playoffRows.length) return "";
+
+  const render = isGoalie ? renderGoalieSeasonHistory : renderSkaterSeasonHistory;
+
+  return `
+<section>
+  <h2 class="section-title">Uran tilastot kausittain</h2>
+  <div class="season-type-picker">
+    <button type="button" class="day-pill active" data-game-type="2">Runkosarja</button>
+    <button type="button" class="day-pill" data-game-type="3">Playoffs</button>
+  </div>
+  <div class="season-history-section" data-game-type="2">${render(regularSeasonRows)}</div>
+  <div class="season-history-section is-hidden" data-game-type="3">${render(playoffRows)}</div>
+</section>`;
+}
+
 function renderGoalieGameLog(games: any[]): string {
   const rows = games
     .map((g) => {
@@ -256,6 +373,11 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   const seasonTotal = seasonTotals.find((s) => s.season === selectedSeason) ?? null;
   const careerTotal: SeasonTotal | null = landing.careerTotals?.regularSeason ?? null;
 
+  const regularSeasonHistory = [...seasonTotals].sort((a, b) => b.season - a.season);
+  const playoffHistory: SeasonTotal[] = (landing.seasonTotals ?? [])
+    .filter((s: SeasonTotal) => s.leagueAbbrev === "NHL" && s.gameTypeId === 3)
+    .sort((a: SeasonTotal, b: SeasonTotal) => b.season - a.season);
+
   let gameLogHtml = "";
   try {
     const gameLog = await fetchJson(`/player/${playerId}/game-log/${selectedSeason}/2`);
@@ -297,6 +419,8 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   </div>
 </section>
 
+${renderDraftInfo(landing.draftDetails)}
+
 ${
   careerTotal
     ? `<section>
@@ -305,6 +429,8 @@ ${
 </section>`
     : ""
 }
+
+${renderSeasonHistorySection(isGoalie, regularSeasonHistory, playoffHistory)}
 
 <section>
   <h2 class="section-title">Kauden tilastot</h2>
