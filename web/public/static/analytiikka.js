@@ -35,20 +35,34 @@
     container.appendChild(empty);
   }
 
-  // Endpoint logos are placed at each line's final (gamesPlayed, points), but
-  // teams tied on points would otherwise draw logos on top of each other --
-  // one forward pass nudges later (in sort order) logos down just enough to
-  // keep them readable.
+  // Endpoint logos are placed at each line's final (gamesPlayed, points).
+  // Teams tied on points but far apart in games played sit nowhere near each
+  // other on screen, so overlap only matters when a pair is close in BOTH x
+  // and y -- comparing y alone (as an earlier version of this did) pushed a
+  // leader's logo down into empty space just because some other team, many
+  // games behind, happened to reach the same points total. Processed in y
+  // order (top first) so a push-down can cascade onto a point it now
+  // collides with that it didn't originally.
   function declutter(endpoints, minGap) {
+    var placed = [];
     endpoints
       .slice()
       .sort(function (a, b) {
         return a.y - b.y;
       })
-      .forEach(function (point, i, sorted) {
-        if (i === 0) return;
-        var prev = sorted[i - 1];
-        if (point.y - prev.y < minGap) point.y = prev.y + minGap;
+      .forEach(function (point) {
+        var collided = true;
+        while (collided) {
+          collided = false;
+          for (var i = 0; i < placed.length; i++) {
+            var other = placed[i];
+            if (Math.abs(point.x - other.x) < minGap && point.y - other.y < minGap) {
+              point.y = other.y + minGap;
+              collided = true;
+            }
+          }
+        }
+        placed.push(point);
       });
   }
 
@@ -133,6 +147,25 @@
         .attr("stroke", color(team.abbrev))
         .attr("stroke-width", 2)
         .attr("d", line);
+
+      // A small dot on every actual game (not the synthetic 0-games start
+      // point) so the line reads as "one point of accumulation per game",
+      // not just a smooth trend.
+      svg
+        .append("g")
+        .selectAll("circle")
+        .data(team.series.map(function (p, i) {
+          return { gamesPlayed: i + 1, points: p.points };
+        }))
+        .join("circle")
+        .attr("r", 3)
+        .attr("fill", color(team.abbrev))
+        .attr("cx", function (p) {
+          return x(p.gamesPlayed);
+        })
+        .attr("cy", function (p) {
+          return y(p.points);
+        });
 
       var last = seriesWithStart[seriesWithStart.length - 1];
       return { team: team, x: x(last.gamesPlayed), y: y(last.points) };
