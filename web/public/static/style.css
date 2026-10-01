@@ -785,13 +785,14 @@ main {
   letter-spacing: 0.02em;
 }
 
-/* Player card's "Uran tilastot" (career totals) tiles -- reuses .stat-tile
-   itself unchanged (same card look as the bio grid above it), just a
-   different wrapper: skaters have 6 tiles, goalies 5, and .stat-grid's
-   fixed 2 columns was sized for the bio grid's always-4. auto-fit instead
-   of a fixed column count so there's never an awkward half-empty last row
-   at either tile count. */
-.career-stat-grid {
+/* Player card's tile-grid stat sections -- "Uran tilastot" (career totals,
+   skaters/goalies) and the goalie season total (which has its own tile
+   section instead of a game-log table row, see renderGoalieStatTiles).
+   Reuses .stat-tile unchanged (same card look as the bio grid above it),
+   just a different wrapper: tile counts vary (5-6), and .stat-grid's fixed
+   2 columns was sized for the bio grid's always-4. auto-fit instead of a
+   fixed column count so there's never an awkward half-empty last row. */
+.stat-tile-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
   gap: 8px;
