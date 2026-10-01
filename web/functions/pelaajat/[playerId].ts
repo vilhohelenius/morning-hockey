@@ -13,9 +13,11 @@
 // (confirmed -- landing() has nothing resembling it), so that part of the
 // ask is simply not available from this data source.
 
+import { currentUsername } from "../_shared/auth";
 import {
   escapeHtml,
   nationalityFlag,
+  renderFavStar,
   seasonLabel,
   shortDate,
   teamHeroBackgroundStyle,
@@ -523,10 +525,27 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
   const age = landing.birthDate ? ageFromBirthDate(landing.birthDate) : null;
 
+  const username = currentUsername(context.request);
+  const isFavoritePlayer = username
+    ? !!(await context.env.DB.prepare("SELECT 1 FROM favorite_players WHERE username = ? AND player_id = ?")
+        .bind(username, playerId)
+        .first())
+    : false;
+
   const content = `
 <a class="back-link js-back" href="/">← Takaisin</a>
 
 <header class="page-header player-card-header hero-banner" style="${escapeHtml(teamHeroBackgroundStyle(landing.currentTeamAbbrev))}">
+  ${
+    username
+      ? renderFavStar({
+          formAction: "/omat/favorites/players",
+          hiddenFields: { player_id: String(playerId), is_goalie: isGoalie ? "1" : "0" },
+          isFavorite: isFavoritePlayer,
+          redirectTo: `/pelaajat/${playerId}`,
+        })
+      : ""
+  }
   <h1>${escapeHtml(name)}</h1>
   <p class="player-hero-meta">
     ${landing.birthCountry ? `<span>${nationalityFlag(landing.birthCountry)}</span>` : ""}

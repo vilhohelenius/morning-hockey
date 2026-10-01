@@ -16,7 +16,8 @@
 // someone visits it, unlike the original team.html, which only linked
 // games nightly-digest.yml happened to pre-build a report for.
 
-import { escapeHtml, helsinkiParts, shortDate, teamHeroBackgroundStyle } from "../_shared/format";
+import { currentUsername } from "../_shared/auth";
+import { escapeHtml, helsinkiParts, renderFavStar, shortDate, teamHeroBackgroundStyle } from "../_shared/format";
 import { renderRosterGoalieTable, renderRosterSkaterTable } from "../_shared/leaderboard";
 import { renderLayout } from "../_shared/layout";
 import type {
@@ -174,10 +175,25 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     .bind(abbrev)
     .all<TeamRosterGoalieRow>();
 
+  const username = currentUsername(context.request);
+  const isFavoriteTeam = username
+    ? !!(await db.prepare("SELECT 1 FROM favorite_teams WHERE username = ? AND team_abbrev = ?").bind(username, abbrev).first())
+    : false;
+
   const content = `
 <a class="back-link js-back" href="/sarjataulukko">← Takaisin</a>
 
 <header class="page-header team-page-header hero-banner" style="${escapeHtml(teamHeroBackgroundStyle(abbrev))}">
+  ${
+    username
+      ? renderFavStar({
+          formAction: "/omat/favorites/teams",
+          hiddenFields: { abbrev },
+          isFavorite: isFavoriteTeam,
+          redirectTo: `/joukkueet/${abbrev.toLowerCase()}`,
+        })
+      : ""
+  }
   <img src="${escapeHtml(team.logo)}" alt="" class="team-hero-logo">
   <h1>${escapeHtml(team.name)}</h1>
   <p class="subtitle">

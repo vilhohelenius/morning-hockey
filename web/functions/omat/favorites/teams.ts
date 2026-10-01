@@ -1,6 +1,8 @@
-// Favorite-team toggle. Plain form POST (no client JS), redirects back to
-// /omat -- consistent with the rest of this site staying dependency-free
-// vanilla markup, and simplest to verify without a browser.
+// Favorite-team toggle. Plain form POST, progressively enhanced by app.js
+// (see data-fav-toggle) into a no-navigation toggle for the hero-banner
+// star on team pages; without JS (or for /omat's own favorites list, which
+// doesn't send redirect_to) it redirects back to wherever the form says,
+// defaulting to /omat.
 
 import { currentUsername } from "../../_shared/auth";
 import type { Env } from "../../_shared/types";
@@ -26,5 +28,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       .run();
   }
 
-  return new Response(null, { status: 303, headers: { Location: "/omat" } });
+  const redirectTo = String(form.get("redirect_to") ?? "");
+  const location = redirectTo.startsWith("/") && !redirectTo.startsWith("//") ? redirectTo : "/omat";
+  return new Response(null, { status: 303, headers: { Location: location } });
 };

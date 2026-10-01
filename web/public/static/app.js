@@ -714,4 +714,39 @@
       refreshTable(table);
     });
   });
+
+  // Hero-banner favorite star (player/team pages): progressively enhances
+  // the plain add/remove form into an instant toggle with no page
+  // navigation. redirect: "manual" means the POST's 303 response is never
+  // followed (its body/Location are irrelevant here) -- the mutation has
+  // already happened server-side by the time the response comes back, so
+  // "opaqueredirect" counts as success same as any 2xx would.
+  document.querySelectorAll("form[data-fav-toggle]").forEach(function (form) {
+    var button = form.querySelector(".hero-fav-star");
+    var actionInput = form.querySelector('input[name="action"]');
+    if (!button || !actionInput) return;
+
+    form.addEventListener("submit", function (event) {
+      event.preventDefault();
+      if (button.disabled) return;
+      button.disabled = true;
+
+      var wasFav = actionInput.value === "remove";
+      fetch(form.action, { method: "POST", body: new FormData(form), redirect: "manual" })
+        .then(function (response) {
+          if (response.type !== "opaqueredirect" && !response.ok) throw new Error("fav toggle failed");
+          var nowFav = !wasFav;
+          actionInput.value = nowFav ? "remove" : "add";
+          button.classList.toggle("is-fav", nowFav);
+          button.setAttribute("aria-pressed", String(nowFav));
+          button.setAttribute("aria-label", nowFav ? "Poista suosikeista" : "Lisää suosikkeihin");
+        })
+        .catch(function () {
+          form.submit();
+        })
+        .finally(function () {
+          button.disabled = false;
+        });
+    });
+  });
 })();

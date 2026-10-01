@@ -1,4 +1,5 @@
-// Favorite-player toggle. Same plain-form-POST shape as favorites/teams.ts.
+// Favorite-player toggle. Same plain-form-POST shape (and redirect_to
+// handling) as favorites/teams.ts.
 
 import { currentUsername } from "../../_shared/auth";
 import type { Env } from "../../_shared/types";
@@ -25,5 +26,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       .run();
   }
 
-  return new Response(null, { status: 303, headers: { Location: "/omat" } });
+  const redirectTo = String(form.get("redirect_to") ?? "");
+  const location = redirectTo.startsWith("/") && !redirectTo.startsWith("//") ? redirectTo : "/omat";
+  return new Response(null, { status: 303, headers: { Location: location } });
 };

@@ -62,6 +62,31 @@ export function teamHeroBackgroundStyle(abbrev: string | null | undefined, inclu
   ].join("; ");
 }
 
+// The star-shaped favorite toggle in a hero banner's top-right corner
+// (player/team pages). A plain form (works with no JS, redirecting back to
+// redirectTo via the POST handler's redirect_to field) that app.js
+// progressively enhances into an instant, no-navigation toggle -- same
+// add/remove POST targets /omat's own favorite forms already use, just
+// pointed back at the current page instead of always at /omat.
+export function renderFavStar(options: {
+  formAction: string;
+  hiddenFields: Record<string, string>;
+  isFavorite: boolean;
+  redirectTo: string;
+}): string {
+  const { formAction, hiddenFields, isFavorite, redirectTo } = options;
+  const hidden = Object.entries(hiddenFields)
+    .map(([name, value]) => `<input type="hidden" name="${escapeHtml(name)}" value="${escapeHtml(value)}">`)
+    .join("");
+  return `
+  <form method="post" action="${escapeHtml(formAction)}" class="hero-fav-form" data-fav-toggle>
+    ${hidden}
+    <input type="hidden" name="action" value="${isFavorite ? "remove" : "add"}">
+    <input type="hidden" name="redirect_to" value="${escapeHtml(redirectTo)}">
+    <button type="submit" class="hero-fav-star${isFavorite ? " is-fav" : ""}" aria-pressed="${isFavorite}" aria-label="${isFavorite ? "Poista suosikeista" : "Lisää suosikkeihin"}">★</button>
+  </form>`;
+}
+
 const WEEKDAYS = ["maanantai", "tiistai", "keskiviikko", "torstai", "perjantai", "lauantai", "sunnuntai"];
 
 export function humanDate(dateStr: string): string {

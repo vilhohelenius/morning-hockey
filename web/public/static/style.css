@@ -744,6 +744,10 @@ main {
   text-align: left;
 }
 
+.player-card-header h1 {
+  padding-right: 44px;
+}
+
 .player-hero-meta {
   display: flex;
   align-items: center;
@@ -791,6 +795,7 @@ main {
    white rather than the theme's --text/--muted, in both light and dark
    mode. */
 .hero-banner {
+  position: relative;
   border-radius: 16px;
   padding: 18px 12px 14px;
 }
@@ -799,6 +804,41 @@ main {
 .hero-banner .subtitle,
 .hero-banner .player-hero-meta {
   color: #fff;
+}
+
+.hero-fav-form {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+}
+
+.hero-fav-star {
+  background: none;
+  border: none;
+  padding: 4px;
+  font-size: 1.7rem;
+  line-height: 1;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.5);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  transition: color 0.15s ease, transform 0.1s ease;
+}
+
+.hero-fav-star:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.hero-fav-star:active {
+  transform: scale(0.88);
+}
+
+.hero-fav-star.is-fav {
+  color: #ffd43b;
+}
+
+.hero-fav-star.is-fav:hover {
+  color: #ffe066;
 }
 
 .section-title {
