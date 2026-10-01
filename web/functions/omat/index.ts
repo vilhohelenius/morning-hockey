@@ -218,7 +218,6 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
 <section>
   <h2 class="section-title">Teema</h2>
-  <p class="subtitle">Nykyinen: ${escapeHtml(currentTheme)}</p>
   <div class="table-filters">
     <form method="post" action="/omat/theme">
       <input type="hidden" name="theme" value="light">
