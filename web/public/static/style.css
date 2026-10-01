@@ -1441,6 +1441,13 @@ main {
   border-left: 3px solid #dc2626;
 }
 
+/* On the row's LAST cell, not the first -- row-fin already owns the first
+   cell's left border, so a player who's both Finnish and on a favorite
+   team shows both accents at once instead of one overwriting the other. */
+.row-team-fav td:last-child {
+  border-right: 4px solid var(--team-fav-color, var(--accent));
+}
+
 /* ---------- Standings team info panel ---------- */
 
 .team-trigger {

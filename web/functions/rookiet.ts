@@ -1,6 +1,7 @@
 // Rookie-pörssi, phase 4. Same shape as Tilastot -- reads rookie_season_stats
 // instead of skater_season_stats via the shared leaderboard renderer.
 
+import { favoriteTeamAbbrevs } from "./_shared/auth";
 import { escapeHtml, seasonLabel } from "./_shared/format";
 import { renderSkaterLeaderboard } from "./_shared/leaderboard";
 import { renderLayout } from "./_shared/layout";
@@ -14,6 +15,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     .all<SkaterStatsRow>();
 
   const seasonText = rookies.length ? seasonLabel(rookies[0].season_id) : "";
+  const favTeams = await favoriteTeamAbbrevs(context.request, context.env);
 
   const content = `
 <header class="page-header">
@@ -27,6 +29,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     tableId: "rookie-stats-table",
     rows: rookies,
     emptyMessage: "Ei vielä tilastoituja rookieita tällä kaudella.",
+    favoriteTeamAbbrevs: favTeams,
   })}
 </section>
 `;

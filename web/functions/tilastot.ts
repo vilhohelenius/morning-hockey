@@ -6,6 +6,7 @@
 // _shared/leaderboard.ts is what keeps the initial page small, not a cut
 // at the data source.
 
+import { favoriteTeamAbbrevs } from "./_shared/auth";
 import { escapeHtml, seasonLabel } from "./_shared/format";
 import { renderSkaterLeaderboard } from "./_shared/leaderboard";
 import { renderLayout } from "./_shared/layout";
@@ -19,6 +20,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     .all<SkaterStatsRow>();
 
   const seasonText = skaters.length ? seasonLabel(skaters[0].season_id) : "";
+  const favTeams = await favoriteTeamAbbrevs(context.request, context.env);
 
   const content = `
 <header class="page-header">
@@ -28,7 +30,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 </header>
 
 <section>
-  ${renderSkaterLeaderboard({ tableId: "skater-stats-table", rows: skaters })}
+  ${renderSkaterLeaderboard({ tableId: "skater-stats-table", rows: skaters, favoriteTeamAbbrevs: favTeams })}
 </section>
 `;
 

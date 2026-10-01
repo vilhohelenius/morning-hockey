@@ -11,6 +11,8 @@
 // spoofable by editing it in devtools. That's a deliberate, acknowledged
 // trade-off for a single-digit-friends app, not an oversight.
 
+import type { Env } from "./types";
+
 const SESSION_COOKIE = "mh_user";
 const SESSION_MAX_AGE = 10 * 365 * 24 * 60 * 60; // ~10 years: "stay logged in basically forever"
 
@@ -60,4 +62,19 @@ export function readThemeCookie(request: Request): Theme | null {
 
 export function themeCookieHeader(theme: Theme): string {
   return `${THEME_COOKIE}=${theme}; Path=/; Max-Age=31536000; SameSite=Lax`;
+}
+
+// The signed-in user's favorite team abbrevs, for highlighting their rows
+// in the leaderboard tables (Pistepörssi/Maalivahtipörssi/Rookie-pörssi --
+// see _shared/leaderboard.ts's row-team-fav class). Not logged in -> empty
+// set, same "no highlight" result as any team that just isn't a favorite.
+export async function favoriteTeamAbbrevs(request: Request, env: Env): Promise<Set<string>> {
+  const username = currentUsername(request);
+  if (!username) return new Set();
+
+  const { results } = await env.DB.prepare("SELECT team_abbrev FROM favorite_teams WHERE username = ?")
+    .bind(username)
+    .all<{ team_abbrev: string }>();
+
+  return new Set(results.map((r) => r.team_abbrev));
 }

@@ -7,6 +7,7 @@
 // than duplicated.
 
 import { escapeHtml, formatToi, nationalityFlag } from "./format";
+import { TEAM_COLORS } from "./teamColors";
 import type { GoalieStatsRow, SkaterStatsRow, TeamRosterGoalieRow, TeamRosterSkaterRow } from "./types";
 
 const COLLAPSE_AT = 25;
@@ -65,13 +66,26 @@ function expandToggle(tableId: string, totalRows: number): string {
     : "";
 }
 
-function renderRow(row: SkaterStatsRow, rank: number): string {
-  const rowClasses = [row.nationality === "FIN" ? "row-fin" : "", row.team_abbrev === "CHI" ? "row-chi" : ""]
+// Shared by renderRow/renderGoalieRow: the row-team-fav class + the inline
+// --team-fav-color custom property the CSS rule reads. The color always
+// comes from the fixed TEAM_COLORS map, never from request/user input, so
+// it's safe to drop straight into a style attribute with no escaping.
+function teamFavAttrs(teamAbbrev: string, favoriteTeamAbbrevs: Set<string>): { class: string; style: string } {
+  const isFavTeam = favoriteTeamAbbrevs.has(teamAbbrev);
+  return {
+    class: isFavTeam ? "row-team-fav" : "",
+    style: isFavTeam ? ` style="--team-fav-color:${TEAM_COLORS[teamAbbrev] ?? "var(--accent)"}"` : "",
+  };
+}
+
+function renderRow(row: SkaterStatsRow, rank: number, favoriteTeamAbbrevs: Set<string>): string {
+  const favAttrs = teamFavAttrs(row.team_abbrev, favoriteTeamAbbrevs);
+  const rowClasses = [row.nationality === "FIN" ? "row-fin" : "", row.team_abbrev === "CHI" ? "row-chi" : "", favAttrs.class]
     .filter(Boolean)
     .join(" ");
 
   return `
-      <tr class="${rowClasses}" data-name="${escapeHtml(row.name)}" data-team="${escapeHtml(row.team_abbrev)}"
+      <tr class="${rowClasses}"${favAttrs.style} data-name="${escapeHtml(row.name)}" data-team="${escapeHtml(row.team_abbrev)}"
           data-nationality="${escapeHtml(row.nationality)}"
           data-gp="${row.games_played}" data-goals="${row.goals}" data-assists="${row.assists}"
           data-rank="${rank}" data-position="${escapeHtml(row.position)}">
@@ -97,16 +111,17 @@ export interface LeaderboardOptions {
   tableId: string;
   rows: SkaterStatsRow[];
   emptyMessage?: string;
+  favoriteTeamAbbrevs?: Set<string>;
 }
 
 export function renderSkaterLeaderboard(options: LeaderboardOptions): string {
-  const { tableId, rows, emptyMessage } = options;
+  const { tableId, rows, emptyMessage, favoriteTeamAbbrevs = new Set<string>() } = options;
 
   if (!rows.length && emptyMessage) {
     return `<p class="empty-note">${escapeHtml(emptyMessage)}</p>`;
   }
 
-  const body = rows.map((row, index) => renderRow(row, index + 1)).join("");
+  const body = rows.map((row, index) => renderRow(row, index + 1, favoriteTeamAbbrevs)).join("");
 
   return `
   <div class="table-filters" data-table-id="${tableId}">
@@ -133,11 +148,12 @@ export function renderSkaterLeaderboard(options: LeaderboardOptions): string {
   ${expandToggle(tableId, rows.length)}`;
 }
 
-function renderGoalieRow(row: GoalieStatsRow, rank: number): string {
-  const rowClasses = [row.nationality === "FIN" ? "row-fin" : ""].filter(Boolean).join(" ");
+function renderGoalieRow(row: GoalieStatsRow, rank: number, favoriteTeamAbbrevs: Set<string>): string {
+  const favAttrs = teamFavAttrs(row.team_abbrev, favoriteTeamAbbrevs);
+  const rowClasses = [row.nationality === "FIN" ? "row-fin" : "", favAttrs.class].filter(Boolean).join(" ");
 
   return `
-      <tr class="${rowClasses}" data-name="${escapeHtml(row.name)}" data-team="${escapeHtml(row.team_abbrev)}"
+      <tr class="${rowClasses}"${favAttrs.style} data-name="${escapeHtml(row.name)}" data-team="${escapeHtml(row.team_abbrev)}"
           data-nationality="${escapeHtml(row.nationality)}"
           data-gp="${row.games_played}" data-wins="${row.wins}" data-shutouts="${row.shutouts}"
           data-gaa="${row.goals_against_average}" data-rank="${rank}">
@@ -164,16 +180,17 @@ export interface GoalieLeaderboardOptions {
   tableId: string;
   rows: GoalieStatsRow[];
   emptyMessage?: string;
+  favoriteTeamAbbrevs?: Set<string>;
 }
 
 export function renderGoalieLeaderboard(options: GoalieLeaderboardOptions): string {
-  const { tableId, rows, emptyMessage } = options;
+  const { tableId, rows, emptyMessage, favoriteTeamAbbrevs = new Set<string>() } = options;
 
   if (!rows.length && emptyMessage) {
     return `<p class="empty-note">${escapeHtml(emptyMessage)}</p>`;
   }
 
-  const body = rows.map((row, index) => renderGoalieRow(row, index + 1)).join("");
+  const body = rows.map((row, index) => renderGoalieRow(row, index + 1, favoriteTeamAbbrevs)).join("");
 
   return `
   <div class="table-filters" data-table-id="${tableId}">

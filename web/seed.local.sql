@@ -59,7 +59,12 @@ INSERT INTO skater_season_stats (player_id, season_id, name, team_abbrev, logo, 
 (8479318, 20262027, 'Auston Matthews', 'TOR', 'https://assets.nhle.com/logos/nhl/svg/TOR_light.svg', 'https://assets.nhle.com/mugs/nhl/20262027/TOR/8479318.png', 'USA', 'C', 6, 7, 4, 11, '2026-09-30T12:00:00Z'),
 (8478483, 20262027, 'Mitch Marner', 'TOR', 'https://assets.nhle.com/logos/nhl/svg/TOR_light.svg', 'https://assets.nhle.com/mugs/nhl/20262027/TOR/8478483.png', 'CAN', 'R', 6, 3, 8, 11, '2026-09-30T12:00:00Z'),
 (8478851, 20262027, 'Morgan Rielly', 'TOR', 'https://assets.nhle.com/logos/nhl/svg/TOR_light.svg', 'https://assets.nhle.com/mugs/nhl/20262027/TOR/8478851.png', 'CAN', 'D', 6, 1, 5, 6, '2026-09-30T12:00:00Z'),
-(8481535, 20262027, 'Sebastian Aho', 'BOS', 'https://assets.nhle.com/logos/nhl/svg/BOS_light.svg', 'https://assets.nhle.com/mugs/nhl/20262027/BOS/8481535.png', 'FIN', 'C', 6, 4, 5, 9, '2026-09-30T12:00:00Z');
+(8481535, 20262027, 'Sebastian Aho', 'BOS', 'https://assets.nhle.com/logos/nhl/svg/BOS_light.svg', 'https://assets.nhle.com/mugs/nhl/20262027/BOS/8481535.png', 'FIN', 'C', 6, 4, 5, 9, '2026-09-30T12:00:00Z'),
+-- Dedicated dual-highlight test case (task 1): Finnish AND on a team
+-- testuser favorites (CAR) -- the existing Sebastian Aho row above is
+-- FIN but on BOS (not favorited), so it can't exercise row-fin + row-team-fav
+-- together. Distinct player_id, fictional otherwise.
+(8470001, 20262027, 'Miska Testaaja', 'CAR', 'https://assets.nhle.com/logos/nhl/svg/CAR_light.svg', 'https://assets.nhle.com/mugs/nhl/20262027/CAR/8470001.png', 'FIN', 'D', 6, 1, 2, 3, '2026-09-30T12:00:00Z');
 
 INSERT INTO goalie_season_stats (player_id, season_id, name, team_abbrev, logo, headshot, nationality, games_played, wins, losses, ot_losses, goals_against_average, save_pct, shutouts, updated_at) VALUES
 (8480313, 20262027, 'Joseph Woll', 'TOR', 'https://assets.nhle.com/logos/nhl/svg/TOR_light.svg', 'https://assets.nhle.com/mugs/nhl/20262027/TOR/8480313.png', 'USA', 4, 3, 1, 0, 2.31, 0.918, 1, '2026-09-30T12:00:00Z');
