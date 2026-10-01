@@ -118,6 +118,8 @@ INSERT INTO standings_rows (
 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT(abbrev) DO UPDATE SET
     as_of_date = excluded.as_of_date,
+    name = excluded.name,
+    logo = excluded.logo,
     division_rank = excluded.division_rank,
     wildcard_rank = excluded.wildcard_rank,
     qualified = excluded.qualified,

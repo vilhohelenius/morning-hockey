@@ -39,6 +39,7 @@ function renderDivisionTable(division: StandingsRow[], teamAbbrev: string): stri
       <span class="division-rank">${row.division_rank}</span>
       <span class="division-team">
         <img src="${escapeHtml(row.logo)}" alt="${escapeHtml(row.abbrev)}" class="division-logo" loading="lazy">
+        <span class="division-name">${escapeHtml(row.name)}</span>
       </span>
       <span class="division-stats">
         <span>${row.games_played}</span>
@@ -73,15 +74,12 @@ function renderGameRow(game: GameRow, teamAbbrev: string, played: boolean): stri
   const opponentLogo = isHome ? game.away_logo : game.home_logo;
   const result = played ? (teamScore > opponentScore ? "W" : game.final_type !== "REG" ? "OTL" : "L") : null;
 
-  // Upcoming games keep the abbreviation text next to the logo; played
-  // (recent-results) rows drop it -- logo-only, like everywhere else a
-  // played game's opponent shows up now.
   const inner = `
       <span class="schedule-date">${shortDate(game.date)}</span>
       <span class="schedule-opponent">
         ${isHome ? "vs" : "@"}
         <img src="${escapeHtml(opponentLogo)}" alt="${escapeHtml(opponentAbbrev)}" class="schedule-logo" loading="lazy">
-        ${played ? "" : escapeHtml(opponentAbbrev)}
+        ${escapeHtml(opponentAbbrev)}
       </span>
       ${
         played
