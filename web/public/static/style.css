@@ -5,6 +5,15 @@
   --muted: #6b7280;
   --accent: #1d4ed8;
   --border: #e5e7eb;
+  /* Team-tinted hero backgrounds (teamHeroBackgroundStyle() + .hero-tinted
+     below) are built from a black vignette/scrim over the team's jersey
+     texture. In light mode that full-strength black reads as a jarring dark
+     patch next to otherwise-light cards, so it's weaker here; dark mode
+     keeps the original full-strength values since the card is already dark
+     there. */
+  --hero-shade-strong: rgba(0, 0, 0, 0.35);
+  --hero-shade-fade: rgba(0, 0, 0, 0.65);
+  --hero-scrim: rgba(0, 0, 0, 0.25);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -18,6 +27,9 @@
     --muted: #9aa1ac;
     --accent: #5b9dff;
     --border: #2a2e37;
+    --hero-shade-strong: rgba(0, 0, 0, 0.65);
+    --hero-shade-fade: rgb(0, 0, 0);
+    --hero-scrim: rgba(0, 0, 0, 0.45);
   }
 }
 
@@ -29,6 +41,9 @@
   --muted: #9aa1ac;
   --accent: #5b9dff;
   --border: #2a2e37;
+  --hero-shade-strong: rgba(0, 0, 0, 0.65);
+  --hero-shade-fade: rgb(0, 0, 0);
+  --hero-scrim: rgba(0, 0, 0, 0.45);
 }
 
 :root[data-theme="light"] {
@@ -38,6 +53,9 @@
   --muted: #6b7280;
   --accent: #1d4ed8;
   --border: #e5e7eb;
+  --hero-shade-strong: rgba(0, 0, 0, 0.35);
+  --hero-shade-fade: rgba(0, 0, 0, 0.65);
+  --hero-scrim: rgba(0, 0, 0, 0.25);
 }
 
 * {
@@ -893,6 +911,120 @@ main {
   object-fit: contain;
 }
 
+/* Flip card: .player-hero-flip is the fixed-position frame (holds the
+   fav-star so it stays put and clickable either side) and never itself
+   rotates; .player-hero-flip-inner is what actually flips via rotateY,
+   with front/back faces stacked via position: absolute + backface-
+   visibility: hidden so only one is ever visible/clickable at a time. Both
+   faces carry the same .hero-banner/.page-header/.player-card-header
+   classes as the old single header did, since both need the same
+   team-tinted background and white text. min-height is sized for the back
+   face's bio grid (the taller of the two); the front face centers its
+   (shorter) content inside that same height via flex, rather than the
+   card visibly resizing when it flips. */
+.player-hero-flip {
+  position: relative;
+}
+
+.player-hero-flip-inner {
+  position: relative;
+  min-height: 240px;
+  cursor: pointer;
+  transform-style: preserve-3d;
+  transition: transform 0.6s ease;
+}
+
+.player-hero-flip.is-flipped .player-hero-flip-inner {
+  transform: rotateY(180deg);
+}
+
+/* .hero-banner.player-hero-face (not just .player-hero-face): .hero-banner
+   itself sets position: relative further down, and since both are single-
+   class selectors of equal specificity, source order alone would decide
+   the winner -- the compound selector's higher specificity makes this
+   override unconditional regardless of where .hero-banner's rule sits. */
+.hero-banner.player-hero-face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-right: 44px;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.hero-banner.player-hero-back {
+  transform: rotateY(180deg);
+}
+
+.player-hero-flip-hint {
+  position: absolute;
+  bottom: 10px;
+  right: 14px;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Front face keeps only #number/position after the rest moved to the
+   back -- shown bigger/bolder since it's no longer sharing the line with
+   five other fields. */
+.player-hero-meta-front span {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.player-hero-back-title {
+  margin: 0 0 8px;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.player-hero-bio-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px 14px;
+}
+
+.player-hero-bio-item {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.player-hero-bio-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.player-hero-bio-value {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.player-hero-draft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.25);
+  font-size: 0.85rem;
+  color: #fff;
+}
+
+.player-hero-draft-logo {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
 /* ---------- Team-colored hero background (player card + team page) ----------
    The background-image/size/position/repeat declarations themselves come
    from an inline style="" attribute (teamHeroBackgroundStyle() in
@@ -987,43 +1119,6 @@ main {
   color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.02em;
-}
-
-/* Draft box: its own full-width section at the bottom of the player card
-   (see renderDraftSection), not a .stat-tile any more now that it no
-   longer shares a 2-col grid with Ikä/Pituus/Paino/Kätisyys (those moved
-   up into the hero header's player-hero-meta line). */
-.draft-box {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 14px 16px;
-}
-
-.draft-box-logo {
-  width: 48px;
-  height: 48px;
-  object-fit: contain;
-  flex-shrink: 0;
-}
-
-.draft-box-text {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.draft-box-year {
-  font-size: 1.3rem;
-  font-weight: 700;
-}
-
-.draft-box-detail {
-  color: var(--muted);
-  font-size: 0.85rem;
 }
 
 /* Player card's tile-grid stat sections -- "Uran tilastot" (career totals,
@@ -1123,8 +1218,8 @@ main {
 }
 
 .division-logo {
-  width: 20px;
-  height: 20px;
+  width: 26px;
+  height: 26px;
   object-fit: contain;
   flex-shrink: 0;
 }
@@ -1975,7 +2070,7 @@ main {
   position: absolute;
   inset: 0;
   z-index: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: var(--hero-scrim);
   border-radius: inherit;
   pointer-events: none;
 }

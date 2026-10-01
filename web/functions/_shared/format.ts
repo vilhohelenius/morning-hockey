@@ -42,12 +42,21 @@ export function teamLogoUrl(abbrev: string): string {
 // fade + jersey texture -- for a team's own pages the wires crest is the
 // point, but the dashboard's non-team teasers borrow a team's background
 // purely for its look, where that team's own crest doesn't belong.
+//
+// The vignette/fade stops below are CSS custom properties (--hero-shade-*,
+// defined in style.css) rather than literal rgba()/rgb() -- this HTML is
+// rendered server-side where the viewer's light/dark preference isn't known
+// (data-theme is only set when the viewer has an explicit cookie override;
+// otherwise it's resolved client-side from prefers-color-scheme), but a
+// var() reference is just inherited text that the browser resolves at paint
+// time against whichever :root block ends up active, so the same markup
+// stays theme-correct either way.
 export function teamHeroBackgroundStyle(abbrev: string | null | undefined, includeCrest = true): string {
   if (!abbrev) return "";
   const texture = `https://assets.nhle.com/textures/nhl/jersey/png/${abbrev}.png`;
   if (!includeCrest) {
     return [
-      `background-image: radial-gradient(50% 100% at 50% 0%, rgba(0,0,0,0) 0%, rgba(0,0,0,0.65) 100%), linear-gradient(rgba(0,0,0,0) 0%, rgb(0,0,0) 100%), url("${texture}")`,
+      `background-image: radial-gradient(50% 100% at 50% 0%, rgba(0,0,0,0) 0%, var(--hero-shade-strong) 100%), linear-gradient(rgba(0,0,0,0) 0%, var(--hero-shade-fade) 100%), url("${texture}")`,
       `background-size: auto, auto, 42px 42px`,
       `background-position: 0% 0%, 0% 0%, 0% 0%`,
       `background-repeat: repeat, repeat, repeat`,
@@ -55,7 +64,7 @@ export function teamHeroBackgroundStyle(abbrev: string | null | undefined, inclu
   }
   const wires = `https://assets.nhle.com/logos/nhl/wires/${abbrev}.svg`;
   return [
-    `background-image: radial-gradient(50% 100% at 50% 0%, rgba(0,0,0,0) 0%, rgba(0,0,0,0.65) 100%), url("${wires}"), linear-gradient(rgba(0,0,0,0) 0%, rgb(0,0,0) 100%), url("${texture}")`,
+    `background-image: radial-gradient(50% 100% at 50% 0%, rgba(0,0,0,0) 0%, var(--hero-shade-strong) 100%), url("${wires}"), linear-gradient(rgba(0,0,0,0) 0%, var(--hero-shade-fade) 100%), url("${texture}")`,
     `background-size: auto, 400px auto, auto, 42px 42px`,
     `background-position: 0% 0%, 50% 50%, 0% 0%, 0% 0%`,
     `background-repeat: repeat, no-repeat, repeat, repeat`,

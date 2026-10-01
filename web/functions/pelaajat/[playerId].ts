@@ -309,38 +309,77 @@ function renderSkaterGameLog(games: any[]): string {
   <button type="button" class="expand-toggle" data-table-id="player-game-log" data-page-size="1000"></button>`;
 }
 
-// Closest thing the public landing endpoint has to NHL.com's player-page
-// "Notes & Transactions" section: draftDetails (year/team/round/pick). The
-// real transaction/news feed (signings, trades, waivers) isn't part of this
-// API as far as this project's existing NHL API usage goes -- it's sourced
-// from NHL.com's own editorial CMS, not api-web.nhle.com. Every field is
-// read defensively so an undrafted player (no draftDetails at all) or an
-// unexpected shape just skips the section instead of rendering "undefined".
-//
-// Its own full-width section at the very bottom of the page (not a
-// .stat-tile-grid tile any more, now that Ikä/Pituus/Paino/Kätisyys moved
-// up into the header's player-hero-meta line) -- wide enough for the
-// team logo, draft year and round/pick detail to sit comfortably in a row.
-function renderDraftSection(draft: any): string {
-  if (!draft?.year) return "";
-  const logo = draft.teamAbbrev
-    ? `<img src="${escapeHtml(teamLogoUrl(draft.teamAbbrev))}" alt="" class="draft-box-logo" onerror="this.style.visibility='hidden'">`
+// "17.9.1997" from the landing endpoint's "1997-09-17" -- distinct from
+// shortDate() above, which deliberately drops the year (game-log rows are
+// all within one season, so it'd be redundant there); the hero card's back
+// face needs the year since a birth date without one isn't a birth date.
+function fullBirthDate(birthDate: string): string {
+  const [y, m, d] = birthDate.split("-").map(Number);
+  return `${d}.${m}.${y}`;
+}
+
+// landing.birthCity/.birthStateProvince are both { default: "..." } (plus
+// per-locale keys this project never reads, same shape as every other
+// *.default field here) -- state/province is only present for
+// US/Canadian-born players, so it's appended only when the API actually
+// sent one rather than assumed.
+function birthPlace(landing: any): string {
+  const city = landing.birthCity?.default;
+  if (!city) return "";
+  const region = landing.birthStateProvince?.default;
+  return region ? `${city}, ${region}` : city;
+}
+
+// The back face of the hero card (see the flip markup in onRequestGet):
+// every bio field that used to sit in the front's player-hero-meta line or
+// in the old bottom-of-page draft section, now together in one place. Read
+// defensively field-by-field (same approach the old renderDraftSection
+// took) so a player missing e.g. birthStateProvince or draftDetails just
+// gets a shorter grid instead of an "undefined" row.
+function renderPlayerHeroBack(landing: any, age: number | null): string {
+  const rows: { label: string; value: string }[] = [];
+  if (landing.heightInCentimeters) rows.push({ label: "Pituus", value: `${landing.heightInCentimeters} cm` });
+  if (landing.weightInKilograms) rows.push({ label: "Paino", value: `${landing.weightInKilograms} kg` });
+  if (landing.shootsCatches) rows.push({ label: "Kätisyys", value: escapeHtml(landing.shootsCatches) });
+  if (landing.birthDate) {
+    rows.push({
+      label: "Syntymäaika",
+      value: `${fullBirthDate(landing.birthDate)}${age !== null ? ` (${age} v.)` : ""}`,
+    });
+  }
+  const place = birthPlace(landing);
+  if (place) rows.push({ label: "Syntymäpaikka", value: escapeHtml(place) });
+  if (landing.birthCountry) {
+    rows.push({
+      label: "Kansallisuus",
+      value: `${nationalityFlag(landing.birthCountry)} ${escapeHtml(landing.birthCountry)}`,
+    });
+  }
+
+  const draft = landing.draftDetails;
+  const draftHtml = draft?.year
+    ? `
+  <div class="player-hero-draft">
+    ${
+      draft.teamAbbrev
+        ? `<img src="${escapeHtml(teamLogoUrl(draft.teamAbbrev))}" alt="" class="player-hero-draft-logo" onerror="this.style.visibility='hidden'">`
+        : ""
+    }
+    <span>Draft ${draft.year}${draft.round ? ` · kierros ${draft.round}` : ""}${draft.overallPick ? ` · ${draft.overallPick}. kok.` : ""}</span>
+  </div>`
     : "";
-  const detailParts: string[] = [];
-  if (draft.round) detailParts.push(`kierros ${draft.round}`);
-  if (draft.overallPick) detailParts.push(`${draft.overallPick}. kok.`);
 
   return `
-<section>
-  <h2 class="section-title">Draft</h2>
-  <div class="draft-box">
-    ${logo}
-    <div class="draft-box-text">
-      <span class="draft-box-year">${draft.year}</span>
-      <span class="draft-box-detail">${detailParts.length ? escapeHtml(detailParts.join(" · ")) : "Draft"}</span>
-    </div>
+  <h2 class="player-hero-back-title">Bio</h2>
+  <div class="player-hero-bio-grid">
+    ${rows
+      .map(
+        (r) =>
+          `<div class="player-hero-bio-item"><span class="player-hero-bio-label">${r.label}</span><span class="player-hero-bio-value">${r.value}</span></div>`,
+      )
+      .join("")}
   </div>
-</section>`;
+  ${draftHtml}`;
 }
 
 // total: the API-computed career total for this tab (careerTotals.
@@ -535,7 +574,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   const content = `
 <a class="back-link js-back" href="/">← Takaisin</a>
 
-<header class="page-header player-card-header hero-banner" style="${escapeHtml(teamHeroBackgroundStyle(landing.currentTeamAbbrev))}">
+<div class="player-hero-flip js-player-hero-flip" role="button" tabindex="0" aria-pressed="false" aria-label="Käännä kortti nähdäksesi pelaajan taustatiedot">
   ${
     username
       ? renderFavStar({
@@ -546,21 +585,24 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
         })
       : ""
   }
-  <h1>${escapeHtml(name)}</h1>
-  <p class="player-hero-meta">
-    ${landing.birthCountry ? `<span>${nationalityFlag(landing.birthCountry)}</span>` : ""}
-    ${landing.sweaterNumber ? `<span>#${landing.sweaterNumber}</span>` : ""}
-    ${landing.position ? `<span>${escapeHtml(POSITION_ABBR[landing.position] ?? landing.position)}</span>` : ""}
-    ${age !== null ? `<span>${age} v.</span>` : ""}
-    ${landing.heightInCentimeters ? `<span>${landing.heightInCentimeters} cm</span>` : ""}
-    ${landing.weightInKilograms ? `<span>${landing.weightInKilograms} kg</span>` : ""}
-    ${landing.shootsCatches ? `<span>${escapeHtml(landing.shootsCatches)}</span>` : ""}
-  </p>
-  <div class="player-hero-footer">
-    <img src="${escapeHtml(landing.headshot ?? "")}" alt="" class="player-hero-photo" onerror="this.style.visibility='hidden'">
-    ${landing.teamLogo ? `<img src="${escapeHtml(landing.teamLogo)}" alt="" class="player-hero-team-logo" loading="lazy">` : ""}
+  <div class="player-hero-flip-inner">
+    <div class="page-header player-card-header hero-banner player-hero-face player-hero-front" style="${escapeHtml(teamHeroBackgroundStyle(landing.currentTeamAbbrev))}">
+      <h1>${escapeHtml(name)}</h1>
+      <p class="player-hero-meta player-hero-meta-front">
+        ${landing.sweaterNumber ? `<span>#${landing.sweaterNumber}</span>` : ""}
+        ${landing.position ? `<span>${escapeHtml(POSITION_ABBR[landing.position] ?? landing.position)}</span>` : ""}
+      </p>
+      <div class="player-hero-footer">
+        <img src="${escapeHtml(landing.headshot ?? "")}" alt="" class="player-hero-photo" onerror="this.style.visibility='hidden'">
+        ${landing.teamLogo ? `<img src="${escapeHtml(landing.teamLogo)}" alt="" class="player-hero-team-logo" loading="lazy">` : ""}
+      </div>
+      <span class="player-hero-flip-hint" aria-hidden="true">⟲ Bio</span>
+    </div>
+    <div class="page-header player-card-header hero-banner player-hero-face player-hero-back" style="${escapeHtml(teamHeroBackgroundStyle(landing.currentTeamAbbrev))}">
+      ${renderPlayerHeroBack(landing, age)}
+    </div>
   </div>
-</header>
+</div>
 
 ${renderPeriodStatsSection(
   isGoalie,
@@ -584,8 +626,6 @@ ${renderSeasonHistorySection(isGoalie, regularSeasonHistory, playoffHistory, car
   }
   ${gameLogHtml}
 </section>
-
-${renderDraftSection(landing.draftDetails)}
 `;
 
   const html = await renderLayout({

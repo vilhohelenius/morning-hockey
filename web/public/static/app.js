@@ -63,6 +63,30 @@
     });
   });
 
+  // Player hero card: click (or Enter/Space, since it's a role="button")
+  // flips it to reveal the bio back face. The fav-star form sits inside
+  // this same element (see [playerId].ts) so its own clicks are excluded
+  // here -- otherwise starring a player would also flip the card.
+  document.querySelectorAll(".js-player-hero-flip").forEach(function (card) {
+    function toggleFlip() {
+      var flipped = card.classList.toggle("is-flipped");
+      card.setAttribute("aria-pressed", String(flipped));
+    }
+
+    card.addEventListener("click", function (event) {
+      if (event.target.closest(".hero-fav-form")) return;
+      toggleFlip();
+    });
+
+    card.addEventListener("keydown", function (event) {
+      if (event.target.closest(".hero-fav-form")) return;
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        toggleFlip();
+      }
+    });
+  });
+
   // Player card's per-game table rows -- each played game links to its
   // report page, same affordance as the old static site's game-card-trigger
   // (src/morning_hockey/templates/_macros.html's "Näytä ottelun tiedot"
