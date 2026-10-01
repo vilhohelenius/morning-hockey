@@ -785,6 +785,18 @@ main {
   letter-spacing: 0.02em;
 }
 
+/* Draft tile (bio .stat-grid): logo sits inline with the year on the
+   value line, same baseline trick as .table-team-logo elsewhere. The
+   label line (round + overall pick) is the longest text any tile here
+   carries, so it's allowed to wrap instead of being forced onto one
+   line -- .stat-tile has no fixed height, it just grows. */
+.stat-tile-draft-logo {
+  height: 18px;
+  width: auto;
+  vertical-align: -3px;
+  margin-right: 3px;
+}
+
 /* Player card's tile-grid stat sections -- "Uran tilastot" (career totals,
    skaters/goalies) and the goalie season total (which has its own tile
    section instead of a game-log table row, see renderGoalieStatTiles).
