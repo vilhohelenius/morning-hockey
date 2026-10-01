@@ -26,81 +26,38 @@
     link.addEventListener("click", closeSidebar);
   });
 
-  document.querySelectorAll(".day-picker").forEach(function (picker) {
-    var pills = picker.querySelectorAll(".day-pill");
-    var sections = document.querySelectorAll(".schedule-day-section");
+  // Every pill-group filter on the site (day-picker, player card's season/
+  // playoffs toggle, team schedule's past/upcoming, Pistepörssi's kaikki
+  // pelaajat/rookiet, Analytiikka's division picker) follows the same
+  // shape: a row of .day-pill buttons and a set of sections that are
+  // already fully rendered server-side, switched with is-hidden rather
+  // than refetched. datasetKey is the camelCased data-* attribute (e.g.
+  // "date" for data-date, "gameType" for data-game-type) both the pill and
+  // its matching section carry.
+  function wirePillToggle(pickerSelector, sectionSelector, datasetKey) {
+    document.querySelectorAll(pickerSelector).forEach(function (picker) {
+      var pills = picker.querySelectorAll(".day-pill");
+      var sections = document.querySelectorAll(sectionSelector);
 
-    pills.forEach(function (pill) {
-      pill.addEventListener("click", function () {
-        pills.forEach(function (p) {
-          p.classList.remove("active");
-        });
-        pill.classList.add("active");
-        sections.forEach(function (section) {
-          section.classList.toggle("is-hidden", section.dataset.date !== pill.dataset.date);
+      pills.forEach(function (pill) {
+        pill.addEventListener("click", function () {
+          pills.forEach(function (p) {
+            p.classList.remove("active");
+          });
+          pill.classList.add("active");
+          sections.forEach(function (section) {
+            section.classList.toggle("is-hidden", section.dataset[datasetKey] !== pill.dataset[datasetKey]);
+          });
         });
       });
     });
-  });
+  }
 
-  // Player card's regular season/playoffs toggle -- same pill + is-hidden
-  // pattern as the day-picker above, just keyed on data-game-type instead
-  // of data-date.
-  document.querySelectorAll(".season-type-picker").forEach(function (picker) {
-    var pills = picker.querySelectorAll(".day-pill");
-    var sections = document.querySelectorAll(".season-history-section");
-
-    pills.forEach(function (pill) {
-      pill.addEventListener("click", function () {
-        pills.forEach(function (p) {
-          p.classList.remove("active");
-        });
-        pill.classList.add("active");
-        sections.forEach(function (section) {
-          section.classList.toggle("is-hidden", section.dataset.gameType !== pill.dataset.gameType);
-        });
-      });
-    });
-  });
-
-  // Team schedule's past/upcoming toggle -- same pill + is-hidden pattern
-  // as the two pickers above, keyed on data-filter.
-  document.querySelectorAll(".team-games-picker").forEach(function (picker) {
-    var pills = picker.querySelectorAll(".day-pill");
-    var sections = document.querySelectorAll(".team-games-section");
-
-    pills.forEach(function (pill) {
-      pill.addEventListener("click", function () {
-        pills.forEach(function (p) {
-          p.classList.remove("active");
-        });
-        pill.classList.add("active");
-        sections.forEach(function (section) {
-          section.classList.toggle("is-hidden", section.dataset.filter !== pill.dataset.filter);
-        });
-      });
-    });
-  });
-
-  // Pistepörssi's kaikki pelaajat/rookiet toggle -- same pill + is-hidden
-  // pattern as the three pickers above, keyed on data-filter. Both
-  // leaderboards are already rendered server-side, so this never refetches.
-  document.querySelectorAll(".player-filter-picker").forEach(function (picker) {
-    var pills = picker.querySelectorAll(".day-pill");
-    var sections = document.querySelectorAll(".player-filter-section");
-
-    pills.forEach(function (pill) {
-      pill.addEventListener("click", function () {
-        pills.forEach(function (p) {
-          p.classList.remove("active");
-        });
-        pill.classList.add("active");
-        sections.forEach(function (section) {
-          section.classList.toggle("is-hidden", section.dataset.filter !== pill.dataset.filter);
-        });
-      });
-    });
-  });
+  wirePillToggle(".day-picker", ".schedule-day-section", "date");
+  wirePillToggle(".season-type-picker", ".season-history-section", "gameType");
+  wirePillToggle(".team-games-picker", ".team-games-section", "filter");
+  wirePillToggle(".player-filter-picker", ".player-filter-section", "filter");
+  wirePillToggle(".division-picker", ".division-chart-section", "division");
 
   // Player hero card: click (or Enter/Space, since it's a role="button")
   // flips it to reveal the bio back face. The fav-star form sits inside

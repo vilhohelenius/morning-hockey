@@ -2412,6 +2412,71 @@ main {
   display: none;
 }
 
+/* ---------- Analytiikka: division points-race chart ---------- */
+
+.division-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.division-chart-section.is-hidden {
+  display: none;
+}
+
+.division-chart {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.division-chart-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.chart-axis path,
+.chart-axis line {
+  stroke: var(--border);
+}
+
+.chart-axis text {
+  fill: var(--muted);
+  font-size: 0.65rem;
+}
+
+.division-chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  margin-top: 14px;
+}
+
+.division-chart-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.division-chart-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.division-chart-legend-logo {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+
 /* ---------- Tulospiilo (spoiler-free mode) ---------- */
 
 .spoiler-placeholder {

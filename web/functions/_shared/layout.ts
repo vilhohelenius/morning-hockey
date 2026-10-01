@@ -36,6 +36,7 @@ const STATS_PAGES = [
   { key: "league_stats", href: "/tilastot", label: "Pistepörssi" },
   { key: "goalie_stats", href: "/maalivahtiporssi", label: "Maalivahtipörssi" },
   { key: "suomiporssi", href: "/suomiporssi", label: "Suomipörssi" },
+  { key: "analytics", href: "/analytiikka", label: "Analytiikka" },
 ];
 
 const GAME_PAGES = [
