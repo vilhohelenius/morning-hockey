@@ -1765,21 +1765,22 @@ main {
   color: var(--muted);
 }
 
-/* Team-colored background (sarjataulukko's click-a-team panel): the
-   background-image itself comes from an inline style (see app.js's
-   applyTeamHeroBackground), scoped to .hero-tinted -- since the texture/
-   crest colors vary by team and this panel's text runs the full height
-   (not just along the top/bottom edges the way the player/team hero
-   banners do), a flat dark scrim behind every child guarantees contrast
-   regardless of team color, rather than relying on the background's own
-   gradients alone. */
-.team-detail.hero-tinted {
+/* Generic tinted-background treatment for any element carrying an inline
+   per-team/per-entity hero background (team page header excluded -- that
+   one's text only ever sits along the top/bottom edges, where the
+   background's own gradients already give it enough contrast; this is for
+   elements whose text runs the full height/width instead): sarjataulukko's
+   click-a-team panel, the dashboard's favorite-team cards and stat teasers.
+   Since the crest/texture colors vary per entity, a flat dark scrim behind
+   every child guarantees contrast regardless of color, rather than relying
+   on the background's own gradients alone. */
+.hero-tinted {
   position: relative;
   border: none;
   color: #fff;
 }
 
-.team-detail.hero-tinted::before {
+.hero-tinted::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -1789,7 +1790,7 @@ main {
   pointer-events: none;
 }
 
-.team-detail.hero-tinted > * {
+.hero-tinted > * {
   position: relative;
   z-index: 1;
 }
@@ -1823,6 +1824,30 @@ main {
 
 .team-detail.hero-tinted .result-otl {
   color: #fde68a;
+}
+
+.fav-team-card.hero-tinted .fav-row-meta {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.fav-team-card.hero-tinted .fav-team-card-scorer {
+  border-top-color: rgba(255, 255, 255, 0.25);
+}
+
+.section-tile.hero-tinted .stats-table thead th,
+.section-tile.hero-tinted .player-meta,
+.section-tile.hero-tinted .col-rank,
+.section-tile.hero-tinted .empty-note {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.section-tile.hero-tinted .stats-table tbody tr {
+  border-bottom-color: rgba(255, 255, 255, 0.2);
+}
+
+.section-tile.hero-tinted .stat-strong,
+.section-tile.hero-tinted .archive-link {
+  color: #8ab4ff;
 }
 
 .gd-period {

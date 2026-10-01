@@ -40,7 +40,17 @@ import {
   type FinnScorerLine,
 } from "./_shared/gameCard";
 import { resolveHighlightsUrl } from "./_shared/youtube";
-import { escapeHtml, helsinkiParts, humanDate, nationalityFlag, shortDate } from "./_shared/format";
+import {
+  crestHeroBackgroundStyle,
+  escapeHtml,
+  FINLAND_FLAG_URL,
+  helsinkiParts,
+  humanDate,
+  nationalityFlag,
+  NHL_LOGO_URL,
+  shortDate,
+  teamHeroBackgroundStyle,
+} from "./_shared/format";
 import { renderLayout } from "./_shared/layout";
 import type {
   Env,
@@ -90,9 +100,16 @@ function renderLeagueSkaterRow(row: SkaterStatsRow, rank: number): string {
       </tr>`;
 }
 
-function statTeaserTable(title: string, rows: string[], emptyMessage: string, archiveHref: string, archiveLabel: string): string {
+function statTeaserTable(
+  title: string,
+  rows: string[],
+  emptyMessage: string,
+  archiveHref: string,
+  archiveLabel: string,
+  heroStyle?: string,
+): string {
   return `
-<section class="section-tile">
+<section class="section-tile${heroStyle ? " hero-tinted" : ""}"${heroStyle ? ` style="${escapeHtml(heroStyle)}"` : ""}>
   <h2 class="section-title">${title}</h2>
   ${
     rows.length
@@ -160,7 +177,7 @@ function renderFavoriteTeamCard(
     : "";
 
   return `
-<a class="fav-team-card" href="/joukkueet/${team.abbrev.toLowerCase()}">
+<a class="fav-team-card hero-tinted" href="/joukkueet/${team.abbrev.toLowerCase()}" style="${escapeHtml(teamHeroBackgroundStyle(team.abbrev))}">
   <div class="fav-team-card-top">
     <img src="${escapeHtml(team.logo)}" alt="" class="fav-team-card-logo" loading="lazy">
     <div>
@@ -374,9 +391,9 @@ ${
 
 ${favoriteTeamsHtml}
 
-${statTeaserTable("🇫🇮 Suomipörssin kärki", finSkaters.map((r, i) => renderFinnishSkaterRow(r, i + 1)), "Ei tilastoituja suomalaispelaajia vielä.", "/suomiporssi", "Koko Suomipörssi →")}
+${statTeaserTable("🇫🇮 Suomipörssin kärki", finSkaters.map((r, i) => renderFinnishSkaterRow(r, i + 1)), "Ei tilastoituja suomalaispelaajia vielä.", "/suomiporssi", "Koko Suomipörssi →", crestHeroBackgroundStyle(FINLAND_FLAG_URL, "#0a1a33"))}
 
-${statTeaserTable("📈 NHL:n kärkipörssi", leagueSkaters.map((r, i) => renderLeagueSkaterRow(r, i + 1)), "Ei tilastoituja pelaajia vielä.", "/tilastot", "Koko Tilastot →")}
+${statTeaserTable("📈 NHL:n kärkipörssi", leagueSkaters.map((r, i) => renderLeagueSkaterRow(r, i + 1)), "Ei tilastoituja pelaajia vielä.", "/tilastot", "Koko Tilastot →", crestHeroBackgroundStyle(NHL_LOGO_URL, "#0d1321"))}
 
 ${upcomingHtml}
 
