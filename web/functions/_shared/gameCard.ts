@@ -120,6 +120,14 @@ export function renderGameCard(
           return `<span class="score-time">${hour}:${String(minute).padStart(2, "0")}</span>`;
         })();
 
+  // Hint only once there's actually something to show -- a not-yet-started
+  // game has no box score yet, so .game-card-trigger's click handler would
+  // just expand to nothing. Ported from the old static site's game_card
+  // macro (_macros.html), which had this same hint but on every card
+  // unconditionally since that build never had not-yet-started games mixed
+  // into the same list.
+  const hint = game.is_finished || isLive(game) ? `<p class="game-card-hint">Näytä ottelun tiedot ▾</p>` : "";
+
   return `
 <div class="game-card game-card-trigger" data-game-id="${game.game_id}" tabindex="0" role="button" aria-expanded="false">
   <div class="score-row">
@@ -137,5 +145,6 @@ export function renderGameCard(
   </div>
   ${badge}
   ${finnStats}
+  ${hint}
 </div>`;
 }
