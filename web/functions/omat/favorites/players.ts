@@ -11,7 +11,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   const form = await context.request.formData();
   const playerId = Number(form.get("player_id"));
   const isGoalie = form.get("is_goalie") === "1" ? 1 : 0;
-  const action = String(form.get("action") ?? "");
+  const action = String(form.get("fav_action") ?? "");
   if (!Number.isInteger(playerId)) return new Response("Virheellinen pelaaja.", { status: 400 });
 
   const db = context.env.DB;

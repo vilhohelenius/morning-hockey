@@ -723,7 +723,7 @@
   // "opaqueredirect" counts as success same as any 2xx would.
   document.querySelectorAll("form[data-fav-toggle]").forEach(function (form) {
     var button = form.querySelector(".hero-fav-star");
-    var actionInput = form.querySelector('input[name="action"]');
+    var actionInput = form.querySelector('input[name="fav_action"]');
     if (!button || !actionInput) return;
 
     form.addEventListener("submit", function (event) {

@@ -81,7 +81,11 @@ export function renderFavStar(options: {
   return `
   <form method="post" action="${escapeHtml(formAction)}" class="hero-fav-form" data-fav-toggle>
     ${hidden}
-    <input type="hidden" name="action" value="${isFavorite ? "remove" : "add"}">
+    <!-- Named "fav_action", not "action": a form field literally named
+         "action" shadows HTMLFormElement's own .action property, which
+         broke app.js's fetch(form.action, ...) (it silently fetched the
+         input *element*, stringified, instead of the URL). -->
+    <input type="hidden" name="fav_action" value="${isFavorite ? "remove" : "add"}">
     <input type="hidden" name="redirect_to" value="${escapeHtml(redirectTo)}">
     <button type="submit" class="hero-fav-star${isFavorite ? " is-fav" : ""}" aria-pressed="${isFavorite}" aria-label="${isFavorite ? "Poista suosikeista" : "Lisää suosikkeihin"}">★</button>
   </form>`;

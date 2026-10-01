@@ -13,7 +13,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
   const form = await context.request.formData();
   const abbrev = String(form.get("abbrev") ?? "").toUpperCase();
-  const action = String(form.get("action") ?? "");
+  const action = String(form.get("fav_action") ?? "");
   if (!abbrev) return new Response("Puuttuva joukkue.", { status: 400 });
 
   const db = context.env.DB;

@@ -47,7 +47,7 @@ function renderFavoriteTeamRow(team: StandingsRow): string {
       </a>
       <form method="post" action="/omat/favorites/teams">
         <input type="hidden" name="abbrev" value="${escapeHtml(team.abbrev)}">
-        <input type="hidden" name="action" value="remove">
+        <input type="hidden" name="fav_action" value="remove">
         <button type="submit" class="icon-btn" aria-label="Poista suosikeista">✕</button>
       </form>
     </div>`;
@@ -77,7 +77,7 @@ function renderFavoritePlayerRow(
       <form method="post" action="/omat/favorites/players">
         <input type="hidden" name="player_id" value="${player.player_id}">
         <input type="hidden" name="is_goalie" value="${fav.isGoalie ? "1" : "0"}">
-        <input type="hidden" name="action" value="remove">
+        <input type="hidden" name="fav_action" value="remove">
         <button type="submit" class="icon-btn" aria-label="Poista suosikeista">✕</button>
       </form>
     </div>`;
@@ -91,7 +91,7 @@ function renderTeamPicker(availableTeams: StandingsRow[]): string {
   return `
   <form method="post" action="/omat/favorites/teams" class="table-filters">
     <select name="abbrev">${options}</select>
-    <input type="hidden" name="action" value="add">
+    <input type="hidden" name="fav_action" value="add">
     <button type="submit" class="filter-btn">Lisää suosikkijoukkue</button>
   </form>`;
 }
@@ -106,7 +106,7 @@ function renderPlayerSearchResult(row: TeamRosterSkaterRow | TeamRosterGoalieRow
       <form method="post" action="/omat/favorites/players">
         <input type="hidden" name="player_id" value="${row.player_id}">
         <input type="hidden" name="is_goalie" value="${isGoalie ? "1" : "0"}">
-        <input type="hidden" name="action" value="add">
+        <input type="hidden" name="fav_action" value="add">
         <button type="submit" class="filter-btn">+ Suosikki</button>
       </form>
     </div>`;
