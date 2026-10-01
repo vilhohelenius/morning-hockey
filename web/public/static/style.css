@@ -2400,6 +2400,18 @@ main {
   display: none;
 }
 
+/* ---------- Pistepörssi: kaikki pelaajat/rookiet toggle ---------- */
+
+.player-filter-picker {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.player-filter-section.is-hidden {
+  display: none;
+}
+
 /* ---------- Tulospiilo (spoiler-free mode) ---------- */
 
 .spoiler-placeholder {

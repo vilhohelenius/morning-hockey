@@ -35,7 +35,6 @@ const NAV_SETTINGS = { key: "settings", href: "/omat", label: "⚙️ Asetukset"
 const STATS_PAGES = [
   { key: "league_stats", href: "/tilastot", label: "Pistepörssi" },
   { key: "goalie_stats", href: "/maalivahtiporssi", label: "Maalivahtipörssi" },
-  { key: "rookies", href: "/rookiet", label: "Rookie-pörssi" },
   { key: "suomiporssi", href: "/suomiporssi", label: "Suomipörssi" },
 ];
 
