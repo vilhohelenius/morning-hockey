@@ -95,13 +95,6 @@ function renderSeasonSelect(playerId: number, seasons: number[], selected: numbe
   </form>`;
 }
 
-// Shared by the skater career tile section and the (now also tile-based)
-// current-season summary -- same tile shape, just fed a different
-// SeasonTotal (career vs. the selected season). Tiles read the same visual
-// language as the bio section's Ikä/Pituus/Paino/Kätisyys tiles. The
-// per-game table below still keeps its own "Kausi" total row too (as a
-// <tfoot>, see renderSkaterGameLog) -- this tile section doesn't replace
-// it, just adds a higher-up summary.
 // Shared row shape for every place a skater's SeasonTotal needs to be one
 // table row: each row (and the total row) of the season-history table, and
 // the one-row "Ottelut" summary. rowClass defaults to "total-row" (the
@@ -138,31 +131,61 @@ function renderGoalieStatRow(label: string, t: SeasonTotal, rowClass = "total-ro
       </tr>`;
 }
 
-// "Kausi <newest>" and "Uran tilastot" together, as one small table with a
-// row per period sharing one set of column headers -- same .stats-table
-// look (and the same horizontal-scroll-on-mobile behavior via
-// .stats-table-wrap) as every other stats table on this page, instead of
-// the big-number tile grid this used to be.
+// One stat-card per period (current season, career) instead of one shared
+// table with a row per period -- mirrors nhl.com's own player stats page,
+// which shows "2026-27 Season" and "Career" as two separate boxed tables
+// rather than two rows of one table. See the "Stat cards" block in
+// style.css.
+function renderSkaterStatCardRow(t: SeasonTotal): string {
+  return `
+        <tr>
+          <td>${t.gamesPlayed}</td>
+          <td>${t.goals ?? 0}</td>
+          <td>${t.assists ?? 0}</td>
+          <td class="stat-card-highlight">${t.points ?? 0}</td>
+          <td>${(t.plusMinus ?? 0) > 0 ? "+" : ""}${t.plusMinus ?? 0}</td>
+          <td>${t.pim ?? 0}</td>
+          <td>${t.avgToi ? escapeHtml(t.avgToi) : "–"}</td>
+        </tr>`;
+}
+
+function renderGoalieStatCardRow(t: SeasonTotal): string {
+  return `
+        <tr>
+          <td>${t.gamesPlayed}</td>
+          <td>${t.wins ?? 0}</td>
+          <td class="stat-card-highlight">${(t.savePctg ?? 0).toFixed(3)}</td>
+          <td>${(t.goalsAgainstAvg ?? 0).toFixed(2)}</td>
+          <td>${t.shutouts ?? 0}</td>
+        </tr>`;
+}
+
 function renderPeriodStatsSection(isGoalie: boolean, periods: { label: string; total: SeasonTotal }[]): string {
   if (!periods.length) return "";
 
-  const rowFn = isGoalie ? renderGoalieStatRow : renderSkaterTotalRow;
   const headerCells = isGoalie
-    ? `<th>Ottelut</th><th>Voitot</th><th>SV%</th><th>GAA</th><th>NP</th>`
-    : `<th>Ottelut</th><th>M</th><th>S</th><th>P</th><th>+/-</th><th>JH</th><th>TOI/GP</th>`;
+    ? `<th>O</th><th>V</th><th>SV%</th><th>GAA</th><th>NP</th>`
+    : `<th>O</th><th>M</th><th>S</th><th>P</th><th>+/-</th><th>JH</th><th>TOI/GP</th>`;
+  const rowFn = isGoalie ? renderGoalieStatCardRow : renderSkaterStatCardRow;
 
-  const tableRows = periods.map((p) => rowFn(p.label, p.total, "")).join("");
+  const cards = periods
+    .map(
+      (p) => `
+    <div class="stat-card">
+      <div class="stat-card-header">${escapeHtml(p.label)}</div>
+      <div class="stat-card-table-wrap">
+        <table class="stat-card-table">
+          <thead><tr>${headerCells}</tr></thead>
+          <tbody>${rowFn(p.total)}</tbody>
+        </table>
+      </div>
+    </div>`,
+    )
+    .join("");
 
   return `
 <section class="player-period-stats">
-  <div class="stats-table-wrap">
-    <table class="stats-table">
-      <thead>
-        <tr><th></th>${headerCells}</tr>
-      </thead>
-      <tbody>${tableRows}</tbody>
-    </table>
-  </div>
+  <div class="stat-card-grid">${cards}</div>
 </section>`;
 }
 

@@ -67,9 +67,9 @@ function renderDivisionTable(division: StandingsRow[], teamAbbrev: string): stri
 </section>`;
 }
 
-// One-row .stats-table, same component every other stats table on the
-// site uses (incl. this page's own roster/division tables right below
-// it), instead of the big-number tile grid this used to be.
+// A single .stat-card: boxed header bar + one dense, abbreviated-column
+// row -- see the "Stat cards" block in style.css for why this replaced
+// the plain .stats-table version (closer to nhl.com's own stat boxes).
 function renderSeasonStats(stats: TeamSeasonStatsRow | null): string {
   if (!stats) return "";
   const goalDifferential = stats.goals_for - stats.goals_against;
@@ -77,33 +77,38 @@ function renderSeasonStats(stats: TeamSeasonStatsRow | null): string {
   return `
 <section>
   <h2 class="section-title">Kausitilastot</h2>
-  <div class="stats-table-wrap">
-    <table class="stats-table team-season-stats-table">
-      <thead>
-        <tr>
-          <th>YV%</th>
-          <th>AV%</th>
-          <th>Aloitus%</th>
-          <th>Tehdyt maalit</th>
-          <th>Päästetyt maalit</th>
-          <th>Maaliero</th>
-          <th>Laukaukset/ottelu</th>
-          <th>Nollapelit</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>${(stats.power_play_pct * 100).toFixed(1)} %</td>
-          <td>${(stats.penalty_kill_pct * 100).toFixed(1)} %</td>
-          <td>${(stats.faceoff_pct * 100).toFixed(1)} %</td>
-          <td>${stats.goals_for}</td>
-          <td>${stats.goals_against}</td>
-          <td>${goalDifferential > 0 ? "+" : ""}${goalDifferential}</td>
-          <td>${stats.shots_for_per_game.toFixed(1)}</td>
-          <td>${stats.shutouts}</td>
-        </tr>
-      </tbody>
-    </table>
+  <div class="stat-card">
+    <div class="stat-card-header">Runkosarja</div>
+    <div class="stat-card-table-wrap">
+      <table class="stat-card-table">
+        <thead>
+          <tr>
+            <th>O</th>
+            <th>YV%</th>
+            <th>AV%</th>
+            <th>AL%</th>
+            <th>TM</th>
+            <th>PM</th>
+            <th>+/-</th>
+            <th>LKT/O</th>
+            <th>NP</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>${stats.games_played}</td>
+            <td>${(stats.power_play_pct * 100).toFixed(1)}</td>
+            <td>${(stats.penalty_kill_pct * 100).toFixed(1)}</td>
+            <td>${(stats.faceoff_pct * 100).toFixed(1)}</td>
+            <td>${stats.goals_for}</td>
+            <td>${stats.goals_against}</td>
+            <td class="stat-card-highlight">${goalDifferential > 0 ? "+" : ""}${goalDifferential}</td>
+            <td>${stats.shots_for_per_game.toFixed(1)}</td>
+            <td>${stats.shutouts}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </section>`;
 }
@@ -190,8 +195,6 @@ ${renderSeasonStats(seasonStats ?? null)}
 
 ${renderDivisionTable(division, abbrev)}
 
-<a class="filter-btn team-schedule-link" href="/joukkueet/${abbrev.toLowerCase()}/ottelut">📅 Kaikki ottelut</a>
-
 <section>
   <h2 class="section-title">Edelliset ottelut</h2>
   ${
@@ -209,6 +212,8 @@ ${renderDivisionTable(division, abbrev)}
       : `<p class="empty-note">Ei tiedossa olevia otteluita synkattuna.</p>`
   }
 </section>
+
+<a class="filter-btn team-schedule-link" href="/joukkueet/${abbrev.toLowerCase()}/ottelut">📅 Kaikki ottelut</a>
 
 ${skaters.length ? renderRosterSkaterTable(skaters, "🏒 Pistepörssi") : ""}
 ${goalies.length ? renderRosterGoalieTable(goalies, "🥅 Maalivahdit") : ""}

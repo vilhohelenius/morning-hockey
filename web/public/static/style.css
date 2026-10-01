@@ -1089,14 +1089,86 @@ main {
   margin: 4px 0 8px;
 }
 
-/* "Kausi <newest>"/"Uran tilastot" (renderPeriodStatsSection): same
-   .stats-table look as every other stats table, just with the row label
-   left-aligned instead of the default first-column center-align, since
-   it's a word ("Kausi 2026-2027", "Uran tilastot") rather than a short
-   rank/season number. */
-.player-period-stats .stats-table td:first-child,
-.player-period-stats .stats-table th:first-child {
-  text-align: left;
+/* ---------- Stat cards (team Kausitilastot, player Kausi/Uran tilastot) ----------
+   A boxed card per stat period, its own header bar + a dense, centered,
+   abbreviated-column table -- closer to the separate "2026-27 Season" /
+   "Career" boxes on a player's own stats page on nhl.com than this
+   project's other tables (leaderboards, game logs), which are long lists
+   sharing one wide .stats-table. Each period here is exactly one row, so
+   there's no row striping/sorting to design for -- just one card that
+   reads at a glance. */
+.stat-card-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.stat-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.stat-card-header {
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+}
+
+.stat-card-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.stat-card-table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 100%;
+}
+
+.stat-card-table th,
+.stat-card-table td {
+  padding: 10px 8px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.stat-card-table thead th {
+  background: var(--bg);
+  color: var(--muted);
+  font-size: 0.64rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  border-bottom: 1px solid var(--border);
+}
+
+.stat-card-table tbody td {
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-card-highlight {
+  color: var(--accent);
+  font-weight: 800;
+  font-size: 1rem;
+}
+
+@media (min-width: 640px) {
+  .stat-card-grid {
+    flex-direction: row;
+  }
+
+  .stat-card-grid .stat-card {
+    flex: 1;
+    min-width: 0;
+  }
 }
 
 .division-table {
@@ -1706,22 +1778,6 @@ main {
    opponent, not a player name -- revert the wide-left-aligned override. */
 .game-log-table th:nth-child(2),
 .game-log-table td:nth-child(2) {
-  text-align: right;
-  white-space: nowrap;
-  min-width: 0;
-}
-
-/* Team page's Kausitilastot: every column is a plain number/percentage,
-   none is a player name or rank -- revert both the 2nd-column
-   left-align and the 1st-column center-align the leaderboard-flavored
-   defaults above assume. */
-.team-season-stats-table th:first-child,
-.team-season-stats-table td:first-child {
-  text-align: right;
-}
-
-.team-season-stats-table th:nth-child(2),
-.team-season-stats-table td:nth-child(2) {
   text-align: right;
   white-space: nowrap;
   min-width: 0;
