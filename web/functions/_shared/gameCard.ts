@@ -71,21 +71,16 @@ function liveBadgeText(live: LiveStatus | null): string {
 const EN_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 // NHL's own YouTube highlight uploads are always titled "{Away} vs. {Home}
-// | NHL Highlights | {Month D, YYYY}" -- no YouTube API key is configured
-// for this project (and this sandbox can't reach youtube.com to test one
-// even if it were), so rather than a guaranteed direct video link, this
-// builds a plain youtube.com search for that exact title text. A sitewide
-// search (not scoped to NHL's channel) is the safer choice here: scoping
-// to a specific channel handle risks zero results if that handle is
-// wrong, and I had no way to verify it live, whereas the exact official
-// title text alone is already specific enough to surface the right video
-// as the top result in practice.
+// | NHL Highlights | {Month D, YYYY}". The date uses America/New_York (the
+// league's own scheduling timezone, not this site's usual Europe/Helsinki)
+// since that's the convention NHL itself dates these uploads by -- a late-
+// night Finnish-time game can fall on a different Helsinki calendar date
+// than its NHL one.
 //
-// The date uses America/New_York (the league's own scheduling timezone,
-// not this site's usual Europe/Helsinki) since that's the convention NHL
-// itself dates these uploads by -- a late-night Finnish-time game can
-// fall on a different Helsinki calendar date than its NHL one.
-function youtubeHighlightsUrl(game: GameRow): string {
+// Exported: _shared/youtube.ts uses this exact text as its YouTube Data
+// API search query, so the real-video lookup and the search-link fallback
+// below always agree on what they're looking for.
+export function highlightsSearchTitle(game: GameRow): string {
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/New_York",
     year: "numeric",
@@ -95,8 +90,21 @@ function youtubeHighlightsUrl(game: GameRow): string {
   const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
   const dateLabel = `${EN_MONTHS[Number(get("month")) - 1] ?? ""} ${get("day")}, ${get("year")}`;
 
-  const query = `${game.away_name} vs. ${game.home_name} | NHL Highlights | ${dateLabel}`;
-  return `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+  return `${game.away_name} vs. ${game.home_name} | NHL Highlights | ${dateLabel}`;
+}
+
+// Fallback used when no YOUTUBE_API_KEY is configured, or _shared/
+// youtube.ts hasn't resolved a real video yet: a plain youtube.com search
+// for the exact official title text above -- specific enough to surface
+// the right video as the top result in practice, even though it isn't a
+// guaranteed direct link.
+//
+// Exported: rendered inside the game-details stat box (app.js's
+// openGameDetail) and on the full /ottelut/[gameId] report, not on the
+// card itself anymore -- a visitor sees it only once they've actually
+// opened a game, not scattered across every card on the dashboard/Arkisto.
+export function youtubeHighlightsUrl(game: GameRow): string {
+  return `https://www.youtube.com/results?search_query=${encodeURIComponent(highlightsSearchTitle(game))}`;
 }
 
 export function renderGameCard(
@@ -159,16 +167,6 @@ export function renderGameCard(
   // into the same list.
   const hint = game.is_finished || isLive(game) ? `<p class="game-card-hint">Näytä ottelun tiedot ▾</p>` : "";
 
-  // Highlights only exist once a game is actually over -- a live or
-  // not-yet-started game has nothing on YouTube yet. onclick stops the
-  // click from also bubbling up into .game-card-trigger's own expand
-  // handler (document-level, event.target.closest-based), which would
-  // otherwise toggle the card open/closed at the same time this link
-  // navigates away.
-  const youtubeLink = game.is_finished
-    ? `<a class="game-card-youtube" href="${escapeHtml(youtubeHighlightsUrl(game))}" target="_blank" rel="noopener" onclick="event.stopPropagation()">▶ Highlightit (YouTube)</a>`
-    : "";
-
   return `
 <div class="game-card game-card-trigger" data-game-id="${game.game_id}" tabindex="0" role="button" aria-expanded="false">
   <div class="score-row">
@@ -186,7 +184,6 @@ export function renderGameCard(
   </div>
   ${badge}
   ${finnStats}
-  ${youtubeLink}
   ${hint}
 </div>`;
 }

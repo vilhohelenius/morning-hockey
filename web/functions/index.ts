@@ -39,6 +39,7 @@ import {
   type FinnGoalieLine,
   type FinnScorerLine,
 } from "./_shared/gameCard";
+import { resolveHighlightsUrl } from "./_shared/youtube";
 import { escapeHtml, helsinkiParts, humanDate, nationalityFlag, shortDate } from "./_shared/format";
 import { renderLayout } from "./_shared/layout";
 import type {
@@ -199,7 +200,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
   let roundGames: GameRow[] = [];
   let gameCardsHtml = "";
-  const gameDetails: Record<number, { goals: unknown; team_stats: unknown }> = {};
+  const gameDetails: Record<number, { goals?: unknown; team_stats?: unknown; youtube_url?: string }> = {};
 
   if (currentRound) {
     const { results } = await db
@@ -223,8 +224,12 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       // use its running tally instead of waiting on the next fast-tier sync.
       let displayGame = game;
 
+      if (game.is_finished) {
+        gameDetails[game.game_id] = { youtube_url: await resolveHighlightsUrl(db, context.env, game) };
+      }
+
       if (box) {
-        gameDetails[game.game_id] = { goals: box.goals, team_stats: box.teamStats };
+        gameDetails[game.game_id] = { ...gameDetails[game.game_id], goals: box.goals, team_stats: box.teamStats };
         scorers = [
           ...finnishScorerLines(box.awaySkaters, game.away_abbrev),
           ...finnishScorerLines(box.homeSkaters, game.home_abbrev),

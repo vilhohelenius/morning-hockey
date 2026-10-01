@@ -20,6 +20,7 @@
 
 import { getBoxScore, type ParsedBoxScore } from "../_shared/boxScoreCache";
 import { escapeHtml, finalTypeFi, humanDate, nationalityFlag } from "../_shared/format";
+import { resolveHighlightsUrl } from "../_shared/youtube";
 import { renderLayout } from "../_shared/layout";
 import type { Env, GameRow, GoalEvent, GoalieGameStat, PlayerGameStat } from "../_shared/types";
 
@@ -157,8 +158,10 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
   let box: ParsedBoxScore | null = null;
   let fetchError = false;
+  let youtubeUrl = "";
   if (game.is_finished) {
     ({ box, fetchError } = await getBoxScore(db, game));
+    youtubeUrl = await resolveHighlightsUrl(db, context.env, game);
   }
 
   const content = `
@@ -185,6 +188,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     </div>
   </div>
   ${game.is_finished && game.final_type !== "REG" ? `<p class="ot-tag">${escapeHtml(finalTypeFi(game.final_type))}</p>` : ""}
+  ${game.is_finished ? `<a class="game-card-youtube" href="${escapeHtml(youtubeUrl)}" target="_blank" rel="noopener">▶ Highlightit (YouTube)</a>` : ""}
 </section>
 
 ${

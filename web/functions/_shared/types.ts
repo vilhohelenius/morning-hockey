@@ -274,4 +274,13 @@ export interface UserRow {
 
 export interface Env {
   DB: D1Database;
+  YOUTUBE_API_KEY?: string;
+}
+
+// See _shared/youtube.ts -- video_url is null for a checked-but-not-found-
+// yet game.
+export interface YoutubeHighlightRow {
+  game_id: number;
+  video_url: string | null;
+  checked_at: string;
 }

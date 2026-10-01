@@ -11,6 +11,7 @@
 
 import { getCachedBoxScores } from "../_shared/boxScoreCache";
 import { finnishGoalieLines, finnishScorerLines, renderGameCard } from "../_shared/gameCard";
+import { resolveHighlightsUrl } from "../_shared/youtube";
 import { escapeHtml, humanDate } from "../_shared/format";
 import { renderLayout } from "../_shared/layout";
 import type { Env, GameRow } from "../_shared/types";
@@ -32,7 +33,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   }
 
   const boxScores = await getCachedBoxScores(db, games.map((g) => g.game_id));
-  const gameDetails: Record<number, { goals: unknown; team_stats: unknown }> = {};
+  const gameDetails: Record<number, { goals?: unknown; team_stats?: unknown; youtube_url?: string }> = {};
   let gameCardsHtml = "";
 
   for (const game of games) {
@@ -40,8 +41,10 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     let scorers: ReturnType<typeof finnishScorerLines> = [];
     let goalies: ReturnType<typeof finnishGoalieLines> = [];
 
+    gameDetails[game.game_id] = { youtube_url: await resolveHighlightsUrl(db, context.env, game) };
+
     if (box) {
-      gameDetails[game.game_id] = { goals: box.goals, team_stats: box.teamStats };
+      gameDetails[game.game_id] = { ...gameDetails[game.game_id], goals: box.goals, team_stats: box.teamStats };
       scorers = [
         ...finnishScorerLines(box.awaySkaters, game.away_abbrev),
         ...finnishScorerLines(box.homeSkaters, game.home_abbrev),

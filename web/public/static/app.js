@@ -434,6 +434,16 @@
       body.appendChild(renderTeamStats(data.team_stats || [], awayAbbrev, homeAbbrev));
       panel.appendChild(body);
 
+      if (data.youtube_url) {
+        var ytLink = document.createElement("a");
+        ytLink.className = "game-card-youtube";
+        ytLink.href = data.youtube_url;
+        ytLink.target = "_blank";
+        ytLink.rel = "noopener";
+        ytLink.textContent = "▶ Highlightit (YouTube)";
+        panel.appendChild(ytLink);
+      }
+
       var fullLink = document.createElement("a");
       fullLink.className = "archive-link";
       fullLink.href = "/ottelut/" + trigger.dataset.gameId;

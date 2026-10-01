@@ -267,6 +267,20 @@ CREATE TABLE IF NOT EXISTS game_box_scores (
     cached_at TEXT NOT NULL
 );
 
+-- Caches a finished game's real NHL Highlights video on YouTube
+-- (_shared/youtube.ts), resolved via the YouTube Data API v3 (needs
+-- YOUTUBE_API_KEY as a Cloudflare Pages secret; without it the site just
+-- falls back to a plain youtube.com search link, no row ever written
+-- here). video_url is NULL when a search has been tried but found nothing
+-- yet -- highlights can take hours to appear after a game ends, and
+-- checked_at lets _shared/youtube.ts only retry periodically instead of
+-- re-querying YouTube's metered search quota on every page view.
+CREATE TABLE IF NOT EXISTS youtube_highlights (
+    game_id INTEGER PRIMARY KEY,
+    video_url TEXT,
+    checked_at TEXT NOT NULL
+);
+
 -- Phase 6: full per-team rosters, for all 32 teams -- NOT derivable from
 -- skater_season_stats/goalie_season_stats above, same reasoning as
 -- finnish_skater_stats/finnish_goalie_stats: those are a global top-N cut
