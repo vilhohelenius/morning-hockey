@@ -81,9 +81,14 @@ function renderSeasonSelect(playerId: number, seasons: number[], selected: numbe
   const options = seasons
     .map((s) => `<option value="${s}" ${s === selected ? "selected" : ""}>${escapeHtml(seasonLabel(s))}</option>`)
     .join("");
+  // location.replace() instead of a normal form submit: swapping seasons
+  // replaces the current history entry instead of pushing a new one, so
+  // "<- Takaisin" (history.back(), in app.js) always leaves the player card
+  // in one click no matter how many seasons were browsed first, rather than
+  // popping back through each season visited along the way.
   return `
   <form method="get" action="/pelaajat/${playerId}" class="table-filters">
-    <select name="season" onchange="this.form.submit()">${options}</select>
+    <select name="season" onchange="location.replace('/pelaajat/${playerId}?season=' + this.value)">${options}</select>
   </form>`;
 }
 
@@ -249,6 +254,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 <header class="page-header player-card-header">
   <img src="${escapeHtml(landing.headshot ?? "")}" alt="" class="player-card-photo" onerror="this.style.visibility='hidden'">
   <h1>${escapeHtml(name)}</h1>
+  ${landing.birthCountry ? `<p class="subtitle">${nationalityFlag(landing.birthCountry)} ${escapeHtml(landing.birthCity?.default ?? "")}, ${escapeHtml(landing.birthCountry)}</p>` : ""}
   <p class="subtitle">
     <img src="${escapeHtml(landing.teamLogo ?? "")}" alt="" class="table-team-logo" loading="lazy">
     ${escapeHtml(landing.fullTeamName?.default ?? landing.currentTeamAbbrev ?? "")}
@@ -264,7 +270,6 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     ${landing.weightInKilograms ? `<div class="stat-tile"><span class="stat-tile-value">${landing.weightInKilograms} kg</span><span class="stat-tile-label">Paino</span></div>` : ""}
     ${handedness ? `<div class="stat-tile"><span class="stat-tile-value">${escapeHtml(handedness)}</span><span class="stat-tile-label">Kätisyys</span></div>` : ""}
   </div>
-  ${landing.birthCountry ? `<p class="subtitle">${nationalityFlag(landing.birthCountry)} ${escapeHtml(landing.birthCity?.default ?? "")}, ${escapeHtml(landing.birthCountry)}</p>` : ""}
 </section>
 
 <section>
