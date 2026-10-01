@@ -80,9 +80,7 @@ function teamFavAttrs(teamAbbrev: string, favoriteTeamAbbrevs: Set<string>): { c
 
 function renderRow(row: SkaterStatsRow, rank: number, favoriteTeamAbbrevs: Set<string>): string {
   const favAttrs = teamFavAttrs(row.team_abbrev, favoriteTeamAbbrevs);
-  const rowClasses = [row.nationality === "FIN" ? "row-fin" : "", row.team_abbrev === "CHI" ? "row-chi" : "", favAttrs.class]
-    .filter(Boolean)
-    .join(" ");
+  const rowClasses = [row.nationality === "FIN" ? "row-fin" : "", favAttrs.class].filter(Boolean).join(" ");
 
   return `
       <tr class="${rowClasses}"${favAttrs.style} data-name="${escapeHtml(row.name)}" data-team="${escapeHtml(row.team_abbrev)}"

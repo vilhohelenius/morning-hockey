@@ -1450,15 +1450,11 @@ main {
   border-left: 3px solid var(--accent);
 }
 
-.row-chi td:first-child {
-  border-left: 3px solid #dc2626;
-}
-
 /* Team-fav uses a pseudo-element stripe (not border-left) so it can sit on
-   the SAME left edge as row-fin/row-chi without one overwriting the other:
-   by default it sits flush at left:0, but when a row is both Finnish/Chilean
-   AND on a favorite team, it shifts to left:3px to sit right next to the
-   existing border-left stripe instead of covering it. */
+   the SAME left edge as row-fin without one overwriting the other: by
+   default it sits flush at left:0, but when a row is both Finnish AND on a
+   favorite team, it shifts to left:3px to sit right next to the existing
+   border-left stripe instead of covering it. */
 .row-team-fav td:first-child {
   position: relative;
 }
@@ -1473,8 +1469,7 @@ main {
   background: var(--team-fav-color, var(--accent));
 }
 
-.row-fin.row-team-fav td:first-child::before,
-.row-chi.row-team-fav td:first-child::before {
+.row-fin.row-team-fav td:first-child::before {
   left: 3px;
 }
 
