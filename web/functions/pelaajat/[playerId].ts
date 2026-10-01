@@ -143,9 +143,15 @@ function renderGoalieStatTiles(t: SeasonTotal): string {
   </div>`;
 }
 
-function renderSkaterTotalRow(label: string, t: SeasonTotal): string {
+// Shared row shape for every place a skater's SeasonTotal needs to be one
+// table row: the per-game table's <tfoot> total, each row (and the total
+// row) of the season-history table, and the one-row "Kauden tilastot"
+// summary. rowClass defaults to "total-row" (the per-game tfoot and the
+// one-row summary both want that emphasis); season-history passes "" for
+// its plain per-season rows and "total-row" again for its own total row.
+function renderSkaterTotalRow(label: string, t: SeasonTotal, rowClass = "total-row"): string {
   return `
-      <tr class="total-row">
+      <tr${rowClass ? ` class="${rowClass}"` : ""}>
         <td>${escapeHtml(label)}</td>
         <td>${t.gamesPlayed}</td>
         <td>${t.goals ?? 0}</td>
@@ -155,6 +161,63 @@ function renderSkaterTotalRow(label: string, t: SeasonTotal): string {
         <td>${t.pim ?? 0}</td>
         <td>${t.avgToi ? escapeHtml(t.avgToi) : "–"}</td>
       </tr>`;
+}
+
+// Goalie equivalent of renderSkaterTotalRow -- same Ottelut/Voitot/
+// Torjunta-%/GAA/Nollapelit shape as renderGoalieStatTiles, just as a row
+// instead of tiles. Used by the season-history table and the one-row
+// "Kauden tilastot" summary (goalies never had a per-game tfoot total, so
+// no third use here the way skaters have).
+function renderGoalieStatRow(label: string, t: SeasonTotal, rowClass = "total-row"): string {
+  return `
+      <tr${rowClass ? ` class="${rowClass}"` : ""}>
+        <td>${escapeHtml(label)}</td>
+        <td>${t.gamesPlayed}</td>
+        <td>${t.wins ?? 0}</td>
+        <td class="stat-strong">${(t.savePctg ?? 0).toFixed(3)}</td>
+        <td>${(t.goalsAgainstAvg ?? 0).toFixed(2)}</td>
+        <td>${t.shutouts ?? 0}</td>
+      </tr>`;
+}
+
+function renderSkaterOneRowSummary(t: SeasonTotal): string {
+  return `
+  <div class="stats-table-wrap">
+    <table class="stats-table">
+      <thead>
+        <tr>
+          <th>Kausi</th>
+          <th>Ottelut</th>
+          <th>M</th>
+          <th>S</th>
+          <th>P</th>
+          <th>+/-</th>
+          <th>JH</th>
+          <th>TOI/GP</th>
+        </tr>
+      </thead>
+      <tbody>${renderSkaterTotalRow(seasonLabel(t.season), t)}</tbody>
+    </table>
+  </div>`;
+}
+
+function renderGoalieOneRowSummary(t: SeasonTotal): string {
+  return `
+  <div class="stats-table-wrap">
+    <table class="stats-table">
+      <thead>
+        <tr>
+          <th>Kausi</th>
+          <th>Ottelut</th>
+          <th>Voitot</th>
+          <th>SV%</th>
+          <th>GAA</th>
+          <th>NP</th>
+        </tr>
+      </thead>
+      <tbody>${renderGoalieStatRow(seasonLabel(t.season), t)}</tbody>
+    </table>
+  </div>`;
 }
 
 // Opponent shown as a logo instead of the abbreviation text -- same
@@ -222,10 +285,10 @@ function renderSkaterGameLog(games: any[], seasonTotal: SeasonTotal | null): str
 // read defensively so an undrafted player (no draftDetails at all) or an
 // unexpected shape just skips the tile instead of rendering "undefined".
 //
-// Lives in the bio .stat-grid as one more tile alongside Ikä/Pituus/Paino/
-// Kätisyys (not its own section) -- year + team logo on the value line,
-// round + overall pick on the label line. Packing four pieces of info into
-// one tile-sized box is tight and the label line will wrap on narrow
+// Lives in the bio .stat-tile-grid as one more tile alongside Ikä/Pituus/
+// Paino/Kätisyys (not its own section) -- year + team logo on the value
+// line, round + overall pick on the label line. Packing four pieces of info
+// into one tile-sized box is tight and the label line will wrap on narrow
 // screens; that's accepted as a known trade-off, not a bug.
 function renderDraftTile(draft: any): string {
   if (!draft?.year) return "";
@@ -251,20 +314,8 @@ function renderDraftTile(draft: any): string {
 function renderSkaterSeasonHistory(rows: SeasonTotal[], total: SeasonTotal | null): string {
   if (!rows.length) return `<p class="empty-note">Ei NHL-kausia.</p>`;
 
-  const row = (label: string, t: SeasonTotal, rowClass?: string) => `
-      <tr${rowClass ? ` class="${rowClass}"` : ""}>
-        <td>${escapeHtml(label)}</td>
-        <td>${t.gamesPlayed}</td>
-        <td>${t.goals ?? 0}</td>
-        <td>${t.assists ?? 0}</td>
-        <td class="stat-strong">${t.points ?? 0}</td>
-        <td>${(t.plusMinus ?? 0) > 0 ? "+" : ""}${t.plusMinus ?? 0}</td>
-        <td>${t.pim ?? 0}</td>
-        <td>${t.avgToi ? escapeHtml(t.avgToi) : "–"}</td>
-      </tr>`;
-
-  const trs = rows.map((t) => row(seasonLabel(t.season), t)).join("");
-  const totalRow = total ? row("Yhteensä", total, "total-row") : "";
+  const trs = rows.map((t) => renderSkaterTotalRow(seasonLabel(t.season), t, "")).join("");
+  const totalRow = total ? renderSkaterTotalRow("Yhteensä", total) : "";
 
   return `
   <div class="stats-table-wrap">
@@ -290,18 +341,8 @@ function renderSkaterSeasonHistory(rows: SeasonTotal[], total: SeasonTotal | nul
 function renderGoalieSeasonHistory(rows: SeasonTotal[], total: SeasonTotal | null): string {
   if (!rows.length) return `<p class="empty-note">Ei NHL-kausia.</p>`;
 
-  const row = (label: string, t: SeasonTotal, rowClass?: string) => `
-      <tr${rowClass ? ` class="${rowClass}"` : ""}>
-        <td>${escapeHtml(label)}</td>
-        <td>${t.gamesPlayed}</td>
-        <td>${t.wins ?? 0}</td>
-        <td class="stat-strong">${(t.savePctg ?? 0).toFixed(3)}</td>
-        <td>${(t.goalsAgainstAvg ?? 0).toFixed(2)}</td>
-        <td>${t.shutouts ?? 0}</td>
-      </tr>`;
-
-  const trs = rows.map((t) => row(seasonLabel(t.season), t)).join("");
-  const totalRow = total ? row("Yhteensä", total, "total-row") : "";
+  const trs = rows.map((t) => renderGoalieStatRow(seasonLabel(t.season), t, "")).join("");
+  const totalRow = total ? renderGoalieStatRow("Yhteensä", total) : "";
 
   return `
   <div class="stats-table-wrap">
@@ -420,6 +461,12 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   const careerTotal: SeasonTotal | null = landing.careerTotals?.regularSeason ?? null;
   const careerPlayoffsTotal: SeasonTotal | null = landing.careerTotals?.playoffs ?? null;
 
+  // Always the newest season with data, independent of the ?season= query
+  // param -- the fixed "Kausi <newest>" tile section near the top is an
+  // at-a-glance snapshot, not something the season <select> (further down,
+  // next to Ottelut) is meant to change.
+  const latestSeasonTotal = seasons.length ? (seasonTotals.find((s) => s.season === seasons[0]) ?? null) : null;
+
   const regularSeasonHistory = [...seasonTotals].sort((a, b) => b.season - a.season);
   const playoffHistory: SeasonTotal[] = (landing.seasonTotals ?? [])
     .filter((s: SeasonTotal) => s.leagueAbbrev === "NHL" && s.gameTypeId === 3)
@@ -458,7 +505,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 </header>
 
 <section>
-  <div class="stat-grid">
+  <div class="stat-tile-grid">
     ${age !== null ? `<div class="stat-tile"><span class="stat-tile-value">${age}</span><span class="stat-tile-label">Ikä</span></div>` : ""}
     ${landing.heightInCentimeters ? `<div class="stat-tile"><span class="stat-tile-value">${landing.heightInCentimeters} cm</span><span class="stat-tile-label">Pituus</span></div>` : ""}
     ${landing.weightInKilograms ? `<div class="stat-tile"><span class="stat-tile-value">${landing.weightInKilograms} kg</span><span class="stat-tile-label">Paino</span></div>` : ""}
@@ -466,6 +513,15 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     ${renderDraftTile(landing.draftDetails)}
   </div>
 </section>
+
+${
+  latestSeasonTotal
+    ? `<section>
+  <h2 class="section-title">Kausi ${escapeHtml(seasonLabel(seasons[0]))}</h2>
+  ${isGoalie ? renderGoalieStatTiles(latestSeasonTotal) : renderSkaterStatTiles(latestSeasonTotal)}
+</section>`
+    : ""
+}
 
 ${
   careerTotal
@@ -478,18 +534,20 @@ ${
 
 ${renderSeasonHistorySection(isGoalie, regularSeasonHistory, playoffHistory, careerTotal, careerPlayoffsTotal)}
 
-${
-  seasonTotal
-    ? `<section>
+<section>
   <h2 class="section-title">Kauden tilastot (${escapeHtml(seasonLabel(selectedSeason))})</h2>
-  ${isGoalie ? renderGoalieStatTiles(seasonTotal) : renderSkaterStatTiles(seasonTotal)}
-</section>`
-    : ""
-}
+  ${renderSeasonSelect(playerId, seasons.length ? seasons : [currentSeasonId()], selectedSeason)}
+  ${
+    seasonTotal
+      ? isGoalie
+        ? renderGoalieOneRowSummary(seasonTotal)
+        : renderSkaterOneRowSummary(seasonTotal)
+      : ""
+  }
+</section>
 
 <section>
   <h2 class="section-title">Ottelut</h2>
-  ${renderSeasonSelect(playerId, seasons.length ? seasons : [currentSeasonId()], selectedSeason)}
   ${gameLogHtml}
 </section>
 `;
