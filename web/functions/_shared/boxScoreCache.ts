@@ -85,6 +85,26 @@ function fromCacheRow(cached: GameBoxScoreRow): ParsedBoxScore {
   };
 }
 
+// Read-only, no NHL fetch -- for pages listing many games at once (Arkisto
+// can list a whole season), where eagerly fetching+caching every uncached
+// one on a single page load would mean a burst of live NHL calls instead
+// of the on-demand, one-game-at-a-time cost the architecture is built
+// around. A game not yet cached here (nobody has opened its full report or
+// seen it on the dashboard yet) just won't have a popup until someone does.
+export async function getCachedBoxScores(db: D1Database, gameIds: number[]): Promise<Map<number, ParsedBoxScore>> {
+  const map = new Map<number, ParsedBoxScore>();
+  if (!gameIds.length) return map;
+
+  const placeholders = gameIds.map(() => "?").join(",");
+  const { results } = await db
+    .prepare(`SELECT * FROM game_box_scores WHERE game_id IN (${placeholders})`)
+    .bind(...gameIds)
+    .all<GameBoxScoreRow>();
+
+  for (const row of results) map.set(row.game_id, fromCacheRow(row));
+  return map;
+}
+
 // Only ever call this for games.is_finished = 1 -- an unfinished game has
 // no box score yet, and callers should show a "not played yet" placeholder
 // instead.

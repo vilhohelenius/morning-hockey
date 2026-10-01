@@ -11,44 +11,67 @@
 // changing in Finland before the next night's games have actually started.
 // Fixed 2026-10-01 by picking the date to show directly from `games`
 // (synced every 30 min, always current): the most recent date with any
-// game that has actually started, finished or not. `digests`'s child
-// tables (digest_scorers/digest_goalies, the Finnish per-game highlights)
-// are still used, just as best-effort enrichment keyed by game_id rather
-// than as the source of which date/games to show -- so a night's scores
-// appear immediately from the fast tier, and the Finnish stat lines fill
-// in themselves whenever the daily digest job next catches up.
+// game that has actually started, finished or not.
 //
-// The click-to-expand info box (#game-details, same mechanism as the
-// original static site and as sarjataulukko.ts's team snapshot) reuses
+// The Finnish per-game highlights (scorer/goalie lines) and the click-to-
+// expand info box (#game-details, same mechanism as the original static
+// site and as sarjataulukko.ts's team snapshot) both come straight off
 // _shared/boxScoreCache's getBoxScore -- same cache /ottelut/[gameId] reads
 // and writes, so a game already visited there (or by an earlier dashboard
-// load) opens instantly; a brand new one fetches+caches it on this page
-// load instead. Only attempted for finished games.
+// load) shows instantly; a brand new one fetches+caches it on this page
+// load instead. This replaced an earlier version keyed off the once-daily
+// digest sync's digest_scorers/digest_goalies tables, which meant a
+// Finnish player's line could take until the next day's cron to appear
+// even though the box score (and the score itself) was already available
+// -- now it shows up the moment the box score does, same as everything
+// else on this page. Only attempted for finished games.
 //
 // The "Aiemmat yöt" archive footer linking to nights/<date>.html isn't
 // ported -- superseded by /arkisto, a real route here.
 
-import { getBoxScore } from "./_shared/boxScoreCache";
 import { currentUsername } from "./_shared/auth";
+import { getBoxScore } from "./_shared/boxScoreCache";
 import { decisionFi, escapeHtml, finalTypeFi, helsinkiParts, humanDate, nationalityFlag, shortDate } from "./_shared/format";
 import { renderLayout } from "./_shared/layout";
 import type {
-  DigestGameRow,
-  DigestGoalieRow,
-  DigestScorerRow,
   Env,
   FinnishSkaterRow,
   GameRow,
+  GoalieGameStat,
+  PlayerGameStat,
   SkaterStatsRow,
   StandingsRow,
   TeamRosterSkaterRow,
 } from "./_shared/types";
 
-// Generous window, same reasoning as sarjataulukko.ts's buildSnapshots:
-// fetch once, filter/group in TS, rather than a query per game.
-const ENRICHMENT_QUERY_LIMIT = 500;
+interface FinnScorerLine {
+  name: string;
+  team_abbrev: string;
+  goals: number;
+  assists: number;
+}
 
-function renderGameCard(game: GameRow, finalType: string, scorers: DigestScorerRow[], goalies: DigestGoalieRow[]): string {
+interface FinnGoalieLine {
+  name: string;
+  team_abbrev: string;
+  decision: string | null;
+  saves: number;
+  shots_against: number;
+}
+
+function finnishScorerLines(skaters: PlayerGameStat[], teamAbbrev: string): FinnScorerLine[] {
+  return skaters
+    .filter((p) => p.nationality === "FIN" && (p.goals > 0 || p.assists > 0))
+    .map((p) => ({ name: p.name, team_abbrev: teamAbbrev, goals: p.goals, assists: p.assists }));
+}
+
+function finnishGoalieLines(goalies: GoalieGameStat[], teamAbbrev: string): FinnGoalieLine[] {
+  return goalies
+    .filter((g) => g.nationality === "FIN")
+    .map((g) => ({ name: g.name, team_abbrev: teamAbbrev, decision: g.decision, saves: g.saves, shots_against: g.shots_against }));
+}
+
+function renderGameCard(game: GameRow, finalType: string, scorers: FinnScorerLine[], goalies: FinnGoalieLine[]): string {
   const finnStats =
     scorers.length || goalies.length
       ? `
@@ -254,29 +277,28 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       .all<GameRow>();
     roundGames = results;
 
-    const [{ results: digestGames }, { results: allScorers }, { results: allGoalies }] = await Promise.all([
-      db.prepare("SELECT * FROM digest_games ORDER BY digest_date DESC LIMIT ?").bind(ENRICHMENT_QUERY_LIMIT).all<DigestGameRow>(),
-      db.prepare("SELECT * FROM digest_scorers LIMIT ?").bind(ENRICHMENT_QUERY_LIMIT).all<DigestScorerRow>(),
-      db.prepare("SELECT * FROM digest_goalies LIMIT ?").bind(ENRICHMENT_QUERY_LIMIT).all<DigestGoalieRow>(),
-    ]);
-    const finalTypeByGame = new Map(digestGames.map((g) => [g.game_id, g.final_type]));
-    const scorersByGame = new Map<number, DigestScorerRow[]>();
-    for (const s of allScorers) scorersByGame.set(s.game_id, [...(scorersByGame.get(s.game_id) ?? []), s]);
-    const goaliesByGame = new Map<number, DigestGoalieRow[]>();
-    for (const g of allGoalies) goaliesByGame.set(g.game_id, [...(goaliesByGame.get(g.game_id) ?? []), g]);
-
     for (const game of roundGames) {
-      gameCardsHtml += renderGameCard(
-        game,
-        finalTypeByGame.get(game.game_id) ?? "REG",
-        scorersByGame.get(game.game_id) ?? [],
-        goaliesByGame.get(game.game_id) ?? [],
-      );
+      let finalType = "REG";
+      let scorers: FinnScorerLine[] = [];
+      let goalies: FinnGoalieLine[] = [];
 
       if (game.is_finished) {
         const { box } = await getBoxScore(db, game);
-        if (box) gameDetails[game.game_id] = { goals: box.goals, team_stats: box.teamStats };
+        if (box) {
+          finalType = box.finalType;
+          gameDetails[game.game_id] = { goals: box.goals, team_stats: box.teamStats };
+          scorers = [
+            ...finnishScorerLines(box.awaySkaters, game.away_abbrev),
+            ...finnishScorerLines(box.homeSkaters, game.home_abbrev),
+          ].sort((a, b) => b.goals + b.assists - (a.goals + a.assists));
+          goalies = [
+            ...finnishGoalieLines(box.awayGoalies, game.away_abbrev),
+            ...finnishGoalieLines(box.homeGoalies, game.home_abbrev),
+          ];
+        }
       }
+
+      gameCardsHtml += renderGameCard(game, finalType, scorers, goalies);
     }
   }
 
@@ -335,9 +357,17 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
   // ---------- Next upcoming round ----------
 
-  const nextRound = await db
-    .prepare("SELECT date FROM games WHERE is_finished = 0 ORDER BY date ASC LIMIT 1")
-    .first<{ date: string }>();
+  // Strictly after currentRound's date, not just "any unfinished game" --
+  // otherwise, once tonight's round has started (so it's showing up top as
+  // currentRound) but not every one of its games has tipped off yet, this
+  // would show the same round a second time down here instead of the one
+  // after it.
+  const nextRound = currentRound
+    ? await db
+        .prepare("SELECT date FROM games WHERE is_finished = 0 AND date > ? ORDER BY date ASC LIMIT 1")
+        .bind(currentRound.date)
+        .first<{ date: string }>()
+    : await db.prepare("SELECT date FROM games WHERE is_finished = 0 ORDER BY date ASC LIMIT 1").first<{ date: string }>();
 
   let upcomingHtml = "";
   if (nextRound) {

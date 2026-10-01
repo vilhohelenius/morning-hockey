@@ -112,7 +112,10 @@ INSERT INTO game_box_scores (game_id, final_type, goals_json, team_stats_json, a
 (2001, 'OT',
 '[{"period_label":"3. erä","time_in_period":"11:05","team_abbrev":"CAR","scorer":"Sebastian Aho","assists":["Andrei Svechnikov"],"strength":"","away_score":2,"home_score":2},{"period_label":"Jatkoaika","time_in_period":"02:14","team_abbrev":"CAR","scorer":"Sebastian Aho","assists":[],"strength":"","away_score":3,"home_score":2}]',
 '[{"label":"Laukaukset","away_value":"30","home_value":"28"},{"label":"Aloitusprosentti","away_value":"52.0 %","home_value":"48.0 %"}]',
-'[]', '[]', '[]', '[]',
+'[{"player_id":8478427,"name":"Sebastian Aho","position":"C","nationality":"FIN","headshot":"https://assets.nhle.com/mugs/nhl/20262027/CAR/8478427.png","goals":2,"assists":1,"points":3,"plus_minus":2,"shots":5,"pim":0,"toi":"20:11"}]',
+'[]',
+'[{"player_id":8477424,"name":"Juuse Saros","nationality":"FIN","headshot":"https://assets.nhle.com/mugs/nhl/20262027/CAR/8477424.png","decision":"W","saves":28,"shots_against":30,"save_pct":0.933,"toi":"65:14"}]',
+'[]',
 '2026-09-30T12:00:00Z');
 
 -- Phase 6: full per-team rosters + season stats, for TOR (team page's own
