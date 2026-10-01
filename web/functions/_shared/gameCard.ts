@@ -22,7 +22,9 @@
 // team-stats info box, reading a page-level `#game-details` JSON script
 // tag keyed by game_id -- callers are responsible for emitting that tag.
 
-import { decisionFi, escapeHtml, finalTypeFi } from "./format";
+import { periodLabel } from "./boxscore";
+import type { LiveStatus } from "./boxScoreCache";
+import { decisionFi, escapeHtml, finalTypeFi, helsinkiParts } from "./format";
 import type { GameRow, GoalieGameStat, PlayerGameStat } from "./types";
 
 export interface FinnScorerLine {
@@ -60,7 +62,18 @@ export function isLive(game: GameRow): boolean {
   return !game.is_finished && game.game_state !== "FUT";
 }
 
-export function renderGameCard(game: GameRow, scorers: FinnScorerLine[], goalies: FinnGoalieLine[]): string {
+function liveBadgeText(live: LiveStatus | null): string {
+  if (!live) return "LIVE";
+  if (live.inIntermission) return "Erätauko";
+  return `${periodLabel({ periodType: live.periodType, number: live.periodNumber })} · ${live.timeRemaining}`;
+}
+
+export function renderGameCard(
+  game: GameRow,
+  scorers: FinnScorerLine[],
+  goalies: FinnGoalieLine[],
+  live: LiveStatus | null = null,
+): string {
   const finnStats =
     scorers.length || goalies.length
       ? `
@@ -91,8 +104,21 @@ export function renderGameCard(game: GameRow, scorers: FinnScorerLine[], goalies
       ? `<p class="ot-tag">${escapeHtml(finalTypeFi(game.final_type))}</p>`
       : ""
     : isLive(game)
-      ? `<p class="live-tag"><span class="live-dot"></span>LIVE</p>`
+      ? `<p class="live-tag"><span class="live-dot"></span>${escapeHtml(liveBadgeText(live))}</p>`
       : "";
+
+  // Not started yet: the score (always 0-0) says nothing useful, so show
+  // its Helsinki-local start time there instead.
+  const scoreHtml =
+    game.is_finished || isLive(game)
+      ? `
+      <span>${game.away_score}</span>
+      <span class="dash">–</span>
+      <span>${game.home_score}</span>`
+      : (() => {
+          const { hour, minute } = helsinkiParts(game.start_time_utc);
+          return `<span class="score-time">${hour}:${String(minute).padStart(2, "0")}</span>`;
+        })();
 
   return `
 <div class="game-card game-card-trigger" data-game-id="${game.game_id}" tabindex="0" role="button" aria-expanded="false">
@@ -102,9 +128,7 @@ export function renderGameCard(game: GameRow, scorers: FinnScorerLine[], goalies
       <span class="abbrev">${escapeHtml(game.away_abbrev)}</span>
     </div>
     <div class="score">
-      <span>${game.away_score}</span>
-      <span class="dash">–</span>
-      <span>${game.home_score}</span>
+      ${scoreHtml}
     </div>
     <div class="team home">
       <span class="abbrev">${escapeHtml(game.home_abbrev)}</span>

@@ -1,0 +1,16 @@
+{
+  "name": "Morning Hockey",
+  "short_name": "Morning Hockey",
+  "description": "NHL-tilastot ja Suomipörssi suomeksi.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f1115",
+  "theme_color": "#0f1115",
+  "icons": [
+    {
+      "src": "/static/icon.jpg",
+      "sizes": "322x322",
+      "type": "image/jpeg"
+    }
+  ]
+}

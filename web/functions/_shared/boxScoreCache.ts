@@ -23,6 +23,18 @@ async function fetchJson(path: string): Promise<any> {
   return response.json();
 }
 
+// A live game's current period/clock, from landing's own `clock` +
+// `periodDescriptor` -- only meaningful (and only ever populated) for the
+// uncached fetchLiveBoxScore path; a cache hit (a finished game) always
+// gets `live: null`, since the cache is for settled results only and
+// where/how much time is left no longer means anything once a game's over.
+export interface LiveStatus {
+  periodNumber: number;
+  periodType: string; // "REG" | "OT" | "SO"
+  timeRemaining: string; // "MM:SS", counts down to 00:00
+  inIntermission: boolean;
+}
+
 export interface ParsedBoxScore {
   finalType: string;
   goals: GoalEvent[];
@@ -31,6 +43,7 @@ export interface ParsedBoxScore {
   homeSkaters: PlayerGameStat[];
   awayGoalies: GoalieGameStat[];
   homeGoalies: GoalieGameStat[];
+  live: LiveStatus | null;
 }
 
 async function fetchAndParseBoxScore(game: GameRow): Promise<ParsedBoxScore> {
@@ -70,7 +83,17 @@ async function fetchAndParseBoxScore(game: GameRow): Promise<ParsedBoxScore> {
     nationalities,
   );
 
-  return { finalType, goals, teamStats, awaySkaters, homeSkaters, awayGoalies, homeGoalies };
+  const live: LiveStatus | null =
+    landing?.clock && landing?.periodDescriptor
+      ? {
+          periodNumber: landing.periodDescriptor.number ?? 0,
+          periodType: landing.periodDescriptor.periodType ?? "REG",
+          timeRemaining: landing.clock.timeRemaining ?? "00:00",
+          inIntermission: !!landing.clock.inIntermission,
+        }
+      : null;
+
+  return { finalType, goals, teamStats, awaySkaters, homeSkaters, awayGoalies, homeGoalies, live };
 }
 
 // For a game still in progress: the same landing/right-rail/boxscore/
@@ -97,6 +120,7 @@ function fromCacheRow(cached: GameBoxScoreRow): ParsedBoxScore {
     homeSkaters: JSON.parse(cached.home_skaters_json),
     awayGoalies: JSON.parse(cached.away_goalies_json),
     homeGoalies: JSON.parse(cached.home_goalies_json),
+    live: null,
   };
 }
 

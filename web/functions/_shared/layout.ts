@@ -114,6 +114,12 @@ export async function renderLayout(options: LayoutOptions): Promise<string> {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${title}</title>
 <link rel="stylesheet" href="/static/style.css">
+<link rel="icon" href="/static/icon.jpg">
+<link rel="apple-touch-icon" href="/static/icon.jpg">
+<link rel="manifest" href="/static/manifest.json">
+<meta name="theme-color" content="#0f1115">
+<meta name="apple-mobile-web-app-title" content="Morning Hockey">
+<meta name="apple-mobile-web-app-capable" content="yes">
 </head>
 <body>
 <div class="app-shell">

@@ -28,7 +28,7 @@ interface RawPeriod {
   goals?: RawGoal[];
 }
 
-function periodLabel(descriptor: { periodType?: string; number?: number }): string {
+export function periodLabel(descriptor: { periodType?: string; number?: number }): string {
   const periodType = descriptor.periodType ?? "REG";
   if (periodType === "OT") return "Jatkoaika";
   if (periodType === "SO") return "Voittolaukaukset";

@@ -229,7 +229,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
         ];
       }
 
-      gameCardsHtml += renderGameCard(game, scorers, goalies);
+      gameCardsHtml += renderGameCard(game, scorers, goalies, box?.live ?? null);
     }
   }
 
@@ -323,7 +323,8 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
   const content = `
 <header class="page-header">
-  <h1 class="brand-heading">🏒 Yön änärit</h1>
+  <img src="/static/banner_light.jpg" alt="Morning Hockey" class="brand-banner brand-banner-light">
+  <img src="/static/banner_dark.jpg" alt="Morning Hockey" class="brand-banner brand-banner-dark">
   ${currentRound ? "" : `<p class="subtitle">Ei vielä otteluita tällä kaudella</p>`}
 </header>
 
