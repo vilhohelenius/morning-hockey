@@ -34,20 +34,26 @@ INSERT INTO standings_rows (abbrev, as_of_date, name, logo, conference, division
 -- teaser only reads standings_rows + games, not the bracket.
 ('CHI', '2026-09-30', 'Blackhawks', 'https://assets.nhle.com/logos/nhl/svg/CHI_light.svg', 'Western', 'Central', 6, 0, 0, 7, 2, 5, 0, 4, -8, '2026-09-30T12:00:00Z');
 
-INSERT INTO games (game_id, date, start_time_utc, away_abbrev, away_name, away_logo, away_score, home_abbrev, home_name, home_logo, home_score, game_state, is_finished, updated_at) VALUES
-(1001, '2026-09-27', '2026-09-27T23:00:00Z', 'TOR', 'Maple Leafs', 'https://assets.nhle.com/logos/nhl/svg/TOR_light.svg', 4, 'BOS', 'Bruins', 'https://assets.nhle.com/logos/nhl/svg/BOS_light.svg', 2, 'OFF', 1, '2026-09-28T01:00:00Z'),
-(1002, '2026-09-25', '2026-09-25T23:30:00Z', 'MTL', 'Canadiens', 'https://assets.nhle.com/logos/nhl/svg/MTL_light.svg', 1, 'TOR', 'Maple Leafs', 'https://assets.nhle.com/logos/nhl/svg/TOR_light.svg', 5, 'OFF', 1, '2026-09-26T02:00:00Z'),
-(1003, '2026-10-02', '2026-10-03T00:00:00Z', 'TOR', 'Maple Leafs', 'https://assets.nhle.com/logos/nhl/svg/TOR_light.svg', 0, 'TBL', 'Lightning', 'https://assets.nhle.com/logos/nhl/svg/TBL_light.svg', 0, 'FUT', 0, '2026-09-30T12:00:00Z'),
+INSERT INTO games (game_id, date, start_time_utc, away_abbrev, away_name, away_logo, away_score, home_abbrev, home_name, home_logo, home_score, game_state, is_finished, final_type, updated_at) VALUES
+(1001, '2026-09-27', '2026-09-27T23:00:00Z', 'TOR', 'Maple Leafs', 'https://assets.nhle.com/logos/nhl/svg/TOR_light.svg', 4, 'BOS', 'Bruins', 'https://assets.nhle.com/logos/nhl/svg/BOS_light.svg', 2, 'OFF', 1, 'REG', '2026-09-28T01:00:00Z'),
+(1002, '2026-09-25', '2026-09-25T23:30:00Z', 'MTL', 'Canadiens', 'https://assets.nhle.com/logos/nhl/svg/MTL_light.svg', 1, 'TOR', 'Maple Leafs', 'https://assets.nhle.com/logos/nhl/svg/TOR_light.svg', 5, 'OFF', 1, 'REG', '2026-09-26T02:00:00Z'),
+(1003, '2026-10-02', '2026-10-03T00:00:00Z', 'TOR', 'Maple Leafs', 'https://assets.nhle.com/logos/nhl/svg/TOR_light.svg', 0, 'TBL', 'Lightning', 'https://assets.nhle.com/logos/nhl/svg/TBL_light.svg', 0, 'FUT', 0, 'REG', '2026-09-30T12:00:00Z'),
 -- Primetime test cases (Finland is UTC+3 in early October): 1004 lands at
 -- 19:00 Helsinki (in window), 1005 at 15:00 Helsinki (outside, excluded),
 -- 1006 at 00:15 Helsinki the *next* calendar day (in window, exercises the
 -- past-midnight edge of starts_in_window).
-(1004, '2026-10-01', '2026-10-01T16:00:00Z', 'CAR', 'Hurricanes', 'https://assets.nhle.com/logos/nhl/svg/CAR_light.svg', 0, 'NYR', 'Rangers', 'https://assets.nhle.com/logos/nhl/svg/NYR_light.svg', 0, 'FUT', 0, '2026-09-30T12:00:00Z'),
-(1005, '2026-10-01', '2026-10-01T12:00:00Z', 'COL', 'Avalanche', 'https://assets.nhle.com/logos/nhl/svg/COL_light.svg', 0, 'VGK', 'Golden Knights', 'https://assets.nhle.com/logos/nhl/svg/VGK_light.svg', 0, 'FUT', 0, '2026-09-30T12:00:00Z'),
-(1006, '2026-10-02', '2026-10-01T21:15:00Z', 'EDM', 'Oilers', 'https://assets.nhle.com/logos/nhl/svg/EDM_light.svg', 0, 'DAL', 'Stars', 'https://assets.nhle.com/logos/nhl/svg/DAL_light.svg', 0, 'FUT', 0, '2026-09-30T12:00:00Z'),
+(1004, '2026-10-01', '2026-10-01T16:00:00Z', 'CAR', 'Hurricanes', 'https://assets.nhle.com/logos/nhl/svg/CAR_light.svg', 0, 'NYR', 'Rangers', 'https://assets.nhle.com/logos/nhl/svg/NYR_light.svg', 0, 'FUT', 0, 'REG', '2026-09-30T12:00:00Z'),
+(1005, '2026-10-01', '2026-10-01T12:00:00Z', 'COL', 'Avalanche', 'https://assets.nhle.com/logos/nhl/svg/COL_light.svg', 0, 'VGK', 'Golden Knights', 'https://assets.nhle.com/logos/nhl/svg/VGK_light.svg', 0, 'FUT', 0, 'REG', '2026-09-30T12:00:00Z'),
+(1006, '2026-10-02', '2026-10-01T21:15:00Z', 'EDM', 'Oilers', 'https://assets.nhle.com/logos/nhl/svg/EDM_light.svg', 0, 'DAL', 'Stars', 'https://assets.nhle.com/logos/nhl/svg/DAL_light.svg', 0, 'FUT', 0, 'REG', '2026-09-30T12:00:00Z'),
 -- CHI games, for the dashboard team teaser's recent/upcoming panel.
-(1007, '2026-09-28', '2026-09-29T00:00:00Z', 'CHI', 'Blackhawks', 'https://assets.nhle.com/logos/nhl/svg/CHI_light.svg', 2, 'MIN', 'Wild', 'https://assets.nhle.com/logos/nhl/svg/MIN_light.svg', 5, 'OFF', 1, '2026-09-29T02:30:00Z'),
-(1008, '2026-10-03', '2026-10-04T01:00:00Z', 'CHI', 'Blackhawks', 'https://assets.nhle.com/logos/nhl/svg/CHI_light.svg', 0, 'NSH', 'Predators', 'https://assets.nhle.com/logos/nhl/svg/NSH_light.svg', 0, 'FUT', 0, '2026-09-30T12:00:00Z');
+(1007, '2026-09-28', '2026-09-29T00:00:00Z', 'CHI', 'Blackhawks', 'https://assets.nhle.com/logos/nhl/svg/CHI_light.svg', 2, 'MIN', 'Wild', 'https://assets.nhle.com/logos/nhl/svg/MIN_light.svg', 5, 'OFF', 1, 'REG', '2026-09-29T02:30:00Z'),
+(1008, '2026-10-03', '2026-10-04T01:00:00Z', 'CHI', 'Blackhawks', 'https://assets.nhle.com/logos/nhl/svg/CHI_light.svg', 0, 'NSH', 'Predators', 'https://assets.nhle.com/logos/nhl/svg/NSH_light.svg', 0, 'FUT', 0, 'REG', '2026-09-30T12:00:00Z'),
+-- 3001: in-progress game, later than everything else above -- tests the
+-- LIVE badge and currentRound correctly advancing to it. Its live box-
+-- score fetch will fail gracefully (fake game_id, not a real NHL game),
+-- same as 1001's cache-miss case; only the badge rendering (driven by
+-- is_finished/game_state, not the fetch) is what this seed row is for.
+(3001, '2026-10-02', '2026-10-02T23:00:00Z', 'EDM', 'Oilers', 'https://assets.nhle.com/logos/nhl/svg/EDM_light.svg', 2, 'CGY', 'Flames', 'https://assets.nhle.com/logos/nhl/svg/CGY_light.svg', 1, 'LIVE', 0, 'REG', '2026-10-02T23:45:00Z');
 
 INSERT INTO skater_season_stats (player_id, season_id, name, team_abbrev, logo, headshot, nationality, position, games_played, goals, assists, points, updated_at) VALUES
 (8479318, 20262027, 'Auston Matthews', 'TOR', 'https://assets.nhle.com/logos/nhl/svg/TOR_light.svg', 'https://assets.nhle.com/mugs/nhl/20262027/TOR/8479318.png', 'USA', 'C', 6, 7, 4, 11, '2026-09-30T12:00:00Z'),
@@ -72,9 +78,9 @@ INSERT INTO finnish_goalie_stats (player_id, season_id, name, team_abbrev, logo,
 -- (tests the game card's bare-scoreline path with no finn-stats div).
 INSERT INTO digests (date, generated_at) VALUES ('2026-09-29', '2026-09-30T06:00:00Z');
 
-INSERT INTO games (game_id, date, start_time_utc, away_abbrev, away_name, away_logo, away_score, home_abbrev, home_name, home_logo, home_score, game_state, is_finished, updated_at) VALUES
-(2001, '2026-09-29', '2026-09-29T00:00:00Z', 'CAR', 'Hurricanes', 'https://assets.nhle.com/logos/nhl/svg/CAR_light.svg', 3, 'NYR', 'Rangers', 'https://assets.nhle.com/logos/nhl/svg/NYR_light.svg', 2, 'OFF', 1, '2026-09-29T03:00:00Z'),
-(2002, '2026-09-29', '2026-09-29T00:00:00Z', 'VGK', 'Golden Knights', 'https://assets.nhle.com/logos/nhl/svg/VGK_light.svg', 4, 'LAK', 'Kings', 'https://assets.nhle.com/logos/nhl/svg/LAK_light.svg', 1, 'OFF', 1, '2026-09-29T03:00:00Z');
+INSERT INTO games (game_id, date, start_time_utc, away_abbrev, away_name, away_logo, away_score, home_abbrev, home_name, home_logo, home_score, game_state, is_finished, final_type, updated_at) VALUES
+(2001, '2026-09-29', '2026-09-29T00:00:00Z', 'CAR', 'Hurricanes', 'https://assets.nhle.com/logos/nhl/svg/CAR_light.svg', 3, 'NYR', 'Rangers', 'https://assets.nhle.com/logos/nhl/svg/NYR_light.svg', 2, 'OFF', 1, 'OT', '2026-09-29T03:00:00Z'),
+(2002, '2026-09-29', '2026-09-29T00:00:00Z', 'VGK', 'Golden Knights', 'https://assets.nhle.com/logos/nhl/svg/VGK_light.svg', 4, 'LAK', 'Kings', 'https://assets.nhle.com/logos/nhl/svg/LAK_light.svg', 1, 'OFF', 1, 'REG', '2026-09-29T03:00:00Z');
 
 INSERT INTO digest_games (game_id, digest_date, away_abbrev, away_name, away_logo, away_score, home_abbrev, home_name, home_logo, home_score, final_type, updated_at) VALUES
 (2001, '2026-09-29', 'CAR', 'Hurricanes', 'https://assets.nhle.com/logos/nhl/svg/CAR_light.svg', 3, 'NYR', 'Rangers', 'https://assets.nhle.com/logos/nhl/svg/NYR_light.svg', 2, 'OT', '2026-09-30T06:00:00Z'),

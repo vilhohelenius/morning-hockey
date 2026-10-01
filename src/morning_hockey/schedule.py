@@ -23,6 +23,7 @@ class ScheduleGame:
     start_local: dt.datetime  # Europe/Helsinki, tz-aware
     game_state: str
     is_finished: bool
+    final_type: str  # "REG" | "OT" | "SO", meaningful only once is_finished
 
 
 @dataclass(frozen=True)
@@ -87,6 +88,7 @@ def build_schedule(client: NHLClient, date: str = "now") -> SchedulePage:
                     start_local=start_local,
                     game_state=game_state,
                     is_finished=game_state in FINISHED_STATES,
+                    final_type=game.get("gameOutcome", {}).get("lastPeriodType", "REG"),
                 )
             )
 

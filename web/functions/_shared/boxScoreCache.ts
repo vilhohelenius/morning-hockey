@@ -73,6 +73,21 @@ async function fetchAndParseBoxScore(game: GameRow): Promise<ParsedBoxScore> {
   return { finalType, goals, teamStats, awaySkaters, homeSkaters, awayGoalies, homeGoalies };
 }
 
+// For a game still in progress: the same landing/right-rail/boxscore/
+// roster fetch, but never cached -- the data changes play by play, so
+// caching it would freeze a live game's state. Called fresh on every
+// dashboard load for whichever games are currently live (a handful at
+// most), same reasoning as getCachedBoxScores about not scaling this to
+// every game ever played.
+export async function fetchLiveBoxScore(game: GameRow): Promise<ParsedBoxScore | null> {
+  try {
+    return await fetchAndParseBoxScore(game);
+  } catch (error) {
+    console.error(`Live box score fetch failed for game ${game.game_id}:`, error);
+    return null;
+  }
+}
+
 function fromCacheRow(cached: GameBoxScoreRow): ParsedBoxScore {
   return {
     finalType: cached.final_type,

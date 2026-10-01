@@ -186,7 +186,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       <img src="${escapeHtml(game.home_logo)}" alt="" class="logo" loading="lazy">
     </div>
   </div>
-  ${box && box.finalType !== "REG" ? `<p class="ot-tag">${escapeHtml(finalTypeFi(box.finalType))}</p>` : ""}
+  ${game.is_finished && game.final_type !== "REG" ? `<p class="ot-tag">${escapeHtml(finalTypeFi(game.final_type))}</p>` : ""}
 </section>
 
 ${

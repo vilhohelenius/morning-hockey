@@ -30,10 +30,11 @@
 // ported -- superseded by /arkisto, a real route here.
 
 import { currentUsername } from "./_shared/auth";
-import { getBoxScore } from "./_shared/boxScoreCache";
+import { fetchLiveBoxScore, getBoxScore } from "./_shared/boxScoreCache";
 import {
   finnishGoalieLines,
   finnishScorerLines,
+  isLive,
   renderGameCard,
   type FinnGoalieLine,
   type FinnScorerLine,
@@ -208,27 +209,27 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     roundGames = results;
 
     for (const game of roundGames) {
-      let finalType = "REG";
       let scorers: FinnScorerLine[] = [];
       let goalies: FinnGoalieLine[] = [];
 
-      if (game.is_finished) {
-        const { box } = await getBoxScore(db, game);
-        if (box) {
-          finalType = box.finalType;
-          gameDetails[game.game_id] = { goals: box.goals, team_stats: box.teamStats };
-          scorers = [
-            ...finnishScorerLines(box.awaySkaters, game.away_abbrev),
-            ...finnishScorerLines(box.homeSkaters, game.home_abbrev),
-          ].sort((a, b) => b.goals + b.assists - (a.goals + a.assists));
-          goalies = [
-            ...finnishGoalieLines(box.awayGoalies, game.away_abbrev),
-            ...finnishGoalieLines(box.homeGoalies, game.home_abbrev),
-          ];
-        }
+      // Finished: the usual cached-or-fetch-once path. Live: fetch fresh
+      // every load, never cached -- the data's still changing play by
+      // play (see _shared/boxScoreCache's fetchLiveBoxScore).
+      const box = game.is_finished ? (await getBoxScore(db, game)).box : isLive(game) ? await fetchLiveBoxScore(game) : null;
+
+      if (box) {
+        gameDetails[game.game_id] = { goals: box.goals, team_stats: box.teamStats };
+        scorers = [
+          ...finnishScorerLines(box.awaySkaters, game.away_abbrev),
+          ...finnishScorerLines(box.homeSkaters, game.home_abbrev),
+        ].sort((a, b) => b.goals + b.assists - (a.goals + a.assists));
+        goalies = [
+          ...finnishGoalieLines(box.awayGoalies, game.away_abbrev),
+          ...finnishGoalieLines(box.homeGoalies, game.home_abbrev),
+        ];
       }
 
-      gameCardsHtml += renderGameCard(game, finalType, scorers, goalies);
+      gameCardsHtml += renderGameCard(game, scorers, goalies);
     }
   }
 
@@ -323,17 +324,13 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   const content = `
 <header class="page-header">
   <h1 class="brand-heading">🏒 Yön änärit</h1>
-  ${
-    currentRound
-      ? `<p class="subtitle">${escapeHtml(humanDate(currentRound.date))} · ${roundGames.length} ottelua</p>`
-      : `<p class="subtitle">Ei vielä otteluita tällä kaudella</p>`
-  }
+  ${currentRound ? "" : `<p class="subtitle">Ei vielä otteluita tällä kaudella</p>`}
 </header>
 
 ${
   currentRound
     ? `<section>
-  <h2 class="section-title">🏒 Viime yön ottelut</h2>
+  <h2 class="section-title">${escapeHtml(humanDate(currentRound.date))} · ${roundGames.length} ottelua</h2>
   <div class="game-list">${gameCardsHtml}</div>
 </section>`
     : ""

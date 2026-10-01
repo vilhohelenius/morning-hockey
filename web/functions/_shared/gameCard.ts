@@ -1,12 +1,20 @@
-// A finished (or in-progress) game's score card, shared by the dashboard's
-// "Viime yön ottelut" and Arkisto's per-day game lists: logos/abbrevs/
-// score, an OT/SO badge when the box score says so, and -- the part that
-// used to come from the once-daily digest sync's digest_scorers/
-// digest_goalies tables -- a Finnish player highlight line for anyone who
-// recorded a point or played goal, derived straight from that game's own
-// box score (_shared/boxScoreCache) instead. Keeping this in one place
-// means both pages get the same Finnish-highlight fix at once, rather than
-// the dashboard having it and Arkisto quietly not.
+// A game's score card, shared by the dashboard's "Viime yön ottelut" and
+// Arkisto's per-day game lists: logos/abbrevs/score, an OT/SO badge, a LIVE
+// badge for a game currently in progress, and -- the part that used to
+// come from the once-daily digest sync's digest_scorers/digest_goalies
+// tables -- a Finnish player highlight line for anyone who recorded a
+// point or played goal, derived straight from that game's own box score
+// (_shared/boxScoreCache) instead. Keeping this in one place means every
+// page gets the same fix at once, rather than one having it and another
+// quietly not.
+//
+// The OT/SO badge reads game.final_type directly (synced by the fast
+// tier from the /schedule/{date} endpoint's gameOutcome.lastPeriodType,
+// confirmed reliable there) rather than the on-demand box score's own
+// copy of it -- the gamecenter/landing endpoint's top-level gameOutcome
+// field came back null for a real finished OT game when checked directly,
+// so a badge that depended on a successful box-score fetch could stay
+// missing indefinitely even once the score itself was showing.
 //
 // Wrapped in `.game-card-trigger` with `data-game-id`: app.js's existing
 // click-to-expand handler (originally written for the static site, reused
@@ -44,7 +52,15 @@ export function finnishGoalieLines(goalies: GoalieGameStat[], teamAbbrev: string
     .map((g) => ({ name: g.name, team_abbrev: teamAbbrev, decision: g.decision, saves: g.saves, shots_against: g.shots_against }));
 }
 
-export function renderGameCard(game: GameRow, finalType: string, scorers: FinnScorerLine[], goalies: FinnGoalieLine[]): string {
+// A game that has started (per the fast tier's own game_state) but isn't
+// finished yet -- same "has it started" definition index.ts's currentRound
+// query already uses, so a game counts as live here exactly when it's the
+// reason that round is showing at all.
+export function isLive(game: GameRow): boolean {
+  return !game.is_finished && game.game_state !== "FUT";
+}
+
+export function renderGameCard(game: GameRow, scorers: FinnScorerLine[], goalies: FinnGoalieLine[]): string {
   const finnStats =
     scorers.length || goalies.length
       ? `
@@ -70,6 +86,14 @@ export function renderGameCard(game: GameRow, finalType: string, scorers: FinnSc
   </div>`
       : "";
 
+  const badge = game.is_finished
+    ? game.final_type !== "REG"
+      ? `<p class="ot-tag">${escapeHtml(finalTypeFi(game.final_type))}</p>`
+      : ""
+    : isLive(game)
+      ? `<p class="live-tag"><span class="live-dot"></span>LIVE</p>`
+      : "";
+
   return `
 <div class="game-card game-card-trigger" data-game-id="${game.game_id}" tabindex="0" role="button" aria-expanded="false">
   <div class="score-row">
@@ -87,7 +111,7 @@ export function renderGameCard(game: GameRow, finalType: string, scorers: FinnSc
       <img src="${escapeHtml(game.home_logo)}" alt="" class="logo" loading="lazy">
     </div>
   </div>
-  ${game.is_finished && finalType !== "REG" ? `<p class="ot-tag">${escapeHtml(finalTypeFi(finalType))}</p>` : ""}
+  ${badge}
   ${finnStats}
 </div>`;
 }

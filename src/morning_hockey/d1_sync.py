@@ -20,13 +20,14 @@ _D1_QUERY_URL = "https://api.cloudflare.com/client/v4/accounts/{account_id}/d1/d
 _UPSERT_GAME_SQL = """
 INSERT INTO games (
     game_id, date, start_time_utc, away_abbrev, away_name, away_logo, away_score,
-    home_abbrev, home_name, home_logo, home_score, game_state, is_finished, updated_at
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    home_abbrev, home_name, home_logo, home_score, game_state, is_finished, final_type, updated_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT(game_id) DO UPDATE SET
     away_score = excluded.away_score,
     home_score = excluded.home_score,
     game_state = excluded.game_state,
     is_finished = excluded.is_finished,
+    final_type = excluded.final_type,
     updated_at = excluded.updated_at
 """
 
@@ -69,6 +70,7 @@ def _game_params(day_date: str, game, synced_at: str) -> list:
         game.home.score,
         game.game_state,
         1 if game.is_finished else 0,
+        game.final_type,
         synced_at,
     ]
 

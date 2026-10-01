@@ -72,7 +72,7 @@ function renderGameRow(game: GameRow, teamAbbrev: string, played: boolean): stri
   const opponentScore = isHome ? game.away_score : game.home_score;
   const opponentAbbrev = isHome ? game.away_abbrev : game.home_abbrev;
   const opponentLogo = isHome ? game.away_logo : game.home_logo;
-  const result = played ? (teamScore > opponentScore ? "W" : "L") : null;
+  const result = played ? (teamScore > opponentScore ? "W" : game.final_type !== "REG" ? "OTL" : "L") : null;
 
   const inner = `
       <span class="schedule-date">${shortDate(game.date)}</span>

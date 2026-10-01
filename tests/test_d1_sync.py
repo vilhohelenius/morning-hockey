@@ -81,6 +81,7 @@ PAGE = SchedulePage(
                     start_local=dt.datetime(2026, 1, 15, 20, 0, tzinfo=HELSINKI),
                     game_state="OFF",
                     is_finished=True,
+                    final_type="OT",
                 )
             ],
         ),
@@ -94,6 +95,7 @@ PAGE = SchedulePage(
                     start_local=dt.datetime(2026, 1, 16, 2, 0, tzinfo=HELSINKI),
                     game_state="FUT",
                     is_finished=False,
+                    final_type="REG",
                 )
             ],
         ),
@@ -117,6 +119,7 @@ def test_sync_schedule_upserts_every_game_across_every_day():
     assert first_params[6] == 3  # away_score
     assert first_params[11] == "OFF"
     assert first_params[12] == 1  # is_finished -> 1
+    assert first_params[13] == "OT"  # final_type
 
     second_params = session.calls[1]["json"]["params"]
     assert second_params[0] == 2

@@ -37,12 +37,10 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
   for (const game of games) {
     const box = boxScores.get(game.game_id);
-    let finalType = "REG";
     let scorers: ReturnType<typeof finnishScorerLines> = [];
     let goalies: ReturnType<typeof finnishGoalieLines> = [];
 
     if (box) {
-      finalType = box.finalType;
       gameDetails[game.game_id] = { goals: box.goals, team_stats: box.teamStats };
       scorers = [
         ...finnishScorerLines(box.awaySkaters, game.away_abbrev),
@@ -54,7 +52,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       ];
     }
 
-    gameCardsHtml += renderGameCard(game, finalType, scorers, goalies);
+    gameCardsHtml += renderGameCard(game, scorers, goalies);
   }
 
   // Same defensive escape every other #....-json script tag in this

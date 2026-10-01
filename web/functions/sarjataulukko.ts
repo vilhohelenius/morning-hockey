@@ -5,9 +5,6 @@
 // commit for why skater_season_stats/goalie_season_stats (global top-N
 // cuts) couldn't back a *per-team* top-3/starting-goalie lookup.
 //
-// recent_results only ever shows "W"/"L", never "OTL" -- same games-table
-// gap as the team page (no period-type stored for a finished game).
-//
 // Rather than one query per team per data kind (32 teams x 4 = 128 round
 // trips), each snapshot ingredient is fetched once for every team and
 // grouped in TS: still fast against D1's native binding, but the more
@@ -25,7 +22,7 @@ const TOP_SCORERS = 3;
 const GAMES_QUERY_LIMIT = 500; // generous window; see module comment
 
 interface TeamSnapshot {
-  recent_results: { result: "W" | "L"; opponent_abbrev: string }[];
+  recent_results: { result: "W" | "L" | "OTL"; opponent_abbrev: string }[];
   top_scorers: { name: string; headshot: string; goals: number; assists: number; points: number }[];
   starting_goalie: { name: string; headshot: string; games_played: number; save_pct: number } | null;
   next_game: { date: string; is_home: boolean; opponent_logo: string; opponent_abbrev: string } | null;
@@ -59,7 +56,8 @@ async function buildSnapshots(db: D1Database, abbrevs: string[]): Promise<Record
         const teamScore = isHome ? g.home_score : g.away_score;
         const opponentScore = isHome ? g.away_score : g.home_score;
         const opponent_abbrev = isHome ? g.away_abbrev : g.home_abbrev;
-        return { result: (teamScore > opponentScore ? "W" : "L") as "W" | "L", opponent_abbrev };
+        const result = (teamScore > opponentScore ? "W" : g.final_type !== "REG" ? "OTL" : "L") as "W" | "L" | "OTL";
+        return { result, opponent_abbrev };
       });
 
     const top_scorers = skaters

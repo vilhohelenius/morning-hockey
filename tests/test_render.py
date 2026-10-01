@@ -561,6 +561,7 @@ def test_render_schedule_writes_a_day_picker_and_every_days_games(tmp_path: Path
                         start_local=dt.datetime(2026, 1, 15, 20, 0, tzinfo=HELSINKI),
                         game_state="FUT",
                         is_finished=False,
+                        final_type="REG",
                     )
                 ],
             ),

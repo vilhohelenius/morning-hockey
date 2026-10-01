@@ -42,6 +42,14 @@ CREATE INDEX IF NOT EXISTS idx_games_date ON games(date);
 CREATE INDEX IF NOT EXISTS idx_games_away_abbrev ON games(away_abbrev);
 CREATE INDEX IF NOT EXISTS idx_games_home_abbrev ON games(home_abbrev);
 
+-- Added 2026-10-01 for the OT/SO badge wherever a finished game's score is
+-- shown (dashboard/Arkisto cards, previously only available via an
+-- on-demand box-score fetch, which could fail or lag). The /schedule/{date}
+-- endpoint's gameOutcome.lastPeriodType is reliable here -- confirmed live,
+-- unlike the gamecenter/landing endpoint's own top-level gameOutcome field,
+-- which came back null for a real finished game when checked directly.
+ALTER TABLE games ADD COLUMN final_type TEXT NOT NULL DEFAULT 'REG';
+
 -- Phase 2: slow tier (a few times a day)
 
 CREATE TABLE IF NOT EXISTS skater_season_stats (

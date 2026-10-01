@@ -15,6 +15,7 @@ export interface GameRow {
   home_score: number;
   game_state: string;
   is_finished: number; // 0 or 1
+  final_type: string; // "REG" | "OT" | "SO", meaningful only once is_finished
 }
 
 export interface StandingsRow {
