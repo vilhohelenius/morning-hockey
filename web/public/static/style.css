@@ -1982,7 +1982,7 @@ main {
 .spoiler-score-row .spoiler-reveal-hint {
   margin: 10px 0 10px;
   padding: 6px 0;
-  font-size: 1rem;
+  font-size: 0.78rem;
   font-weight: 700;
   color: var(--accent);
 }
