@@ -43,33 +43,38 @@ async function searchNhlVideo(title: string, apiKey: string): Promise<string | n
   return hit?.id?.videoId ?? null;
 }
 
+// Never throws: this is a "nice to have" link, not core page content, and
+// every call site renders the result directly into a page that would
+// otherwise render fine without it -- a D1/network/API hiccup here (e.g.
+// the youtube_highlights table not existing yet, or a bad API key) must
+// degrade to the plain search-link fallback, not crash the whole page.
 export async function resolveHighlightsUrl(db: D1Database, env: Env, game: GameRow): Promise<string> {
   const fallback = youtubeHighlightsUrl(game);
   if (!env.YOUTUBE_API_KEY) return fallback;
 
-  const cached = await db
-    .prepare("SELECT * FROM youtube_highlights WHERE game_id = ?")
-    .bind(game.game_id)
-    .first<YoutubeHighlightRow>();
-
-  if (cached?.video_url) return cached.video_url;
-  if (cached && Date.now() - new Date(cached.checked_at).getTime() < RETRY_AFTER_MS) return fallback;
-
-  let videoId: string | null = null;
   try {
-    videoId = await searchNhlVideo(highlightsSearchTitle(game), env.YOUTUBE_API_KEY);
+    const cached = await db
+      .prepare("SELECT * FROM youtube_highlights WHERE game_id = ?")
+      .bind(game.game_id)
+      .first<YoutubeHighlightRow>();
+
+    if (cached?.video_url) return cached.video_url;
+    if (cached && Date.now() - new Date(cached.checked_at).getTime() < RETRY_AFTER_MS) return fallback;
+
+    const videoId = await searchNhlVideo(highlightsSearchTitle(game), env.YOUTUBE_API_KEY);
+    const videoUrl = videoId ? `https://www.youtube.com/watch?v=${videoId}` : null;
+
+    await db
+      .prepare(
+        `INSERT INTO youtube_highlights (game_id, video_url, checked_at) VALUES (?, ?, ?)
+         ON CONFLICT(game_id) DO UPDATE SET video_url = excluded.video_url, checked_at = excluded.checked_at`,
+      )
+      .bind(game.game_id, videoUrl, new Date().toISOString())
+      .run();
+
+    return videoUrl ?? fallback;
   } catch (error) {
-    console.error(`YouTube search threw for game ${game.game_id}:`, error);
+    console.error(`resolveHighlightsUrl failed for game ${game.game_id}:`, error);
+    return fallback;
   }
-
-  const videoUrl = videoId ? `https://www.youtube.com/watch?v=${videoId}` : null;
-  await db
-    .prepare(
-      `INSERT INTO youtube_highlights (game_id, video_url, checked_at) VALUES (?, ?, ?)
-       ON CONFLICT(game_id) DO UPDATE SET video_url = excluded.video_url, checked_at = excluded.checked_at`,
-    )
-    .bind(game.game_id, videoUrl, new Date().toISOString())
-    .run();
-
-  return videoUrl ?? fallback;
 }
