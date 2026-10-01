@@ -20,8 +20,13 @@
 
   var WIDTH = 720;
   var HEIGHT = 380;
-  var MARGIN = { top: 16, right: 40, bottom: 28, left: 32 };
-  var LOGO_SIZE = 20;
+  var LOGO_SIZE = 32;
+  // Margins leave room for a logo centered right on the line's endpoint --
+  // top/bottom need half a logo's height of breathing room above/below the
+  // plotted range, right needs a full logo's width plus the gap after the
+  // line, otherwise a team sitting at the very top (highest points) or far
+  // right (most games played) gets its logo clipped against the SVG edge.
+  var MARGIN = { top: LOGO_SIZE / 2 + 8, right: LOGO_SIZE + 16, bottom: 28 + LOGO_SIZE / 2, left: 32 };
 
   function drawEmpty(container) {
     var empty = document.createElement("p");
@@ -89,11 +94,19 @@
 
     var svg = d3.create("svg").attr("viewBox", [0, 0, WIDTH, HEIGHT]).attr("class", "division-chart-svg");
 
+    // Points are always whole numbers -- .nice() can otherwise pick a domain
+    // that spaces default ticks at half-point intervals (0, 0.5, 1, ...), so
+    // only the integer ticks are kept.
+    var yTicks = y.ticks(5).filter(function (v) {
+      return Number.isInteger(v);
+    });
+    if (!yTicks.length) yTicks = [0, maxPoints || 1];
+
     svg
       .append("g")
       .attr("class", "chart-axis")
       .attr("transform", "translate(" + MARGIN.left + ",0)")
-      .call(d3.axisLeft(y).ticks(5));
+      .call(d3.axisLeft(y).tickValues(yTicks).tickFormat(d3.format("d")));
 
     svg
       .append("g")
@@ -125,7 +138,7 @@
       return { team: team, x: x(last.gamesPlayed), y: y(last.points) };
     });
 
-    declutter(endpoints, LOGO_SIZE + 2);
+    declutter(endpoints, LOGO_SIZE + 4);
 
     endpoints.forEach(function (point) {
       svg
