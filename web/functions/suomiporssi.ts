@@ -28,7 +28,7 @@ function renderSkaterTable(rows: FinnishSkaterRow[]): string {
             </span>
           </a>
         </td>
-        <td><img src="${escapeHtml(row.logo)}" alt="" class="table-team-logo" loading="lazy">${escapeHtml(row.team_abbrev)}</td>
+        <td><img src="${escapeHtml(row.logo)}" alt="${escapeHtml(row.team_abbrev)}" class="table-team-logo" loading="lazy"></td>
         <td>${row.games_played}</td>
         <td>${row.goals}</td>
         <td>${row.assists}</td>
@@ -70,7 +70,7 @@ function renderGoalieTable(rows: FinnishGoalieRow[]): string {
             <span class="player-name">${escapeHtml(row.name)}</span>
           </a>
         </td>
-        <td><img src="${escapeHtml(row.logo)}" alt="" class="table-team-logo" loading="lazy">${escapeHtml(row.team_abbrev)}</td>
+        <td><img src="${escapeHtml(row.logo)}" alt="${escapeHtml(row.team_abbrev)}" class="table-team-logo" loading="lazy"></td>
         <td>${row.games_played}</td>
         <td>${row.wins}</td>
         <td>${row.losses}</td>

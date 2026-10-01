@@ -132,8 +132,8 @@ function renderTeamGameLine(team: StandingsRow, game: GameRow, played: boolean):
   <div class="fav-team-card-game">
     <span>${shortDate(game.date)}</span>
     <span>${isHome ? "vs" : "@"}</span>
-    <img src="${escapeHtml(opponentLogo)}" alt="" class="fav-team-card-game-logo" loading="lazy">
-    <span>${escapeHtml(opponentAbbrev)}</span>
+    <img src="${escapeHtml(opponentLogo)}" alt="${escapeHtml(opponentAbbrev)}" class="fav-team-card-game-logo" loading="lazy">
+    ${played ? "" : `<span>${escapeHtml(opponentAbbrev)}</span>`}
     ${scoreHtml}
   </div>`;
 }

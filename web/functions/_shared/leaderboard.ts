@@ -6,7 +6,7 @@
 // source/shape, and empty-state message differ, so factored out rather
 // than duplicated.
 
-import { escapeHtml, formatToi, nationalityFlag } from "./format";
+import { escapeHtml, formatToi, nationalityFlag, teamLogoUrl } from "./format";
 import { TEAM_COLORS } from "./teamColors";
 import type { GoalieStatsRow, SkaterStatsRow, TeamRosterGoalieRow, TeamRosterSkaterRow } from "./types";
 
@@ -37,7 +37,7 @@ function teamFilterDropdown(rows: { team_abbrev: string; logo: string }[]): stri
     "Kaikki joukkueet",
     teams.map((t) => ({
       value: t,
-      label: `<img src="${escapeHtml(logoByTeam.get(t) ?? "")}" alt="" class="multi-filter-logo" loading="lazy">${escapeHtml(t)}`,
+      label: `<img src="${escapeHtml(logoByTeam.get(t) ?? "")}" alt="${escapeHtml(t)}" title="${escapeHtml(t)}" class="multi-filter-logo" loading="lazy">`,
     })),
   );
 }
@@ -97,7 +97,7 @@ function renderRow(row: SkaterStatsRow, rank: number, favoriteTeamAbbrevs: Set<s
             </span>
           </a>
         </td>
-        <td><img src="${escapeHtml(row.logo)}" alt="" class="table-team-logo" loading="lazy">${escapeHtml(row.team_abbrev)}</td>
+        <td><img src="${escapeHtml(row.logo)}" alt="${escapeHtml(row.team_abbrev)}" class="table-team-logo" loading="lazy"></td>
         <td>${row.games_played}</td>
         <td>${row.goals}</td>
         <td>${row.assists}</td>
@@ -165,7 +165,7 @@ function renderGoalieRow(row: GoalieStatsRow, rank: number, favoriteTeamAbbrevs:
             </span>
           </a>
         </td>
-        <td><img src="${escapeHtml(row.logo)}" alt="" class="table-team-logo" loading="lazy">${escapeHtml(row.team_abbrev)}</td>
+        <td><img src="${escapeHtml(row.logo)}" alt="${escapeHtml(row.team_abbrev)}" class="table-team-logo" loading="lazy"></td>
         <td>${row.games_played}</td>
         <td>${row.wins}</td>
         <td>${row.goals_against_average.toFixed(2)}</td>
@@ -223,6 +223,14 @@ export function renderGoalieLeaderboard(options: GoalieLeaderboardOptions): stri
 // /omat/pelaajat's favorites list can reuse the identical table instead of
 // duplicating it.
 
+// showTeam's small inline team tag -- unlike the leaderboard tables above,
+// TeamRosterSkaterRow/TeamRosterGoalieRow carry no `logo` column of their
+// own (every other row on a roster table is already the same team, so it's
+// normally redundant), hence teamLogoUrl() instead of a stored logo field.
+function teamMetaLogo(abbrev: string): string {
+  return `<img src="${escapeHtml(teamLogoUrl(abbrev))}" alt="${escapeHtml(abbrev)}" class="table-team-logo" loading="lazy">`;
+}
+
 export function renderRosterSkaterTable(
   skaters: TeamRosterSkaterRow[],
   sectionTitle: string,
@@ -240,7 +248,7 @@ export function renderRosterSkaterTable(
             <img src="${escapeHtml(player.headshot)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
             <span class="player-name">
               ${escapeHtml(player.name)}
-              <span class="player-meta">#${player.sweater_number} · ${nationalityFlag(player.nationality)} ${escapeHtml(player.position)}${showTeam ? ` · ${escapeHtml(player.team_abbrev)}` : ""}</span>
+              <span class="player-meta">#${player.sweater_number} · ${nationalityFlag(player.nationality)} ${escapeHtml(player.position)}${showTeam ? ` · ${teamMetaLogo(player.team_abbrev)}` : ""}</span>
             </span>
           </a>
         </td>
@@ -294,7 +302,7 @@ export function renderRosterGoalieTable(
             <img src="${escapeHtml(player.headshot)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
             <span class="player-name">
               ${escapeHtml(player.name)}
-              <span class="player-meta">#${player.sweater_number}${showTeam ? ` · ${escapeHtml(player.team_abbrev)}` : ""}</span>
+              <span class="player-meta">#${player.sweater_number}${showTeam ? ` · ${teamMetaLogo(player.team_abbrev)}` : ""}</span>
             </span>
           </a>
         </td>

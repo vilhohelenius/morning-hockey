@@ -19,6 +19,14 @@ export function seasonLabel(seasonId: number): string {
   return `${startYear}–${endYear}`;
 }
 
+// Same CDN path NHL.com itself serves team logos from -- no API call or D1
+// join needed, just the abbreviation, which every row that needs this
+// already carries even when (unlike standings_rows/team_roster_*) it
+// doesn't carry a `logo` column of its own.
+export function teamLogoUrl(abbrev: string): string {
+  return `https://assets.nhle.com/logos/nhl/svg/${abbrev}_light.svg`;
+}
+
 const WEEKDAYS = ["maanantai", "tiistai", "keskiviikko", "torstai", "perjantai", "lauantai", "sunnuntai"];
 
 export function humanDate(dateStr: string): string {

@@ -96,8 +96,7 @@ function renderTeamRow(row: StandingsRow, rankLabel: string): string {
     <div class="division-row ${row.qualified ? "qualified" : ""}">
       <span class="division-rank">${rankLabel}</span>
       <button type="button" class="division-team team-trigger" data-team-abbrev="${escapeHtml(row.abbrev)}" data-team-name="${escapeHtml(row.name)}">
-        <img src="${escapeHtml(row.logo)}" alt="" class="division-logo" loading="lazy">
-        ${escapeHtml(row.abbrev)}
+        <img src="${escapeHtml(row.logo)}" alt="${escapeHtml(row.abbrev)}" class="division-logo" loading="lazy">
         ${row.qualified ? `<span class="playoff-dot"></span>` : ""}
       </button>
       <span class="division-stats cols-6">

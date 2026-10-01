@@ -13,7 +13,7 @@
 // (confirmed -- landing() has nothing resembling it), so that part of the
 // ask is simply not available from this data source.
 
-import { escapeHtml, nationalityFlag, shortDate } from "../_shared/format";
+import { escapeHtml, nationalityFlag, seasonLabel, shortDate, teamLogoUrl } from "../_shared/format";
 import { renderLayout } from "../_shared/layout";
 import type { Env } from "../_shared/types";
 
@@ -49,14 +49,6 @@ function ageFromBirthDate(birthDate: string): number {
 const HANDEDNESS_FI: Record<string, string> = { L: "Vasen", R: "Oikea" };
 const GOALIE_DECISION_FI: Record<string, string> = { W: "V", L: "H", O: "JH" };
 
-// Same CDN path NHL.com itself serves team logos from, used elsewhere in
-// this project's seed fixtures -- no API call needed, just the abbreviation
-// we already have (either from the player's own draftDetails or an
-// opponentAbbrev already trusted and rendered as plain text today).
-function teamLogoUrl(abbrev: string): string {
-  return `https://assets.nhle.com/logos/nhl/svg/${abbrev}_light.svg`;
-}
-
 interface SeasonTotal {
   season: number;
   gameTypeId: number;
@@ -77,12 +69,6 @@ interface SeasonTotal {
   shotsAgainst?: number;
   goalsAgainst?: number;
   timeOnIce?: string; // cumulative, goalies -- avgToi above is skaters' per-game average
-}
-
-function seasonLabel(season: number): string {
-  const start = Math.floor(season / 10_000);
-  const end = season % 10_000;
-  return `${start}–${end}`;
 }
 
 function renderSeasonSelect(playerId: number, seasons: number[], selected: number): string {

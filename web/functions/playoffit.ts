@@ -66,8 +66,7 @@ function renderWildcardStanding(rows: StandingsRow[]): string {
     <div class="division-row">
       <span class="division-rank">VK${row.wildcard_rank}</span>
       <span class="division-team">
-        <img src="${escapeHtml(row.logo)}" alt="" class="division-logo" loading="lazy">
-        ${escapeHtml(row.abbrev)}
+        <img src="${escapeHtml(row.logo)}" alt="${escapeHtml(row.abbrev)}" class="division-logo" loading="lazy">
         ${row.qualified ? `<span class="playoff-dot"></span>` : ""}
       </span>
       <span class="division-stats">

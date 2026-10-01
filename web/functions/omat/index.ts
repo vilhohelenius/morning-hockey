@@ -10,7 +10,7 @@
 // POST routes under omat/* don't need their redirect targets changed.
 
 import { currentUsername, readThemeCookie } from "../_shared/auth";
-import { escapeHtml, formatToi } from "../_shared/format";
+import { escapeHtml, formatToi, teamLogoUrl } from "../_shared/format";
 import { renderLayout } from "../_shared/layout";
 import type {
   Env,
@@ -71,7 +71,7 @@ function renderFavoritePlayerRow(
     <div class="fav-row">
       <a href="/pelaajat/${player.player_id}" class="fav-row-info">
         <img src="${escapeHtml(player.headshot)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
-        ${escapeHtml(player.name)} <span class="fav-row-meta">${escapeHtml(player.team_abbrev)}</span>
+        ${escapeHtml(player.name)} <span class="fav-row-meta"><img src="${escapeHtml(teamLogoUrl(player.team_abbrev))}" alt="${escapeHtml(player.team_abbrev)}" class="table-team-logo" loading="lazy"></span>
       </a>
       <span class="fav-row-meta">${statLine}</span>
       <form method="post" action="/omat/favorites/players">
@@ -101,7 +101,7 @@ function renderPlayerSearchResult(row: TeamRosterSkaterRow | TeamRosterGoalieRow
     <div class="fav-row">
       <a href="/pelaajat/${row.player_id}" class="fav-row-info">
         <img src="${escapeHtml(row.headshot)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
-        ${escapeHtml(row.name)} <span class="fav-row-meta">${escapeHtml(row.team_abbrev)}</span>
+        ${escapeHtml(row.name)} <span class="fav-row-meta"><img src="${escapeHtml(teamLogoUrl(row.team_abbrev))}" alt="${escapeHtml(row.team_abbrev)}" class="table-team-logo" loading="lazy"></span>
       </a>
       <form method="post" action="/omat/favorites/players">
         <input type="hidden" name="player_id" value="${row.player_id}">
