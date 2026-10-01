@@ -2448,33 +2448,8 @@ main {
   font-size: 0.65rem;
 }
 
-.division-chart-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px 16px;
-  margin-top: 14px;
-}
-
-.division-chart-legend-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--text);
-}
-
-.division-chart-swatch {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.division-chart-legend-logo {
-  width: 18px;
-  height: 18px;
-  object-fit: contain;
+.division-chart-endpoint-logo {
+  pointer-events: none;
 }
 
 /* ---------- Tulospiilo (spoiler-free mode) ---------- */
