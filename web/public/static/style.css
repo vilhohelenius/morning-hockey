@@ -731,31 +731,7 @@ main {
 /* ---------- Player card ---------- */
 
 .player-card-header {
-  position: relative;
   text-align: center;
-  padding: 20px 12px;
-  border-radius: 16px;
-  overflow: hidden;
-  background: color-mix(in srgb, var(--team-accent, var(--accent)) 14%, var(--bg));
-  isolation: isolate;
-}
-
-/* Large faded team logo behind the photo -- this project's stand-in for
-   NHL.com's own "logo printed on the jersey" background treatment, see
-   onRequestGet's teamAccent comment. aria-hidden + decorative only, so no
-   alt text; z-index via isolation above keeps it behind everything else in
-   the header without needing z-index on every other child. */
-.player-card-header-bg {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 75%;
-  max-width: 280px;
-  height: auto;
-  opacity: 0.16;
-  z-index: -1;
-  pointer-events: none;
 }
 
 .player-card-photo {

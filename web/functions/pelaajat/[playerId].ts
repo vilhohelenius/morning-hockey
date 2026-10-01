@@ -15,7 +15,6 @@
 
 import { escapeHtml, nationalityFlag, seasonLabel, shortDate, teamLogoUrl } from "../_shared/format";
 import { renderLayout } from "../_shared/layout";
-import { TEAM_COLORS } from "../_shared/teamColors";
 import type { Env } from "../_shared/types";
 
 const NHL_BASE = "https://api-web.nhle.com/v1";
@@ -131,11 +130,10 @@ function renderGoalieStatTiles(t: SeasonTotal): string {
 }
 
 // Shared row shape for every place a skater's SeasonTotal needs to be one
-// table row: the per-game table's <tfoot> total, each row (and the total
-// row) of the season-history table, and the one-row "Kauden tilastot"
-// summary. rowClass defaults to "total-row" (the per-game tfoot and the
-// one-row summary both want that emphasis); season-history passes "" for
-// its plain per-season rows and "total-row" again for its own total row.
+// table row: each row (and the total row) of the season-history table, and
+// the one-row "Ottelut" summary. rowClass defaults to "total-row" (the
+// one-row summary wants that emphasis); season-history passes "" for its
+// plain per-season rows and "total-row" again for its own total row.
 function renderSkaterTotalRow(label: string, t: SeasonTotal, rowClass = "total-row"): string {
   return `
       <tr${rowClass ? ` class="${rowClass}"` : ""}>
@@ -260,7 +258,7 @@ function opponentCell(homeRoadFlag: string, abbrev: string): string {
 
 const GAME_LOG_COLLAPSE_AT = 5;
 
-function renderSkaterGameLog(games: any[], seasonTotal: SeasonTotal | null): string {
+function renderSkaterGameLog(games: any[]): string {
   const rows = games
     .map(
       (g) => `
@@ -277,13 +275,10 @@ function renderSkaterGameLog(games: any[], seasonTotal: SeasonTotal | null): str
     )
     .join("");
 
-  // Season total row moves to <tfoot> (always visible, outside app.js's
-  // collapse/expand counting, which only ever looks at tbody rows) instead
-  // of being the first <tbody> row like before -- keeps it out of the
-  // "show 5 most recent games" budget, and puts it at the bottom alongside
-  // the same choice made for the season-history table's own total row.
-  const totalRow = seasonTotal ? renderSkaterTotalRow("Kausi", seasonTotal) : "";
-
+  // No "Kausi" total row here any more -- it duplicated the one-row summary
+  // that already sits at the top of the Ottelut section, right above this
+  // table, and with few games played the two rows could show identical
+  // numbers right next to each other.
   return `
   <div class="stats-table-wrap">
     <table id="player-game-log" class="stats-table game-log-table" data-collapse-at="${GAME_LOG_COLLAPSE_AT}">
@@ -300,7 +295,6 @@ function renderSkaterGameLog(games: any[], seasonTotal: SeasonTotal | null): str
         </tr>
       </thead>
       <tbody>${rows}</tbody>
-      ${totalRow ? `<tfoot>${totalRow}</tfoot>` : ""}
     </table>
   </div>
   <button type="button" class="expand-toggle" data-table-id="player-game-log" data-page-size="1000"></button>
@@ -510,7 +504,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     gameLogHtml = games.length
       ? isGoalie
         ? renderGoalieGameLog(games)
-        : renderSkaterGameLog(games, seasonTotal)
+        : renderSkaterGameLog(games)
       : `<p class="empty-note">Ei pelattuja otteluita tälle kaudelle.</p>`;
   } catch (error) {
     console.error(`Player game log fetch failed for ${playerId}/${selectedSeason}:`, error);
@@ -520,22 +514,10 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   const age = landing.birthDate ? ageFromBirthDate(landing.birthDate) : null;
   const handedness = landing.shootsCatches ? (HANDEDNESS_FI[landing.shootsCatches] ?? landing.shootsCatches) : null;
 
-  // NHL.com's own player page has a large team-logo watermark behind the
-  // photo, "printed on the jersey" -- the public landing endpoint has no
-  // field for that specific hero/background image as far as this project's
-  // NHL API usage has established with any confidence (unlike draftDetails,
-  // which is a well-documented field), so rather than guess at one, this
-  // reuses data already fetched and trusted: the player's own team logo,
-  // faded large behind the header, over a gradient tinted with that team's
-  // TEAM_COLORS accent (the same map the favorite-team leaderboard
-  // highlight uses).
-  const teamAccent = TEAM_COLORS[landing.currentTeamAbbrev] ?? "";
-
   const content = `
 <a class="back-link js-back" href="/">← Takaisin</a>
 
-<header class="page-header player-card-header"${teamAccent ? ` style="--team-accent:${teamAccent}"` : ""}>
-  ${landing.teamLogo ? `<img src="${escapeHtml(landing.teamLogo)}" alt="" class="player-card-header-bg" aria-hidden="true">` : ""}
+<header class="page-header player-card-header">
   <img src="${escapeHtml(landing.headshot ?? "")}" alt="" class="player-card-photo" onerror="this.style.visibility='hidden'">
   <h1>${escapeHtml(name)}</h1>
   ${landing.birthCountry ? `<p class="subtitle">${nationalityFlag(landing.birthCountry)} ${escapeHtml(landing.birthCity?.default ?? "")}, ${escapeHtml(landing.birthCountry)}</p>` : ""}
