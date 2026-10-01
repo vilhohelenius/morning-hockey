@@ -144,6 +144,16 @@ export async function getCachedBoxScores(db: D1Database, gameIds: number[]): Pro
   return map;
 }
 
+// A cache row written before blocked_shots/hits/giveaways/takeaways/
+// faceoff_pct (skaters) and ev/pp/sh_goals_against (goalies) existed in the
+// parser is missing those keys entirely rather than having them as 0 --
+// this substring check is cheaper than JSON.parse and catches exactly that
+// gap, so a stale row is treated as a cache miss and transparently
+// refetched/re-cached below instead of needing a one-off backfill script.
+function isStale(cached: GameBoxScoreRow): boolean {
+  return !cached.away_skaters_json.includes('"blocked_shots"') || !cached.away_goalies_json.includes('"ev_goals_against"');
+}
+
 // Only ever call this for games.is_finished = 1 -- an unfinished game has
 // no box score yet, and callers should show a "not played yet" placeholder
 // instead.
@@ -152,32 +162,45 @@ export async function getBoxScore(
   game: GameRow,
 ): Promise<{ box: ParsedBoxScore | null; fetchError: boolean }> {
   const cached = await db.prepare("SELECT * FROM game_box_scores WHERE game_id = ?").bind(game.game_id).first<GameBoxScoreRow>();
-  if (cached) return { box: fromCacheRow(cached), fetchError: false };
+  if (cached && !isStale(cached)) return { box: fromCacheRow(cached), fetchError: false };
 
   try {
     const box = await fetchAndParseBoxScore(game);
-    await db
-      .prepare(
-        `INSERT INTO game_box_scores (
-          game_id, final_type, goals_json, team_stats_json,
-          away_skaters_json, home_skaters_json, away_goalies_json, home_goalies_json, cached_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      )
-      .bind(
-        game.game_id,
-        box.finalType,
-        JSON.stringify(box.goals),
-        JSON.stringify(box.teamStats),
-        JSON.stringify(box.awaySkaters),
-        JSON.stringify(box.homeSkaters),
-        JSON.stringify(box.awayGoalies),
-        JSON.stringify(box.homeGoalies),
-        new Date().toISOString(),
-      )
-      .run();
+    const params = [
+      box.finalType,
+      JSON.stringify(box.goals),
+      JSON.stringify(box.teamStats),
+      JSON.stringify(box.awaySkaters),
+      JSON.stringify(box.homeSkaters),
+      JSON.stringify(box.awayGoalies),
+      JSON.stringify(box.homeGoalies),
+      new Date().toISOString(),
+    ];
+    if (cached) {
+      await db
+        .prepare(
+          `UPDATE game_box_scores SET
+            final_type = ?, goals_json = ?, team_stats_json = ?,
+            away_skaters_json = ?, home_skaters_json = ?, away_goalies_json = ?, home_goalies_json = ?, cached_at = ?
+          WHERE game_id = ?`,
+        )
+        .bind(...params, game.game_id)
+        .run();
+    } else {
+      await db
+        .prepare(
+          `INSERT INTO game_box_scores (
+            game_id, final_type, goals_json, team_stats_json,
+            away_skaters_json, home_skaters_json, away_goalies_json, home_goalies_json, cached_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        )
+        .bind(game.game_id, ...params)
+        .run();
+    }
     return { box, fetchError: false };
   } catch (error) {
     console.error(`Box score fetch failed for game ${game.game_id}:`, error);
+    if (cached) return { box: fromCacheRow(cached), fetchError: false };
     return { box: null, fetchError: true };
   }
 }

@@ -125,17 +125,17 @@ function renderSkaterTable(skaters: PlayerGameStat[]): string {
       <tr>
         <th class="col-rank">#</th>
         <th>Pelaaja</th>
-        <th>M</th>
-        <th>S</th>
-        <th>P</th>
-        <th>+/-</th>
-        <th>L</th>
-        <th>Torj.</th>
-        <th>Tak.</th>
-        <th>Men.</th>
-        <th>Riis.</th>
-        <th>Al.%</th>
-        <th>JH</th>
+        <th title="Maalit">M</th>
+        <th title="Syötöt">S</th>
+        <th title="Pisteet">P</th>
+        <th title="Plus/miinus">+/-</th>
+        <th title="Laukaukset">L</th>
+        <th title="Blokatut laukaukset">Blokit</th>
+        <th title="Taklaukset">Taklat</th>
+        <th title="Menetetyt kiekot">Menet.</th>
+        <th title="Riistetyt kiekot">Riistot</th>
+        <th title="Aloitusprosentti">Al.%</th>
+        <th title="Jäähyt (min)">JH</th>
         <th>Peliaika</th>
       </tr>
     </thead>
@@ -186,10 +186,10 @@ function renderGoalieTable(goalies: GoalieGameStat[]): string {
       <tr>
         <th class="col-rank">#</th>
         <th>Pelaaja</th>
-        <th>Lauk.</th>
-        <th>Torj.</th>
-        <th>Päästi</th>
-        <th>SV%</th>
+        <th title="Laukauksia vastaan">Lauk.</th>
+        <th title="Torjunnat">Torj.</th>
+        <th title="Päästetyt maalit">Päästi</th>
+        <th title="Torjuntaprosentti">SV%</th>
         <th>Peliaika</th>
       </tr>
     </thead>
@@ -541,17 +541,24 @@ ${
   </div>
 </section>
 
-<section>
-  <h2 class="section-title"><img src="${escapeHtml(game.away_logo)}" alt="" class="nav-icon">${escapeHtml(game.away_name)}</h2>
-  ${renderSkaterTable(box.awaySkaters)}
-  ${box.awayGoalies.length ? renderGoalieTable(box.awayGoalies) : ""}
-</section>
-
-<section>
-  <h2 class="section-title"><img src="${escapeHtml(game.home_logo)}" alt="" class="nav-icon">${escapeHtml(game.home_name)}</h2>
-  ${renderSkaterTable(box.homeSkaters)}
-  ${box.homeGoalies.length ? renderGoalieTable(box.homeGoalies) : ""}
-</section>`
+<div class="roster-team-picker toggle-group">
+  <button type="button" class="toggle-segment active" data-team="away">${escapeHtml(game.away_abbrev)}</button>
+  <button type="button" class="toggle-segment" data-team="home">${escapeHtml(game.home_abbrev)}</button>
+</div>
+<div class="roster-team-section" data-team="away">
+  <section>
+    <h2 class="section-title"><img src="${escapeHtml(game.away_logo)}" alt="" class="nav-icon">${escapeHtml(game.away_name)}</h2>
+    ${renderSkaterTable(box.awaySkaters)}
+    ${box.awayGoalies.length ? renderGoalieTable(box.awayGoalies) : ""}
+  </section>
+</div>
+<div class="roster-team-section is-hidden" data-team="home">
+  <section>
+    <h2 class="section-title"><img src="${escapeHtml(game.home_logo)}" alt="" class="nav-icon">${escapeHtml(game.home_name)}</h2>
+    ${renderSkaterTable(box.homeSkaters)}
+    ${box.homeGoalies.length ? renderGoalieTable(box.homeGoalies) : ""}
+  </section>
+</div>`
         : ""
 }
 `;
