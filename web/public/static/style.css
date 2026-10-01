@@ -731,7 +731,31 @@ main {
 /* ---------- Player card ---------- */
 
 .player-card-header {
+  position: relative;
   text-align: center;
+  padding: 20px 12px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--team-accent, var(--accent)) 14%, var(--bg));
+  isolation: isolate;
+}
+
+/* Large faded team logo behind the photo -- this project's stand-in for
+   NHL.com's own "logo printed on the jersey" background treatment, see
+   onRequestGet's teamAccent comment. aria-hidden + decorative only, so no
+   alt text; z-index via isolation above keeps it behind everything else in
+   the header without needing z-index on every other child. */
+.player-card-header-bg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 75%;
+  max-width: 280px;
+  height: auto;
+  opacity: 0.16;
+  z-index: -1;
+  pointer-events: none;
 }
 
 .player-card-photo {
@@ -808,6 +832,31 @@ main {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
   gap: 8px;
+}
+
+/* "Kausi <newest>"/"Uran tilastot" each render twice (renderPeriodStatsSection):
+   tile grids (above) under ~860px, one combined table over it -- same
+   breakpoint the sidebar already switches to a permanent rail at, so the
+   whole page's "mobile vs. wide" line stays in one place. Default to the
+   tile grids; the table only takes over once there's room for it to read
+   as an actual table instead of a cramped single-row squeeze. */
+.stat-period-table {
+  display: none;
+}
+
+@media (min-width: 860px) {
+  .stat-period-tiles {
+    display: none;
+  }
+
+  .stat-period-table {
+    display: block;
+  }
+
+  .stat-period-table .stats-table td:first-child,
+  .stat-period-table .stats-table th:first-child {
+    text-align: left;
+  }
 }
 
 .division-table {
@@ -1365,6 +1414,22 @@ main {
   text-align: right;
   white-space: nowrap;
   min-width: 0;
+}
+
+/* Same affordance as the old static site's .game-card-trigger/.game-card-
+   hint (src/morning_hockey/static/style.css), ported for the player card's
+   per-game table rows -- each played game links to its report page
+   (app.js), with one hint line below the whole table rather than repeated
+   under every row. */
+.game-row-link {
+  cursor: pointer;
+}
+
+.game-row-hint {
+  margin: 10px 0 0;
+  text-align: center;
+  font-size: 0.72rem;
+  color: var(--muted);
 }
 
 .stats-table th:first-child,

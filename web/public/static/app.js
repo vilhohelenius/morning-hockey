@@ -63,6 +63,17 @@
     });
   });
 
+  // Player card's per-game table rows -- each played game links to its
+  // report page, same affordance as the old static site's game-card-trigger
+  // (src/morning_hockey/templates/_macros.html's "Näytä ottelun tiedot"
+  // hint), just a <tr> instead of a whole card so a full navigation (not an
+  // inline expand) makes more sense here.
+  document.querySelectorAll(".game-row-link").forEach(function (row) {
+    row.addEventListener("click", function () {
+      location.href = "/ottelut/" + row.dataset.gameId;
+    });
+  });
+
   // "Back" buttons on pages reached by navigating forward from somewhere
   // else: prefer real browser history over a fixed destination, since a
   // page can be reached from several different places (e.g. a game report

@@ -15,6 +15,7 @@
 
 import { escapeHtml, nationalityFlag, seasonLabel, shortDate, teamLogoUrl } from "../_shared/format";
 import { renderLayout } from "../_shared/layout";
+import { TEAM_COLORS } from "../_shared/teamColors";
 import type { Env } from "../_shared/types";
 
 const NHL_BASE = "https://api-web.nhle.com/v1";
@@ -166,6 +167,48 @@ function renderGoalieStatRow(label: string, t: SeasonTotal, rowClass = "total-ro
       </tr>`;
 }
 
+// "Kausi <newest>" and "Uran tilastot" together, rendered twice: a tile
+// grid per period (unchanged look, shown under ~860px -- same breakpoint
+// the sidebar already switches on) and, for wider screens, ONE combined
+// table with a row per period sharing one set of column headers -- closer
+// to how NHL.com's own player page lays these two out side by side on
+// desktop. Both renderings read the exact same tile/row helpers used
+// elsewhere on this page, so the numbers can't drift between the two.
+// Pure CSS toggle (.stat-period-tiles/.stat-period-table), no JS.
+function renderPeriodStatsSection(isGoalie: boolean, periods: { label: string; total: SeasonTotal }[]): string {
+  if (!periods.length) return "";
+
+  const tileFn = isGoalie ? renderGoalieStatTiles : renderSkaterStatTiles;
+  const rowFn = isGoalie ? renderGoalieStatRow : renderSkaterTotalRow;
+  const headerCells = isGoalie
+    ? `<th>Ottelut</th><th>Voitot</th><th>SV%</th><th>GAA</th><th>NP</th>`
+    : `<th>Ottelut</th><th>M</th><th>S</th><th>P</th><th>+/-</th><th>JH</th><th>TOI/GP</th>`;
+
+  const tileSections = periods
+    .map(
+      (p) => `
+<section class="stat-period-tiles">
+  <h2 class="section-title">${escapeHtml(p.label)}</h2>
+  ${tileFn(p.total)}
+</section>`,
+    )
+    .join("");
+
+  const tableRows = periods.map((p) => rowFn(p.label, p.total, "")).join("");
+
+  return `${tileSections}
+<section class="stat-period-table">
+  <div class="stats-table-wrap">
+    <table class="stats-table">
+      <thead>
+        <tr><th></th>${headerCells}</tr>
+      </thead>
+      <tbody>${tableRows}</tbody>
+    </table>
+  </div>
+</section>`;
+}
+
 function renderSkaterOneRowSummary(t: SeasonTotal): string {
   return `
   <div class="stats-table-wrap">
@@ -221,7 +264,7 @@ function renderSkaterGameLog(games: any[], seasonTotal: SeasonTotal | null): str
   const rows = games
     .map(
       (g) => `
-      <tr>
+      <tr class="game-row-link" data-game-id="${g.gameId}">
         <td>${escapeHtml(shortDate(g.gameDate))}</td>
         <td>${opponentCell(g.homeRoadFlag, g.opponentAbbrev)}</td>
         <td>${g.goals}</td>
@@ -260,7 +303,8 @@ function renderSkaterGameLog(games: any[], seasonTotal: SeasonTotal | null): str
       ${totalRow ? `<tfoot>${totalRow}</tfoot>` : ""}
     </table>
   </div>
-  <button type="button" class="expand-toggle" data-table-id="player-game-log" data-page-size="1000"></button>`;
+  <button type="button" class="expand-toggle" data-table-id="player-game-log" data-page-size="1000"></button>
+  <p class="game-row-hint">Näytä ottelun tiedot ▾</p>`;
 }
 
 // Closest thing the public landing endpoint has to NHL.com's player-page
@@ -381,7 +425,7 @@ function renderGoalieGameLog(games: any[]): string {
     .map((g) => {
       const saves = (g.shotsAgainst ?? 0) - (g.goalsAgainst ?? 0);
       return `
-      <tr>
+      <tr class="game-row-link" data-game-id="${g.gameId}">
         <td>${escapeHtml(shortDate(g.gameDate))}</td>
         <td>${opponentCell(g.homeRoadFlag, g.opponentAbbrev)}</td>
         <td>${g.decision ? escapeHtml(GOALIE_DECISION_FI[g.decision] ?? g.decision) : "–"}</td>
@@ -411,7 +455,8 @@ function renderGoalieGameLog(games: any[]): string {
       <tbody>${rows}</tbody>
     </table>
   </div>
-  <button type="button" class="expand-toggle" data-table-id="player-game-log" data-page-size="1000"></button>`;
+  <button type="button" class="expand-toggle" data-table-id="player-game-log" data-page-size="1000"></button>
+  <p class="game-row-hint">Näytä ottelun tiedot ▾</p>`;
 }
 
 export const onRequestGet: PagesFunction<Env> = async (context) => {
@@ -475,10 +520,22 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   const age = landing.birthDate ? ageFromBirthDate(landing.birthDate) : null;
   const handedness = landing.shootsCatches ? (HANDEDNESS_FI[landing.shootsCatches] ?? landing.shootsCatches) : null;
 
+  // NHL.com's own player page has a large team-logo watermark behind the
+  // photo, "printed on the jersey" -- the public landing endpoint has no
+  // field for that specific hero/background image as far as this project's
+  // NHL API usage has established with any confidence (unlike draftDetails,
+  // which is a well-documented field), so rather than guess at one, this
+  // reuses data already fetched and trusted: the player's own team logo,
+  // faded large behind the header, over a gradient tinted with that team's
+  // TEAM_COLORS accent (the same map the favorite-team leaderboard
+  // highlight uses).
+  const teamAccent = TEAM_COLORS[landing.currentTeamAbbrev] ?? "";
+
   const content = `
 <a class="back-link js-back" href="/">← Takaisin</a>
 
-<header class="page-header player-card-header">
+<header class="page-header player-card-header"${teamAccent ? ` style="--team-accent:${teamAccent}"` : ""}>
+  ${landing.teamLogo ? `<img src="${escapeHtml(landing.teamLogo)}" alt="" class="player-card-header-bg" aria-hidden="true">` : ""}
   <img src="${escapeHtml(landing.headshot ?? "")}" alt="" class="player-card-photo" onerror="this.style.visibility='hidden'">
   <h1>${escapeHtml(name)}</h1>
   ${landing.birthCountry ? `<p class="subtitle">${nationalityFlag(landing.birthCountry)} ${escapeHtml(landing.birthCity?.default ?? "")}, ${escapeHtml(landing.birthCountry)}</p>` : ""}
@@ -500,28 +557,18 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   </div>
 </section>
 
-${
-  latestSeasonTotal
-    ? `<section>
-  <h2 class="section-title">Kausi ${escapeHtml(seasonLabel(seasons[0]))}</h2>
-  ${isGoalie ? renderGoalieStatTiles(latestSeasonTotal) : renderSkaterStatTiles(latestSeasonTotal)}
-</section>`
-    : ""
-}
-
-${
-  careerTotal
-    ? `<section>
-  <h2 class="section-title">Uran tilastot</h2>
-  ${isGoalie ? renderGoalieStatTiles(careerTotal) : renderSkaterStatTiles(careerTotal)}
-</section>`
-    : ""
-}
+${renderPeriodStatsSection(
+  isGoalie,
+  [
+    latestSeasonTotal ? { label: `Kausi ${seasonLabel(seasons[0])}`, total: latestSeasonTotal } : null,
+    careerTotal ? { label: "Uran tilastot", total: careerTotal } : null,
+  ].filter((p): p is { label: string; total: SeasonTotal } => p !== null),
+)}
 
 ${renderSeasonHistorySection(isGoalie, regularSeasonHistory, playoffHistory, careerTotal, careerPlayoffsTotal)}
 
 <section>
-  <h2 class="section-title">Kauden tilastot (${escapeHtml(seasonLabel(selectedSeason))})</h2>
+  <h2 class="section-title">Ottelut</h2>
   ${renderSeasonSelect(playerId, seasons.length ? seasons : [currentSeasonId()], selectedSeason)}
   ${
     seasonTotal
@@ -530,10 +577,6 @@ ${renderSeasonHistorySection(isGoalie, regularSeasonHistory, playoffHistory, car
         : renderSkaterOneRowSummary(seasonTotal)
       : ""
   }
-</section>
-
-<section>
-  <h2 class="section-title">Ottelut</h2>
   ${gameLogHtml}
 </section>
 `;
