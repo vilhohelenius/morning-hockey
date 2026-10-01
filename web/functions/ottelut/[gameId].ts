@@ -210,20 +210,14 @@ function renderFormChips(entry: FormGuideEntry | undefined, align: "start" | "en
 
 // Team-colored, continuous share-of-total bar with a diagonal seam --
 // matches the look of NHL.com's own Team Stats section (confirmed via live
-// inspection), unlike the Game Stats section's plain two-tone .gd-stat-bar
-// used by renderTeamStatRows below for finished games.
-function renderPreviewTeamStats(rows: TeamStatRow[], awayAbbrev: string, homeAbbrev: string, awayForm: FormGuideEntry | undefined, homeForm: FormGuideEntry | undefined): string {
+// inspection). Shared by the preview page's season-stats comparison (with a
+// form-guide row and league ranks) and the finished-game box-score
+// comparison (without either, since buildTeamStats never sets rank fields).
+function renderStatBarRows(rows: TeamStatRow[], awayAbbrev: string, homeAbbrev: string): string {
   const awayColor = TEAM_COLORS[awayAbbrev] ?? "var(--accent)";
   const homeColor = TEAM_COLORS[homeAbbrev] ?? "color-mix(in srgb, var(--accent) 45%, transparent)";
 
-  const formRow = `
-      <div class="gd-stat-row">
-        ${renderFormChips(awayForm, "start")}
-        <span class="gd-stat-label">Viimeiset ${FORM_GUIDE_WINDOW} ottelua</span>
-        ${renderFormChips(homeForm, "end")}
-      </div>`;
-
-  const statRows = rows
+  return rows
     .map(
       (stat) => `
       <div class="gd-stat-block">
@@ -236,41 +230,28 @@ function renderPreviewTeamStats(rows: TeamStatRow[], awayAbbrev: string, homeAbb
           <span class="pts-bar-away" style="width: ${stat.away_pct ?? 50}%; background: ${awayColor}"></span>
           <span class="pts-bar-home" style="width: ${stat.home_pct ?? 50}%; background: ${homeColor}"></span>
         </div>
-        <div class="pts-ranks">
+        ${
+          stat.away_rank || stat.home_rank
+            ? `<div class="pts-ranks">
           <span>${stat.away_rank ? `${stat.away_rank}.` : "–"}</span>
           <span>${stat.home_rank ? `${stat.home_rank}.` : "–"}</span>
-        </div>
-      </div>`,
-    )
-    .join("");
-
-  return formRow + statRows;
-}
-
-// Shared by the finished-game box-score comparison and the unplayed-game
-// season-stats comparison below -- same TeamStatRow shape, same bar-chart
-// markup, different source data.
-function renderTeamStatRows(rows: TeamStatRow[]): string {
-  return rows
-    .map(
-      (stat) => `
-      <div class="gd-stat-block">
-        <div class="gd-stat-row">
-          <span class="gd-stat-value">${escapeHtml(stat.away_value)}</span>
-          <span class="gd-stat-label">${escapeHtml(stat.label)}</span>
-          <span class="gd-stat-value">${escapeHtml(stat.home_value)}</span>
-        </div>
-        ${
-          stat.away_pct !== undefined && stat.home_pct !== undefined
-            ? `<div class="gd-stat-bar">
-          <span class="gd-stat-bar-away" style="width: ${stat.away_pct}%"></span>
-          <span class="gd-stat-bar-home" style="width: ${stat.home_pct}%"></span>
         </div>`
             : ""
         }
       </div>`,
     )
     .join("");
+}
+
+function renderPreviewTeamStats(rows: TeamStatRow[], awayAbbrev: string, homeAbbrev: string, awayForm: FormGuideEntry | undefined, homeForm: FormGuideEntry | undefined): string {
+  const formRow = `
+      <div class="gd-stat-row">
+        ${renderFormChips(awayForm, "start")}
+        <span class="gd-stat-label">Viimeiset ${FORM_GUIDE_WINDOW} ottelua</span>
+        ${renderFormChips(homeForm, "end")}
+      </div>`;
+
+  return formRow + renderStatBarRows(rows, awayAbbrev, homeAbbrev);
 }
 
 // "Players to watch": each team's own points leader and goals leader
@@ -536,7 +517,7 @@ ${
         <span class="gd-stat-team">${escapeHtml(game.away_abbrev)}</span>
         <span class="gd-stat-team">${escapeHtml(game.home_abbrev)}</span>
       </div>
-      ${renderTeamStatRows(box.teamStats)}
+      ${renderStatBarRows(box.teamStats, game.away_abbrev, game.home_abbrev)}
     </div>
   </div>
 </section>

@@ -463,12 +463,27 @@
       return match ? parseFloat(match[0]) : null;
     }
 
+    // Kept in sync by hand with functions/_shared/teamColors.ts -- this
+    // project has no build step, so app.js can't import the .ts module and
+    // duplicates the map instead.
+    var TEAM_COLORS = {
+      ANA: "#F47A38", BOS: "#FFB81C", BUF: "#002654", CAR: "#CC0000", CBJ: "#002654",
+      CGY: "#D2001C", CHI: "#CF0A2C", COL: "#6F263D", DAL: "#006847", DET: "#CE1126",
+      EDM: "#FF4C00", FLA: "#C8102E", LAK: "#A2AAAD", MIN: "#154734", MTL: "#AF1E2D",
+      NJD: "#CE1126", NSH: "#FFB81C", NYI: "#00539B", NYR: "#0038A8", OTT: "#C52032",
+      PHI: "#F74902", PIT: "#FCB514", SEA: "#99D9D9", SJS: "#006D75", STL: "#002F87",
+      TBL: "#002868", TOR: "#00205B", UTA: "#71AFE5", VAN: "#00205B", VGK: "#B4975A",
+      WPG: "#041E42", WSH: "#C8102E",
+    };
+
     function renderTeamStats(stats, awayAbbrev, homeAbbrev) {
       var wrap = section("Ottelun tilastot");
       var header = el("div", "gd-stat-header");
       header.appendChild(el("span", "gd-stat-team", awayAbbrev));
       header.appendChild(el("span", "gd-stat-team", homeAbbrev));
       wrap.appendChild(header);
+      var awayColor = TEAM_COLORS[awayAbbrev] || "var(--accent)";
+      var homeColor = TEAM_COLORS[homeAbbrev] || "color-mix(in srgb, var(--accent) 45%, transparent)";
       stats.forEach(function (stat) {
         var block = el("div", "gd-stat-block");
         var row = el("div", "gd-stat-row");
@@ -489,11 +504,13 @@
         block.appendChild(row);
 
         if (stat.away_pct !== undefined && stat.home_pct !== undefined) {
-          var bar = el("div", "gd-stat-bar");
-          var awayBar = el("span", "gd-stat-bar-away");
+          var bar = el("div", "pts-bar");
+          var awayBar = el("span", "pts-bar-away");
           awayBar.style.width = stat.away_pct + "%";
-          var homeBar = el("span", "gd-stat-bar-home");
+          awayBar.style.background = awayColor;
+          var homeBar = el("span", "pts-bar-home");
           homeBar.style.width = stat.home_pct + "%";
+          homeBar.style.background = homeColor;
           bar.appendChild(awayBar);
           bar.appendChild(homeBar);
           block.appendChild(bar);

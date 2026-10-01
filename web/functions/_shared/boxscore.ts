@@ -88,17 +88,6 @@ function powerPlayDisplay(attempts: string, pct: number): string {
   return `${attempts} (${percent(pct)})`;
 }
 
-// Two-sided bar fill (0-100 each), scaled so the larger of the pair fills
-// its full half -- matches the look of NHL.com's own "Game Stats" bars.
-// Pass already-0-100-scale numbers for percentage rows.
-function barSplit(away: number | undefined, home: number | undefined): [number, number] {
-  const a = Math.max(away ?? 0, 0);
-  const h = Math.max(home ?? 0, 0);
-  const max = Math.max(a, h);
-  if (max === 0) return [0, 0];
-  return [(a / max) * 100, (h / max) * 100];
-}
-
 export function buildTeamStats(teamGameStats: RawTeamStat[], awayScore: number, homeScore: number): TeamStatRow[] {
   const byCategory = new Map(teamGameStats.map((row) => [row.category, row]));
   const raw = (category: string): [string | number | undefined, string | number | undefined] => {
@@ -121,12 +110,19 @@ export function buildTeamStats(teamGameStats: RawTeamStat[], awayScore: number, 
   const awayPkPct = homePpPct !== undefined ? 1 - homePpPct : undefined;
   const homePkPct = awayPpPct !== undefined ? 1 - awayPpPct : undefined;
 
-  const [sogAwayPct, sogHomePct] = barSplit(awaySog, homeSog);
-  const [pimAwayPct, pimHomePct] = barSplit(awayPim, homePim);
-  const [hitsAwayPct, hitsHomePct] = barSplit(awayHits, homeHits);
-  const [blockedAwayPct, blockedHomePct] = barSplit(awayBlocked, homeBlocked);
-  const [giveawaysAwayPct, giveawaysHomePct] = barSplit(awayGiveaways, homeGiveaways);
-  const [takeawaysAwayPct, takeawaysHomePct] = barSplit(awayTakeaways, homeTakeaways);
+  // Same continuous share-of-total split the preview page's Team Stats
+  // uses (shareSplit below), not an independent-per-side scale -- so the
+  // two bar halves always add up to one continuous 100%-wide bar.
+  const [sogAwayPct, sogHomePct] = shareSplit(awaySog ?? 0, homeSog ?? 0);
+  const [saveAwayPct, saveHomePct] = shareSplit((awaySavePct ?? 0) * 100, (homeSavePct ?? 0) * 100);
+  const [faceoffAwayPct, faceoffHomePct] = shareSplit((awayFaceoff ?? 0) * 100, (homeFaceoff ?? 0) * 100);
+  const [ppAwayPct, ppHomePct] = shareSplit((awayPpPct ?? 0) * 100, (homePpPct ?? 0) * 100);
+  const [pkAwayPct, pkHomePct] = shareSplit((awayPkPct ?? 0) * 100, (homePkPct ?? 0) * 100);
+  const [pimAwayPct, pimHomePct] = shareSplit(awayPim ?? 0, homePim ?? 0);
+  const [hitsAwayPct, hitsHomePct] = shareSplit(awayHits ?? 0, homeHits ?? 0);
+  const [blockedAwayPct, blockedHomePct] = shareSplit(awayBlocked ?? 0, homeBlocked ?? 0);
+  const [giveawaysAwayPct, giveawaysHomePct] = shareSplit(awayGiveaways ?? 0, homeGiveaways ?? 0);
+  const [takeawaysAwayPct, takeawaysHomePct] = shareSplit(awayTakeaways ?? 0, homeTakeaways ?? 0);
 
   return [
     {
@@ -140,29 +136,29 @@ export function buildTeamStats(teamGameStats: RawTeamStat[], awayScore: number, 
       label: "Torjuntaprosentti",
       away_value: awaySavePct !== undefined ? percent(awaySavePct) : "–",
       home_value: homeSavePct !== undefined ? percent(homeSavePct) : "–",
-      away_pct: awaySavePct !== undefined ? awaySavePct * 100 : 0,
-      home_pct: homeSavePct !== undefined ? homeSavePct * 100 : 0,
+      away_pct: saveAwayPct,
+      home_pct: saveHomePct,
     },
     {
       label: "Aloitusprosentti",
       away_value: awayFaceoff !== undefined ? percent(awayFaceoff) : "–",
       home_value: homeFaceoff !== undefined ? percent(homeFaceoff) : "–",
-      away_pct: awayFaceoff !== undefined ? awayFaceoff * 100 : 0,
-      home_pct: homeFaceoff !== undefined ? homeFaceoff * 100 : 0,
+      away_pct: faceoffAwayPct,
+      home_pct: faceoffHomePct,
     },
     {
       label: "Ylivoima (YV%)",
       away_value: awayPp !== undefined ? powerPlayDisplay(awayPp, awayPpPct ?? 0) : "–",
       home_value: homePp !== undefined ? powerPlayDisplay(homePp, homePpPct ?? 0) : "–",
-      away_pct: awayPpPct !== undefined ? awayPpPct * 100 : 0,
-      home_pct: homePpPct !== undefined ? homePpPct * 100 : 0,
+      away_pct: ppAwayPct,
+      home_pct: ppHomePct,
     },
     {
       label: "Alivoima (AV%)",
       away_value: awayPkPct !== undefined ? percent(awayPkPct) : "–",
       home_value: homePkPct !== undefined ? percent(homePkPct) : "–",
-      away_pct: awayPkPct !== undefined ? awayPkPct * 100 : 0,
-      home_pct: homePkPct !== undefined ? homePkPct * 100 : 0,
+      away_pct: pkAwayPct,
+      home_pct: pkHomePct,
     },
     {
       label: "Jäähyt (min)",

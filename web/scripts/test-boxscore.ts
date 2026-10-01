@@ -114,17 +114,23 @@ const TEAM_GAME_STATS = [
   const rows = buildTeamStats(TEAM_GAME_STATS, 1, 2);
   const byLabel = Object.fromEntries(rows.map((r) => [r.label, r]));
 
-  // Larger side of each count-based row fills its full half; the other is
-  // proportional to it. Blocked shots: away 11, home 21 -> home is max.
-  assert.equal(byLabel["Torjutut laukaukset"].home_pct, 100);
-  assert.ok(Math.abs(byLabel["Torjutut laukaukset"].away_pct! - (11 / 21) * 100) < 1e-6);
-  // Equal takeaways (4/4) both fill 100%.
-  assert.equal(byLabel["Riistetyt kiekot"].away_pct, 100);
-  assert.equal(byLabel["Riistetyt kiekot"].home_pct, 100);
-  // Percentage rows use the percentage itself, not a relative split.
+  // Every row is a continuous share-of-total split (the two sides always
+  // sum to ~100, for one continuous bar) -- not an independent per-side
+  // scale. Blocked shots: away 11, home 21, total 32.
+  assert.ok(Math.abs(byLabel["Torjutut laukaukset"].away_pct! - (11 / 32) * 100) < 1e-6);
+  assert.ok(Math.abs(byLabel["Torjutut laukaukset"].home_pct! - (21 / 32) * 100) < 1e-6);
+  // Equal takeaways (4/4) split evenly.
+  assert.equal(byLabel["Riistetyt kiekot"].away_pct, 50);
+  assert.equal(byLabel["Riistetyt kiekot"].home_pct, 50);
+  // Faceoff win pct already sums to 100 between the two teams, so the
+  // share split leaves it unchanged.
   assert.ok(Math.abs(byLabel["Aloitusprosentti"].away_pct! - 41.3793) < 1e-3);
   assert.ok(Math.abs(byLabel["Aloitusprosentti"].home_pct! - 58.6207) < 1e-3);
-  console.log("ok: build_team_stats bar percentages scale count rows by their max and percentage rows directly");
+  // Save pct (derived from score/shots) does NOT sum to 100 on its own
+  // (86.7 + 95.0 = 181.7), so the share split normalizes it down.
+  assert.ok(Math.abs(byLabel["Torjuntaprosentti"].away_pct! - 47.7064) < 1e-3);
+  assert.ok(Math.abs(byLabel["Torjuntaprosentti"].home_pct! - 52.2936) < 1e-3);
+  console.log("ok: build_team_stats bar percentages are a continuous share-of-total split for every row");
 }
 
 {
