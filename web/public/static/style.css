@@ -288,6 +288,11 @@ main {
   border-radius: 12px;
 }
 
+.sidebar-banner {
+  width: 170px;
+  border-radius: 8px;
+}
+
 .brand-banner-dark {
   display: none;
 }

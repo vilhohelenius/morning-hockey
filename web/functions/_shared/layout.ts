@@ -127,7 +127,8 @@ export async function renderLayout(options: LayoutOptions): Promise<string> {
 
   <nav id="sidebar" class="sidebar" aria-label="Päävalikko">
     <div class="sidebar-header">
-      <span class="brand">🏒 Morning Hockey</span>
+      <img src="/static/banner_light.png" alt="Morning Hockey" class="brand-banner brand-banner-light sidebar-banner">
+      <img src="/static/banner_dark.png" alt="Morning Hockey" class="brand-banner brand-banner-dark sidebar-banner">
       <button id="sidebar-close" class="icon-btn" aria-label="Sulje valikko">✕</button>
     </div>
     <ul class="nav-list">

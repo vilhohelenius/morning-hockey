@@ -323,8 +323,8 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
   const content = `
 <header class="page-header">
-  <img src="/static/banner_light.jpg" alt="Morning Hockey" class="brand-banner brand-banner-light">
-  <img src="/static/banner_dark.jpg" alt="Morning Hockey" class="brand-banner brand-banner-dark">
+  <img src="/static/banner_light.png" alt="Morning Hockey" class="brand-banner brand-banner-light">
+  <img src="/static/banner_dark.png" alt="Morning Hockey" class="brand-banner brand-banner-dark">
   ${currentRound ? "" : `<p class="subtitle">Ei vielä otteluita tällä kaudella</p>`}
 </header>
 
