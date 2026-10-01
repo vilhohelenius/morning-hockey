@@ -171,7 +171,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       : `<p class="empty-note">Ei osumia haulle "${escapeHtml(query)}".</p>`;
   }
 
-  const currentTheme = settings?.theme ?? readThemeCookie(context.request) ?? "system (selaimen oma)";
+  const currentTheme = settings?.theme ?? readThemeCookie(context.request) ?? "system";
   const tulospiiloEnabled = !!settings?.tulospiilo_mode;
 
   const content = `
@@ -187,6 +187,43 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     <span class="fav-row-info">👤 ${escapeHtml(username)}</span>
     <form method="post" action="/kirjaudu/ulos">
       <button type="submit" class="filter-btn">Kirjaudu ulos</button>
+    </form>
+  </div>
+</section>
+
+<section>
+  <h2 class="section-title">Teema</h2>
+  <div class="toggle-group">
+    <form method="post" action="/omat/theme">
+      <input type="hidden" name="theme" value="light">
+      <button type="submit" class="toggle-segment ${currentTheme === "light" ? "active" : ""}">☀️ Vaalea</button>
+    </form>
+    <form method="post" action="/omat/theme">
+      <input type="hidden" name="theme" value="dark">
+      <button type="submit" class="toggle-segment ${currentTheme === "dark" ? "active" : ""}">🌙 Tumma</button>
+    </form>
+    <form method="post" action="/omat/theme">
+      <input type="hidden" name="theme" value="system">
+      <button type="submit" class="toggle-segment ${currentTheme === "system" ? "active" : ""}">💻 Järjestelmä</button>
+    </form>
+  </div>
+</section>
+
+<section>
+  <h2 class="section-title">🙈 Tulospiilo</h2>
+  <p class="standings-legend">
+    Päällä ollessaan etusivu avautuu suoraan Tulospiilo-näkymään, jossa edellisen kierroksen
+    ottelut ja YouTube-highlightit näkyvät ilman tuloksia -- tulos paljastuu ottelukohtaisesti
+    ruksimalla.
+  </p>
+  <div class="toggle-group">
+    <form method="post" action="/omat/tulospiilo">
+      <input type="hidden" name="enabled" value="1">
+      <button type="submit" class="toggle-segment ${tulospiiloEnabled ? "active" : ""}">🙈 Päällä</button>
+    </form>
+    <form method="post" action="/omat/tulospiilo">
+      <input type="hidden" name="enabled" value="0">
+      <button type="submit" class="toggle-segment ${tulospiiloEnabled ? "" : "active"}">Pois päältä</button>
     </form>
   </div>
 </section>
@@ -215,39 +252,6 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     <button type="submit" class="filter-btn">Hae</button>
   </form>
   ${searchResultsHtml}
-</section>
-
-<section>
-  <h2 class="section-title">Teema</h2>
-  <div class="table-filters">
-    <form method="post" action="/omat/theme">
-      <input type="hidden" name="theme" value="light">
-      <button type="submit" class="filter-btn ${currentTheme === "light" ? "active" : ""}">☀️ Vaalea</button>
-    </form>
-    <form method="post" action="/omat/theme">
-      <input type="hidden" name="theme" value="dark">
-      <button type="submit" class="filter-btn ${currentTheme === "dark" ? "active" : ""}">🌙 Tumma</button>
-    </form>
-  </div>
-</section>
-
-<section>
-  <h2 class="section-title">🙈 Tulospiilo</h2>
-  <p class="standings-legend">
-    Päällä ollessaan etusivu avautuu suoraan Tulospiilo-näkymään, jossa edellisen kierroksen
-    ottelut ja YouTube-highlightit näkyvät ilman tuloksia -- tulos paljastuu ottelukohtaisesti
-    ruksimalla.
-  </p>
-  <div class="table-filters">
-    <form method="post" action="/omat/tulospiilo">
-      <input type="hidden" name="enabled" value="1">
-      <button type="submit" class="filter-btn ${tulospiiloEnabled ? "active" : ""}">🙈 Päällä</button>
-    </form>
-    <form method="post" action="/omat/tulospiilo">
-      <input type="hidden" name="enabled" value="0">
-      <button type="submit" class="filter-btn ${tulospiiloEnabled ? "" : "active"}">Pois päältä</button>
-    </form>
-  </div>
 </section>
 
 </div>

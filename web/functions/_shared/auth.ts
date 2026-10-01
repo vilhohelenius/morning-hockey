@@ -44,7 +44,10 @@ export async function hashPassword(password: string): Promise<string> {
   return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-export type Theme = "light" | "dark";
+// "system" isn't a real cookie/CSS value -- it means "no explicit choice",
+// which is already what an absent cookie means to style.css's
+// prefers-color-scheme fallback. Choosing it just clears the cookie.
+export type Theme = "light" | "dark" | "system";
 
 const THEME_COOKIE = "theme";
 
@@ -55,12 +58,13 @@ const THEME_COOKIE = "theme";
 // everywhere else just reads the cookie. Not HttpOnly: it only ever holds
 // "light"/"dark", nothing sensitive, and app.js has no reason to read it
 // today but shouldn't be blocked from it later.
-export function readThemeCookie(request: Request): Theme | null {
+export function readThemeCookie(request: Request): "light" | "dark" | null {
   const match = readCookie(request, THEME_COOKIE);
   return match === "light" || match === "dark" ? match : null;
 }
 
 export function themeCookieHeader(theme: Theme): string {
+  if (theme === "system") return `${THEME_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax`;
   return `${THEME_COOKIE}=${theme}; Path=/; Max-Age=31536000; SameSite=Lax`;
 }
 

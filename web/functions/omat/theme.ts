@@ -12,7 +12,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
   const form = await context.request.formData();
   const theme = String(form.get("theme") ?? "");
-  if (theme !== "light" && theme !== "dark") {
+  if (theme !== "light" && theme !== "dark" && theme !== "system") {
     return new Response("Virheellinen teema.", { status: 400 });
   }
 

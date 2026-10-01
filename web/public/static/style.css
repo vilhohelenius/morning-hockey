@@ -1353,6 +1353,44 @@ main {
   color: #fff;
 }
 
+/* Segmented pill control (Asetukset: Teema, Tulospiilo) -- several forms,
+   each posting a different value to the same endpoint, laid out so they
+   read as one wide rounded bar with a divider between choices rather than
+   separate buttons floating next to each other. */
+.toggle-group {
+  display: flex;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  overflow: hidden;
+}
+
+.toggle-group form {
+  flex: 1;
+  display: flex;
+}
+
+.toggle-group form + form {
+  border-left: 1px solid var(--border);
+}
+
+.toggle-segment {
+  flex: 1;
+  padding: 11px 16px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.toggle-segment.active {
+  background: var(--accent);
+  color: #fff;
+}
+
 /* Custom-styled select/search/text inputs, used in the table-filters forms
    (team picker, player search) and the login form -- plain native controls
    otherwise look out of place next to the pill-shaped filter buttons. */
@@ -1501,6 +1539,10 @@ main {
 
 .settings-page .section-title {
   margin-bottom: 12px;
+}
+
+.settings-page .standings-legend {
+  margin-bottom: 14px;
 }
 
 .fav-list {
