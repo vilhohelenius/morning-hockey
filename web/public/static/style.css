@@ -2358,14 +2358,16 @@ main {
    two adjacent same-colored halves would otherwise merge into one
    indistinguishable block. A flex gap shrinks both halves by their
    proportional share to make room (no explicit width math needed), so
-   each bar now ends a little short of the container's own edge instead of
-   the previous diagonal-clip-path version, which also had a standing bug:
-   its -8px overlap margin silently ate 8px off the bar's right end, as a
-   stray sliver of the container's own (gray) background showing through
-   inside the home half. The old shared app.js copy of this rendering
-   (dashboard/tulospiilo's click-to-expand info box) reuses these same
-   class names with no JS-side clip-path/margin of its own, so this CSS
-   change alone covers all three places this bar appears. */
+   each bar now ends a little short of the container's own edge; the
+   diagonal clip-path on each half's inner edge keeps the original slanted
+   look, just no longer overlapping into the gap the way the old
+   -8px-margin version did -- that overlap was also a standing bug, quietly
+   eating 8px off the bar's right end as a stray sliver of the container's
+   own (gray) background showing through inside the home half. The shared
+   app.js copy of this rendering (dashboard/tulospiilo's click-to-expand
+   info box) reuses these same class names with no JS-side clip-path/margin
+   of its own, so this CSS change alone covers all three places this bar
+   appears. */
 .pts-bar {
   display: flex;
   height: 10px;
@@ -2379,6 +2381,14 @@ main {
 .pts-bar-away,
 .pts-bar-home {
   height: 100%;
+}
+
+.pts-bar-away {
+  clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+}
+
+.pts-bar-home {
+  clip-path: polygon(8px 0, 100% 0, 100% 100%, 0 100%);
 }
 
 .pts-ranks {
