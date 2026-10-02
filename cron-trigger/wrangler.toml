@@ -1,0 +1,16 @@
+name = "morning-hockey-cron-trigger"
+main = "src/index.ts"
+compatibility_date = "2026-10-02"
+
+[triggers]
+# Same cadence as the three sync workflows' old (unreliable) GitHub Actions
+# `schedule:` triggers -- see src/index.ts for why this Worker exists.
+crons = ["*/30 * * * *", "0 * * * *", "0 6 * * *"]
+
+[vars]
+GITHUB_REPO = "vilhohelenius/morning-hockey"
+
+# GITHUB_TOKEN is a secret, not set here -- run:
+#   npx wrangler secret put GITHUB_TOKEN
+# with a fine-grained GitHub PAT scoped to this repo only, Actions:
+# read+write permission, nothing else.

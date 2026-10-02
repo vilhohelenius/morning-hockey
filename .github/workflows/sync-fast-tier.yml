@@ -1,11 +1,10 @@
 name: Sync fast-tier schedule to D1
 
 on:
-  schedule:
-    # Every 30 minutes. This is the "fast tier" of the Cloudflare migration:
-    # cheap, scoreboard/schedule-only, separate from the much heavier nightly
-    # digest build.
-    - cron: "*/30 * * * *"
+  # No native `schedule:` trigger -- GitHub Actions' own cron is best-effort
+  # and was observed running hours late under load. A Cloudflare Worker
+  # (cron-trigger/) with its own Cron Trigger calls workflow_dispatch below
+  # every 30 minutes instead; see cron-trigger/src/index.ts.
   workflow_dispatch:
     inputs:
       date:

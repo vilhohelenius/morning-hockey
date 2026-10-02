@@ -1,14 +1,8 @@
 name: Sync slow-tier stats to D1
 
 on:
-  schedule:
-    # Hourly. Was every 4 hours; tightened 2026-10-01 so Pistepörssi/
-    # Maalivahtipörssi feel current without a full re-fetch of every page
-    # view -- triggering this (several minutes, ~32 teams' worth of NHL
-    # API calls) on every visit doesn't scale and risks overlapping runs;
-    # an hourly cron is the standard, safe way to get "current enough"
-    # instead.
-    - cron: "0 * * * *"
+  # No native `schedule:` trigger -- see sync-fast-tier.yml's comment.
+  # Cloudflare Worker (cron-trigger/) calls workflow_dispatch hourly instead.
   workflow_dispatch: {}
 
 jobs:

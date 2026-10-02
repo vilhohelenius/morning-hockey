@@ -11,3 +11,7 @@ build/
 # Cloudflare Pages project (web/)
 web/node_modules/
 web/.wrangler/
+
+# Cloudflare Worker (cron-trigger/)
+cron-trigger/node_modules/
+cron-trigger/.wrangler/

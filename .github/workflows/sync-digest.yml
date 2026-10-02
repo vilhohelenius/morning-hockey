@@ -1,11 +1,9 @@
 name: Sync digest to D1
 
 on:
-  schedule:
-    # Once daily -- last night's games don't change again until the next
-    # night, so a faster cadence would just re-fetch the same settled data
-    # (and re-run every finished game's box score fetch for nothing).
-    - cron: "0 6 * * *"
+  # No native `schedule:` trigger -- see sync-fast-tier.yml's comment.
+  # Cloudflare Worker (cron-trigger/) calls workflow_dispatch once daily
+  # instead.
   workflow_dispatch: {}
 
 jobs:
