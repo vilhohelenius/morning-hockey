@@ -17,7 +17,7 @@
 const WORKFLOW_BY_CRON: Record<string, string> = {
   "*/10 * * * *": "sync-fast-tier.yml",
   "*/30 * * * *": "sync-slow-tier.yml",
-  "0 * * * *": "sync-digest.yml",
+  "0 */6 * * *": "sync-digest.yml",
 };
 
 interface Env {
