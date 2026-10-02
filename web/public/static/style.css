@@ -1134,6 +1134,21 @@ main {
   flex-shrink: 0;
 }
 
+.stat-card-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stat-card-team-logo {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
 .stat-card-table-wrap {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
@@ -2438,14 +2453,15 @@ main {
 }
 
 .pw-name {
-  display: block;
-  font-size: 0.72rem;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-size: 0.78rem;
   font-weight: 600;
   color: var(--muted);
-  line-height: 1.2;
+  line-height: 1.25;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
 }
 
 .pw-player-empty {

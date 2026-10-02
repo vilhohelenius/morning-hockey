@@ -132,8 +132,8 @@ function renderSkaterTable(skaters: PlayerGameStat[]): string {
         <th title="Laukaukset">L</th>
         <th title="Blokatut laukaukset">Blokit</th>
         <th title="Taklaukset">Taklat</th>
-        <th title="Menetetyt kiekot">Menet.</th>
-        <th title="Riistetyt kiekot">Riistot</th>
+        <th title="Kiekon menetykset">Menet.</th>
+        <th title="Kiekon riistot">Riistot</th>
         <th title="Aloitusprosentti">Al.%</th>
         <th title="Jäähyt (min)">JH</th>
         <th>Peliaika</th>
@@ -214,8 +214,17 @@ function renderFormChips(entry: FormGuideEntry | undefined, align: "start" | "en
 // form-guide row and league ranks) and the finished-game box-score
 // comparison (without either, since buildTeamStats never sets rank fields).
 function renderStatBarRows(rows: TeamStatRow[], awayAbbrev: string, homeAbbrev: string): string {
-  const awayColor = TEAM_COLORS[awayAbbrev] ?? "var(--accent)";
-  const homeColor = TEAM_COLORS[homeAbbrev] ?? "color-mix(in srgb, var(--accent) 45%, transparent)";
+  const rawAwayColor = TEAM_COLORS[awayAbbrev];
+  const rawHomeColor = TEAM_COLORS[homeAbbrev];
+  // Several real team colors are identical or near-identical (e.g. BUF/CBJ
+  // both #002654, DET/NJD both #CE1126) -- when the matchup has that
+  // collision, the bar's diagonal seam between the two halves becomes
+  // invisible. Falls back the away half to --text instead, which is
+  // already the theme's own black-in-light/white-in-dark value, so it
+  // stays readable in both themes without a separate light/dark branch here.
+  const colorsCollide = !!rawAwayColor && !!rawHomeColor && rawAwayColor.toLowerCase() === rawHomeColor.toLowerCase();
+  const awayColor = colorsCollide ? "var(--text)" : rawAwayColor ?? "var(--accent)";
+  const homeColor = rawHomeColor ?? "color-mix(in srgb, var(--accent) 45%, transparent)";
 
   return rows
     .map(
@@ -297,12 +306,13 @@ function renderPlayersToWatch(awaySkaters: TeamRosterSkaterRow[], homeSkaters: T
 
 // One compact stat card per team's presumed starter (reuses the .stat-card
 // component from the team page's Kausitilastot box) -- W-L-OTL/GAA/SV%/SO.
-function renderGoalieCard(g: TeamRosterGoalieRow): string {
+function renderGoalieCard(g: TeamRosterGoalieRow, teamLogo: string): string {
   return `
   <div class="stat-card">
     <div class="stat-card-header">
       <img src="${escapeHtml(g.headshot)}" alt="" class="stat-card-headshot" loading="lazy" onerror="this.style.visibility='hidden'">
-      ${escapeHtml(g.name)}
+      <span class="stat-card-name">${escapeHtml(g.name)}</span>
+      <img src="${escapeHtml(teamLogo)}" alt="" class="stat-card-team-logo" loading="lazy">
     </div>
     <div class="stat-card-table-wrap">
       <table class="stat-card-table">
@@ -335,9 +345,12 @@ function pickStarter(goalies: TeamRosterGoalieRow[]): TeamRosterGoalieRow | unde
   );
 }
 
-function renderGoaltending(awayGoalies: TeamRosterGoalieRow[], homeGoalies: TeamRosterGoalieRow[]): string {
-  const starters = [pickStarter(awayGoalies), pickStarter(homeGoalies)].filter((g): g is TeamRosterGoalieRow => !!g);
-  const cards = starters.map(renderGoalieCard).join("");
+function renderGoaltending(awayGoalies: TeamRosterGoalieRow[], homeGoalies: TeamRosterGoalieRow[], awayLogo: string, homeLogo: string): string {
+  const starters = [
+    [pickStarter(awayGoalies), awayLogo] as const,
+    [pickStarter(homeGoalies), homeLogo] as const,
+  ].filter((pair): pair is [TeamRosterGoalieRow, string] => !!pair[0]);
+  const cards = starters.map(([g, logo]) => renderGoalieCard(g, logo)).join("");
   return `<div class="stat-card-grid">${cards}</div>`;
 }
 
@@ -471,7 +484,7 @@ ${
         ? `
     <div class="tp-section">
       <p class="tp-section-title">Maalivahdit</p>
-      ${renderGoaltending(awayGoalies, homeGoalies)}
+      ${renderGoaltending(awayGoalies, homeGoalies, game.away_logo, game.home_logo)}
     </div>`
         : ""
     }

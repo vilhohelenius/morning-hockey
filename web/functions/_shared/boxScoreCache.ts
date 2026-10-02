@@ -158,6 +158,13 @@ const LIVE_CACHE_TTL_MS = 15_000;
 
 function isStale(cached: GameBoxScoreRow, game: GameRow): boolean {
   if (!cached.away_skaters_json.includes('"blocked_shots"') || !cached.away_goalies_json.includes('"ev_goals_against"')) return true;
+  // 2026-10-02: team_stats_json's row labels were renamed ("Torjutut
+  // laukaukset" -> "Blokatut laukaukset", "Menetetyt kiekot" -> "Kiekon
+  // menetykset", "Riistetyt kiekot" -> "Kiekon riistot") -- same
+  // cheap-substring-check pattern as the missing-key case above, so an
+  // already-cached finished game picks up the new wording on next view
+  // instead of being stuck with whatever text was cached before the rename.
+  if (cached.team_stats_json.includes('"Torjutut laukaukset"') || cached.team_stats_json.includes('"Menetetyt kiekot"') || cached.team_stats_json.includes('"Riistetyt kiekot"')) return true;
   if (game.is_finished) return false;
   return Date.now() - new Date(cached.cached_at).getTime() > LIVE_CACHE_TTL_MS;
 }

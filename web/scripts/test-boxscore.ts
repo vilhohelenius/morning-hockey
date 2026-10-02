@@ -101,12 +101,12 @@ const TEAM_GAME_STATS = [
   assert.equal(byLabel["Jäähyt (min)"].home_value, "19");
   assert.equal(byLabel["Taklaukset"].away_value, "24");
   assert.equal(byLabel["Taklaukset"].home_value, "19");
-  assert.equal(byLabel["Torjutut laukaukset"].away_value, "11");
-  assert.equal(byLabel["Torjutut laukaukset"].home_value, "21");
-  assert.equal(byLabel["Menetetyt kiekot"].away_value, "12");
-  assert.equal(byLabel["Menetetyt kiekot"].home_value, "15");
-  assert.equal(byLabel["Riistetyt kiekot"].away_value, "4");
-  assert.equal(byLabel["Riistetyt kiekot"].home_value, "4");
+  assert.equal(byLabel["Blokatut laukaukset"].away_value, "11");
+  assert.equal(byLabel["Blokatut laukaukset"].home_value, "21");
+  assert.equal(byLabel["Kiekon menetykset"].away_value, "12");
+  assert.equal(byLabel["Kiekon menetykset"].home_value, "15");
+  assert.equal(byLabel["Kiekon riistot"].away_value, "4");
+  assert.equal(byLabel["Kiekon riistot"].home_value, "4");
   console.log("ok: build_team_stats computes save pct from score and shots, and carries hits/blocks/giveaways/takeaways");
 }
 
@@ -117,11 +117,11 @@ const TEAM_GAME_STATS = [
   // Every row is a continuous share-of-total split (the two sides always
   // sum to ~100, for one continuous bar) -- not an independent per-side
   // scale. Blocked shots: away 11, home 21, total 32.
-  assert.ok(Math.abs(byLabel["Torjutut laukaukset"].away_pct! - (11 / 32) * 100) < 1e-6);
-  assert.ok(Math.abs(byLabel["Torjutut laukaukset"].home_pct! - (21 / 32) * 100) < 1e-6);
+  assert.ok(Math.abs(byLabel["Blokatut laukaukset"].away_pct! - (11 / 32) * 100) < 1e-6);
+  assert.ok(Math.abs(byLabel["Blokatut laukaukset"].home_pct! - (21 / 32) * 100) < 1e-6);
   // Equal takeaways (4/4) split evenly.
-  assert.equal(byLabel["Riistetyt kiekot"].away_pct, 50);
-  assert.equal(byLabel["Riistetyt kiekot"].home_pct, 50);
+  assert.equal(byLabel["Kiekon riistot"].away_pct, 50);
+  assert.equal(byLabel["Kiekon riistot"].home_pct, 50);
   // Faceoff win pct already sums to 100 between the two teams, so the
   // share split leaves it unchanged.
   assert.ok(Math.abs(byLabel["Aloitusprosentti"].away_pct! - 41.3793) < 1e-3);
