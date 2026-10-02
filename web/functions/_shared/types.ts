@@ -211,6 +211,7 @@ export interface GameBoxScoreRow {
   home_skaters_json: string;
   away_goalies_json: string;
   home_goalies_json: string;
+  live_json: string | null;
   cached_at: string;
 }
 

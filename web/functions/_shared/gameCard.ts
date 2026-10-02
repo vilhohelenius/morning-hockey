@@ -54,12 +54,18 @@ export function finnishGoalieLines(goalies: GoalieGameStat[], teamAbbrev: string
     .map((g) => ({ name: g.name, team_abbrev: teamAbbrev, decision: g.decision, saves: g.saves, shots_against: g.shots_against }));
 }
 
-// A game that has started (per the fast tier's own game_state) but isn't
-// finished yet -- same "has it started" definition index.ts's currentRound
-// query already uses, so a game counts as live here exactly when it's the
-// reason that round is showing at all.
+// A game that has started but isn't finished yet. Primarily per the fast
+// tier's own game_state -- same "has it started" definition index.ts's
+// currentRound query already uses, so a game counts as live here exactly
+// when it's the reason that round is showing at all -- but that field only
+// updates every ~30 min, so a game whose scheduled start has already passed
+// is treated as live too even while game_state still says "FUT": otherwise
+// a just-started game would keep showing its pre-game preview (score text
+// box score etc.) for up to half an hour.
 export function isLive(game: GameRow): boolean {
-  return !game.is_finished && game.game_state !== "FUT";
+  if (game.is_finished) return false;
+  if (game.game_state !== "FUT") return true;
+  return new Date(game.start_time_utc).getTime() <= Date.now();
 }
 
 function liveBadgeText(live: LiveStatus | null): string {

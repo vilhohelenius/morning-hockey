@@ -371,9 +371,9 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   let awayForm: FormGuideEntry | undefined;
   let homeForm: FormGuideEntry | undefined;
 
-  if (game.is_finished) {
+  if (game.is_finished || isLive(game)) {
     ({ box, fetchError } = await getBoxScore(db, game));
-    youtubeUrl = await resolveHighlightsUrl(db, context.env, game);
+    if (game.is_finished) youtubeUrl = await resolveHighlightsUrl(db, context.env, game);
   } else {
     const skaterQuery = (abbrev: string) =>
       db
@@ -452,7 +452,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 </section>
 
 ${
-  !game.is_finished
+  !game.is_finished && !isLive(game)
     ? hasPreviewData
       ? `
 <section class="team-detail">

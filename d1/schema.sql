@@ -448,3 +448,14 @@ CREATE TABLE IF NOT EXISTS skater_game_log_cache (
     points_json TEXT NOT NULL,
     cached_at TEXT NOT NULL
 );
+
+-- 2026-10-02: extends game_box_scores (previously finished-games-only, write
+-- once) to also cache a live game's box score on a short TTL (see
+-- LIVE_CACHE_TTL_MS in _shared/boxScoreCache.ts) instead of fetching the NHL
+-- API fresh on every single dashboard/game-page load while a game is in
+-- progress. live_json holds that fetch's LiveStatus (period/clock) so a
+-- cache hit can still render the right "2. erä · 14:32" badge text instead
+-- of falling back to a generic "LIVE" -- NULL for a finished game (landing
+-- has no clock once a game's over) or for any row cached before this column
+-- existed.
+ALTER TABLE game_box_scores ADD COLUMN live_json TEXT;

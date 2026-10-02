@@ -44,7 +44,15 @@ export interface ParsedBoxScore {
   awayGoalies: GoalieGameStat[];
   homeGoalies: GoalieGameStat[];
   live: LiveStatus | null;
+  // NHL's own current state for this game ("FUT"|"PRE"|"LIVE"|"CRIT"|"OFF"|
+  // "FINAL", same vocabulary digest.py's FINISHED_STATES already uses) --
+  // lets getBoxScore below write the result straight back into `games`
+  // instead of waiting for the next ~30 min fast-tier cron tick to notice a
+  // game has started or finished.
+  nhlGameState: string;
 }
+
+const NHL_FINISHED_STATES = new Set(["OFF", "FINAL"]);
 
 async function fetchAndParseBoxScore(game: GameRow): Promise<ParsedBoxScore> {
   const seasonId = seasonIdForDate(game.date);
@@ -93,22 +101,9 @@ async function fetchAndParseBoxScore(game: GameRow): Promise<ParsedBoxScore> {
         }
       : null;
 
-  return { finalType, goals, teamStats, awaySkaters, homeSkaters, awayGoalies, homeGoalies, live };
-}
+  const nhlGameState: string = landing?.gameState ?? game.game_state;
 
-// For a game still in progress: the same landing/right-rail/boxscore/
-// roster fetch, but never cached -- the data changes play by play, so
-// caching it would freeze a live game's state. Called fresh on every
-// dashboard load for whichever games are currently live (a handful at
-// most), same reasoning as getCachedBoxScores about not scaling this to
-// every game ever played.
-export async function fetchLiveBoxScore(game: GameRow): Promise<ParsedBoxScore | null> {
-  try {
-    return await fetchAndParseBoxScore(game);
-  } catch (error) {
-    console.error(`Live box score fetch failed for game ${game.game_id}:`, error);
-    return null;
-  }
+  return { finalType, goals, teamStats, awaySkaters, homeSkaters, awayGoalies, homeGoalies, live, nhlGameState };
 }
 
 function fromCacheRow(cached: GameBoxScoreRow): ParsedBoxScore {
@@ -120,7 +115,10 @@ function fromCacheRow(cached: GameBoxScoreRow): ParsedBoxScore {
     homeSkaters: JSON.parse(cached.home_skaters_json),
     awayGoalies: JSON.parse(cached.away_goalies_json),
     homeGoalies: JSON.parse(cached.home_goalies_json),
-    live: null,
+    live: cached.live_json ? JSON.parse(cached.live_json) : null,
+    // Only meaningful right after a fresh NHL fetch (see getBoxScore's
+    // write-through below) -- nothing reads it off a cache hit.
+    nhlGameState: "",
   };
 }
 
@@ -150,19 +148,36 @@ export async function getCachedBoxScores(db: D1Database, gameIds: number[]): Pro
 // this substring check is cheaper than JSON.parse and catches exactly that
 // gap, so a stale row is treated as a cache miss and transparently
 // refetched/re-cached below instead of needing a one-off backfill script.
-function isStale(cached: GameBoxScoreRow): boolean {
-  return !cached.away_skaters_json.includes('"blocked_shots"') || !cached.away_goalies_json.includes('"ev_goals_against"');
+//
+// For a finished game that's otherwise fine, the cache is permanent -- a
+// settled result never changes. For a game still in progress, it's instead
+// good for LIVE_CACHE_TTL_MS: short enough that nobody waits long for a new
+// goal to show up, long enough that several visitors hitting the dashboard
+// within the same few seconds share one NHL fetch instead of one each.
+const LIVE_CACHE_TTL_MS = 15_000;
+
+function isStale(cached: GameBoxScoreRow, game: GameRow): boolean {
+  if (!cached.away_skaters_json.includes('"blocked_shots"') || !cached.away_goalies_json.includes('"ev_goals_against"')) return true;
+  if (game.is_finished) return false;
+  return Date.now() - new Date(cached.cached_at).getTime() > LIVE_CACHE_TTL_MS;
 }
 
-// Only ever call this for games.is_finished = 1 -- an unfinished game has
-// no box score yet, and callers should show a "not played yet" placeholder
-// instead.
+// For any game that's started (finished or currently live -- callers should
+// check game.is_finished || isLive(game) first; an upcoming game has no box
+// score yet and should show a "not played yet" placeholder instead).
+//
+// Also self-heals `games.is_finished`/`game_state`/`final_type` the moment a
+// live fetch's own landing payload reveals NHL already considers the game
+// started or finished but this row's own 30-min-cron-synced fields haven't
+// caught up yet -- closes that gap on the next view instead of waiting for
+// the next fast-tier sync. Mutates the passed-in `game` to match, so this
+// same request's own rendering reflects it immediately too.
 export async function getBoxScore(
   db: D1Database,
   game: GameRow,
 ): Promise<{ box: ParsedBoxScore | null; fetchError: boolean }> {
   const cached = await db.prepare("SELECT * FROM game_box_scores WHERE game_id = ?").bind(game.game_id).first<GameBoxScoreRow>();
-  if (cached && !isStale(cached)) return { box: fromCacheRow(cached), fetchError: false };
+  if (cached && !isStale(cached, game)) return { box: fromCacheRow(cached), fetchError: false };
 
   try {
     const box = await fetchAndParseBoxScore(game);
@@ -174,6 +189,7 @@ export async function getBoxScore(
       JSON.stringify(box.homeSkaters),
       JSON.stringify(box.awayGoalies),
       JSON.stringify(box.homeGoalies),
+      JSON.stringify(box.live),
       new Date().toISOString(),
     ];
     if (cached) {
@@ -181,7 +197,7 @@ export async function getBoxScore(
         .prepare(
           `UPDATE game_box_scores SET
             final_type = ?, goals_json = ?, team_stats_json = ?,
-            away_skaters_json = ?, home_skaters_json = ?, away_goalies_json = ?, home_goalies_json = ?, cached_at = ?
+            away_skaters_json = ?, home_skaters_json = ?, away_goalies_json = ?, home_goalies_json = ?, live_json = ?, cached_at = ?
           WHERE game_id = ?`,
         )
         .bind(...params, game.game_id)
@@ -191,12 +207,34 @@ export async function getBoxScore(
         .prepare(
           `INSERT INTO game_box_scores (
             game_id, final_type, goals_json, team_stats_json,
-            away_skaters_json, home_skaters_json, away_goalies_json, home_goalies_json, cached_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            away_skaters_json, home_skaters_json, away_goalies_json, home_goalies_json, live_json, cached_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         )
         .bind(game.game_id, ...params)
         .run();
     }
+
+    if (box.nhlGameState && box.nhlGameState !== game.game_state) {
+      const finished = NHL_FINISHED_STATES.has(box.nhlGameState);
+      // Carries the score along too, from the goal timeline's own running
+      // tally -- otherwise a self-healed "finished" row would show as
+      // finished (no more LIVE badge) while still displaying whatever score
+      // the last cron sync happened to have, which can be behind the real
+      // final score by up to ~30 min.
+      const lastGoal = box.goals[box.goals.length - 1];
+      const awayScore = lastGoal ? lastGoal.away_score : game.away_score;
+      const homeScore = lastGoal ? lastGoal.home_score : game.home_score;
+      await db
+        .prepare("UPDATE games SET is_finished = ?, game_state = ?, final_type = ?, away_score = ?, home_score = ? WHERE game_id = ?")
+        .bind(finished ? 1 : 0, box.nhlGameState, box.finalType, awayScore, homeScore, game.game_id)
+        .run();
+      game.is_finished = finished ? 1 : 0;
+      game.game_state = box.nhlGameState;
+      game.final_type = box.finalType;
+      game.away_score = awayScore;
+      game.home_score = homeScore;
+    }
+
     return { box, fetchError: false };
   } catch (error) {
     console.error(`Box score fetch failed for game ${game.game_id}:`, error);

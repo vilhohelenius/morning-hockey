@@ -30,7 +30,7 @@
 // ported -- superseded by /arkisto, a real route here.
 
 import { currentUsername, readTulospiiloBypassDate, readTulospiiloCookie } from "./_shared/auth";
-import { fetchLiveBoxScore, getBoxScore } from "./_shared/boxScoreCache";
+import { getBoxScore } from "./_shared/boxScoreCache";
 import {
   finnishGoalieLines,
   finnishScorerLines,
@@ -220,7 +220,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     url.searchParams.get("tulospiilo") !== "ohita" &&
     readTulospiiloBypassDate(context.request) !== currentRound?.date
   ) {
-    return new Response(null, { status: 302, headers: { Location: "/tulospiilo" } });
+    return new Response(null, { status: 302, headers: { Location: "/tulospiilo", "Cache-Control": "no-store" } });
   }
 
   const username = currentUsername(context.request);
@@ -240,10 +240,10 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       let scorers: FinnScorerLine[] = [];
       let goalies: FinnGoalieLine[] = [];
 
-      // Finished: the usual cached-or-fetch-once path. Live: fetch fresh
-      // every load, never cached -- the data's still changing play by
-      // play (see _shared/boxScoreCache's fetchLiveBoxScore).
-      const box = game.is_finished ? (await getBoxScore(db, game)).box : isLive(game) ? await fetchLiveBoxScore(game) : null;
+      // Finished or live: the shared cached-or-fetch path (short TTL while
+      // live, permanent once finished -- see _shared/boxScoreCache).
+      // Not started yet: no box score exists.
+      const box = game.is_finished || isLive(game) ? (await getBoxScore(db, game)).box : null;
 
       // The card's own score otherwise only updates every ~30 min (the
       // fast tier's own sync cadence) -- for a live game, the box score
@@ -403,5 +403,5 @@ ${upcomingHtml}
     env: context.env,
   });
 
-  return new Response(html, { headers: { "content-type": "text/html; charset=utf-8" } });
+  return new Response(html, { headers: { "content-type": "text/html; charset=utf-8", "Cache-Control": "no-store" } });
 };
