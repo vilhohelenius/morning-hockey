@@ -2349,34 +2349,36 @@ main {
   margin-bottom: 8px;
 }
 
-/* Game preview's "Joukkuetilastot" bar: one continuous team-colored bar
-   with a diagonal seam, matching NHL.com's own Team Stats section (its
-   bars are confirmed proportional to the share of each stat, not a fixed
-   50/50 split -- away_pct + home_pct always sum to ~100 here). The
-   negative margin + matching diagonal clip-paths make the two halves
-   overlap by 8px so their cut edges line up into one seam instead of a
-   plain vertical divider. */
+/* Game preview's "Joukkuetilastot" bar: one continuous team-colored bar,
+   matching NHL.com's own Team Stats section (its bars are confirmed
+   proportional to the share of each stat, not a fixed 50/50 split --
+   away_pct + home_pct always sum to ~100 here). The `gap` below is a fixed
+   white seam between the two halves -- several real team colors are
+   identical or near-identical (e.g. BUF/CBJ, DET/NJD both share a hex), and
+   two adjacent same-colored halves would otherwise merge into one
+   indistinguishable block. A flex gap shrinks both halves by their
+   proportional share to make room (no explicit width math needed), so
+   each bar now ends a little short of the container's own edge instead of
+   the previous diagonal-clip-path version, which also had a standing bug:
+   its -8px overlap margin silently ate 8px off the bar's right end, as a
+   stray sliver of the container's own (gray) background showing through
+   inside the home half. The old shared app.js copy of this rendering
+   (dashboard/tulospiilo's click-to-expand info box) reuses these same
+   class names with no JS-side clip-path/margin of its own, so this CSS
+   change alone covers all three places this bar appears. */
 .pts-bar {
   display: flex;
   height: 10px;
   margin-top: 4px;
   border-radius: 2px;
   overflow: hidden;
-  background: var(--border);
+  gap: 12px;
+  background: #fff;
 }
 
 .pts-bar-away,
 .pts-bar-home {
   height: 100%;
-}
-
-.pts-bar-away {
-  clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
-  margin-right: -8px;
-}
-
-.pts-bar-home {
-  clip-path: polygon(8px 0, 100% 0, 100% 100%, 0 100%);
 }
 
 .pts-ranks {

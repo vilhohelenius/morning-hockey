@@ -214,17 +214,8 @@ function renderFormChips(entry: FormGuideEntry | undefined, align: "start" | "en
 // form-guide row and league ranks) and the finished-game box-score
 // comparison (without either, since buildTeamStats never sets rank fields).
 function renderStatBarRows(rows: TeamStatRow[], awayAbbrev: string, homeAbbrev: string): string {
-  const rawAwayColor = TEAM_COLORS[awayAbbrev];
-  const rawHomeColor = TEAM_COLORS[homeAbbrev];
-  // Several real team colors are identical or near-identical (e.g. BUF/CBJ
-  // both #002654, DET/NJD both #CE1126) -- when the matchup has that
-  // collision, the bar's diagonal seam between the two halves becomes
-  // invisible. Falls back the away half to --text instead, which is
-  // already the theme's own black-in-light/white-in-dark value, so it
-  // stays readable in both themes without a separate light/dark branch here.
-  const colorsCollide = !!rawAwayColor && !!rawHomeColor && rawAwayColor.toLowerCase() === rawHomeColor.toLowerCase();
-  const awayColor = colorsCollide ? "var(--text)" : rawAwayColor ?? "var(--accent)";
-  const homeColor = rawHomeColor ?? "color-mix(in srgb, var(--accent) 45%, transparent)";
+  const awayColor = TEAM_COLORS[awayAbbrev] ?? "var(--accent)";
+  const homeColor = TEAM_COLORS[homeAbbrev] ?? "color-mix(in srgb, var(--accent) 45%, transparent)";
 
   return rows
     .map(
