@@ -3,9 +3,9 @@ main = "src/index.ts"
 compatibility_date = "2026-10-02"
 
 [triggers]
-# Same cadence as the three sync workflows' old (unreliable) GitHub Actions
-# `schedule:` triggers -- see src/index.ts for why this Worker exists.
-crons = ["*/30 * * * *", "0 * * * *", "0 6 * * *"]
+# Fast-tier every 10 min, slow-tier every 30 min, digest hourly. Must stay
+# in sync with WORKFLOW_BY_CRON in src/index.ts -- see the comment there.
+crons = ["*/10 * * * *", "*/30 * * * *", "0 * * * *"]
 
 [vars]
 GITHUB_REPO = "vilhohelenius/morning-hockey"
