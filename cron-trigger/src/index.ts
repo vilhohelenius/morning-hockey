@@ -16,7 +16,7 @@
 // dispatches the wrong workflow.
 const WORKFLOW_BY_CRON: Record<string, string> = {
   "*/10 * * * *": "sync-fast-tier.yml",
-  "*/30 * * * *": "sync-slow-tier.yml",
+  "0 */2 * * *": "sync-slow-tier.yml",
   "0 */6 * * *": "sync-digest.yml",
 };
 

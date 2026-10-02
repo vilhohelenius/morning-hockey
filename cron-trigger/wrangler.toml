@@ -3,9 +3,9 @@ main = "src/index.ts"
 compatibility_date = "2026-10-02"
 
 [triggers]
-# Fast-tier every 10 min, slow-tier every 30 min, digest every 6h. Must
+# Fast-tier every 10 min, slow-tier every 2h, digest every 6h. Must
 # stay in sync with WORKFLOW_BY_CRON in src/index.ts -- see the comment there.
-crons = ["*/10 * * * *", "*/30 * * * *", "0 */6 * * *"]
+crons = ["*/10 * * * *", "0 */2 * * *", "0 */6 * * *"]
 
 [vars]
 GITHUB_REPO = "vilhohelenius/morning-hockey"
