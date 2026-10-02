@@ -377,7 +377,10 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 ${
   currentRound
     ? `<section>
-  <h2 class="section-title">${escapeHtml(humanDate(currentRound.date))} · ${roundGames.length} ottelua</h2>
+  <div class="section-title-row">
+    <h2 class="section-title">${escapeHtml(humanDate(currentRound.date))} · ${roundGames.length} ottelua</h2>
+    <button type="button" class="icon-btn refresh-btn" title="Päivitä ottelutiedot" aria-label="Päivitä ottelutiedot" onclick="location.reload()">⟳</button>
+  </div>
   <div class="game-list">${gameCardsHtml}</div>
 </section>`
     : ""

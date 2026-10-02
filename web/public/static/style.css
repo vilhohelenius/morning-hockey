@@ -1091,6 +1091,25 @@ main {
   margin: 4px 0 8px;
 }
 
+/* Only the current-round game list on the dashboard needs a manual
+   refresh -- it's the one section whose live box scores someone might
+   watch update over several minutes, where a plain reload is faster than
+   relying on the next cron tick or re-opening the tab. */
+.section-title-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.section-title-row .section-title {
+  margin: 4px 0 8px 0;
+}
+
+.refresh-btn {
+  flex-shrink: 0;
+}
+
 /* ---------- Stat cards (team Kausitilastot, player Kausi/Uran tilastot) ----------
    A boxed card per stat period, its own header bar + a dense, centered,
    abbreviated-column table -- closer to the separate "2026-27 Season" /
