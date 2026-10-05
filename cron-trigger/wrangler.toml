@@ -7,6 +7,9 @@ compatibility_date = "2026-10-02"
 # stay in sync with WORKFLOW_BY_CRON in src/index.ts -- see the comment there.
 crons = ["*/10 * * * *", "0 */2 * * *", "0 */6 * * *"]
 
+[observability]
+enabled = true
+
 [vars]
 GITHUB_REPO = "vilhohelenius/morning-hockey"
 
