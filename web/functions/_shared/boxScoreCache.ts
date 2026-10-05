@@ -165,7 +165,14 @@ function isStale(cached: GameBoxScoreRow, game: GameRow): boolean {
   // already-cached finished game picks up the new wording on next view
   // instead of being stuck with whatever text was cached before the rename.
   if (cached.team_stats_json.includes('"Torjutut laukaukset"') || cached.team_stats_json.includes('"Menetetyt kiekot"') || cached.team_stats_json.includes('"Riistetyt kiekot"')) return true;
-  if (game.is_finished) return false;
+  // A cache row is only a trustworthy "settled result" if it was itself
+  // captured after the game looked over -- `live_json` is non-null exactly
+  // when the fetch that produced this row still saw a clock/period (see
+  // fetchAndParseBoxScore). `games.is_finished` flips via the independent
+  // fast-tier cron sync, so it can go true well after the last (in-progress)
+  // box score fetch -- without this check, that early snapshot would be
+  // treated as permanently fresh and never refetched once finished.
+  if (game.is_finished) return cached.live_json !== null;
   return Date.now() - new Date(cached.cached_at).getTime() > LIVE_CACHE_TTL_MS;
 }
 
