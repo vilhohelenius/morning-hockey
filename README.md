@@ -7,7 +7,7 @@ Ei ilmoituksia eikä yhtä kovakoodattua joukkuetta: kirjautuminen on kevyt
 suosikkipelaajat, teeman ja tulospiilo-asetuksen.
 
 <!-- TODO: lisää screenshot -->
-![Etusivu](docs/screenshots/etusivu.png)
+<img src="docs/screenshots/etusivu.png" alt="Etusivu" width="300">
 
 ## Sivut
 
@@ -25,7 +25,7 @@ ottelut (manuaalinen päivitysnappi). Jos tulospiilo on päällä, `/` ohjaa
 sivulle `/tulospiilo`.
 
 <!-- TODO: lisää screenshot -->
-![Etusivu, ottelukortti](docs/screenshots/etusivu-ottelukortti.png)
+<img src="docs/screenshots/etusivu-ottelukortti.png" alt="Etusivu, ottelukortti" width="300">
 
 ### Sarjataulukko (`/sarjataulukko`)
 Divisioonittainen sarjataulukko sekä **Kuntopuntari**: joukkueiden viimeisten
@@ -33,10 +33,10 @@ ottelujen form-taulukko (W/L/OTL, järjestys pistekeskiarvon mukaan). Joukkueen
 klikkaus avaa pikakatsauksen.
 
 <!-- TODO: lisää screenshot -->
-![Sarjataulukko](docs/screenshots/sarjataulukko.png)
+<img src="docs/screenshots/sarjataulukko.png" alt="Sarjataulukko" width="300">
 
 <!-- TODO: lisää screenshot -->
-![Kuntopuntari](docs/screenshots/kuntopuntari.png)
+<img src="docs/screenshots/kuntopuntari.png" alt="Kuntopuntari" width="300">
 
 ### Tilastot
 - `/tilastot` Pistepörssi (myös rookie-pörssi)
@@ -48,20 +48,20 @@ klikkaus avaa pikakatsauksen.
   (NHL:n game log, välimuistitettu D1:een)
 
 <!-- TODO: lisää screenshot -->
-![Pistepörssi](docs/screenshots/pisteporssi.png)
+<img src="docs/screenshots/pisteporssi.png" alt="Pistepörssi" width="300">
 
 <!-- TODO: lisää screenshot -->
-![Suomipörssi](docs/screenshots/suomiporssi.png)
+<img src="docs/screenshots/suomiporssi.png" alt="Suomipörssi" width="300">
 
 <!-- TODO: lisää screenshot -->
-![Analytiikka](docs/screenshots/analytiikka.png)
+<img src="docs/screenshots/analytiikka.png" alt="Analytiikka" width="300">
 
 ### Playoff-bracket (`/playoffit`)
 Ensimmäisen kierroksen pelipari johdettuna sarjataulukosta (divisioonien
 kärkikaksikot ja wild cardit).
 
 <!-- TODO: lisää screenshot -->
-![Playoff-bracket](docs/screenshots/playoffit.png)
+<img src="docs/screenshots/playoffit.png" alt="Playoff-bracket" width="300">
 
 ### Ottelut
 - `/otteluohjelma` Otteluohjelma: seuraavat 8 päivää, kaikki ottelut
@@ -73,13 +73,13 @@ kärkikaksikot ja wild cardit).
   kuntopuntari, kokoonpanot)
 
 <!-- TODO: lisää screenshot -->
-![Otteluohjelma](docs/screenshots/otteluohjelma.png)
+<img src="docs/screenshots/otteluohjelma.png" alt="Otteluohjelma" width="300">
 
 <!-- TODO: lisää screenshot -->
-![Ottelun raportti](docs/screenshots/ottelun-raportti.png)
+<img src="docs/screenshots/ottelun-raportti.png" alt="Ottelun raportti" width="300">
 
 <!-- TODO: lisää screenshot -->
-![Ottelun esikatselu](docs/screenshots/ottelun-esikatselu.png)
+<img src="docs/screenshots/ottelun-esikatselu.png" alt="Ottelun esikatselu" width="300">
 
 ### Joukkue- ja pelaajasivut
 - `/joukkueet/<lyhenne>` Joukkuesivu (kaikki 32): rosteri, kausitilastot, viimeisimmät/seuraavat ottelut;
@@ -88,17 +88,17 @@ kärkikaksikot ja wild cardit).
   loki, haetaan suoraan NHL:n API:sta (ei tallenneta D1:een)
 
 <!-- TODO: lisää screenshot -->
-![Joukkuesivu](docs/screenshots/joukkue.png)
+<img src="docs/screenshots/joukkue.png" alt="Joukkuesivu" width="300">
 
 <!-- TODO: lisää screenshot -->
-![Pelaajakortti](docs/screenshots/pelaaja.png)
+<img src="docs/screenshots/pelaaja.png" alt="Pelaajakortti" width="300">
 
 ### Arkisto (`/arkisto`)
 Kauden pelipäivät uusimmasta vanhimpaan; `/arkisto/<päivä>` näyttää päivän
 ottelut ottelukortteina. Perustuu `games`-tauluun, joka ei koskaan poista rivejä.
 
 <!-- TODO: lisää screenshot -->
-![Arkisto](docs/screenshots/arkisto.png)
+<img src="docs/screenshots/arkisto.png" alt="Arkisto" width="300">
 
 ### Tili, suosikit ja asetukset
 - `/kirjaudu`: kirjautuminen/rekisteröityminen yhdellä lomakkeella (tuntematon
@@ -111,10 +111,10 @@ ottelut ottelukortteina. Perustuu `games`-tauluun, joka ei koskaan poista rivej�
   tulos paljastuu vasta kun "olen katsonut highlightit" on ruksattu
 
 <!-- TODO: lisää screenshot -->
-![Asetukset](docs/screenshots/asetukset.png)
+<img src="docs/screenshots/asetukset.png" alt="Asetukset" width="300">
 
 <!-- TODO: lisää screenshot -->
-![Tulospiilo](docs/screenshots/tulospiilo.png)
+<img src="docs/screenshots/tulospiilo.png" alt="Tulospiilo" width="300">
 
 ## Miten se toimii
 
