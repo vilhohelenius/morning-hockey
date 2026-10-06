@@ -11,6 +11,7 @@
 
 import { currentUsername, readHighlightsCookie, readThemeCookie } from "../_shared/auth";
 import { escapeHtml, formatToi, teamLogoUrl } from "../_shared/format";
+import { loadPicks, loadWindowGames } from "../_shared/bingoData";
 import { renderLayout } from "../_shared/layout";
 import type {
   Env,
@@ -23,6 +24,8 @@ import type {
 } from "../_shared/types";
 
 const SEARCH_RESULTS_LIMIT = 15;
+
+type SettingsTab = "yleiset" | "suosikit" | "tulospiilo";
 
 function renderNotSignedIn(request: Request): Promise<string> {
   return renderLayout({
@@ -48,6 +51,7 @@ function renderFavoriteTeamRow(team: StandingsRow): string {
       <form method="post" action="/omat/favorites/teams">
         <input type="hidden" name="abbrev" value="${escapeHtml(team.abbrev)}">
         <input type="hidden" name="fav_action" value="remove">
+        <input type="hidden" name="redirect_to" value="/omat?osio=suosikit">
         <button type="submit" class="icon-btn" aria-label="Poista suosikeista">✕</button>
       </form>
     </div>`;
@@ -78,6 +82,7 @@ function renderFavoritePlayerRow(
         <input type="hidden" name="player_id" value="${player.player_id}">
         <input type="hidden" name="is_goalie" value="${fav.isGoalie ? "1" : "0"}">
         <input type="hidden" name="fav_action" value="remove">
+        <input type="hidden" name="redirect_to" value="/omat?osio=suosikit">
         <button type="submit" class="icon-btn" aria-label="Poista suosikeista">✕</button>
       </form>
     </div>`;
@@ -92,6 +97,7 @@ function renderTeamPicker(availableTeams: StandingsRow[]): string {
   <form method="post" action="/omat/favorites/teams" class="table-filters">
     <select name="abbrev">${options}</select>
     <input type="hidden" name="fav_action" value="add">
+        <input type="hidden" name="redirect_to" value="/omat?osio=suosikit">
     <button type="submit" class="filter-btn">Lisää suosikkijoukkue</button>
   </form>`;
 }
@@ -107,6 +113,7 @@ function renderPlayerSearchResult(row: TeamRosterSkaterRow | TeamRosterGoalieRow
         <input type="hidden" name="player_id" value="${row.player_id}">
         <input type="hidden" name="is_goalie" value="${isGoalie ? "1" : "0"}">
         <input type="hidden" name="fav_action" value="add">
+        <input type="hidden" name="redirect_to" value="/omat?osio=suosikit">
         <button type="submit" class="filter-btn">+ Suosikki</button>
       </form>
     </div>`;
@@ -175,13 +182,11 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   const tulospiiloEnabled = !!settings?.tulospiilo_mode;
   const highlightsEnabled = settings ? !!settings.highlights : readHighlightsCookie(context.request);
 
-  const content = `
-<header class="page-header">
-  <h1>⚙️ Asetukset</h1>
-</header>
+  const tabParam = url.searchParams.get("osio");
+  const tab: SettingsTab = query ? "suosikit" : tabParam === "suosikit" || tabParam === "tulospiilo" ? tabParam : "yleiset";
+  const back = `<input type="hidden" name="redirect_to" value="/omat?osio=${tab}">`;
 
-<div class="settings-page">
-
+  const accountSection = `
 <section>
   <h2 class="section-title">Tili</h2>
   <div class="fav-row">
@@ -190,26 +195,80 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       <button type="submit" class="filter-btn">Kirjaudu ulos</button>
     </form>
   </div>
-</section>
+</section>`;
 
+  const themeSection = `
 <section>
   <h2 class="section-title">Teema</h2>
   <div class="toggle-group">
-    <form method="post" action="/omat/theme">
-      <input type="hidden" name="theme" value="light">
-      <button type="submit" class="toggle-segment ${currentTheme === "light" ? "active" : ""}">☀️ Vaalea</button>
+    ${(["light", "dark", "system"] as const)
+      .map(
+        (value) => `<form method="post" action="/omat/theme">
+      <input type="hidden" name="theme" value="${value}">
+      ${back}
+      <button type="submit" class="toggle-segment ${currentTheme === value ? "active" : ""}">${value === "light" ? "☀️ Vaalea" : value === "dark" ? "🌙 Tumma" : "💻 Järjestelmä"}</button>
+    </form>`,
+      )
+      .join("\n    ")}
+  </div>
+</section>`;
+
+  const highlightsSection = `
+<section>
+  <h2 class="section-title">🔵 Pörssien korostukset</h2>
+  <p class="standings-legend">
+    Pörsseissä (Pistepörssi, Maalivahtipörssi, Suomipörssi, Suosikkipelaajat) pelaajan nimen perässä
+    näkyy pieni pallura: sininen = suomalainen pelaaja, joukkueen värinen = suosikkijoukkueen pelaaja.
+  </p>
+  <div class="toggle-group">
+    <form method="post" action="/omat/highlights">
+      <input type="hidden" name="enabled" value="1">
+      ${back}
+      <button type="submit" class="toggle-segment ${highlightsEnabled ? "active" : ""}">Päällä</button>
     </form>
-    <form method="post" action="/omat/theme">
-      <input type="hidden" name="theme" value="dark">
-      <button type="submit" class="toggle-segment ${currentTheme === "dark" ? "active" : ""}">🌙 Tumma</button>
-    </form>
-    <form method="post" action="/omat/theme">
-      <input type="hidden" name="theme" value="system">
-      <button type="submit" class="toggle-segment ${currentTheme === "system" ? "active" : ""}">💻 Järjestelmä</button>
+    <form method="post" action="/omat/highlights">
+      <input type="hidden" name="enabled" value="0">
+      ${back}
+      <button type="submit" class="toggle-segment ${highlightsEnabled ? "" : "active"}">Pois päältä</button>
     </form>
   </div>
-</section>
+</section>`;
 
+  const favoriteTeamsSection = `
+<section>
+  <h2 class="section-title">Suosikkijoukkueet</h2>
+  <p class="standings-legend">Näkyvät sivupalkin ⭐ Omat -valikossa, linkkinä suoraan joukkueen tilastosivulle.</p>
+  ${
+    favoriteTeamsHtml.length
+      ? `<div class="fav-list">${favoriteTeamsHtml.join("")}</div>`
+      : `<p class="empty-note">Ei vielä suosikkijoukkueita.</p>`
+  }
+  ${renderTeamPicker(availableTeams)}
+</section>`;
+
+  const favoritePlayersSection = `
+<section>
+  <h2 class="section-title">Suosikkipelaajat</h2>
+  <p class="standings-legend">Näkyvät koottuna listana sivupalkin ⭐ Omat → Suosikkipelaajat -kohdassa.</p>
+  ${
+    favoritePlayersHtml.length
+      ? `<div class="fav-list">${favoritePlayersHtml.join("")}</div>`
+      : `<p class="empty-note">Ei vielä suosikkipelaajia.</p>`
+  }
+  <form method="get" action="/omat" class="table-filters">
+    <input type="hidden" name="osio" value="suosikit">
+    <input type="search" name="q" placeholder="Hae pelaajaa nimellä..." value="${escapeHtml(query)}">
+    <button type="submit" class="filter-btn">Hae</button>
+  </form>
+  ${searchResultsHtml}
+</section>`;
+
+  let tulospiiloSections = "";
+  if (tab === "tulospiilo") {
+    const nowMs = Date.now();
+    const windowGames = await loadWindowGames(db);
+    const picks = (await loadPicks(db, username, windowGames, nowMs)).filter((p) => p.phase !== "stale");
+    tulospiiloSections = `
 <section>
   <h2 class="section-title">🙈 Tulospiilo</h2>
   <p class="standings-legend">
@@ -220,59 +279,60 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   <div class="toggle-group">
     <form method="post" action="/omat/tulospiilo">
       <input type="hidden" name="enabled" value="1">
+      ${back}
       <button type="submit" class="toggle-segment ${tulospiiloEnabled ? "active" : ""}">🙈 Päällä</button>
     </form>
     <form method="post" action="/omat/tulospiilo">
       <input type="hidden" name="enabled" value="0">
+      ${back}
       <button type="submit" class="toggle-segment ${tulospiiloEnabled ? "" : "active"}">Pois päältä</button>
     </form>
   </div>
 </section>
 
 <section>
-  <h2 class="section-title">🔵 Pörssien korostukset</h2>
+  <h2 class="section-title">🎯 Pistemiesbingo</h2>
   <p class="standings-legend">
-    Pörsseissä (Pistepörssi, Maalivahtipörssi, Suomipörssi, Suosikkipelaajat) pelaajan nimen perässä
-    näkyy pieni pallura: sininen = suomalainen pelaaja, joukkueen värinen = suosikkijoukkueen pelaaja.
+    Pistemiesbingo-lappusi pelaajat näkyvät Tulospiilon alaosassa: pelaajan tilasto paljastuu samalla
+    kun ottelun tulos. Lappu nollautuu itsestään, kun seuraava pelikierros alkaa.
   </p>
-  <div class="toggle-group">
-    <form method="post" action="/omat/highlights">
-      <input type="hidden" name="enabled" value="1">
-      <button type="submit" class="toggle-segment ${highlightsEnabled ? "active" : ""}">Päällä</button>
-    </form>
-    <form method="post" action="/omat/highlights">
-      <input type="hidden" name="enabled" value="0">
-      <button type="submit" class="toggle-segment ${highlightsEnabled ? "" : "active"}">Pois päältä</button>
-    </form>
+  <div class="fav-row">
+    <span class="fav-row-info">${picks.length ? `${picks.length} ${picks.length === 1 ? "pelaaja" : "pelaajaa"} lapussa` : "Ei pelaajia lapussa"}</span>
+    <a class="filter-btn" href="/bingo">Muokkaa lappua →</a>
   </div>
-</section>
-
-<section>
-  <h2 class="section-title">Suosikkijoukkueet</h2>
-  <p class="standings-legend">Näkyvät sivupalkin ⭐ Omat -valikossa, linkkinä suoraan joukkueen tilastosivulle.</p>
-  ${
-    favoriteTeamsHtml.length
-      ? `<div class="fav-list">${favoriteTeamsHtml.join("")}</div>`
-      : `<p class="empty-note">Ei vielä suosikkijoukkueita.</p>`
+</section>`;
   }
-  ${renderTeamPicker(availableTeams)}
-</section>
 
-<section>
-  <h2 class="section-title">Suosikkipelaajat</h2>
-  <p class="standings-legend">Näkyvät koottuna listana sivupalkin ⭐ Omat → Suosikkipelaajat -kohdassa.</p>
-  ${
-    favoritePlayersHtml.length
-      ? `<div class="fav-list">${favoritePlayersHtml.join("")}</div>`
-      : `<p class="empty-note">Ei vielä suosikkipelaajia.</p>`
-  }
-  <form method="get" action="/omat" class="table-filters">
-    <input type="search" name="q" placeholder="Hae pelaajaa nimellä..." value="${escapeHtml(query)}">
-    <button type="submit" class="filter-btn">Hae</button>
-  </form>
-  ${searchResultsHtml}
-</section>
+  const tabs: { key: SettingsTab; label: string }[] = [
+    { key: "yleiset", label: "Yleiset" },
+    { key: "suosikit", label: "Suosikit" },
+    { key: "tulospiilo", label: "Tulospiilo" },
+  ];
+  const tabsHtml = `<nav class="standings-tab-picker settings-tabs" aria-label="Asetusten osiot">
+  ${tabs
+    .map(
+      (t) =>
+        `<a class="standings-tab${t.key === tab ? " active" : ""}" href="/omat${t.key === "yleiset" ? "" : `?osio=${t.key}`}"${t.key === tab ? ' aria-current="page"' : ""}>${t.label}</a>`,
+    )
+    .join("\n  ")}
+</nav>`;
 
+  const sections =
+    tab === "yleiset"
+      ? accountSection + themeSection + highlightsSection
+      : tab === "suosikit"
+        ? favoriteTeamsSection + favoritePlayersSection
+        : tulospiiloSections;
+
+  const content = `
+<header class="page-header">
+  <h1>⚙️ Asetukset</h1>
+</header>
+
+${tabsHtml}
+
+<div class="settings-page">
+${sections}
 </div>
 `;
 

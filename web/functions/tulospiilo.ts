@@ -28,10 +28,13 @@
 // first); that guard is skipped once everything's already been revealed,
 // since there's nothing left to spoil at that point.
 
+import { currentUsername } from "./_shared/auth";
+import { renderBingoSection } from "./_shared/bingo";
+import { loadActiveRows, loadPicks, loadWindowGames } from "./_shared/bingoData";
 import { getBoxScore } from "./_shared/boxScoreCache";
 import { buildTimeline } from "./_shared/boxscore";
 import { resolveHighlightsUrl } from "./_shared/youtube";
-import { escapeHtml, humanDate } from "./_shared/format";
+import { escapeHtml, humanDate, teamHeroBackgroundStyle } from "./_shared/format";
 import { renderLayout } from "./_shared/layout";
 import type { Env, GameRow } from "./_shared/types";
 
@@ -110,6 +113,28 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     }
   }
 
+  // Pistemiesbingo (bottom of the page, only if the signed-in user has an
+  // active slip). Stats of started games are gated ("?") per game by the same
+  // checkbox that reveals that game's result; games without a checkbox here
+  // wait for all of them (data-gate="all"). See _shared/bingo.ts.
+  let bingoHtml = "";
+  const username = currentUsername(context.request);
+  if (username) {
+    const now = Date.now();
+    const windowGames = await loadWindowGames(db);
+    const picks = await loadPicks(db, username, windowGames, now);
+    const rows = await loadActiveRows(db, windowGames, picks, now);
+    if (rows.length) {
+      const listed = new Set(Object.keys(gameDetails).map(Number));
+      bingoHtml = renderBingoSection(
+        rows,
+        teamHeroBackgroundStyle("BOS", false),
+        { showScore: false, gated: true, gateFor: (id) => (listed.has(id) ? String(id) : "all") },
+        now,
+      );
+    }
+  }
+
   // Same defensive escape index.ts's own #game-details tag applies: a
   // stray "</script" inside embedded JSON can't close the tag early.
   const gameDetailsJson = JSON.stringify(gameDetails).replace(/<\//g, "<\\/");
@@ -126,6 +151,8 @@ ${
 <div class="game-list">${gamesHtml}</div>`
     : `<p class="empty-note">Ei vielä valmiita otteluita viimeisimmältä kierrokselta.</p>`
 }
+
+${bingoHtml}
 
 <a class="spoiler-exit" href="/?tulospiilo=ohita">Poistu tulospiilosta</a>
 
@@ -171,6 +198,19 @@ ${
     });
   });
   recomputeAllRevealed();
+
+  // Pistemiesbingo rows reveal together with the game's own result.
+  var bingoRows = Array.prototype.slice.call(document.querySelectorAll(".bingo-row[data-gate]"));
+  function syncBingo() {
+    var all = checkboxes.length > 0 && checkboxes.every(function (cb) { return cb.checked; });
+    bingoRows.forEach(function (row) {
+      var gate = row.getAttribute("data-gate");
+      var cb = gate === "all" ? null : document.getElementById("spoiler-check-" + gate);
+      row.classList.toggle("is-revealed", cb ? cb.checked : all);
+    });
+  }
+  checkboxes.forEach(function (cb) { cb.addEventListener("change", syncBingo); });
+  syncBingo();
 
   // "Valitse kaikki" and the YouTube highlights link both just tick the
   // same checkbox(es) a manual click would, via the change handler above

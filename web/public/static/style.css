@@ -3719,3 +3719,169 @@ main {
 .hero-tinted img[src$="/TBL_light.svg"] { content: url("https://assets.nhle.com/logos/nhl/svg/TBL_dark.svg"); }
 .hero-tinted img[src$="/TOR_light.svg"] { content: url("https://assets.nhle.com/logos/nhl/svg/TOR_dark.svg"); }
 .hero-tinted img[src$="/NSH_light.svg"] { content: url("https://assets.nhle.com/logos/nhl/svg/NSH_dark.svg"); }
+
+/* ===== Pistemiesbingo (_shared/bingo.ts, /bingo, /tulospiilo, Asetukset) =====
+   Table sits directly on the hero-tinted tile (translucent, like the front
+   page's top-5 teasers): no card box, no own white/grey backgrounds, and no
+   dependence on .yf-table / .stand-table rules. */
+.bingo-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  background: none;
+  border: 0;
+}
+
+.bingo-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+  background: none;
+  color: #fff;
+}
+
+.bingo-section {
+  margin-top: 16px;
+}
+
+.bingo-section .section-title {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.bingo-table td[colspan] {
+  white-space: normal;
+  min-width: 110px;
+  line-height: 1.25;
+}
+
+.bingo-table th,
+.bingo-table td {
+  padding: 8px 4px;
+  text-align: center;
+  white-space: nowrap;
+  background: transparent;
+}
+
+.bingo-table thead th {
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.85);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.bingo-table tbody tr:nth-child(odd) td {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.bingo-table .bingo-first {
+  text-align: left;
+  min-width: 0;
+}
+
+.bingo-table .player-cell {
+  gap: 8px;
+  color: inherit;
+}
+
+.bingo-table .player-cell img:not(.table-team-logo) {
+  width: 32px;
+  height: 32px;
+}
+
+.bingo-table .player-name {
+  font-size: 0.88rem;
+  white-space: normal;
+  color: #fff;
+}
+
+.bingo-table .player-meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.bingo-table .table-team-logo {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  background: none;
+  border-radius: 0;
+  vertical-align: middle;
+}
+
+.bingo-table .bingo-game {
+  font-weight: 600;
+}
+
+.bingo-table .bingo-pts {
+  font-weight: 700;
+  color: #fff;
+}
+
+.bingo-time,
+.bingo-status {
+  display: block;
+  font-size: 0.74rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.bingo-live {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #8ab4ff;
+}
+
+.bingo-live .live-dot {
+  display: inline-block;
+  margin-right: 5px;
+  vertical-align: middle;
+}
+
+/* Spoiler gate (Tulospiilo): stats of a started game stay "?" until the
+   page's script marks the row .is-revealed. */
+.bingo-q {
+  display: none;
+}
+
+.bingo-row[data-gate]:not(.is-revealed) .bingo-val {
+  display: none;
+}
+
+.bingo-row[data-gate]:not(.is-revealed) .bingo-q {
+  display: inline;
+  color: rgba(255, 255, 255, 0.75);
+  letter-spacing: 0.1em;
+}
+
+.bingo-reveal {
+  margin-top: 10px;
+}
+
+.bingo-chip {
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.bingo-group-title {
+  margin: 14px 0 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+/* Asetukset tabs (Yleiset / Suosikit / Tulospiilo): links styled like the
+   Sarjataulukko tab picker. */
+.settings-tabs a.standings-tab {
+  text-align: center;
+  text-decoration: none;
+}

@@ -3,7 +3,7 @@
 // route reads (see _shared/auth.ts) so it applies immediately without
 // every page needing its own D1 query.
 
-import { currentUsername, themeCookieHeader, type Theme } from "../_shared/auth";
+import { currentUsername, redirectTarget, themeCookieHeader, type Theme } from "../_shared/auth";
 import type { Env } from "../_shared/types";
 
 export const onRequestPost: PagesFunction<Env> = async (context) => {
@@ -27,6 +27,6 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
   return new Response(null, {
     status: 303,
-    headers: { Location: "/omat", "Set-Cookie": themeCookieHeader(theme as Theme) },
+    headers: { Location: redirectTarget(form, "/omat"), "Set-Cookie": themeCookieHeader(theme as Theme) },
   });
 };

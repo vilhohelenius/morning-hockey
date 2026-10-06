@@ -3,7 +3,7 @@
 // account across devices, mirrored into a cookie that the pörssi pages read
 // (see _shared/auth.ts's readHighlightsCookie) without a D1 round-trip.
 
-import { currentUsername, highlightsCookieHeader, readThemeCookie } from "../_shared/auth";
+import { currentUsername, highlightsCookieHeader, readThemeCookie, redirectTarget } from "../_shared/auth";
 import type { Env } from "../_shared/types";
 
 export const onRequestPost: PagesFunction<Env> = async (context) => {
@@ -25,6 +25,6 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
   return new Response(null, {
     status: 303,
-    headers: { Location: "/omat", "Set-Cookie": highlightsCookieHeader(enabled) },
+    headers: { Location: redirectTarget(form, "/omat"), "Set-Cookie": highlightsCookieHeader(enabled) },
   });
 };

@@ -463,3 +463,18 @@ CREATE TABLE IF NOT EXISTS skater_game_log_cache (
 -- has no clock once a game's over) or for any row cached before this column
 -- existed.
 ALTER TABLE game_box_scores ADD COLUMN live_json TEXT;
+
+-- Pistemiesbingo (2026-10): a user's bingo slip, one row per picked skater
+-- per round. round_date is the "night" key (see web/functions/_shared/
+-- bingo.ts): the date of the North-American evening of the first game that
+-- had not started when the pick was made. Rows with round_date older than
+-- the current night are stale and ignored/pruned. Idempotent.
+CREATE TABLE IF NOT EXISTS bingo_picks (
+    username TEXT NOT NULL,
+    player_id INTEGER NOT NULL,
+    round_date TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    PRIMARY KEY (username, player_id, round_date)
+);
+
+CREATE INDEX IF NOT EXISTS idx_bingo_picks_user ON bingo_picks(username);

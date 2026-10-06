@@ -3,7 +3,7 @@
 // request to / reads (see _shared/auth.ts) so the redirect decision never
 // needs a D1 round-trip.
 
-import { currentUsername, readThemeCookie, tulospiiloCookieHeader } from "../_shared/auth";
+import { currentUsername, readThemeCookie, redirectTarget, tulospiiloCookieHeader } from "../_shared/auth";
 import type { Env } from "../_shared/types";
 
 export const onRequestPost: PagesFunction<Env> = async (context) => {
@@ -28,6 +28,6 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
   return new Response(null, {
     status: 303,
-    headers: { Location: "/omat", "Set-Cookie": tulospiiloCookieHeader(enabled) },
+    headers: { Location: redirectTarget(form, "/omat"), "Set-Cookie": tulospiiloCookieHeader(enabled) },
   });
 };

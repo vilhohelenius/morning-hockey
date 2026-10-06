@@ -30,6 +30,7 @@ const NAV_HOME = { key: "home", href: "/", label: "🏠 Etusivu" };
 const NAV_STANDINGS = { key: "standings", href: "/sarjataulukko", label: "📊 Sarjataulukko" };
 const NAV_PLAYOFFS = { key: "playoffs", href: "/playoffit", label: "🏆 Playoff-bracket" };
 const NAV_ARCHIVE = { key: "archive", href: "/arkisto", label: "🗂️ Arkisto" };
+const NAV_BINGO = { key: "bingo", href: "/bingo", label: "🎯 Pistemiesbingo" };
 const NAV_SETTINGS = { key: "settings", href: "/omat", label: "⚙️ Asetukset" };
 
 const STATS_PAGES = [
@@ -161,6 +162,7 @@ export async function renderLayout(options: LayoutOptions): Promise<string> {
       ${navLink(NAV_PLAYOFFS, activePage)}
       ${navGroup("games", "📅 Ottelut", GAME_PAGES, activePage)}
       ${navLink(NAV_ARCHIVE, activePage)}
+      ${navLink(NAV_BINGO, activePage)}
       ${navLink(NAV_SETTINGS, activePage)}
     </ul>
   </nav>
