@@ -3253,3 +3253,14 @@ main {
 .refresh-btn:hover {
   border-color: var(--muted);
 }
+
+/* Dashboard day row: title centered between the arrows, both axes */
+.section-title-row {
+  align-items: center;
+  margin: 4px 0 10px;
+}
+
+.section-title-row .section-title {
+  margin: 0;
+  text-align: center;
+}
