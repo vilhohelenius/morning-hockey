@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types scripts/test-boxscore.ts && node --experimental-strip-types scripts/test-division-points.ts && node --experimental-strip-types scripts/test-form-guide.ts && node --experimental-strip-types scripts/test-day-games.ts && node --experimental-strip-types scripts/test-standings-views.ts && node --experimental-strip-types scripts/test-finnish-night.ts && node --experimental-strip-types scripts/test-bingo.ts",
+    "test": "node --experimental-strip-types scripts/test-boxscore.ts && node --experimental-strip-types scripts/test-division-points.ts && node --experimental-strip-types scripts/test-form-guide.ts && node --experimental-strip-types scripts/test-day-games.ts && node --experimental-strip-types scripts/test-standings-views.ts && node --experimental-strip-types scripts/test-finnish-night.ts && node --experimental-strip-types scripts/test-bingo.ts && node --experimental-strip-types scripts/test-winprob.ts",
     "dev": "wrangler pages dev public",
     "deploy": "wrangler pages deploy public --project-name=morning-hockey"
   },

@@ -158,7 +158,8 @@ src/morning_hockey/
   sync_fast_tier.py       CLI: ottelut → D1 (10 min välein)
   sync_slow_tier.py       CLI: kausitilastot → D1 (2 h välein)
   sync_digest.py          CLI: suomalaiset → D1 (6 h välein)
-  sync_xg.py              CLI: xG/GSAx → D1 (digest-workflow'ssa); `--backfill 20252026`, `--backfill-teams 20252026` (vain joukkuerivit)
+  sync_xg.py              CLI: xG/GSAx → D1 (digest-workflow'ssa); `--backfill 20252026`, `--backfill-teams 20252026` (vain joukkuerivit), `--backfill-wp-inputs 20252026`
+  winprob/                voittotodennäköisyysmalli (model_wp.json, tilat, D1-synkka)
   xg/                     xGoalBoost-mallit (models/), features.py (kopio sellaisenaan
                           xGoalBoostista) ja compute.py (play-by-play → xG-rivit)
 
@@ -259,3 +260,24 @@ pip install -e ".[xg]"
 python -m morning_hockey.sync_xg --backfill 20232024   # sama 20242025, 20252026
 python -m morning_hockey.sync_xg --backfill-teams 20232024   # joukkue-xGF% jo xG-backfillatuille kausille (ei kirjoita pelaajarivejä uudelleen)
 ```
+
+## Voittotodennäköisyys (otteluennakko)
+
+Ennakkomalli kotijoukkueen voitolle (`src/morning_hockey/winprob/`, kertoimet
+`model_wp.json` xGoalBoostin `winprob/train_wp.py`:stä; testit toistavat sen
+laskennan). Logistinen regressio: joukkueiden eksponentiaalisesti painotetut
+tulokset, maali-, xG-, 5v5-xG-, laukaus- ja DZ-giveaway-erot (puoliintumisajat
+10 ja 40 peliä), maalivahdin taso (joukkueen 20 viimeisen aloittajan GSAx/100,
+ei vahvistettua aloittajaa), back-to-back ja kotietu. Kausivaihteessa tilat
+säilyvät 60 %, joten kausi alkaa edellisen kauden tiloista.
+
+`sync_xg`-oletusajo (xG-vaiheiden jälkeen) lukee D1:stä kolmen viimeisen kauden
+pelatut ottelut, laskee tilat ja kirjoittaa `game_win_prob`-rivin jokaiselle
+pelaamattomalle ottelulle; ottelun ennakko näyttää sen. Tarvitsee taulun
+`team_game_wp_inputs` (laukaukset, DZ-giveawayt; `d1/schema.sql`):
+
+```
+python -m morning_hockey.sync_xg --backfill-wp-inputs 20242025   # sama 20232024, 20252026
+```
+
+Vaihe on virhesietoinen: puuttuva taulu tai data ohittaa sen, xG-synkka ei kaadu.
