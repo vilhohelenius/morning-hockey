@@ -96,7 +96,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
         return `<tr data-name="${escapeHtml(p.name)}" data-gp="${p.gp}" data-goals="${p.goals}" data-xg="${p.xg}"
       data-xgpg="${p.xg / p.gp}" data-xgf="${pct ?? -1}" data-rank="${i + 1}">
     <td class="col-rank">${i + 1}</td>
-    <td>${playerCell(p.player_id, p.name, p.headshot, `${nationalityFlag(p.nationality)} ${p.nationality} · ${p.position} · ${p.team_abbrev}`)}</td>
+    <td>${playerCell(p.player_id, p.name, p.headshot, `${nationalityFlag(p.nationality)} · ${p.position} · ${p.team_abbrev}`)}</td>
     <td>${p.gp}</td><td>${p.goals}</td><td class="stat-strong">${formatXg(p.xg)}</td>
     <td>${(p.xg / p.gp).toFixed(2)}</td>
     <td>${pct !== null && p.xgf !== null && p.xga !== null ? xgPercent(p.xgf, p.xga) : "–"}</td>
@@ -111,7 +111,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       return `<tr data-name="${escapeHtml(g.name)}" data-gp="${g.gp}" data-gsax="${g.gsax}" data-gsax100="${per100 ?? -1000}"
       data-sa="${g.sa}" data-rank="${i + 1}">
     <td class="col-rank">${i + 1}</td>
-    <td>${playerCell(g.player_id, g.name, g.headshot, `${nationalityFlag(g.nationality)} ${g.nationality} · ${g.team_abbrev}`)}</td>
+    <td>${playerCell(g.player_id, g.name, g.headshot, `${nationalityFlag(g.nationality)} · ${g.team_abbrev}`)}</td>
     <td>${g.gp}</td><td class="stat-strong">${formatGsax(g.gsax)}</td><td>${per100 === null ? "–" : formatGsax(per100, 2)}</td><td>${g.sa}</td>
   </tr>`;
     })
