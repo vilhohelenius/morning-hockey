@@ -12,6 +12,7 @@
 import { getCachedBoxScores } from "../_shared/boxScoreCache";
 import { buildTimeline } from "../_shared/boxscore";
 import { finnishGoalieLines, finnishScorerLines, renderGameCard } from "../_shared/gameCard";
+import { fetchGamesGoalieGsax } from "../_shared/xg";
 import { resolveHighlightsUrl } from "../_shared/youtube";
 import { escapeHtml, humanDate } from "../_shared/format";
 import { renderLayout } from "../_shared/layout";
@@ -36,6 +37,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   const boxScores = await getCachedBoxScores(db, games.map((g) => g.game_id));
   const gameDetails: Record<number, { timeline?: unknown; team_stats?: unknown; youtube_url?: string }> = {};
   let gameCardsHtml = "";
+  const gsaxByGame = await fetchGamesGoalieGsax(db, games.map((g) => g.game_id));
 
   for (const game of games) {
     const box = boxScores.get(game.game_id);
@@ -51,8 +53,8 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
         ...finnishScorerLines(box.homeSkaters, game.home_abbrev),
       ].sort((a, b) => b.goals + b.assists - (a.goals + a.assists));
       goalies = [
-        ...finnishGoalieLines(box.awayGoalies, game.away_abbrev),
-        ...finnishGoalieLines(box.homeGoalies, game.home_abbrev),
+        ...finnishGoalieLines(box.awayGoalies, game.away_abbrev, gsaxByGame.get(game.game_id)),
+        ...finnishGoalieLines(box.homeGoalies, game.home_abbrev, gsaxByGame.get(game.game_id)),
       ];
     }
 

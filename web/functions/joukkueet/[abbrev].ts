@@ -16,7 +16,7 @@
 // someone visits it, unlike the original team.html, which only linked
 // games nightly-digest.yml happened to pre-build a report for.
 
-import { fetchLeagueTeamXg, rankBadge as badge, rankIn, teamIdOf, type TeamXg, xgfPct } from "../_shared/xg";
+import { fetchGoaliesSeasonGsaxMap, fetchLeagueTeamXg,rankBadge as badge, rankIn, teamIdOf, type TeamXg, xgfPct } from "../_shared/xg";
 import { currentUsername } from "../_shared/auth";
 import { escapeHtml, renderFavStar, renderGameRow, teamHeroBackgroundStyle } from "../_shared/format";
 import { renderRosterGoalieTable, renderRosterSkaterTable } from "../_shared/leaderboard";
@@ -174,6 +174,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     .prepare("SELECT * FROM team_roster_goalies WHERE team_abbrev = ? ORDER BY save_pct DESC")
     .bind(abbrev)
     .all<TeamRosterGoalieRow>();
+  const goalieGsax = await fetchGoaliesSeasonGsaxMap(db, goalies.map((g) => g.player_id));
 
   const teamId = teamIdOf(abbrev);
   const leagueXg = await fetchLeagueTeamXg(db);
@@ -231,7 +232,7 @@ ${renderDivisionTable(division, abbrev)}
 <a class="filter-btn team-schedule-link" href="/joukkueet/${abbrev.toLowerCase()}/ottelut">📅 Kaikki ottelut</a>
 
 ${skaters.length ? renderRosterSkaterTable(skaters, "🏒 Rosteri") : ""}
-${goalies.length ? renderRosterGoalieTable(goalies, "🥅 Maalivahdit") : ""}
+${goalies.length ? renderRosterGoalieTable(goalies, "🥅 Maalivahdit", false, undefined, goalieGsax) : ""}
 `;
 
   const html = await renderLayout({

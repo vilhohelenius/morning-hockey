@@ -26,6 +26,7 @@ import { periodLabel } from "./boxscore";
 import type { LiveStatus } from "./boxScoreCache";
 import { isGameLive } from "./dayGames";
 import { decisionFi, escapeHtml, finalTypeFi, helsinkiParts } from "./format";
+import { formatGsax } from "./xg";
 import type { GameRow, GoalieGameStat, PlayerGameStat } from "./types";
 
 export interface FinnScorerLine {
@@ -41,6 +42,7 @@ export interface FinnGoalieLine {
   decision: string | null;
   saves: number;
   shots_against: number;
+  gsax?: number;
 }
 
 export function finnishScorerLines(skaters: PlayerGameStat[], teamAbbrev: string): FinnScorerLine[] {
@@ -49,10 +51,10 @@ export function finnishScorerLines(skaters: PlayerGameStat[], teamAbbrev: string
     .map((p) => ({ name: p.name, team_abbrev: teamAbbrev, goals: p.goals, assists: p.assists }));
 }
 
-export function finnishGoalieLines(goalies: GoalieGameStat[], teamAbbrev: string): FinnGoalieLine[] {
+export function finnishGoalieLines(goalies: GoalieGameStat[], teamAbbrev: string, gsax?: Map<number, number>): FinnGoalieLine[] {
   return goalies
     .filter((g) => g.nationality === "FIN")
-    .map((g) => ({ name: g.name, team_abbrev: teamAbbrev, decision: g.decision, saves: g.saves, shots_against: g.shots_against }));
+    .map((g) => ({ name: g.name, team_abbrev: teamAbbrev, decision: g.decision, saves: g.saves, shots_against: g.shots_against, gsax: gsax?.get(g.player_id) }));
 }
 
 // A game that has started but isn't finished yet. Primarily per the fast
@@ -138,7 +140,7 @@ export function renderGameCard(
         (g) => `
     <p class="stat-line goalie">
       <span class="flag">🇫🇮</span><strong>${escapeHtml(g.name)}</strong><span class="team-tag">${escapeHtml(g.team_abbrev)}</span>
-      <span class="value">${g.saves}/${g.shots_against}${g.decision ? ` · ${escapeHtml(decisionFi(g.decision))}` : ""}</span>
+      <span class="value">${g.saves}/${g.shots_against}${g.decision ? ` · ${escapeHtml(decisionFi(g.decision))}` : ""}${g.gsax === undefined ? "" : ` · ${formatGsax(g.gsax, 2)} GSAx`}</span>
     </p>`,
       )
       .join("")}

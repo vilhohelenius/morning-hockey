@@ -12,7 +12,7 @@ import { favoriteTeamAbbrevs, readHighlightsCookie } from "./_shared/auth";
 import { escapeHtml, formatToi, seasonLabel } from "./_shared/format";
 import { highlightDots, type HighlightOptions } from "./_shared/leaderboard";
 import { renderLayout } from "./_shared/layout";
-import { formatPct, xgfPct } from "./_shared/xg";
+import { fetchGoaliesSeasonGsaxMap, formatGsax, formatPct, xgfPct } from "./_shared/xg";
 import type { Env, FinnishGoalieRow, FinnishSkaterRow } from "./_shared/types";
 
 // finnish_skater_stats has no +/-, TOI or PIM. +/- and avg TOI come from
@@ -120,13 +120,14 @@ function renderSkaterTable(rows: FinnishSkaterRow[], hl: HighlightOptions, extra
   </div>`;
 }
 
-function renderGoalieTable(rows: FinnishGoalieRow[], hl: HighlightOptions): string {
+function renderGoalieTable(rows: FinnishGoalieRow[], hl: HighlightOptions, gsax: Map<number, number>): string {
+  const withGsax = gsax.size > 0;
   const body = rows
     .map(
       (row, index) => `
       <tr data-name="${escapeHtml(row.name)}" data-team="${escapeHtml(row.team_abbrev)}"
           data-wins="${row.wins}" data-losses="${row.losses}" data-otl="${row.ot_losses}"
-          data-gaa="${row.goals_against_average}" data-shutouts="${row.shutouts}" data-rank="${index + 1}">
+          data-gaa="${row.goals_against_average}" data-shutouts="${row.shutouts}" data-gsax="${gsax.get(row.player_id) ?? -1000}" data-rank="${index + 1}">
         <td class="col-rank">${index + 1}</td>
         <td>
           <a href="/pelaajat/${row.player_id}" class="player-cell">
@@ -144,6 +145,7 @@ function renderGoalieTable(rows: FinnishGoalieRow[], hl: HighlightOptions): stri
         <td>${row.goals_against_average.toFixed(2)}</td>
         <td class="stat-strong">${row.save_pct.toFixed(3)}</td>
         <td>${row.shutouts}</td>
+        ${withGsax ? `<td>${formatGsax(gsax.get(row.player_id), 2)}</td>` : ""}
       </tr>`,
     )
     .join("");
@@ -162,6 +164,7 @@ function renderGoalieTable(rows: FinnishGoalieRow[], hl: HighlightOptions): stri
           <th data-sort="gaa">GAA</th>
           <th data-sort="rank" data-first-dir="asc" class="sort-asc">SV%</th>
           <th data-sort="shutouts">NP</th>
+          ${withGsax ? '<th data-sort="gsax">GSAx</th>' : ""}
         </tr>
       </thead>
       <tbody>${body}</tbody>
@@ -201,7 +204,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
 <section>
   <h2 class="section-title">🥅 Maalivahtipörssi · ${goalies.length} pelaajaa</h2>
-  ${goalies.length ? renderGoalieTable(goalies, hl) : `<p class="empty-note">Ei tilastoituja suomalaisia maalivahteja tälle kaudelle vielä.</p>`}
+  ${goalies.length ? renderGoalieTable(goalies, hl, await fetchGoaliesSeasonGsaxMap(db, goalies.map((g) => g.player_id))) : `<p class="empty-note">Ei tilastoituja suomalaisia maalivahteja tälle kaudelle vielä.</p>`}
 </section>
 `;
 

@@ -313,13 +313,15 @@ export function renderRosterGoalieTable(
   sectionTitle: string,
   showTeam = false,
   hl?: HighlightOptions,
+  gsax?: Map<number, number>, // season GSAx per player_id; column hidden when empty/absent
 ): string {
+  const withGsax = !!gsax?.size;
   const rows = goalies
     .map(
       (player, index) => `
       <tr data-name="${escapeHtml(player.name)}" data-gp="${player.games_played}" data-wins="${player.wins}"
           data-shutouts="${player.shutouts}"
-          data-gaa="${player.goals_against_average}" data-rank="${index + 1}">
+          data-gaa="${player.goals_against_average}" data-gsax="${gsax?.get(player.player_id) ?? -1000}" data-rank="${index + 1}">
         <td class="col-rank">${index + 1}</td>
         <td>
           <a href="/pelaajat/${player.player_id}" class="player-cell">
@@ -335,6 +337,7 @@ export function renderRosterGoalieTable(
         <td>${player.shutouts}</td>
         <td>${player.goals_against_average.toFixed(2)}</td>
         <td class="stat-strong">${player.save_pct.toFixed(3)}</td>
+        ${withGsax ? `<td>${formatGsax(gsax!.get(player.player_id), 2)}</td>` : ""}
       </tr>`,
     )
     .join("");
@@ -353,6 +356,7 @@ export function renderRosterGoalieTable(
           <th data-sort="shutouts">NP</th>
           <th data-sort="gaa">GAA</th>
           <th data-sort="rank" data-first-dir="asc" class="sort-asc">SV%</th>
+          ${withGsax ? '<th data-sort="gsax">GSAx</th>' : ""}
         </tr>
       </thead>
       <tbody>${rows}</tbody>

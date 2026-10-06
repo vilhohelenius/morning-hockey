@@ -438,10 +438,9 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     awayRanked = sortWatchSkaters(awaySkaters, prevPoints);
     homeRanked = sortWatchSkaters(homeSkaters, prevPoints);
     const watched = [...pickWatchPlayers(awayRanked), ...pickWatchPlayers(homeRanked)].filter((p): p is TeamRosterSkaterRow => !!p);
-    const starters = [pickStarter(awayGoalies), pickStarter(homeGoalies)].filter((g): g is TeamRosterGoalieRow => !!g);
     [watchPct, goalieGsax] = await Promise.all([
       fetchSkatersOnIcePctMap(db, watched.map((p) => p.player_id)),
-      fetchGoaliesSeasonGsaxMap(db, starters.map((g) => g.player_id)),
+      fetchGoaliesSeasonGsaxMap(db, [...awayGoalies, ...homeGoalies].map((g) => g.player_id)),
     ]);
   }
 
@@ -535,11 +534,11 @@ ${
 </div>
 <div class="roster-team-section" data-team="away">
   ${renderRosterSkaterTable(awaySkaters, `<img src="${escapeHtml(game.away_logo)}" alt="" class="nav-icon"> ${escapeHtml(game.away_name)} – kokoonpano`)}
-  ${awayGoalies.length ? renderRosterGoalieTable(awayGoalies, `🥅 ${escapeHtml(game.away_name)} – maalivahdit`) : ""}
+  ${awayGoalies.length ? renderRosterGoalieTable(awayGoalies, `🥅 ${escapeHtml(game.away_name)} – maalivahdit`, false, undefined, goalieGsax) : ""}
 </div>
 <div class="roster-team-section is-hidden" data-team="home">
   ${renderRosterSkaterTable(homeSkaters, `<img src="${escapeHtml(game.home_logo)}" alt="" class="nav-icon"> ${escapeHtml(game.home_name)} – kokoonpano`)}
-  ${homeGoalies.length ? renderRosterGoalieTable(homeGoalies, `🥅 ${escapeHtml(game.home_name)} – maalivahdit`) : ""}
+  ${homeGoalies.length ? renderRosterGoalieTable(homeGoalies, `🥅 ${escapeHtml(game.home_name)} – maalivahdit`, false, undefined, goalieGsax) : ""}
 </div>`
       : winProbSection
         ? `<section class="team-detail"><div class="team-detail-body">${winProbSection}</div></section>`
