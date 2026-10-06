@@ -552,15 +552,26 @@ CREATE TABLE IF NOT EXISTS team_game_xg (
 );
 CREATE INDEX IF NOT EXISTS idx_team_game_xg_team ON team_game_xg(team_id, season);
 
--- Win-probability model inputs the xG tables lack (2026-10-06): shots on goal
--- for/against and own-defensive-zone giveaways per team and game, written by
--- `sync_xg --backfill-wp-inputs SEASON` and the incremental run. Idempotent;
--- in the D1 Console run the statements one at a time.
+-- Win-probability model inputs (2026-10-06): per team and game the result and
+-- shots/giveaway numbers the xG tables lack, so the model's 3-season walk needs
+-- nothing from `games` (which only holds the current season). Written from the
+-- play-by-play by `sync_xg --backfill-wp-inputs SEASON` and the incremental
+-- run. gf/ga are the pbp scores (shootout winner's goal included), final_type
+-- the gameOutcome lastPeriodType (REG/OT/SO), sog_* shots on goal, dz_giveaways
+-- the team's giveaways in its own defensive zone. game_date is the NHL gameDate
+-- (US date, for back-to-back). Idempotent; in the D1 Console run the
+-- statements one at a time.
 CREATE TABLE IF NOT EXISTS team_game_wp_inputs (
     game_id INTEGER NOT NULL,
     team_id INTEGER NOT NULL,
+    opp_team_id INTEGER NOT NULL,
     season INTEGER NOT NULL,
-    game_date TEXT NOT NULL,          -- NHL gameDate (US date), used for back-to-back
+    game_date TEXT NOT NULL,
+    start_time_utc TEXT NOT NULL,
+    is_home INTEGER NOT NULL,         -- 0 or 1
+    gf INTEGER NOT NULL,
+    ga INTEGER NOT NULL,
+    final_type TEXT NOT NULL,         -- REG, OT or SO
     sog_f INTEGER NOT NULL,
     sog_a INTEGER NOT NULL,
     dz_giveaways INTEGER NOT NULL,

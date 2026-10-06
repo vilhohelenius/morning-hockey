@@ -8,7 +8,7 @@ import pytest
 
 from morning_hockey.winprob.inputs import compute_wp_inputs
 from morning_hockey.winprob.model import MODEL, WinProbState, predict
-from morning_hockey.winprob.sync import predict_upcoming
+from morning_hockey.winprob.sync import load_history, predict_upcoming
 
 FIXTURES = pathlib.Path(__file__).parent / "fixtures"
 
@@ -131,3 +131,31 @@ def test_wp_inputs_from_real_pbp():
     home, away = compute_wp_inputs(pbp)
     assert home["sog_f"] == away["sog_a"] and away["sog_f"] == home["sog_a"]
     assert 15 < home["sog_f"] < 60 and home["dz_giveaways"] >= 0
+    assert (home["is_home"], away["is_home"]) == (1, 0) and home["opp_team_id"] == away["team_id"]
+    assert (home["gf"], home["ga"], home["final_type"]) == (1, 4, "REG") and home["start_time_utc"] == "2024-10-04T17:00:00Z"
+
+
+class _FakeD1:
+    """Answers load_history's two queries with canned rows."""
+
+    def __init__(self, wp, goalies):
+        self.wp, self.goalies = wp, goalies
+
+    def execute(self, sql, params=None):
+        rows = self.wp if "team_game_wp_inputs" in sql else self.goalies
+        lo, hi = params
+        return {"result": [{"results": [r for r in rows if lo <= r["game_id"] <= hi]}]}
+
+
+def test_load_history_builds_games_from_wp_inputs_and_xg_only():
+    def team(t, opp, home, gf, ga, final="SO"):
+        return {"game_id": 2024020001, "team_id": t, "opp_team_id": opp, "game_date": "2024-10-04", "start_time_utc": "2024-10-04T23:00:00Z",
+                "is_home": home, "gf": gf, "ga": ga, "final_type": final, "sog_f": 30, "sog_a": 25, "dz_giveaways": 4,
+                "xgf": 2.5, "xga": 2.0, "xgf_5v5": 1.5, "xga_5v5": 1.0}
+    goalie = {"game_id": 2024020001, "player_id": 99, "opp_team_id": 2, "shots_against": 25, "goals_against": 2, "xga": 2.5}
+    d1 = _FakeD1([team(1, 2, 1, 3, 2), team(2, 1, 0, 2, 3)], [goalie])
+    [g] = load_history(d1, 2024)
+    assert (g["home_id"], g["away_id"], g["final_type"], g["season"]) == (1, 2, "SO", 20242025)
+    assert g["teams"][1]["gf"] == 3 and g["teams"][2]["sog_f"] == 30
+    # opp_team_id 2 shot at the goalie, so he plays for team 1 (home)
+    assert g["goalies"] == [{"player_id": 99, "team_id": 1, "shots": 25, "gsax": 0.5}]

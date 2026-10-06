@@ -273,8 +273,10 @@ säilyvät 60 %, joten kausi alkaa edellisen kauden tiloista.
 
 `sync_xg`-oletusajo (xG-vaiheiden jälkeen) lukee D1:stä kolmen viimeisen kauden
 pelatut ottelut, laskee tilat ja kirjoittaa `game_win_prob`-rivin jokaiselle
-pelaamattomalle ottelulle; ottelun ennakko näyttää sen. Tarvitsee taulun
-`team_game_wp_inputs` (laukaukset, DZ-giveawayt; `d1/schema.sql`):
+pelaamattomalle (`games.is_finished = 0`) ottelulle; ottelun ennakko näyttää sen. Historia luetaan
+vain tauluista `team_game_xg`, `goalie_game_xg` ja `team_game_wp_inputs` (tulos,
+jatkoaika, laukaukset, DZ-giveawayt play-by-playstä; `d1/schema.sql`), koska
+`games` sisältää vain käynnissä olevan kauden:
 
 ```
 python -m morning_hockey.sync_xg --backfill-wp-inputs 20242025   # sama 20232024, 20252026

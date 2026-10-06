@@ -10,7 +10,10 @@ from ..d1_sync import D1Client, _insert_rows
 from .model import MODEL, WinProbState, predict
 
 _SEASONS = 3
-_WP_INPUT_COLUMNS = ["game_id", "team_id", "season", "game_date", "sog_f", "sog_a", "dz_giveaways"]
+_WP_INPUT_COLUMNS = [
+    "game_id", "team_id", "opp_team_id", "season", "game_date", "start_time_utc", "is_home",
+    "gf", "ga", "final_type", "sog_f", "sog_a", "dz_giveaways",
+]
 _WIN_PROB_COLUMNS = ["game_id", "home_win_prob", "computed_at", "model_version", "ability", "chances", "goalie", "context"]
 _TEAM_IDS = {
     "ANA": 24, "ARI": 53, "BOS": 6, "BUF": 7, "CAR": 12, "CBJ": 29, "CGY": 20, "CHI": 16, "COL": 21, "DAL": 25, "DET": 17,
@@ -38,26 +41,19 @@ def _et_date(start_time_utc: str) -> dt.date:
 
 def load_history(client: D1Client, last_year: int) -> list[dict]:
     """Finished regular-season games of the last _SEASONS seasons (start years
-    last_year-2 .. last_year) that have every input, oldest first."""
+    last_year-2 .. last_year) that have every input, oldest first. Results
+    come from team_game_wp_inputs, xG from team_game_xg, goalies from
+    goalie_game_xg; nothing from games."""
     games: list[dict] = []
     for year in range(last_year - _SEASONS + 1, last_year + 1):
-        lo, hi = year * 1_000_000 + 20_001, year * 1_000_000 + 29_999
-        params = [lo, hi]
-        by_id = {
-            g["game_id"]: g
-            for g in _rows(
-                client,
-                "SELECT game_id, start_time_utc, home_abbrev, away_abbrev, home_score, away_score, final_type "
-                "FROM games WHERE is_finished = 1 AND game_id BETWEEN ? AND ?",
-                params,
-            )
-        }
+        params = [year * 1_000_000 + 20_001, year * 1_000_000 + 29_999]
         teams: dict[int, dict] = {}
         for r in _rows(
             client,
-            "SELECT x.game_id, x.team_id, x.game_date, x.xgf, x.xga, x.xgf_5v5, x.xga_5v5, w.sog_f, w.sog_a, w.dz_giveaways "
-            "FROM team_game_xg x JOIN team_game_wp_inputs w ON w.game_id = x.game_id AND w.team_id = x.team_id "
-            "WHERE x.game_id BETWEEN ? AND ?",
+            "SELECT w.game_id, w.team_id, w.opp_team_id, w.game_date, w.start_time_utc, w.is_home, w.gf, w.ga, w.final_type, "
+            "w.sog_f, w.sog_a, w.dz_giveaways, x.xgf, x.xga, x.xgf_5v5, x.xga_5v5 "
+            "FROM team_game_wp_inputs w JOIN team_game_xg x ON x.game_id = w.game_id AND x.team_id = w.team_id "
+            "WHERE w.game_id BETWEEN ? AND ?",
             params,
         ):
             teams.setdefault(r["game_id"], {})[r["team_id"]] = r
@@ -68,18 +64,19 @@ def load_history(client: D1Client, last_year: int) -> list[dict]:
             params,
         ):
             goalies.setdefault(r["game_id"], []).append(r)
-        for gid, g in by_id.items():
-            home, away = _TEAM_IDS.get(g["home_abbrev"]), _TEAM_IDS.get(g["away_abbrev"])
-            t = teams.get(gid, {})
-            if home is None or away is None or home not in t or away not in t:
+        for gid, t in teams.items():
+            if len(t) != 2:
                 continue
-            score = {home: (g["home_score"], g["away_score"]), away: (g["away_score"], g["home_score"])}
+            home = next(k for k, v in t.items() if v["is_home"])
+            away = t[home]["opp_team_id"]
+            if away not in t:
+                continue
             games.append({
-                "game_id": gid, "season": _season_of(gid), "start": g["start_time_utc"], "date": t[home]["game_date"],
-                "home_id": home, "away_id": away, "final_type": g["final_type"],
+                "game_id": gid, "season": _season_of(gid), "start": t[home]["start_time_utc"], "date": t[home]["game_date"],
+                "home_id": home, "away_id": away, "final_type": t[home]["final_type"],
                 "teams": {
                     k: {
-                        "gf": score[k][0], "ga": score[k][1], "xgf": t[k]["xgf"], "xga": t[k]["xga"],
+                        "gf": t[k]["gf"], "ga": t[k]["ga"], "xgf": t[k]["xgf"], "xga": t[k]["xga"],
                         "xgf5": t[k]["xgf_5v5"], "xga5": t[k]["xga_5v5"],
                         "sog_f": t[k]["sog_f"], "sog_a": t[k]["sog_a"], "dz": t[k]["dz_giveaways"],
                     }
