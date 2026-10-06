@@ -65,6 +65,50 @@
   wirePillToggle(".standings-tab-picker", ".standings-tab-section", "tab", ".standings-tab");
   wirePillToggle(".roster-team-picker", ".roster-team-section", "team", ".toggle-segment");
 
+  // Dashboard day browser: yesterday/today/tomorrow panels are all rendered
+  // server-side (index.ts), so the arrows just switch which one is visible.
+  // The links keep real ?pv= hrefs as the no-JS fallback; history.replaceState
+  // keeps the URL in sync so the refresh button reloads the same day.
+  var dayNav = document.getElementById("day-nav");
+  if (dayNav) {
+    var dayOffset = parseInt(dayNav.getAttribute("data-offset") || "0", 10);
+    var dayTitleEl = document.getElementById("day-title");
+    var dayPanels = document.querySelectorAll(".day-panel");
+    var dayButtons = dayNav.querySelectorAll(".day-nav-btn");
+
+    var showDay = function (offset) {
+      dayOffset = offset;
+      dayPanels.forEach(function (panel) {
+        var active = parseInt(panel.getAttribute("data-offset"), 10) === offset;
+        panel.hidden = !active;
+        if (active && dayTitleEl) dayTitleEl.textContent = panel.getAttribute("data-title");
+      });
+      dayButtons.forEach(function (btn) {
+        var target = offset + parseInt(btn.getAttribute("data-dir"), 10);
+        var disabled = target < -1 || target > 1;
+        btn.classList.toggle("is-disabled", disabled);
+        if (disabled) {
+          btn.setAttribute("aria-disabled", "true");
+          btn.removeAttribute("href");
+        } else {
+          btn.removeAttribute("aria-disabled");
+          btn.setAttribute("href", target === 0 ? "/" : "/?pv=" + target);
+        }
+      });
+      try {
+        history.replaceState(null, "", offset === 0 ? "/" : "/?pv=" + offset);
+      } catch (e) {}
+    };
+
+    dayButtons.forEach(function (btn) {
+      btn.addEventListener("click", function (event) {
+        event.preventDefault();
+        var target = dayOffset + parseInt(btn.getAttribute("data-dir"), 10);
+        if (target >= -1 && target <= 1) showDay(target);
+      });
+    });
+  }
+
   // Sarjataulukko tabs: remember the last selected tab (storage may be
   // unavailable/blocked, so every access is guarded; default stays Divisioona).
   document.querySelectorAll(".standings-tab-picker").forEach(function (picker) {

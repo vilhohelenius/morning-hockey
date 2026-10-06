@@ -228,22 +228,23 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
   const username = currentUsername(context.request);
 
-  // Which Helsinki calendar day to show: ?pv=-1/0/1 (clamped). Only the
-  // today view carries over still-live games from the previous date.
+  // Which Helsinki calendar day is initially shown: ?pv=-1/0/1 (clamped).
   const dayOffset = clampDayOffset(url.searchParams.get("pv"));
   const todayDate = helsinkiToday();
-  const viewDate = addDays(todayDate, dayOffset);
 
-  let roundGames: GameRow[] = [];
-  let gameCardsHtml = "";
   const gameDetails: Record<number, { timeline?: unknown; team_stats?: unknown; youtube_url?: string }> = {};
 
-  {
+  // All three days (yesterday/today/tomorrow) are rendered up front as
+  // hidden panels, so the arrows switch client-side (app.js) with no reload.
+  // Only today's panel carries over still-live games from the previous date.
+  async function renderDay(offset: number): Promise<{ title: string; html: string; count: number }> {
+    const date = addDays(todayDate, offset);
     const { results } = await db
       .prepare("SELECT * FROM games WHERE date = ? OR (date = ? AND is_finished = 0) ORDER BY start_time_utc ASC")
-      .bind(viewDate, addDays(viewDate, -1))
+      .bind(date, addDays(date, -1))
       .all<GameRow>();
-    roundGames = selectDayGames(results, viewDate, dayOffset === 0);
+    const roundGames = selectDayGames(results, date, offset === 0);
+    let gameCardsHtml = "";
 
     for (const game of roundGames) {
       let scorers: FinnScorerLine[] = [];
@@ -282,7 +283,23 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
       gameCardsHtml += renderGameCard(displayGame, scorers, goalies, box?.live ?? null);
     }
+
+    const label = offset === 0 ? "Tämän päivän" : offset < 0 ? "Eilisen" : "Huomisen";
+    const title = `${label} ottelut, ${humanDate(date)} · ${roundGames.length} ${roundGames.length === 1 ? "ottelu" : "ottelua"}`;
+    return {
+      title,
+      count: roundGames.length,
+      html: roundGames.length ? `<div class="game-list">${gameCardsHtml}</div>` : `<p class="empty-note">Ei otteluita tänä päivänä.</p>`,
+    };
   }
+
+  const days = await Promise.all([-1, 0, 1].map(renderDay));
+  const dayPanelsHtml = days
+    .map(
+      (d, i) =>
+        `<div class="day-panel" data-offset="${i - 1}" data-title="${escapeHtml(d.title)}"${i - 1 === dayOffset ? "" : " hidden"}>${d.html}</div>`,
+    )
+    .join("");
 
   // ---------- Stat teasers ----------
 
@@ -339,12 +356,12 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
   // ---------- Next upcoming round ----------
 
-  // Strictly after the day being shown above, not just "any unfinished
-  // game" -- otherwise today's still-unfinished games would show up a
-  // second time down here instead of the next day's.
+  // Strictly after the last day shown above (tomorrow), not just "any
+  // unfinished game" -- otherwise those games would show up a second time
+  // down here.
   const nextRound = await db
     .prepare("SELECT date FROM games WHERE is_finished = 0 AND date > ? ORDER BY date ASC LIMIT 1")
-    .bind(viewDate)
+    .bind(addDays(todayDate, 1))
     .first<{ date: string }>();
 
   let upcomingHtml = "";
@@ -373,8 +390,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   // is about a single team, and there's no "wires" crest for "Finland" or
   // "the NHL" to use instead.
   const dayHref = (offset: number) => (offset === 0 ? "/" : `/?pv=${offset}`);
-  const dayTitle =
-    dayOffset === 0 ? `Tämän päivän ottelut, ${humanDate(viewDate)}` : `${dayOffset < 0 ? "Eilisen" : "Huomisen"} ottelut, ${humanDate(viewDate)}`;
+  const dayTitle = days[dayOffset + 1].title;
 
   const content = `
 <header class="page-header">
@@ -383,13 +399,13 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 </header>
 
 <section>
-  <div class="section-title-row">
-    <a class="icon-btn day-nav-btn${dayOffset <= -1 ? " is-disabled" : ""}" ${dayOffset <= -1 ? 'aria-disabled="true"' : `href="${dayHref(dayOffset - 1)}"`} title="Edellinen päivä" aria-label="Edellinen päivä">‹</a>
-    <h2 class="section-title">${escapeHtml(dayTitle)} · ${roundGames.length} ${roundGames.length === 1 ? "ottelu" : "ottelua"}</h2>
-    <a class="icon-btn day-nav-btn${dayOffset >= 1 ? " is-disabled" : ""}" ${dayOffset >= 1 ? 'aria-disabled="true"' : `href="${dayHref(dayOffset + 1)}"`} title="Seuraava päivä" aria-label="Seuraava päivä">›</a>
+  <div class="section-title-row" id="day-nav" data-offset="${dayOffset}">
+    <a class="icon-btn day-nav-btn${dayOffset <= -1 ? " is-disabled" : ""}" ${dayOffset <= -1 ? 'aria-disabled="true"' : `href="${dayHref(dayOffset - 1)}"`} data-dir="-1" title="Edellinen päivä" aria-label="Edellinen päivä">‹</a>
+    <h2 class="section-title" id="day-title">${escapeHtml(dayTitle)}</h2>
+    <a class="icon-btn day-nav-btn${dayOffset >= 1 ? " is-disabled" : ""}" ${dayOffset >= 1 ? 'aria-disabled="true"' : `href="${dayHref(dayOffset + 1)}"`} data-dir="1" title="Seuraava päivä" aria-label="Seuraava päivä">›</a>
     <button type="button" class="icon-btn refresh-btn" title="Päivitä ottelutiedot" aria-label="Päivitä ottelutiedot" onclick="location.reload()">⟳</button>
   </div>
-  ${roundGames.length ? `<div class="game-list">${gameCardsHtml}</div>` : `<p class="empty-note">Ei otteluita tänä päivänä.</p>`}
+  <div class="day-panels">${dayPanelsHtml}</div>
 </section>
 
 ${favoriteTeamsHtml}
