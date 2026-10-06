@@ -21,6 +21,7 @@
 import { getBoxScore, type ParsedBoxScore } from "../_shared/boxScoreCache";
 import { buildPreviewTeamStats, buildTimeline } from "../_shared/boxscore";
 import { fetchGameTeamXg, fetchTeamSeasonXg, teamXgStatRows } from "../_shared/xg";
+import { fetchGameWinProb, winProbInfoText, winProbStatRow, type GameWinProb } from "../_shared/winProb";
 import { renderMatchTimeline } from "../_shared/matchTimeline";
 import { computeFormGuide, type FormGuideEntry } from "../_shared/formGuide";
 import { escapeHtml, finalTypeFi, helsinkiParts, humanDate, nationalityFlag } from "../_shared/format";
@@ -348,6 +349,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   let awayForm: FormGuideEntry | undefined;
   let homeForm: FormGuideEntry | undefined;
   let xgRows: TeamStatRow[] = [];
+  let winProb: GameWinProb | null = null;
 
   if (game.is_finished || isLive(game)) {
     ({ box, fetchError } = await getBoxScore(db, game));
@@ -357,6 +359,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       if (gameXg) xgRows = teamXgStatRows(gameXg.away, gameXg.home, true);
     }
   } else {
+    winProb = await fetchGameWinProb(db, game.game_id);
     const skaterQuery = (abbrev: string) =>
       db
         .prepare("SELECT * FROM team_roster_skaters WHERE team_abbrev = ? ORDER BY points DESC, goals DESC, name ASC")
@@ -402,6 +405,18 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   }
 
   const hasPreviewData = awaySkaters.length > 0 && homeSkaters.length > 0;
+  const winProbSection = winProb
+    ? `
+    <div class="tp-section">
+      <p class="tp-section-title">Voittotodennäköisyys</p>
+      <div class="gd-stat-header">
+        <span class="gd-stat-team">${escapeHtml(game.away_abbrev)} (vieras)</span>
+        <span class="gd-stat-team">${escapeHtml(game.home_abbrev)} (koti)</span>
+      </div>
+      ${renderStatBarRows([winProbStatRow(winProb)], game.away_abbrev, game.home_abbrev)}
+      ${winProbInfoText(winProb)}
+    </div>`
+    : "";
 
   const content = `
 <a class="back-link js-back" href="/">← Takaisin</a>
@@ -441,7 +456,7 @@ ${
     ? hasPreviewData
       ? `
 <section class="team-detail">
-  <div class="team-detail-body">
+  <div class="team-detail-body">${winProbSection}
     <div class="tp-section">
       <p class="tp-section-title">Pelaajat seurattavaksi</p>
       <div class="gd-stat-header">
@@ -485,7 +500,9 @@ ${
   ${renderRosterSkaterTable(homeSkaters, `<img src="${escapeHtml(game.home_logo)}" alt="" class="nav-icon"> ${escapeHtml(game.home_name)} – kokoonpano`)}
   ${homeGoalies.length ? renderRosterGoalieTable(homeGoalies, `🥅 ${escapeHtml(game.home_name)} – maalivahdit`) : ""}
 </div>`
-      : `<p class="empty-note">Ottelua ei ole vielä pelattu.</p>`
+      : winProbSection
+        ? `<section class="team-detail"><div class="team-detail-body">${winProbSection}</div></section>`
+        : `<p class="empty-note">Ottelua ei ole vielä pelattu.</p>`
     : fetchError
       ? `<p class="empty-note">Ottelun tarkkoja tietoja ei juuri nyt saatu. Yritä myöhemmin uudelleen.</p>`
       : box
