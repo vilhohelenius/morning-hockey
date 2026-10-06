@@ -2,7 +2,7 @@
 // straight from the sync_xg tables. Three tabs toggled client-side (the
 // analytiikka-view-picker pill wiring in app.js).
 
-import { escapeHtml, seasonLabel } from "./_shared/format";
+import { escapeHtml, nationalityFlag, seasonLabel } from "./_shared/format";
 import { renderLayout } from "./_shared/layout";
 import type { Env, StandingsRow } from "./_shared/types";
 import { fetchLeagueTeamXg, formatGsax, formatXg, gsaxPer100, rankBadge, rankedTeamXg, XG_INFO_TEXT, xgfPct, xgPercent } from "./_shared/xg";
@@ -14,6 +14,7 @@ interface SkaterRow {
   name: string;
   headshot: string;
   team_abbrev: string;
+  nationality: string;
   position: string;
   gp: number;
   xg: number;
@@ -27,6 +28,7 @@ interface GoalieRow {
   name: string;
   headshot: string;
   team_abbrev: string;
+  nationality: string;
   gp: number;
   gsax: number;
   sa: number;
@@ -60,7 +62,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   const [{ results: skaters }, { results: goalies }, { results: standings }, league, season] = await Promise.all([
     db
       .prepare(
-        `SELECT s.player_id, s.name, s.headshot, s.team_abbrev, s.position, s.games_played AS gp,
+        `SELECT s.player_id, s.name, s.headshot, s.team_abbrev, s.nationality, s.position, s.games_played AS gp,
                 SUM(x.xg) AS xg, SUM(x.goals) AS goals, o.xgf, o.xga
          FROM skater_game_xg x
          JOIN skater_season_stats s ON s.player_id = x.player_id AND s.season_id = x.season
@@ -73,7 +75,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       .all<SkaterRow>(),
     db
       .prepare(
-        `SELECT s.player_id, s.name, s.headshot, s.team_abbrev, s.games_played AS gp,
+        `SELECT s.player_id, s.name, s.headshot, s.team_abbrev, s.nationality, s.games_played AS gp,
                 SUM(x.xga) - SUM(x.goals_against) AS gsax, SUM(x.shots_against) AS sa
          FROM goalie_game_xg x
          JOIN goalie_season_stats s ON s.player_id = x.player_id AND s.season_id = x.season
@@ -94,7 +96,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
         return `<tr data-name="${escapeHtml(p.name)}" data-gp="${p.gp}" data-goals="${p.goals}" data-xg="${p.xg}"
       data-xgpg="${p.xg / p.gp}" data-xgf="${pct ?? -1}" data-rank="${i + 1}">
     <td class="col-rank">${i + 1}</td>
-    <td>${playerCell(p.player_id, p.name, p.headshot, `${p.team_abbrev} · ${p.position}`)}</td>
+    <td>${playerCell(p.player_id, p.name, p.headshot, `${nationalityFlag(p.nationality)} ${p.nationality} · ${p.position} · ${p.team_abbrev}`)}</td>
     <td>${p.gp}</td><td>${p.goals}</td><td class="stat-strong">${formatXg(p.xg)}</td>
     <td>${(p.xg / p.gp).toFixed(2)}</td>
     <td>${pct !== null && p.xgf !== null && p.xga !== null ? xgPercent(p.xgf, p.xga) : "–"}</td>
@@ -109,7 +111,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       return `<tr data-name="${escapeHtml(g.name)}" data-gp="${g.gp}" data-gsax="${g.gsax}" data-gsax100="${per100 ?? -1000}"
       data-sa="${g.sa}" data-rank="${i + 1}">
     <td class="col-rank">${i + 1}</td>
-    <td>${playerCell(g.player_id, g.name, g.headshot, g.team_abbrev)}</td>
+    <td>${playerCell(g.player_id, g.name, g.headshot, `${nationalityFlag(g.nationality)} ${g.nationality} · ${g.team_abbrev}`)}</td>
     <td>${g.gp}</td><td class="stat-strong">${formatGsax(g.gsax)}</td><td>${per100 === null ? "–" : formatGsax(per100, 2)}</td><td>${g.sa}</td>
   </tr>`;
     })
@@ -121,7 +123,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       const s = names.get(t.abbrev);
       return `<tr>
     <td class="col-rank">${i + 1}</td>
-    <td><a href="/joukkueet/${t.abbrev.toLowerCase()}" class="player-cell">${s ? `<img src="${escapeHtml(s.logo)}" alt="" loading="lazy">` : ""}<span class="player-name"><span class="player-name-line">${escapeHtml(s?.name ?? t.abbrev)}</span></span></a></td>
+    <td><a href="/joukkueet/${t.abbrev.toLowerCase()}" class="player-cell">${s ? `<img src="${escapeHtml(s.logo)}" alt="" class="team-logo-plain" loading="lazy">` : ""}<span class="player-name"><span class="player-name-line">${escapeHtml(s?.name ?? t.abbrev)}</span></span></a></td>
     <td>${t.games}</td><td class="stat-strong">${t.pct.toFixed(1)}${rankBadge(t.rankPct)}</td>
     <td>${t.xgf.toFixed(1)}${rankBadge(t.rankXgf)}</td><td>${t.xga.toFixed(1)}${rankBadge(t.rankXga)}</td>
   </tr>`;

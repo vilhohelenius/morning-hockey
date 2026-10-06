@@ -4004,3 +4004,9 @@ main {
 
 /* Game preview goalie cards reuse .pw-card; "V-H-JH" is longer than the other cells. */
 .pw-card .stat-card-cell.pw-cell-sm .stat-card-value { font-size: 0.78rem; line-height: 1.55; }
+
+/* /odotetut Joukkueet: plain logos, no round headshot background */
+.porssi-table .player-cell img.team-logo-plain {
+  border-radius: 0;
+  background: none;
+}
