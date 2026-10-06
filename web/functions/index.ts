@@ -37,6 +37,7 @@ import {
   finnishGoalieLines,
   finnishScorerLines,
   isLive,
+  liveBadgeText,
   renderGameCard,
   type FinnGoalieLine,
   type FinnScorerLine,
@@ -44,6 +45,7 @@ import {
 import { resolveHighlightsUrl } from "./_shared/youtube";
 import { clampDayOffset, selectDayGames } from "./_shared/dayGames";
 import { addDays, escapeHtml, helsinkiParts, helsinkiToday, humanDate, nationalityFlag, shortDate, teamHeroBackgroundStyle } from "./_shared/format";
+import { buildFinnishNight, renderFinnishNightSection, type NightGame } from "./_shared/finnishNight";
 import { renderLayout } from "./_shared/layout";
 import type {
   Env,
@@ -229,6 +231,10 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   const dayOffset = clampDayOffset(url.searchParams.get("pv"));
   const todayDate = helsinkiToday();
 
+  // Started games of today's panel (offset 0) with their box scores, reused
+  // for "Yön suomalaiset" below -- no extra fetches.
+  const nightGames: NightGame[] = [];
+
   const gameDetails: Record<number, { timeline?: unknown; team_stats?: unknown; youtube_url?: string }> = {};
 
   // All three days (yesterday/today/tomorrow) are rendered up front as
@@ -260,6 +266,19 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
       if (game.is_finished) {
         gameDetails[game.game_id] = { youtube_url: await resolveHighlightsUrl(db, context.env, game) };
+      }
+
+      if (box && offset === 0) {
+        const live = !game.is_finished && isLive(game);
+        nightGames.push({
+          game,
+          awaySkaters: box.awaySkaters,
+          homeSkaters: box.homeSkaters,
+          awayGoalies: box.awayGoalies,
+          homeGoalies: box.homeGoalies,
+          live,
+          liveText: live ? liveBadgeText(box.live ?? null) : "",
+        });
       }
 
       if (box) {
@@ -404,6 +423,8 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   </div>
   <div class="day-panels">${dayPanelsHtml}</div>
 </section>
+
+${renderFinnishNightSection(buildFinnishNight(nightGames), teamHeroBackgroundStyle("NYR", false))}
 
 ${favoriteTeamsHtml}
 

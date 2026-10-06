@@ -3281,3 +3281,80 @@ main {
   border-radius: 5px;
   font-size: 0.72rem;
 }
+
+/* ===== Yön suomalaiset (finnishNight.ts) ===== */
+.yf-section .yf-scroll {
+  margin-bottom: 12px;
+}
+
+.yf-section .yf-scroll:last-child {
+  margin-bottom: 0;
+}
+
+.yf-table .yf-first {
+  min-width: 150px;
+}
+
+.yf-table .player-cell {
+  gap: 10px;
+}
+
+.yf-table .player-cell img:not(.table-team-logo) {
+  width: 36px;
+  height: 36px;
+}
+
+.yf-table .player-name {
+  font-size: 0.95rem;
+}
+
+.yf-table .player-meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.yf-table .player-meta .table-team-logo {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  background: none;
+  border-radius: 0;
+}
+
+.yf-table .yf-game {
+  font-weight: 600;
+}
+
+.yf-live {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.yf-section .yf-scroll {
+  color: var(--text);
+}
+
+.yf-live .live-dot {
+  display: inline-block;
+  margin-right: 5px;
+  vertical-align: middle;
+}
+
+.section-tile.hero-tinted .yf-table .player-meta,
+.section-tile.hero-tinted .yf-table .player-name {
+  color: var(--muted);
+}
+
+.section-tile.hero-tinted .yf-table .player-name {
+  color: var(--text);
+}
+
+.section-tile.hero-tinted .yf-table td.st-pts {
+  color: var(--text);
+}

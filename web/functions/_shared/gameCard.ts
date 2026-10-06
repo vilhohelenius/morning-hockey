@@ -69,7 +69,7 @@ export function isLive(game: GameRow): boolean {
   return isGameLive(game);
 }
 
-function liveBadgeText(live: LiveStatus | null): string {
+export function liveBadgeText(live: LiveStatus | null): string {
   if (!live) return "LIVE";
   if (live.inIntermission) return "Erätauko";
   return `${periodLabel({ periodType: live.periodType, number: live.periodNumber })} · ${live.timeRemaining}`;
