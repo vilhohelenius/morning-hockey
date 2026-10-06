@@ -156,31 +156,105 @@ function renderGoalieStatRow(label: string, t: SeasonTotal, rowClass = "total-ro
 // which shows "2026-27 Season" and "Career" as two separate boxed tables
 // rather than two rows of one table. See the "Stat cards" block in
 // style.css.
-function renderSkaterStatCardRow(t: SeasonTotal): string {
+function renderSkaterStatCardRow(t: SeasonTotal, ranks: LeagueRanks = {}): string {
   return `
         <tr>
           <td>${t.gamesPlayed}</td>
-          <td>${t.goals ?? 0}</td>
-          <td>${t.assists ?? 0}</td>
-          <td class="stat-card-highlight">${t.points ?? 0}</td>
+          <td>${t.goals ?? 0}${rankBadge(ranks.goals)}</td>
+          <td>${t.assists ?? 0}${rankBadge(ranks.assists)}</td>
+          <td class="stat-card-highlight">${t.points ?? 0}${rankBadge(ranks.points)}</td>
           <td>${(t.plusMinus ?? 0) > 0 ? "+" : ""}${t.plusMinus ?? 0}</td>
           <td>${t.pim ?? 0}</td>
           <td>${t.avgToi ? escapeHtml(t.avgToi) : "–"}</td>
         </tr>`;
 }
 
-function renderGoalieStatCardRow(t: SeasonTotal): string {
+function renderGoalieStatCardRow(t: SeasonTotal, ranks: LeagueRanks = {}): string {
   return `
         <tr>
           <td>${t.gamesPlayed}</td>
-          <td>${t.wins ?? 0}</td>
-          <td class="stat-card-highlight">${(t.savePctg ?? 0).toFixed(3)}</td>
-          <td>${(t.goalsAgainstAvg ?? 0).toFixed(2)}</td>
-          <td>${t.shutouts ?? 0}</td>
+          <td>${t.wins ?? 0}${rankBadge(ranks.wins)}</td>
+          <td class="stat-card-highlight">${(t.savePctg ?? 0).toFixed(3)}${rankBadge(ranks.savePct)}</td>
+          <td>${(t.goalsAgainstAvg ?? 0).toFixed(2)}${rankBadge(ranks.gaa)}</td>
+          <td>${t.shutouts ?? 0}${rankBadge(ranks.shutouts)}</td>
         </tr>`;
 }
 
-function renderPeriodStatsSection(isGoalie: boolean, periods: { label: string; total: SeasonTotal }[]): string {
+// League rank (1-based) per stat category, only filled in for categories
+// where the player is in the top RANK_BADGE_MAX; see fetchLeagueRanks.
+interface LeagueRanks {
+  goals?: number;
+  assists?: number;
+  points?: number;
+  wins?: number;
+  savePct?: number;
+  gaa?: number;
+  shutouts?: number;
+}
+
+const RANK_BADGE_MAX = 10;
+
+function rankBadge(rank: number | undefined): string {
+  return rank ? `<span class="rank-badge" title="Sija NHL-pörssissä">#${rank}</span>` : "";
+}
+
+// Rank = 1 + number of players strictly ahead, using the same ordering as
+// the leaderboards (tilastot.ts: points DESC, goals DESC; maalivahtiporssi.ts:
+// save_pct DESC, wins DESC) -- so tied players share a rank instead of the
+// leaderboard's alphabetical tiebreak implying a fake gap. Read from the
+// synced skater_season_stats/goalie_season_stats tables (no extra NHL API
+// call). A zero value never gets a badge, and goalies with no games are
+// skipped for SV%/GAA. Goalies use the same no-minimum-games rule as the
+// leaderboard.
+async function fetchLeagueRanks(
+  db: D1Database,
+  playerId: number,
+  seasonId: number,
+  isGoalie: boolean,
+): Promise<LeagueRanks> {
+  const sql = isGoalie
+    ? `SELECT
+         (SELECT COUNT(*) + 1 FROM goalie_season_stats o WHERE o.season_id = s.season_id AND o.wins > s.wins) AS wins,
+         (SELECT COUNT(*) + 1 FROM goalie_season_stats o WHERE o.season_id = s.season_id AND o.games_played > 0
+            AND (o.save_pct > s.save_pct OR (o.save_pct = s.save_pct AND o.wins > s.wins))) AS savePct,
+         (SELECT COUNT(*) + 1 FROM goalie_season_stats o WHERE o.season_id = s.season_id AND o.games_played > 0
+            AND o.goals_against_average < s.goals_against_average) AS gaa,
+         (SELECT COUNT(*) + 1 FROM goalie_season_stats o WHERE o.season_id = s.season_id AND o.shutouts > s.shutouts) AS shutouts,
+         s.wins AS wins_v, s.shutouts AS shutouts_v, s.games_played AS gp
+       FROM goalie_season_stats s WHERE s.player_id = ? AND s.season_id = ?`
+    : `SELECT
+         (SELECT COUNT(*) + 1 FROM skater_season_stats o WHERE o.season_id = s.season_id AND o.goals > s.goals) AS goals,
+         (SELECT COUNT(*) + 1 FROM skater_season_stats o WHERE o.season_id = s.season_id AND o.assists > s.assists) AS assists,
+         (SELECT COUNT(*) + 1 FROM skater_season_stats o WHERE o.season_id = s.season_id
+            AND (o.points > s.points OR (o.points = s.points AND o.goals > s.goals))) AS points,
+         s.goals AS goals_v, s.assists AS assists_v, s.points AS points_v
+       FROM skater_season_stats s WHERE s.player_id = ? AND s.season_id = ?`;
+  let row: Record<string, number> | null = null;
+  try {
+    row = await db.prepare(sql).bind(playerId, seasonId).first<Record<string, number>>();
+  } catch (error) {
+    console.error(`League rank lookup failed for ${playerId}:`, error);
+  }
+  if (!row) return {};
+  const top = (rank: number, value: number) => (value > 0 && rank <= RANK_BADGE_MAX ? rank : undefined);
+  return isGoalie
+    ? {
+        wins: top(row.wins, row.wins_v),
+        savePct: top(row.savePct, row.gp),
+        gaa: top(row.gaa, row.gp),
+        shutouts: top(row.shutouts, row.shutouts_v),
+      }
+    : {
+        goals: top(row.goals, row.goals_v),
+        assists: top(row.assists, row.assists_v),
+        points: top(row.points, row.points_v),
+      };
+}
+
+function renderPeriodStatsSection(
+  isGoalie: boolean,
+  periods: { label: string; total: SeasonTotal; ranks?: LeagueRanks }[],
+): string {
   if (!periods.length) return "";
 
   const headerCells = isGoalie
@@ -196,7 +270,7 @@ function renderPeriodStatsSection(isGoalie: boolean, periods: { label: string; t
       <div class="stat-card-table-wrap">
         <table class="stat-card-table">
           <thead><tr>${headerCells}</tr></thead>
-          <tbody>${rowFn(p.total)}</tbody>
+          <tbody>${rowFn(p.total, p.ranks)}</tbody>
         </table>
       </div>
     </div>`,
@@ -557,6 +631,13 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     gameLogHtml = `<p class="empty-note">Ottelukohtaisia tilastoja ei juuri nyt saatu.</p>`;
   }
 
+  // League-rank badges only make sense for the current season's card (the
+  // leaderboard tables only hold the current season).
+  const latestRanks: LeagueRanks =
+    seasons.length && seasons[0] === currentSeasonId()
+      ? await fetchLeagueRanks(context.env.DB, playerId, seasons[0], isGoalie)
+      : {};
+
   const age = landing.birthDate ? ageFromBirthDate(landing.birthDate) : null;
 
   const username = currentUsername(context.request);
@@ -602,9 +683,11 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 ${renderPeriodStatsSection(
   isGoalie,
   [
-    latestSeasonTotal ? { label: `Kausi ${seasonLabel(seasons[0])}`, total: latestSeasonTotal } : null,
+    latestSeasonTotal
+      ? { label: `Kausi ${seasonLabel(seasons[0])}`, total: latestSeasonTotal, ranks: latestRanks }
+      : null,
     careerTotal ? { label: "Uran tilastot", total: careerTotal } : null,
-  ].filter((p): p is { label: string; total: SeasonTotal } => p !== null),
+  ].filter((p): p is { label: string; total: SeasonTotal; ranks?: LeagueRanks } => p !== null),
 )}
 
 ${renderSeasonHistorySection(isGoalie, regularSeasonHistory, playoffHistory, careerTotal, careerPlayoffsTotal)}

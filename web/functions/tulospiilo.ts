@@ -121,7 +121,8 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
 ${
   gamesHtml
-    ? `<div class="game-list">${gamesHtml}</div>`
+    ? `<div class="spoiler-bulk"><button type="button" class="filter-btn" id="spoiler-check-all">Valitse kaikki</button></div>
+<div class="game-list">${gamesHtml}</div>`
     : `<p class="empty-note">Ei vielä valmiita otteluita viimeisimmältä kierrokselta.</p>`
 }
 
@@ -169,6 +170,28 @@ ${
     });
   });
   recomputeAllRevealed();
+
+  // "Valitse kaikki" and the YouTube highlights link both just tick the
+  // same checkbox(es) a manual click would, via the change handler above
+  // (so reveal/lock/bypass-cookie logic stays in one place). Already-
+  // checked (hence disabled) boxes are skipped.
+  function checkBox(cb) {
+    if (cb.checked) return;
+    cb.checked = true;
+    cb.dispatchEvent(new Event("change"));
+  }
+
+  var checkAllBtn = document.getElementById("spoiler-check-all");
+  if (checkAllBtn) {
+    checkAllBtn.addEventListener("click", function () { checkboxes.forEach(checkBox); });
+  }
+
+  Array.prototype.slice.call(document.querySelectorAll(".game-card-youtube")).forEach(function (link) {
+    link.addEventListener("click", function () {
+      var cb = link.closest(".spoiler-game").querySelector(".spoiler-reveal-toggle");
+      if (cb) checkBox(cb);
+    });
+  });
 
   // Clicking/activating the row opens the shared goal-timeline/team-stats
   // box (app.js's own delegated .game-card-trigger listener, unaffected by

@@ -1227,6 +1227,20 @@ main {
   font-size: 1rem;
 }
 
+/* League top-10 rank next to a stat value (player page's current season). */
+.rank-badge {
+  display: inline-block;
+  margin-left: 4px;
+  padding: 0 5px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1.5;
+  vertical-align: middle;
+}
+
 @media (min-width: 640px) {
   .stat-card-grid {
     flex-direction: row;
@@ -2827,6 +2841,12 @@ main {
   display: flex;
   gap: 10px;
   justify-content: flex-end;
+}
+
+.spoiler-bulk {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 10px;
 }
 
 .spoiler-exit {
