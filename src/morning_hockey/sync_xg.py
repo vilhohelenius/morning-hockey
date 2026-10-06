@@ -2,7 +2,7 @@
 regular-season games that have no xG rows yet, scores every shot with the
 shipped models (xg/), and writes per-game skater/goalie rows to D1.
 
-  python -m morning_hockey.sync_xg                      # incremental (digest workflow)
+  python -m morning_hockey.sync_xg                      # incremental (digest workflow): xG, team xG, on-ice
   python -m morning_hockey.sync_xg --backfill 20242025  # every game of one season
   python -m morning_hockey.sync_xg --backfill-teams 20242025  # only team_game_xg rows (xGF%, incl. 5v5)
   python -m morning_hockey.sync_xg --backfill-onice 20242025  # skater on-ice xGF/xGA (shift charts)
@@ -93,6 +93,17 @@ def backfill_onice_games(d1: D1Client, season: int) -> list[int]:
     return [g for g in query_game_ids(d1, "SELECT DISTINCT game_id FROM skater_game_xg WHERE season = ? ORDER BY game_id", [season]) if g not in have]
 
 
+def unprocessed_onice_games(d1: D1Client) -> list[int]:
+    """Incremental: latest season's xG-processed games without on-ice rows, newest first.
+    Older seasons are left to --backfill-onice."""
+    return query_game_ids(
+        d1,
+        "SELECT DISTINCT game_id FROM skater_game_xg WHERE season = (SELECT MAX(season) FROM skater_game_xg) "
+        "AND game_id NOT IN (SELECT game_id FROM skater_game_onice_xg) ORDER BY game_id DESC LIMIT ?",
+        [_MAX_PER_RUN],
+    )
+
+
 def _process_onice(client: NHLClient, d1: D1Client, game_ids: list[int]) -> int:
     rows: list[dict] = []
     done = 0
@@ -131,6 +142,8 @@ def run() -> None:
         game_ids, teams_only = unprocessed_games(d1), False
     done = _process(NHLClient(), d1, game_ids, teams_only)
     print(f"Synced xG for {done} game(s) to D1.")
+    if not (args.backfill or args.backfill_teams):
+        print(f"Synced on-ice xG for {_process_onice(NHLClient(), d1, unprocessed_onice_games(d1))} game(s) to D1.")
 
 
 if __name__ == "__main__":
