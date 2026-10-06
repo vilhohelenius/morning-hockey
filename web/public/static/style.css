@@ -2094,6 +2094,13 @@ main {
   margin-right: 6px;
 }
 
+/* Suosikkipelaajat: logo smaller than in the leaderboards */
+.porssi-table-fav .table-team-logo {
+  width: 20px;
+  height: 20px;
+  margin-right: 4px;
+}
+
 /* ---------- Standings team info panel ---------- */
 
 .team-trigger {
@@ -3154,6 +3161,10 @@ main {
   gap: 4px;
   min-width: 0;
   font-size: 0.9rem;
+}
+
+.mt-penalty .mt-who strong {
+  font-weight: 400;
 }
 
 .mt-reason,

@@ -280,7 +280,7 @@ export function renderRosterSkaterTable(
 <section>
   <h2 class="section-title">${sectionTitle}</h2>
   <div class="stats-table-wrap">
-    <table class="stats-table${hl ? " porssi-table" : ""}">
+    <table class="stats-table${hl ? " porssi-table porssi-table-fav" : ""}">
       <thead>
         <tr>
           <th class="col-rank">#</th>
@@ -334,7 +334,7 @@ export function renderRosterGoalieTable(
 <section>
   <h2 class="section-title">${sectionTitle}</h2>
   <div class="stats-table-wrap">
-    <table class="stats-table${hl ? " porssi-table" : ""}">
+    <table class="stats-table${hl ? " porssi-table porssi-table-fav" : ""}">
       <thead>
         <tr>
           <th class="col-rank">#</th>
