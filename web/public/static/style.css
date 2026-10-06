@@ -3281,3 +3281,160 @@ main {
   border-radius: 5px;
   font-size: 0.72rem;
 }
+
+/* ===== Pörssit restyle (.porssi-table: NHL-app style, shares look with .stand-table) =====
+   Markup unchanged. The rank (#) cell and the player cell are both sticky,
+   so "sija + kuva + nimi" stays pinned while the stat columns scroll. */
+.stats-table-wrap:has(> .porssi-table) {
+  margin: 0 0 14px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card-bg);
+}
+
+.porssi-table {
+  --st-stripe: color-mix(in srgb, var(--card-bg) 94%, var(--text));
+  border-collapse: separate;
+  border-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.porssi-table th,
+.porssi-table td {
+  padding: 9px 6px;
+  text-align: center;
+  background: var(--card-bg);
+}
+
+.porssi-table thead th {
+  color: var(--text);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0;
+  border-bottom: 1px solid var(--border);
+  min-width: 34px;
+}
+
+.porssi-table tbody tr:nth-child(odd) td {
+  background: var(--st-stripe);
+}
+
+.porssi-table tbody tr {
+  border-bottom: 0;
+}
+
+.porssi-table .col-rank {
+  box-sizing: border-box;
+  width: 40px;
+  min-width: 40px;
+  max-width: 40px;
+  padding-left: 4px;
+  padding-right: 4px;
+  text-align: center;
+  position: sticky;
+  left: 0;
+  z-index: 2;
+}
+
+.porssi-table th:nth-child(2),
+.porssi-table td:nth-child(2) {
+  position: sticky;
+  left: 40px;
+  z-index: 1;
+  box-sizing: border-box;
+  text-align: left;
+  min-width: 150px;
+  max-width: 200px;
+  padding-left: 4px;
+  border-right: 1px solid var(--border);
+}
+
+.porssi-table th:nth-child(2) {
+  z-index: 2;
+}
+
+.porssi-table td.stat-strong {
+  color: var(--text);
+  font-weight: 700;
+}
+
+/* Active/sorted column: accent label with the same triangle as .st-arrow */
+.porssi-table thead th.sort-asc,
+.porssi-table thead th.sort-desc {
+  color: var(--accent);
+}
+
+.porssi-table thead th.sort-asc::after,
+.porssi-table thead th.sort-desc::after {
+  content: "";
+  display: block;
+  margin: 3px auto 0;
+  border: 4px solid transparent;
+}
+
+.porssi-table thead th.sort-desc::after {
+  border-top-color: var(--accent);
+  border-bottom-width: 0;
+}
+
+.porssi-table thead th.sort-asc::after {
+  border-bottom-color: var(--accent);
+  border-top-width: 0;
+}
+
+/* The default "rank ascending" state means best-first, i.e. a descending stat */
+.porssi-table thead th[data-sort="rank"].sort-asc::after {
+  border-top-color: var(--accent);
+  border-bottom-color: transparent;
+  border-top-width: 4px;
+  border-bottom-width: 0;
+}
+
+.porssi-table thead th[data-sort="rank"].sort-desc::after {
+  border-top-color: transparent;
+  border-bottom-color: var(--accent);
+  border-top-width: 0;
+  border-bottom-width: 4px;
+}
+
+.porssi-table thead th[data-sort="name"].sort-asc::after,
+.porssi-table thead th[data-sort="name"].sort-desc::after {
+  margin-left: 0;
+}
+
+/* Front-page teasers sit on a hero-tinted tile: keep that background, no
+   card box or sticky columns (6 narrow columns fit without scrolling). */
+.section-tile.hero-tinted .stats-table-wrap:has(> .porssi-table) {
+  border: 0;
+  border-radius: 0;
+  background: none;
+}
+
+.section-tile.hero-tinted .porssi-table th,
+.section-tile.hero-tinted .porssi-table td {
+  background: transparent;
+  position: static;
+  border-right: 0;
+  min-width: 0;
+  max-width: none;
+}
+
+.section-tile.hero-tinted .porssi-table thead th {
+  color: rgba(255, 255, 255, 0.85);
+  border-bottom-color: rgba(255, 255, 255, 0.3);
+}
+
+.section-tile.hero-tinted .porssi-table tbody tr:nth-child(odd) td {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.section-tile.hero-tinted .porssi-table td.stat-strong {
+  color: #fff;
+}
+
+.section-tile.hero-tinted .porssi-table th:nth-child(2),
+.section-tile.hero-tinted .porssi-table td:nth-child(2) {
+  min-width: 0;
+}
