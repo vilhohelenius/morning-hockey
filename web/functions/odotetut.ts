@@ -137,7 +137,7 @@ ${XG_INFO_TEXT}
 
 <section class="analytiikka-view-section is-hidden" data-view="goalies">
   <h2 class="section-title">Kärki GSAx:n mukaan</h2>
-  <p class="standings-legend">Top ${TOP_N}, vähintään ${MIN_GAMES} ottelua. GSAx/100 näytetään vasta 500 laukauksen jälkeen.</p>
+  <p class="standings-legend">Top ${TOP_N}, vähintään ${MIN_GAMES} ottelua. GSAx/100 näytetään vasta 300 laukauksen jälkeen.</p>
   ${goalieRows ? table(["#", "Maalivahti", "O", "GSAx", "GSAx/100", "L"], goalieRows) : empty}
 </section>
 

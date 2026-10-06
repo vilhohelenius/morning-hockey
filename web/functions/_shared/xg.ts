@@ -8,7 +8,7 @@ import type { Env } from "./types";
 
 // GSAx/100 below this many shots faced is mostly noise, so the maalivahti-
 // pörssi shows "–" instead of ranking it.
-export const MIN_SHOTS_FOR_PER_100 = 500;
+export const MIN_SHOTS_FOR_PER_100 = 300;
 
 export interface SkaterSeasonXg {
   xg: number;
