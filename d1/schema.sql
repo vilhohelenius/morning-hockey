@@ -551,3 +551,34 @@ CREATE TABLE IF NOT EXISTS team_game_xg (
     PRIMARY KEY (game_id, team_id)
 );
 CREATE INDEX IF NOT EXISTS idx_team_game_xg_team ON team_game_xg(team_id, season);
+
+-- Win-probability model inputs the xG tables lack (2026-10-06): shots on goal
+-- for/against and own-defensive-zone giveaways per team and game, written by
+-- `sync_xg --backfill-wp-inputs SEASON` and the incremental run. Idempotent;
+-- in the D1 Console run the statements one at a time.
+CREATE TABLE IF NOT EXISTS team_game_wp_inputs (
+    game_id INTEGER NOT NULL,
+    team_id INTEGER NOT NULL,
+    season INTEGER NOT NULL,
+    game_date TEXT NOT NULL,          -- NHL gameDate (US date), used for back-to-back
+    sog_f INTEGER NOT NULL,
+    sog_a INTEGER NOT NULL,
+    dz_giveaways INTEGER NOT NULL,
+    PRIMARY KEY (game_id, team_id)
+);
+CREATE INDEX IF NOT EXISTS idx_team_game_wp_inputs_team ON team_game_wp_inputs(team_id, season);
+
+-- Pre-game home win probability per unplayed game (src/morning_hockey/winprob/),
+-- recomputed by every default sync_xg run. ability/chances/goalie/context are
+-- the logit contributions of the model's feature groups (the intercept holds
+-- the home advantage), for the explanation text in the game preview.
+CREATE TABLE IF NOT EXISTS game_win_prob (
+    game_id INTEGER PRIMARY KEY,
+    home_win_prob REAL NOT NULL,
+    computed_at TEXT NOT NULL,
+    model_version TEXT NOT NULL,
+    ability REAL NOT NULL,
+    chances REAL NOT NULL,
+    goalie REAL NOT NULL,
+    context REAL NOT NULL
+);

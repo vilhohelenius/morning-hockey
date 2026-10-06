@@ -29,6 +29,7 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 "morning_hockey.xg" = ["models/*.json"]
+"morning_hockey.winprob" = ["model_wp.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
