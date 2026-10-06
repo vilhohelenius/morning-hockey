@@ -1,4 +1,4 @@
-// Odotetut tilastot: xG / GSAx / team xGF% leaders for the latest season,
+// Edistyneet tilastot: xG / GSAx / team xGF% leaders for the latest season,
 // straight from the sync_xg tables. Three tabs toggled client-side (the
 // analytiikka-view-picker pill wiring in app.js).
 
@@ -133,7 +133,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   const empty = `<p class="empty-note">Ei vielä dataa.</p>`;
   const content = `
 <header class="page-header">
-  <h1>🧮 Odotetut tilastot</h1>
+  <h1>🧮 Edistyneet tilastot</h1>
   <p class="subtitle">Kausi ${season?.s ? escapeHtml(seasonLabel(season.s)) : ""} · runkosarja</p>
 </header>
 
@@ -165,8 +165,8 @@ ${XG_INFO_TEXT}
 `;
 
   const html = await renderLayout({
-    title: "Odotetut tilastot · Morning Hockey",
-    headerTitle: "Odotetut tilastot",
+    title: "Edistyneet tilastot · Morning Hockey",
+    headerTitle: "Edistyneet tilastot",
     activePage: "xstats",
     content,
     request: context.request,

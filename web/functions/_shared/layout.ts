@@ -39,7 +39,7 @@ const STATS_PAGES = [
 ];
 
 const ANALYTICS_PAGES = [
-  { key: "xstats", href: "/odotetut", label: "Odotetut tilastot" },
+  { key: "xstats", href: "/odotetut", label: "Edistyneet tilastot" },
   { key: "analytics", href: "/analytiikka", label: "Analytiikka" },
 ];
 
