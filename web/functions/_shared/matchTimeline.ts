@@ -3,28 +3,26 @@
 // app.js (renderTimeline) builds the same markup client-side from the same
 // TimelinePeriod[] JSON -- keep the two in sync by hand (no build step).
 
-import { escapeHtml } from "./format";
+import { escapeHtml, teamLogoUrl } from "./format";
 import type { TimelineEvent, TimelinePeriod } from "./boxscore";
 import type { GoalEvent, PenaltyEvent, ShootoutAttempt } from "./types";
 
 const STRENGTH_FI: Record<string, string> = { YV: "Ylivoima", AV: "Alivoima" };
 
-const PLAY_ICON = `<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><rect x="2.5" y="4.5" width="19" height="15" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M10 9l5 3-5 3z" fill="currentColor"/></svg>`;
-const PUCK_ICON = `<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><ellipse cx="12" cy="9.5" rx="9" ry="4.5" fill="currentColor"/><path d="M3 9.5v4c0 2.5 4 4.5 9 4.5s9-2 9-4.5v-4c0 2.5-4 4.5-9 4.5S3 12 3 9.5z" fill="currentColor" opacity="0.75"/></svg>`;
+
+function logoHtml(abbrev: string): string {
+  return `<img class="mt-logo" src="${escapeHtml(teamLogoUrl(abbrev))}" alt="${escapeHtml(abbrev)}" loading="lazy">`;
+}
 
 function goalHtml(goal: GoalEvent, side: "away" | "home"): string {
   const strength = goal.strength ? `<span class="mt-strength">(${escapeHtml(STRENGTH_FI[goal.strength] ?? goal.strength)})</span>` : "";
-  const clip = goal.clip_url
-    ? `<a class="mt-clip" href="${escapeHtml(goal.clip_url)}" target="_blank" rel="noopener" aria-label="Maalin kooste (NHL.com)">${PLAY_ICON}</a>`
-    : "";
   const assists = goal.assists_short ?? goal.assists;
   return `
     <div class="mt-event mt-${side} mt-goal">
       <div class="mt-main">
         ${(goal.period ?? 0) >= 100 ? "" : `<span class="mt-time">${escapeHtml(goal.time_in_period)}</span>`}
-        <span class="mt-pill"><span class="mt-icon">${PUCK_ICON}</span><span class="mt-pill-score">${goal.away_score} - ${goal.home_score}</span></span>
+        <span class="mt-pill">${logoHtml(goal.team_abbrev)}<span class="mt-pill-score">${goal.away_score} - ${goal.home_score}</span></span>
         <span class="mt-who">${strength}<strong>${escapeHtml(goal.scorer_short ?? goal.scorer)}</strong></span>
-        ${clip}
       </div>
       ${assists.length ? `<p class="mt-assists">${escapeHtml(assists.join(" + "))}</p>` : ""}
     </div>`;
@@ -48,7 +46,7 @@ function shootoutHtml(attempt: ShootoutAttempt, awayAbbrev: string): string {
   const side = attempt.team_abbrev === awayAbbrev ? "away" : "home";
   const outcome =
     attempt.result === "goal"
-      ? `<span class="mt-pill"><span class="mt-icon">${PUCK_ICON}</span><span class="mt-pill-score">${attempt.away_score} - ${attempt.home_score}</span></span>`
+      ? `<span class="mt-pill">${logoHtml(attempt.team_abbrev)}<span class="mt-pill-score">${attempt.away_score} - ${attempt.home_score}</span></span>`
       : `<span class="mt-so-miss">${SO_RESULT_FI[attempt.result]}</span>`;
   return `
     <div class="mt-event mt-${side} mt-so mt-so-${attempt.result}">

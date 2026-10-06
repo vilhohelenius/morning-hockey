@@ -3073,6 +3073,7 @@ main {
 
 .stand-table .st-first .st-rank {
   line-height: 26px;
+}
 
 /* ===== Match timeline "Ottelun kulku" (mt-*) -- _shared/matchTimeline.ts + app.js renderTimeline ===== */
 .mt {
@@ -3185,15 +3186,10 @@ main {
   font-variant-numeric: tabular-nums;
 }
 
-.mt-icon {
-  display: inline-flex;
-  color: var(--text);
-}
-
-.mt-clip {
-  flex-shrink: 0;
-  display: inline-flex;
-  color: var(--accent);
+.mt-logo {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
 }
 
 .mt-assists {

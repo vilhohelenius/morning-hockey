@@ -450,8 +450,13 @@
     // (server render on /ottelut/[id]); the server already grouped goals +
     // penalties into periods (buildTimeline), so this only renders.
     // Static, trusted SVG markup only -- all data goes in via textContent/href.
-    var MT_PLAY_ICON = '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><rect x="2.5" y="4.5" width="19" height="15" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M10 9l5 3-5 3z" fill="currentColor"/></svg>';
-    var MT_PUCK_ICON = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><ellipse cx="12" cy="9.5" rx="9" ry="4.5" fill="currentColor"/><path d="M3 9.5v4c0 2.5 4 4.5 9 4.5s9-2 9-4.5v-4c0 2.5-4 4.5-9 4.5S3 12 3 9.5z" fill="currentColor" opacity="0.75"/></svg>';
+    function mtLogo(abbrev) {
+      var img = el("img", "mt-logo");
+      img.src = "https://assets.nhle.com/logos/nhl/svg/" + abbrev + "_light.svg";
+      img.alt = abbrev;
+      img.loading = "lazy";
+      return img;
+    }
     var MT_STRENGTH = { YV: "Ylivoima", AV: "Alivoima" };
 
     function timelineEvent(event, awayAbbrev) {
@@ -466,23 +471,12 @@
 
       if (isGoal) {
         var pill = el("span", "mt-pill");
-        var puck = el("span", "mt-icon");
-        puck.innerHTML = MT_PUCK_ICON;
-        pill.appendChild(puck);
+        pill.appendChild(mtLogo(item.team_abbrev));
         pill.appendChild(el("span", "mt-pill-score", item.away_score + " - " + item.home_score));
         main.appendChild(pill);
         if (item.strength) who.appendChild(el("span", "mt-strength", "(" + (MT_STRENGTH[item.strength] || item.strength) + ")"));
         who.appendChild(el("strong", null, item.scorer_short || item.scorer));
         main.appendChild(who);
-        if (item.clip_url && /^https:\/\/(www\.)?nhl\.com\//.test(item.clip_url)) {
-          var clip = el("a", "mt-clip");
-          clip.href = item.clip_url;
-          clip.target = "_blank";
-          clip.rel = "noopener";
-          clip.setAttribute("aria-label", "Maalin kooste (NHL.com)");
-          clip.innerHTML = MT_PLAY_ICON;
-          main.appendChild(clip);
-        }
         row.appendChild(main);
         var assists = item.assists_short || item.assists || [];
         if (assists.length) row.appendChild(el("p", "mt-assists", assists.join(" + ")));
@@ -503,9 +497,7 @@
       main.appendChild(el("span", "mt-time", attempt.sequence + "."));
       if (attempt.result === "goal") {
         var pill = el("span", "mt-pill");
-        var puck = el("span", "mt-icon");
-        puck.innerHTML = MT_PUCK_ICON;
-        pill.appendChild(puck);
+        pill.appendChild(mtLogo(attempt.team_abbrev));
         pill.appendChild(el("span", "mt-pill-score", attempt.away_score + " - " + attempt.home_score));
         main.appendChild(pill);
       } else {
