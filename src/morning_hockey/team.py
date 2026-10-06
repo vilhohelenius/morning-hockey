@@ -64,6 +64,14 @@ def _format_toi(seconds: float) -> str:
     return f"{minutes}:{secs:02d}"
 
 
+def _nationality(player: dict, nationality_by_id: dict[int, str]) -> str:
+    """Prefer the stats REST nationalityCode (what Suomipörssi/NHL.com use:
+    the player's sporting nationality, e.g. FIN for US-born Samuel Helenius)
+    over the roster payload's birthCountry. Players with no recorded games
+    this season aren't in the bios report, so fall back to birthCountry."""
+    return nationality_by_id.get(player["id"]) or player.get("birthCountry", "")
+
+
 def _build_skaters(client: NHLClient, season_id: int, raw_roster: dict) -> list[RosterSkater]:
     # Unfiltered, like _build_goalies below: merging happens by player id
     # against the roster's own player list, so team-filtering this query
@@ -71,6 +79,8 @@ def _build_skaters(client: NHLClient, season_id: int, raw_roster: dict) -> list[
     cayenne_exp = f"seasonId={season_id} and gameTypeId=2"
     sort = '[{"property":"points","direction":"DESC"}]'
     stats_by_id = {row["playerId"]: row for row in client.skater_summary(cayenne_exp, sort, limit=-1)}
+
+    nationality_by_id = {row["playerId"]: row["nationalityCode"] for row in client.skater_bios(cayenne_exp, sort, limit=-1)}
 
     skaters = []
     for player in raw_roster.get("forwards", []) + raw_roster.get("defensemen", []):
@@ -80,7 +90,7 @@ def _build_skaters(client: NHLClient, season_id: int, raw_roster: dict) -> list[
                 player_id=player["id"],
                 name=_player_name(player),
                 position=player["positionCode"],
-                nationality=player.get("birthCountry", ""),
+                nationality=_nationality(player, nationality_by_id),
                 sweater_number=player.get("sweaterNumber", 0),
                 headshot=player.get("headshot", ""),
                 games_played=stats.get("gamesPlayed", 0),
@@ -101,6 +111,8 @@ def _build_goalies(client: NHLClient, season_id: int, raw_roster: dict) -> list[
     sort = '[{"property":"savePct","direction":"DESC"}]'
     stats_by_id = {row["playerId"]: row for row in client.goalie_summary(cayenne_exp, sort, limit=-1)}
 
+    nationality_by_id = {row["playerId"]: row["nationalityCode"] for row in client.goalie_bios(cayenne_exp, sort, limit=-1)}
+
     goalies = []
     for player in raw_roster.get("goalies", []):
         stats = stats_by_id.get(player["id"], {})
@@ -108,7 +120,7 @@ def _build_goalies(client: NHLClient, season_id: int, raw_roster: dict) -> list[
             RosterGoalie(
                 player_id=player["id"],
                 name=_player_name(player),
-                nationality=player.get("birthCountry", ""),
+                nationality=_nationality(player, nationality_by_id),
                 sweater_number=player.get("sweaterNumber", 0),
                 headshot=player.get("headshot", ""),
                 games_played=stats.get("gamesPlayed", 0),
