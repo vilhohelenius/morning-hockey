@@ -3264,3 +3264,24 @@ main {
   margin: 0;
   text-align: center;
 }
+
+/* Penalties: slightly quieter than goals */
+.mt-penalty .mt-time {
+  font-weight: 400;
+  font-size: 0.8rem;
+}
+
+.mt-penalty .mt-who {
+  font-size: 0.82rem;
+}
+
+.mt-penalty .mt-reason {
+  font-size: 0.78rem;
+}
+
+.mt-penalty .mt-badge {
+  min-width: 20px;
+  padding: 1px 5px;
+  border-radius: 5px;
+  font-size: 0.72rem;
+}
