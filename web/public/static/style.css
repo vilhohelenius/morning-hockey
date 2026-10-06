@@ -3236,3 +3236,20 @@ main {
   font-weight: 500;
   color: var(--muted);
 }
+
+/* Dashboard day arrows + refresh: boxed so they read as buttons */
+.day-nav-btn,
+.refresh-btn {
+  background: var(--card-bg);
+  border: 1px solid color-mix(in srgb, var(--muted) 45%, transparent);
+  border-radius: 8px;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 10px;
+  font-size: 1.2rem;
+}
+
+.day-nav-btn:hover,
+.refresh-btn:hover {
+  border-color: var(--muted);
+}

@@ -172,10 +172,20 @@ export function renderGameCard(
   // macro (_macros.html), which had this same hint but on every card
   // unconditionally since that build never had not-yet-started games mixed
   // into the same list.
-  const hint = game.is_finished || isLive(game) ? `<p class="game-card-hint">Näytä ottelun tiedot ▾</p>` : "";
+  const hasDetails = game.is_finished || isLive(game);
+  const hint = hasDetails
+    ? `<p class="game-card-hint">Näytä ottelun tiedot ▾</p>`
+    : `<p class="game-card-hint">Avaa ottelun esikatselu ›</p>`;
+
+  // Not started yet: nothing to expand inline, so the whole card links to
+  // the game page, which renders the pre-game preview.
+  const openTag = hasDetails
+    ? `<div class="game-card game-card-trigger" data-game-id="${game.game_id}" tabindex="0" role="button" aria-expanded="false">`
+    : `<a class="game-card game-card-link" href="/ottelut/${game.game_id}">`;
+  const closeTag = hasDetails ? "</div>" : "</a>";
 
   return `
-<div class="game-card game-card-trigger" data-game-id="${game.game_id}" tabindex="0" role="button" aria-expanded="false">
+${openTag}
   <div class="score-row">
     <div class="team away">
       <img src="${escapeHtml(game.away_logo)}" alt="" class="logo" loading="lazy">
@@ -192,5 +202,5 @@ export function renderGameCard(
   ${badge}
   ${finnStats}
   ${hint}
-</div>`;
+${closeTag}`;
 }
