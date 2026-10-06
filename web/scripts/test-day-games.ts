@@ -33,8 +33,11 @@ assert.equal(clampDayOffset("abc"), 0);
 assert.equal(clampDayOffset("1.5"), 0);
 assert.equal(clampDayOffset("-1"), -1);
 assert.equal(clampDayOffset("1"), 1);
+assert.equal(clampDayOffset("3"), 3);
+assert.equal(clampDayOffset("4"), 3);
+assert.equal(clampDayOffset("-2"), -1);
 assert.equal(clampDayOffset("+1"), 1);
-assert.equal(clampDayOffset("7"), 1);
+assert.equal(clampDayOffset("7"), 3);
 assert.equal(clampDayOffset("-9"), -1);
 
 const day = "2026-10-06";

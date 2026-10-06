@@ -65,10 +65,11 @@
   wirePillToggle(".standings-tab-picker", ".standings-tab-section", "tab", ".standings-tab");
   wirePillToggle(".roster-team-picker", ".roster-team-section", "team", ".toggle-segment");
 
-  // Dashboard day browser: yesterday/today/tomorrow panels are all rendered
+  // Dashboard day browser: yesterday..+3 days panels are all rendered
   // server-side (index.ts), so the arrows just switch which one is visible.
   // The links keep real ?pv= hrefs as the no-JS fallback; history.replaceState
   // keeps the URL in sync so the refresh button reloads the same day.
+  var DAY_MIN = -1, DAY_MAX = 3;
   var dayNav = document.getElementById("day-nav");
   if (dayNav) {
     var dayOffset = parseInt(dayNav.getAttribute("data-offset") || "0", 10);
@@ -85,7 +86,7 @@
       });
       dayButtons.forEach(function (btn) {
         var target = offset + parseInt(btn.getAttribute("data-dir"), 10);
-        var disabled = target < -1 || target > 1;
+        var disabled = target < DAY_MIN || target > DAY_MAX;
         btn.classList.toggle("is-disabled", disabled);
         if (disabled) {
           btn.setAttribute("aria-disabled", "true");
@@ -104,7 +105,7 @@
       btn.addEventListener("click", function (event) {
         event.preventDefault();
         var target = dayOffset + parseInt(btn.getAttribute("data-dir"), 10);
-        if (target >= -1 && target <= 1) showDay(target);
+        if (target >= DAY_MIN && target <= DAY_MAX) showDay(target);
       });
     });
   }
