@@ -446,47 +446,98 @@
     var openGameTrigger = null;
     var gameDetailEl = null;
 
-    function goalRow(goal, awayAbbrev, awayLogo, homeLogo) {
-      var row = el("div", "gd-goal-row");
+    // "Ottelun kulku" timeline. Mirrors functions/_shared/matchTimeline.ts
+    // (server render on /ottelut/[id]); the server already grouped goals +
+    // penalties into periods (buildTimeline), so this only renders.
+    // Static, trusted SVG markup only -- all data goes in via textContent/href.
+    var MT_PLAY_ICON = '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><rect x="2.5" y="4.5" width="19" height="15" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M10 9l5 3-5 3z" fill="currentColor"/></svg>';
+    var MT_PUCK_ICON = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><ellipse cx="12" cy="9.5" rx="9" ry="4.5" fill="currentColor"/><path d="M3 9.5v4c0 2.5 4 4.5 9 4.5s9-2 9-4.5v-4c0 2.5-4 4.5-9 4.5S3 12 3 9.5z" fill="currentColor" opacity="0.75"/></svg>';
+    var MT_STRENGTH = { YV: "Ylivoima", AV: "Alivoima" };
 
-      var main = el("div", "gd-goal-main");
-      main.appendChild(el("span", "gd-goal-time", goal.time_in_period));
+    function timelineEvent(event, awayAbbrev) {
+      var isGoal = event.kind === "goal";
+      var item = isGoal ? event.goal : event.penalty;
+      var side = item.team_abbrev === awayAbbrev ? "away" : "home";
+      var row = el("div", "mt-event mt-" + side + (isGoal ? " mt-goal" : " mt-penalty"));
+      var main = el("div", "mt-main");
+      // Shootout attempts carry no meaningful clock time.
+      if (!(item.period >= 100)) main.appendChild(el("span", "mt-time", item.time_in_period));
+      var who = el("span", "mt-who");
 
-      var logo = document.createElement("img");
-      logo.src = goal.team_abbrev === awayAbbrev ? awayLogo : homeLogo;
-      logo.alt = "";
-      logo.loading = "lazy";
-      logo.className = "gd-goal-logo";
-      main.appendChild(logo);
-
-      var who = el("span", "gd-goal-who");
-      who.appendChild(el("strong", null, goal.scorer));
-      if (goal.strength) who.appendChild(el("span", "gd-goal-strength", goal.strength));
-      main.appendChild(who);
-
-      main.appendChild(el("span", "gd-goal-score", goal.away_score + "–" + goal.home_score));
-      row.appendChild(main);
-
-      if (goal.assists.length) {
-        row.appendChild(el("p", "gd-goal-assists", goal.assists.join(", ")));
+      if (isGoal) {
+        var pill = el("span", "mt-pill");
+        var puck = el("span", "mt-icon");
+        puck.innerHTML = MT_PUCK_ICON;
+        pill.appendChild(puck);
+        pill.appendChild(el("span", "mt-pill-score", item.away_score + " - " + item.home_score));
+        main.appendChild(pill);
+        if (item.strength) who.appendChild(el("span", "mt-strength", "(" + (MT_STRENGTH[item.strength] || item.strength) + ")"));
+        who.appendChild(el("strong", null, item.scorer_short || item.scorer));
+        main.appendChild(who);
+        if (item.clip_url && /^https:\/\/(www\.)?nhl\.com\//.test(item.clip_url)) {
+          var clip = el("a", "mt-clip");
+          clip.href = item.clip_url;
+          clip.target = "_blank";
+          clip.rel = "noopener";
+          clip.setAttribute("aria-label", "Maalin kooste (NHL.com)");
+          clip.innerHTML = MT_PLAY_ICON;
+          main.appendChild(clip);
+        }
+        row.appendChild(main);
+        var assists = item.assists_short || item.assists || [];
+        if (assists.length) row.appendChild(el("p", "mt-assists", assists.join(" + ")));
+      } else {
+        main.appendChild(el("span", "mt-badge", item.minutes > 0 ? String(item.minutes) : "RL"));
+        who.appendChild(el("strong", null, item.player || item.team_abbrev));
+        if (item.reason) who.appendChild(el("span", "mt-reason", "(" + item.reason + ")"));
+        main.appendChild(who);
+        row.appendChild(main);
       }
       return row;
     }
 
-    function renderGoals(goals, awayAbbrev, awayLogo, homeLogo) {
-      var wrap = section("Maalit");
-      if (!goals.length) {
-        wrap.appendChild(el("p", "tp-empty", "Ei maaleja."));
+    function shootoutEvent(attempt, awayAbbrev) {
+      var side = attempt.team_abbrev === awayAbbrev ? "away" : "home";
+      var row = el("div", "mt-event mt-" + side + " mt-so mt-so-" + attempt.result);
+      var main = el("div", "mt-main");
+      main.appendChild(el("span", "mt-time", attempt.sequence + "."));
+      if (attempt.result === "goal") {
+        var pill = el("span", "mt-pill");
+        var puck = el("span", "mt-icon");
+        puck.innerHTML = MT_PUCK_ICON;
+        pill.appendChild(puck);
+        pill.appendChild(el("span", "mt-pill-score", attempt.away_score + " - " + attempt.home_score));
+        main.appendChild(pill);
+      } else {
+        main.appendChild(el("span", "mt-so-miss", attempt.result === "save" ? "Torjuttu" : "Ohi"));
+      }
+      var who = el("span", "mt-who");
+      who.appendChild(el("strong", null, attempt.player));
+      main.appendChild(who);
+      row.appendChild(main);
+      return row;
+    }
+
+    function renderTimeline(periods, awayAbbrev) {
+      var wrap = section("Ottelun kulku");
+      if (!periods.length) {
+        wrap.appendChild(el("p", "tp-empty", "Ei maaleja eikä jäähyjä."));
         return wrap;
       }
-      var currentPeriod = null;
-      goals.forEach(function (goal) {
-        if (goal.period_label !== currentPeriod) {
-          currentPeriod = goal.period_label;
-          wrap.appendChild(el("p", "gd-period", currentPeriod));
-        }
-        wrap.appendChild(goalRow(goal, awayAbbrev, awayLogo, homeLogo));
+      var list = el("div", "mt");
+      periods.forEach(function (period) {
+        var band = el("div", "mt-band");
+        band.appendChild(el("span", null, period.label));
+        band.appendChild(el("span", "mt-band-score", period.away_goals + " - " + period.home_goals));
+        list.appendChild(band);
+        period.events.forEach(function (event) {
+          list.appendChild(timelineEvent(event, awayAbbrev));
+        });
+        (period.shootout || []).forEach(function (attempt) {
+          list.appendChild(shootoutEvent(attempt, awayAbbrev));
+        });
       });
+      wrap.appendChild(list);
       return wrap;
     }
 
@@ -599,7 +650,7 @@
       panel.appendChild(header);
 
       var body = el("div", "team-detail-body");
-      body.appendChild(renderGoals(data.goals || [], awayAbbrev, awayLogo, homeLogo));
+      body.appendChild(renderTimeline(data.timeline || [], awayAbbrev));
       body.appendChild(renderTeamStats(data.team_stats || [], awayAbbrev, homeAbbrev));
       panel.appendChild(body);
 

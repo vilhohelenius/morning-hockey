@@ -4,7 +4,7 @@
 // Pure functions, no D1/fetch involved, so they're plain-node testable
 // (see scripts/test-boxscore.mjs).
 
-import type { GoalEvent, TeamSeasonStatsRow, TeamStatRow } from "./types";
+import type { GoalEvent, PenaltyEvent, ShootoutAttempt, TeamSeasonStatsRow, TeamStatRow } from "./types";
 
 const PERIOD_NUMBER_LABELS: Record<number, string> = { 1: "1. erä", 2: "2. erä", 3: "3. erä" };
 const STRENGTH_LABELS: Record<string, string> = { pp: "YV", sh: "AV" };
@@ -28,6 +28,21 @@ interface RawPeriod {
   goals?: RawGoal[];
 }
 
+// OT (incl. playoff OT2+) sorts after regulation, shootout after that.
+export function periodOrder(descriptor: { periodType?: string; number?: number }): number {
+  if (descriptor.periodType === "SO") return 100;
+  if (descriptor.periodType === "OT") return Math.max(descriptor.number ?? 4, 4);
+  return descriptor.number ?? 0;
+}
+
+// Back-fills GoalEvent.period for a legacy cached row, from its Finnish label.
+export function periodFromLabel(label: string): number {
+  if (label === "Voittolaukaukset") return 100;
+  if (label === "Jatkoaika") return 4;
+  const match = label.match(/^(\d+)\./);
+  return match ? Number(match[1]) : 0;
+}
+
 export function periodLabel(descriptor: { periodType?: string; number?: number }): string {
   const periodType = descriptor.periodType ?? "REG";
   if (periodType === "OT") return "Jatkoaika";
@@ -38,6 +53,18 @@ export function periodLabel(descriptor: { periodType?: string; number?: number }
 
 function nameWithFlag(person: RawPerson, finnishIds: Set<number>): string {
   const name = `${person.firstName.default} ${person.lastName.default}`;
+  return finnishIds.has(person.playerId) ? `${name} ${FINNISH_FLAG}` : name;
+}
+
+// "Podkolzin V." -- the compact form the match timeline shows (Flashscore
+// style). Multi-word first names ("Jean-Gabriel") just use the initial.
+export function shortName(first: string, last: string): string {
+  const initial = first.trim().charAt(0);
+  return initial ? `${last} ${initial}.` : last;
+}
+
+function shortNameWithFlag(person: RawPerson, finnishIds: Set<number>): string {
+  const name = shortName(person.firstName.default, person.lastName.default);
   return finnishIds.has(person.playerId) ? `${name} ${FINNISH_FLAG}` : name;
 }
 
@@ -60,10 +87,13 @@ export function buildGoalEvents(
 
       events.push({
         period_label: label,
+        period: periodOrder(period.periodDescriptor ?? {}),
         time_in_period: goal.timeInPeriod,
         team_abbrev: teamAbbrev,
         scorer: nameWithFlag(goal, finnishIds),
+        scorer_short: shortNameWithFlag(goal, finnishIds),
         assists: (goal.assists ?? []).map((a) => nameWithFlag(a, finnishIds)),
+        assists_short: (goal.assists ?? []).map((a) => shortNameWithFlag(a, finnishIds)),
         strength: STRENGTH_LABELS[goal.strength ?? ""] ?? "",
         away_score: awayScore,
         home_score: homeScore,
@@ -305,4 +335,308 @@ export function buildPreviewTeamStats(away: TeamSeasonStatsRow, home: TeamSeason
       home_rank: gaHomeRank,
     },
   ];
+}
+
+// ---------- Match timeline (ottelun kulku): penalties, clips, grouping ----------
+
+// NHL play-by-play penalty descKey -> Finnish. Keys the NHL adds later fall
+// back to a humanised form of the key itself (see penaltyReasonFi).
+const PENALTY_REASONS_FI: Record<string, string> = {
+  "abuse-of-officials": "Tuomarin loukkaaminen",
+  "abusive-language": "Rienaaminen",
+  aggressor: "Hyökkääjä",
+  "attempt-to-injure": "Loukkaamisyritys",
+  "bench-minor": "Vaihtopenkin rangaistus",
+  boarding: "Laitaan taklaus",
+  "broken-stick": "Rikkinäinen maila",
+  "butt-ending": "Mailan pää",
+  charging: "Ryntäys",
+  clipping: "Polviin taklaus",
+  "closing-hand-on-puck": "Kiekon peittäminen kädellä",
+  "cross-checking": "Ristiintarkistus",
+  "delaying-game": "Pelin viivyttäminen",
+  "delaying-game-puck-over-glass": "Kiekko katsomoon",
+  "delaying-game-smothering-puck": "Kiekon peittäminen",
+  "delaying-game-unsuccessful-challenge": "Epäonnistunut haaste",
+  diving: "Filmaus",
+  elbowing: "Kyynärpäätaklaus",
+  embellishment: "Filmaus",
+  "face-off-violation": "Aloitusrike",
+  fighting: "Nyrkkitappelu",
+  "game-misconduct": "Pelikielto",
+  "goalie-leave-crease": "Maalivahti ylitti alueen",
+  "goalkeeper-displaced-net": "Maalin siirtäminen",
+  "head-butting": "Päällä puskeminen",
+  "high-sticking": "Korkea maila",
+  "high-sticking-double-minor": "Korkea maila (kaksoisrangaistus)",
+  holding: "Pitäminen",
+  "holding-the-stick": "Mailasta pitäminen",
+  hooking: "Koukkaus",
+  "illegal-check-to-head": "Taklaus päähän",
+  "illegal-equipment": "Kielletty varuste",
+  "illegal-stick": "Kielletty maila",
+  instigator: "Tappelun aloittaja",
+  interference: "Estäminen",
+  "interference-goalkeeper": "Maalivahdin estäminen",
+  kneeing: "Polvitaklaus",
+  "leaving-penalty-box": "Rangaistusaitiosta poistuminen",
+  misconduct: "Kurinpitorangaistus",
+  "player-equipment": "Pelaajan varuste",
+  "premature-substitution": "Ennenaikainen vaihto",
+  "puck-thrown-forward-goalkeeper": "Kiekon heitto eteenpäin",
+  roughing: "Väkivaltaisuus",
+  slashing: "Mailalla lyönti",
+  spearing: "Keihästys",
+  "throwing-stick": "Mailan heittäminen",
+  "too-many-men-on-the-ice": "Liian monta pelaajaa",
+  tripping: "Kampitus",
+  "unsportsmanlike-conduct": "Epäurheilijamainen käytös",
+};
+
+export function penaltyReasonFi(descKey: string | undefined): string {
+  if (!descKey) return "";
+  const known = PENALTY_REASONS_FI[descKey];
+  if (known) return known;
+  // Penalty-shot variants ("ps-hooking-on-breakaway" etc.).
+  if (descKey.startsWith("ps-")) return "Rangaistuslaukaus";
+  const words = descKey.replace(/-/g, " ").trim();
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
+interface RawPbpPlay {
+  typeDescKey?: string;
+  periodDescriptor?: { periodType?: string; number?: number };
+  timeInPeriod?: string;
+  details?: {
+    descKey?: string;
+    duration?: number;
+    committedByPlayerId?: number;
+    servedByPlayerId?: number;
+    eventOwnerTeamId?: number;
+    highlightClipSharingUrl?: string;
+  };
+}
+
+interface RawPbpRosterSpot {
+  playerId: number;
+  firstName?: { default: string };
+  lastName?: { default: string };
+}
+
+export interface RawPlayByPlay {
+  gameOutcome?: { lastPeriodType?: string };
+  awayTeam?: { id?: number };
+  homeTeam?: { id?: number };
+  plays?: RawPbpPlay[];
+  rosterSpots?: RawPbpRosterSpot[];
+}
+
+function pbpPlayerName(spots: Map<number, RawPbpRosterSpot>, playerId: number | undefined, finnishIds: Set<number>): string {
+  if (playerId === undefined) return "";
+  const spot = spots.get(playerId);
+  if (!spot?.lastName) return "";
+  const name = shortName(spot.firstName?.default ?? "", spot.lastName.default);
+  return finnishIds.has(playerId) ? `${name} ${FINNISH_FLAG}` : name;
+}
+
+function teamAbbrevForId(pbp: RawPlayByPlay, teamId: number | undefined, awayAbbrev: string, homeAbbrev: string): string {
+  if (teamId !== undefined && teamId === pbp.awayTeam?.id) return awayAbbrev;
+  if (teamId !== undefined && teamId === pbp.homeTeam?.id) return homeAbbrev;
+  return "";
+}
+
+export function buildPenaltyEvents(pbp: RawPlayByPlay, awayAbbrev: string, homeAbbrev: string, finnishIds: Set<number>): PenaltyEvent[] {
+  const spots = new Map((pbp.rosterSpots ?? []).map((s) => [s.playerId, s]));
+  const events: PenaltyEvent[] = [];
+  for (const play of pbp.plays ?? []) {
+    if (play.typeDescKey !== "penalty" || !play.details) continue;
+    const team = teamAbbrevForId(pbp, play.details.eventOwnerTeamId, awayAbbrev, homeAbbrev);
+    if (!team) continue;
+    const descriptor = play.periodDescriptor ?? {};
+    // Bench / too-many-men minors have no committing player; whoever serves
+    // it is the closest thing to a name, else it's shown as a team penalty.
+    const player =
+      pbpPlayerName(spots, play.details.committedByPlayerId, finnishIds) ||
+      pbpPlayerName(spots, play.details.servedByPlayerId, finnishIds);
+    events.push({
+      period: periodOrder(descriptor),
+      period_label: periodLabel(descriptor),
+      time_in_period: play.timeInPeriod ?? "00:00",
+      team_abbrev: team,
+      player,
+      minutes: play.details.duration ?? 0,
+      reason: penaltyReasonFi(play.details.descKey),
+    });
+  }
+  return events;
+}
+
+// Highlight clip page per goal, matched on period + time + scoring team
+// (landing's goal list has no event id to join on, and no two goals by one
+// team share a second). Only nhl.com links are accepted.
+export function attachGoalClips(goals: GoalEvent[], pbp: RawPlayByPlay, awayAbbrev: string, homeAbbrev: string): GoalEvent[] {
+  const clips = new Map<string, string>();
+  for (const play of pbp.plays ?? []) {
+    if (play.typeDescKey !== "goal") continue;
+    const url = play.details?.highlightClipSharingUrl;
+    if (!url || !/^https:\/\/(www\.)?nhl\.com\//.test(url)) continue;
+    const team = teamAbbrevForId(pbp, play.details?.eventOwnerTeamId, awayAbbrev, homeAbbrev);
+    clips.set(`${periodOrder(play.periodDescriptor ?? {})}|${play.timeInPeriod}|${team}`, url);
+  }
+  return goals.map((goal) => {
+    const url = clips.get(`${goal.period}|${goal.time_in_period}|${goal.team_abbrev}`);
+    return url ? { ...goal, clip_url: url } : goal;
+  });
+}
+
+export type TimelineEvent =
+  | { kind: "goal"; time: string; goal: GoalEvent }
+  | { kind: "penalty"; time: string; penalty: PenaltyEvent };
+
+export interface TimelinePeriod {
+  label: string;
+  away_goals: number;
+  home_goals: number;
+  events: TimelineEvent[];
+  // Set only on the shootout band: the individual attempts (events is empty).
+  shootout?: ShootoutAttempt[];
+}
+
+function timeToSeconds(time: string): number {
+  const [m, s] = time.split(":").map(Number);
+  return (m || 0) * 60 + (s || 0);
+}
+
+// Groups goals + penalties into one band per period, events in clock order
+// (a penalty sorts before a goal at the exact same second -- it was called
+// first). Period score counts that period's goals only, as Flashscore does.
+// With `shootout` attempts, the shootout winner "goal" that landing's
+// scoring list also carries is dropped (the attempts already include it) and
+// the shootout band's score is the attempts' own tally.
+export function buildTimeline(goals: GoalEvent[], penalties: PenaltyEvent[], awayAbbrev: string, shootout: ShootoutAttempt[] = []): TimelinePeriod[] {
+  const entries: { period: number; label: string; seconds: number; rank: number; event: TimelineEvent }[] = [];
+  for (const goal of goals) {
+    const period = goal.period ?? periodFromLabel(goal.period_label);
+    if (shootout.length && period >= 100) continue;
+    entries.push({
+      period,
+      label: goal.period_label,
+      seconds: timeToSeconds(goal.time_in_period),
+      rank: 1,
+      event: { kind: "goal", time: goal.time_in_period, goal },
+    });
+  }
+  for (const penalty of penalties) {
+    entries.push({
+      period: penalty.period,
+      label: penalty.period_label,
+      seconds: timeToSeconds(penalty.time_in_period),
+      rank: 0,
+      event: { kind: "penalty", time: penalty.time_in_period, penalty },
+    });
+  }
+  entries.sort((a, b) => a.period - b.period || a.seconds - b.seconds || a.rank - b.rank);
+
+  const periods: TimelinePeriod[] = [];
+  let current: TimelinePeriod | null = null;
+  let currentKey: number | null = null;
+  for (const entry of entries) {
+    if (!current || currentKey !== entry.period) {
+      current = { label: entry.label, away_goals: 0, home_goals: 0, events: [] };
+      currentKey = entry.period;
+      periods.push(current);
+    }
+    current.events.push(entry.event);
+    if (entry.event.kind === "goal") {
+      if (entry.event.goal.team_abbrev === awayAbbrev) current.away_goals += 1;
+      else current.home_goals += 1;
+    }
+  }
+
+  if (shootout.length) {
+    const scored = shootout.filter((a) => a.result === "goal");
+    periods.push({
+      label: periodLabel({ periodType: "SO" }),
+      away_goals: scored.filter((a) => a.team_abbrev === awayAbbrev).length,
+      home_goals: scored.filter((a) => a.team_abbrev !== awayAbbrev).length,
+      events: [],
+      shootout,
+    });
+  }
+  return periods;
+}
+
+interface RawShootoutEvent {
+  sequence?: number;
+  playerId: number;
+  teamAbbrev: { default: string };
+  firstName: { default: string };
+  lastName: { default: string };
+  result?: string;
+  gameWinner?: boolean;
+  homeScore?: number;
+  awayScore?: number;
+}
+
+// landing.summary.shootout.events -> one entry per attempt (shooter, team,
+// goal/save/miss, running shootout score).
+export function buildShootoutAttempts(events: RawShootoutEvent[] | undefined, finnishIds: Set<number>): ShootoutAttempt[] {
+  if (!Array.isArray(events)) return [];
+  return events.map((e, i) => ({
+    sequence: e.sequence ?? i + 1,
+    team_abbrev: e.teamAbbrev.default,
+    player: shortNameWithFlag(e, finnishIds),
+    result: e.result === "goal" ? "goal" : e.result === "save" ? "save" : "miss",
+    away_score: e.awayScore ?? 0,
+    home_score: e.homeScore ?? 0,
+    winner: !!e.gameWinner,
+  }));
+}
+
+// landing has no gameOutcome (it lives on the schedule + play-by-play
+// payloads). Order: play-by-play's gameOutcome, landing's if present, then --
+// for a finished game only -- landing's own periodDescriptor, which for a
+// settled game is its last period (REG/OT/SO, confirmed on a real shootout).
+export function resolveFinalType(
+  landing: { gameOutcome?: { lastPeriodType?: string }; periodDescriptor?: { periodType?: string } } | null | undefined,
+  playByPlay: { gameOutcome?: { lastPeriodType?: string } } | null | undefined,
+  finished: boolean,
+): string {
+  const explicit = playByPlay?.gameOutcome?.lastPeriodType ?? landing?.gameOutcome?.lastPeriodType;
+  if (explicit) return explicit;
+  if (finished) {
+    const type = landing?.periodDescriptor?.periodType;
+    if (type === "OT" || type === "SO") return type;
+  }
+  return "REG";
+}
+
+// ---- cache envelope: goals_json holds goals + penalties with no schema change ----
+
+export interface Timeline {
+  goals: GoalEvent[];
+  penalties: PenaltyEvent[];
+  shootout: ShootoutAttempt[];
+  // False when the play-by-play fetch failed (or the row predates the
+  // timeline) -- penalties/clips are then missing, so the cache row is
+  // treated as stale and retried on the next view.
+  complete: boolean;
+}
+
+export function serializeTimeline(timeline: Timeline): string {
+  return JSON.stringify({ v: 3, complete: timeline.complete, goals: timeline.goals, penalties: timeline.penalties, shootout: timeline.shootout });
+}
+
+// Reads both the current envelope and the legacy bare goals array.
+export function parseTimeline(goalsJson: string): Timeline {
+  const parsed = JSON.parse(goalsJson);
+  if (Array.isArray(parsed)) {
+    return {
+      goals: parsed.map((g: GoalEvent) => ({ ...g, period: g.period ?? periodFromLabel(g.period_label) })),
+      penalties: [],
+      shootout: [],
+      complete: false,
+    };
+  }
+  return { goals: parsed.goals ?? [], penalties: parsed.penalties ?? [], shootout: parsed.shootout ?? [], complete: parsed.complete !== false };
 }

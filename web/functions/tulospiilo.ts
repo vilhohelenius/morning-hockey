@@ -29,6 +29,7 @@
 // since there's nothing left to spoil at that point.
 
 import { getBoxScore } from "./_shared/boxScoreCache";
+import { buildTimeline } from "./_shared/boxscore";
 import { resolveHighlightsUrl } from "./_shared/youtube";
 import { escapeHtml, humanDate } from "./_shared/format";
 import { renderLayout } from "./_shared/layout";
@@ -73,7 +74,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   let gamesHtml = "";
   let roundDate: string | null = null;
   let roundComplete = false;
-  const gameDetails: Record<number, { goals?: unknown; team_stats?: unknown; youtube_url?: string }> = {};
+  const gameDetails: Record<number, { timeline?: unknown; team_stats?: unknown; youtube_url?: string }> = {};
 
   if (currentRound) {
     const [{ results: games }, { results: allRoundGames }] = await Promise.all([
@@ -101,7 +102,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
         gameDetails[game.game_id] = {
           youtube_url: youtubeUrl ?? undefined,
-          ...(box ? { goals: box.goals, team_stats: box.teamStats } : {}),
+          ...(box ? { timeline: buildTimeline(box.goals, box.penalties, game.away_abbrev, box.shootout), team_stats: box.teamStats } : {}),
         };
 
         gamesHtml += renderSpoilerGame(game, youtubeUrl);

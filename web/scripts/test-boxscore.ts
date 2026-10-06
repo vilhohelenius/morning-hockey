@@ -8,7 +8,20 @@
 // live check once deployed.
 
 import assert from "node:assert/strict";
-import { buildGoalEvents, buildPreviewTeamStats, buildTeamStats } from "../functions/_shared/boxscore.ts";
+import {
+  attachGoalClips,
+  buildGoalEvents,
+  buildShootoutAttempts,
+  resolveFinalType,
+  buildPenaltyEvents,
+  buildPreviewTeamStats,
+  buildTeamStats,
+  buildTimeline,
+  parseTimeline,
+  penaltyReasonFi,
+  serializeTimeline,
+  shortName,
+} from "../functions/_shared/boxscore.ts";
 import type { TeamSeasonStatsRow } from "../functions/_shared/types.ts";
 
 const SCORING_BY_PERIOD = [
@@ -204,3 +217,187 @@ const TEAM_GAME_STATS = [
 }
 
 console.log("\nAll boxscore.ts parity tests passed.");
+
+// ---------- match timeline (ottelun kulku) ----------
+
+const PBP = {
+  awayTeam: { id: 10 },
+  homeTeam: { id: 20 },
+  rosterSpots: [
+    { playerId: 1, firstName: { default: "Gustav" }, lastName: { default: "Forsling" } },
+    { playerId: 3, firstName: { default: "Sebastian" }, lastName: { default: "Aho" } },
+    { playerId: 9, firstName: { default: "Brad" }, lastName: { default: "Marchand" } },
+  ],
+  plays: [
+    { typeDescKey: "faceoff", periodDescriptor: { number: 1, periodType: "REG" }, timeInPeriod: "00:00" },
+    {
+      typeDescKey: "penalty",
+      periodDescriptor: { number: 3, periodType: "REG" },
+      timeInPeriod: "10:00",
+      details: { descKey: "tripping", duration: 2, committedByPlayerId: 9, eventOwnerTeamId: 10 },
+    },
+    {
+      typeDescKey: "penalty",
+      periodDescriptor: { number: 1, periodType: "REG" },
+      timeInPeriod: "02:31",
+      details: { descKey: "some-new-thing", duration: 5, committedByPlayerId: 3, eventOwnerTeamId: 20 },
+    },
+    {
+      // bench minor: no committing player, served by #1
+      typeDescKey: "penalty",
+      periodDescriptor: { number: 2, periodType: "REG" },
+      timeInPeriod: "04:55",
+      details: { descKey: "too-many-men-on-the-ice", duration: 2, servedByPlayerId: 1, eventOwnerTeamId: 10 },
+    },
+    {
+      typeDescKey: "goal",
+      periodDescriptor: { number: 2, periodType: "REG" },
+      timeInPeriod: "04:55",
+      details: { eventOwnerTeamId: 10, highlightClipSharingUrl: "https://nhl.com/video/x-123" },
+    },
+    {
+      typeDescKey: "goal",
+      periodDescriptor: { number: 4, periodType: "OT" },
+      timeInPeriod: "01:23",
+      details: { eventOwnerTeamId: 20, highlightClipSharingUrl: "javascript:alert(1)" },
+    },
+  ],
+};
+
+{
+  assert.equal(shortName("Vladislav", "Podkolzin"), "Podkolzin V.");
+  assert.equal(shortName("", "Cher"), "Cher");
+  const events = buildGoalEvents(SCORING_BY_PERIOD, "FLA", "CAR", new Set([2]));
+  assert.equal(events[0].scorer_short, "Forsling G.");
+  assert.deepEqual(events[0].assists_short, ["Verhaeghe C. 🇫🇮"]);
+  assert.equal(events[0].period, 2);
+  assert.equal(events[1].period, 4);
+  console.log("ok: goal events carry short names and a sortable period number");
+}
+
+{
+  assert.equal(penaltyReasonFi("tripping"), "Kampitus");
+  assert.equal(penaltyReasonFi("interference"), "Estäminen");
+  assert.equal(penaltyReasonFi("roughing"), "Väkivaltaisuus");
+  assert.equal(penaltyReasonFi("some-new-thing"), "Some new thing");
+  assert.equal(penaltyReasonFi("ps-hooking-on-breakaway"), "Rangaistuslaukaus");
+  assert.equal(penaltyReasonFi(undefined), "");
+  console.log("ok: penalty reasons translate with a humanised fallback");
+}
+
+{
+  const penalties = buildPenaltyEvents(PBP, "FLA", "CAR", new Set([3]));
+  assert.equal(penalties.length, 3);
+  assert.deepEqual(penalties[0], {
+    period: 3,
+    period_label: "3. erä",
+    time_in_period: "10:00",
+    team_abbrev: "FLA",
+    player: "Marchand B.",
+    minutes: 2,
+    reason: "Kampitus",
+  });
+  assert.equal(penalties[1].team_abbrev, "CAR");
+  assert.equal(penalties[1].player, "Aho S. 🇫🇮");
+  assert.equal(penalties[1].minutes, 5);
+  assert.equal(penalties[2].player, "Forsling G.", "bench minor falls back to the serving player");
+  console.log("ok: build_penalty_events maps team, player, minutes and Finnish reason");
+}
+
+{
+  const goals = attachGoalClips(buildGoalEvents(SCORING_BY_PERIOD, "FLA", "CAR", new Set()), PBP, "FLA", "CAR");
+  assert.equal(goals[0].clip_url, "https://nhl.com/video/x-123");
+  assert.equal(goals[1].clip_url, undefined, "non-nhl.com links are dropped");
+  console.log("ok: goal clips are matched by period/time/team and restricted to nhl.com");
+}
+
+{
+  const goals = buildGoalEvents(SCORING_BY_PERIOD, "FLA", "CAR", new Set());
+  const penalties = buildPenaltyEvents(PBP, "FLA", "CAR", new Set());
+  const periods = buildTimeline(goals, penalties, "FLA");
+  assert.deepEqual(
+    periods.map((p) => [p.label, p.away_goals, p.home_goals, p.events.length]),
+    [
+      ["1. erä", 0, 0, 1],
+      ["2. erä", 1, 0, 2],
+      ["3. erä", 0, 0, 1],
+      ["Jatkoaika", 0, 1, 1],
+    ],
+  );
+  // same second: the penalty comes before the goal
+  assert.deepEqual(periods[1].events.map((e) => e.kind), ["penalty", "goal"]);
+  console.log("ok: build_timeline groups by period in clock order with per-period scores");
+}
+
+{
+  const goals = buildGoalEvents(SCORING_BY_PERIOD, "FLA", "CAR", new Set());
+  const penalties = buildPenaltyEvents(PBP, "FLA", "CAR", new Set());
+  const round = parseTimeline(serializeTimeline({ goals, penalties, shootout: [], complete: true }));
+  assert.deepEqual(round.goals, goals);
+  assert.deepEqual(round.penalties, penalties);
+  assert.equal(round.complete, true);
+  assert.ok(serializeTimeline({ goals, penalties, shootout: [], complete: true }).startsWith('{"v":3,"complete":true'));
+  assert.equal(parseTimeline(serializeTimeline({ goals, penalties: [], shootout: [], complete: false })).complete, false);
+
+  // legacy cache row: a bare goals array, no period field
+  const legacy = parseTimeline(JSON.stringify(goals.map(({ period, ...rest }) => rest)));
+  assert.equal(legacy.complete, false);
+  assert.deepEqual(legacy.penalties, []);
+  assert.deepEqual(legacy.goals.map((g) => g.period), [2, 4]);
+  console.log("ok: goals_json envelope round-trips and still reads legacy rows");
+}
+
+// ---------- shootout + final type ----------
+
+{
+  assert.equal(resolveFinalType({ periodDescriptor: { periodType: "SO" } }, null, true), "SO", "landing has no gameOutcome: use last period when finished");
+  assert.equal(resolveFinalType({ periodDescriptor: { periodType: "OT" } }, undefined, true), "OT");
+  assert.equal(resolveFinalType({ periodDescriptor: { periodType: "SO" } }, null, false), "REG", "an unfinished game's current period is not its final type");
+  assert.equal(resolveFinalType({ periodDescriptor: { periodType: "REG" } }, null, true), "REG");
+  assert.equal(resolveFinalType({ periodDescriptor: { periodType: "OT" } }, { gameOutcome: { lastPeriodType: "SO" } }, false), "SO", "play-by-play gameOutcome wins");
+  assert.equal(resolveFinalType({ gameOutcome: { lastPeriodType: "OT" } }, null, false), "OT");
+  assert.equal(resolveFinalType(null, null, true), "REG");
+  console.log("ok: resolve_final_type finds OT/SO without landing.gameOutcome");
+}
+
+const RAW_SO = [
+  { sequence: 1, playerId: 5, teamAbbrev: { default: "CAR" }, firstName: { default: "Seth" }, lastName: { default: "Jarvis" }, result: "save", gameWinner: false, homeScore: 0, awayScore: 0 },
+  { sequence: 2, playerId: 6, teamAbbrev: { default: "FLA" }, firstName: { default: "Aleksander" }, lastName: { default: "Barkov" }, result: "goal", gameWinner: false, homeScore: 0, awayScore: 1 },
+  { sequence: 3, playerId: 7, teamAbbrev: { default: "CAR" }, firstName: { default: "Sebastian" }, lastName: { default: "Aho" }, result: "missed", gameWinner: false, homeScore: 0, awayScore: 1 },
+  { sequence: 4, playerId: 8, teamAbbrev: { default: "FLA" }, firstName: { default: "Sam" }, lastName: { default: "Reinhart" }, result: "goal", gameWinner: true, homeScore: 0, awayScore: 2 },
+];
+
+{
+  const attempts = buildShootoutAttempts(RAW_SO, new Set([7]));
+  assert.deepEqual(attempts.map((a) => a.result), ["save", "goal", "miss", "goal"]);
+  assert.equal(attempts[0].player, "Jarvis S.");
+  assert.equal(attempts[2].player, "Aho S. 🇫🇮");
+  assert.equal(attempts[3].winner, true);
+  assert.deepEqual(buildShootoutAttempts(undefined, new Set()), []);
+
+  const scoring = [
+    ...SCORING_BY_PERIOD,
+    { periodDescriptor: { number: 5, periodType: "SO" }, goals: [{ playerId: 8, firstName: { default: "Sam" }, lastName: { default: "Reinhart" }, teamAbbrev: { default: "FLA" }, timeInPeriod: "00:00", assists: [] }] },
+  ];
+  const goals = buildGoalEvents(scoring, "FLA", "CAR", new Set());
+  const withAttempts = buildTimeline(goals, [], "FLA", attempts);
+  const last = withAttempts[withAttempts.length - 1];
+  assert.equal(last.label, "Voittolaukaukset");
+  assert.equal(last.shootout?.length, 4);
+  assert.deepEqual([last.away_goals, last.home_goals], [2, 0]);
+  assert.equal(withAttempts.filter((p) => p.label === "Voittolaukaukset").length, 1, "SO winner goal is not duplicated as a goal event");
+  assert.equal(withAttempts.flatMap((p) => p.events).filter((e) => e.kind === "goal").length, 2);
+
+  // no attempts known (e.g. legacy row): fall back to the goal event
+  const fallback = buildTimeline(goals, [], "FLA");
+  assert.equal(fallback[fallback.length - 1].events.length, 1);
+  console.log("ok: shootout attempts form their own band without duplicating the winner goal");
+}
+
+{
+  const attempts = buildShootoutAttempts(RAW_SO, new Set());
+  const round = parseTimeline(serializeTimeline({ goals: [], penalties: [], shootout: attempts, complete: true }));
+  assert.deepEqual(round.shootout, attempts);
+  assert.deepEqual(parseTimeline('{"v":2,"complete":true,"goals":[],"penalties":[]}').shootout, []);
+  console.log("ok: envelope v3 carries the shootout");
+}

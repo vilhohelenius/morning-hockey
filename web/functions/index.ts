@@ -32,6 +32,7 @@
 
 import { currentUsername, readTulospiiloBypassDate, readTulospiiloCookie } from "./_shared/auth";
 import { getBoxScore } from "./_shared/boxScoreCache";
+import { buildTimeline } from "./_shared/boxscore";
 import {
   finnishGoalieLines,
   finnishScorerLines,
@@ -235,7 +236,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
   let roundGames: GameRow[] = [];
   let gameCardsHtml = "";
-  const gameDetails: Record<number, { goals?: unknown; team_stats?: unknown; youtube_url?: string }> = {};
+  const gameDetails: Record<number, { timeline?: unknown; team_stats?: unknown; youtube_url?: string }> = {};
 
   {
     const { results } = await db
@@ -264,7 +265,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       }
 
       if (box) {
-        gameDetails[game.game_id] = { ...gameDetails[game.game_id], goals: box.goals, team_stats: box.teamStats };
+        gameDetails[game.game_id] = { ...gameDetails[game.game_id], timeline: buildTimeline(box.goals, box.penalties, game.away_abbrev, box.shootout), team_stats: box.teamStats };
         scorers = [
           ...finnishScorerLines(box.awaySkaters, game.away_abbrev),
           ...finnishScorerLines(box.homeSkaters, game.home_abbrev),
