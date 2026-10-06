@@ -2088,7 +2088,10 @@ main {
 }
 
 .porssi-table .table-team-logo {
+  width: 28px;
+  height: 28px;
   vertical-align: middle;
+  margin-right: 6px;
 }
 
 /* ---------- Standings team info panel ---------- */
