@@ -2496,6 +2496,10 @@ main {
   gap: 3px;
   background: #fff;
 }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .pts-bar { background: var(--bg); }
+}
+:root[data-theme="dark"] .pts-bar { background: var(--bg); }
 
 .pts-bar-away,
 .pts-bar-home {

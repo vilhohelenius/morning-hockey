@@ -1019,3 +1019,10 @@
     });
   });
 })();
+
+// Logos swapped to *_dark.svg via CSS `content: url()` (style.css "Logo dark
+// fix") don't paint while the <img> is loading="lazy" until a scroll forces
+// a re-layout, so make those few eager.
+document.querySelectorAll('img[src$="/TBL_light.svg"],img[src$="/TOR_light.svg"],img[src$="/NSH_light.svg"]').forEach(function (img) {
+  img.loading = "eager";
+});
