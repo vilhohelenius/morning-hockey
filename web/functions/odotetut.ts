@@ -5,7 +5,7 @@
 import { escapeHtml, nationalityFlag, seasonLabel } from "./_shared/format";
 import { renderLayout } from "./_shared/layout";
 import type { Env, StandingsRow } from "./_shared/types";
-import { fetchLeagueTeamXg, formatGsax, formatXg, gsaxPer100, rankBadge, rankedTeamXg, XG_INFO_TEXT, xgfPct, xgPercent } from "./_shared/xg";
+import { fetchLeagueTeamXg, formatGsax, formatXg, gsaxPer100, rankedTeamXg, XG_INFO_TEXT, xgfPct, xgPercent } from "./_shared/xg";
 
 const MIN_GAMES = 5; // early-season friendly; raise as the season goes on
 
@@ -48,10 +48,11 @@ const playerCell = (id: number, name: string, headshot: string, meta: string) =>
 // default column carries data-rank (the SQL order), like leaderboard.ts.
 const COLLAPSE_AT = 25;
 const table = (id: string, head: [string, string?][], rows: string, count: number) => `
-  <div class="stats-table-wrap"><table class="stats-table porssi-table" id="${id}" data-collapse-at="${COLLAPSE_AT}"><thead><tr>${head
+  <div class="stats-table-wrap"><table class="stats-table porssi-table" id="${id}" data-collapse-at="${count ? COLLAPSE_AT : 0}"><thead><tr>${head
     .map(([h, key]) =>
       key === "rank" ? `<th data-sort="rank" data-first-dir="asc" class="sort-asc">${h}</th>`
       : key === "name" ? `<th data-sort="name" data-type="text">${h}</th>`
+      : key === "xga" ? `<th data-sort="xga" data-first-dir="asc">${h}</th>` // fewer chances against = better
       : key ? `<th data-sort="${key}">${h}</th>` : `<th${h === "#" ? ' class="col-rank"' : ""}>${h}</th>`)
     .join("")}</tr></thead><tbody>${rows}</tbody></table></div>
   ${count > COLLAPSE_AT ? `<button type="button" class="expand-toggle" data-table-id="${id}" data-page-size="25"></button>` : ""}`;
@@ -121,11 +122,11 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   const teamRows = rankedTeamXg(league)
     .map((t, i) => {
       const s = names.get(t.abbrev);
-      return `<tr>
+      return `<tr data-name="${escapeHtml(s?.name ?? t.abbrev)}" data-xgf="${t.xgf}" data-xga="${t.xga}" data-rank="${i + 1}">
     <td class="col-rank">${i + 1}</td>
     <td><a href="/joukkueet/${t.abbrev.toLowerCase()}" class="player-cell">${s ? `<img src="${escapeHtml(s.logo)}" alt="" class="team-logo-plain" loading="lazy">` : ""}<span class="player-name"><span class="player-name-line">${escapeHtml(s?.name ?? t.abbrev)}</span></span></a></td>
-    <td>${t.games}</td><td class="stat-strong">${t.pct.toFixed(1)}${rankBadge(t.rankPct)}</td>
-    <td>${t.xgf.toFixed(1)}${rankBadge(t.rankXgf)}</td><td>${t.xga.toFixed(1)}${rankBadge(t.rankXga)}</td>
+    <td>${t.games}</td><td class="stat-strong">${t.pct.toFixed(1)}</td>
+    <td>${t.xgf.toFixed(1)}</td><td>${t.xga.toFixed(1)}</td>
   </tr>`;
     })
     .join("");
@@ -159,8 +160,8 @@ ${XG_INFO_TEXT}
 
 <section class="analytiikka-view-section is-hidden" data-view="teams">
   <h2 class="section-title">Joukkueet xGF%:n mukaan</h2>
-  <p class="standings-legend">Sijat NHL:ssä; xGF ja xGA per ottelu.</p>
-  ${teamRows ? table("xg-teams-table", [["#"], ["Joukkue"], ["O"], ["xGF%"], ["xGF"], ["xGA"]], teamRows, 0) : empty}
+  <p class="standings-legend">xGF ja xGA per ottelu. Napauta sarakeotsikkoa järjestääksesi.</p>
+  ${teamRows ? table("xg-teams-table", [["#"], ["Joukkue", "name"], ["O"], ["xGF%", "rank"], ["xGF", "xgf"], ["xGA", "xga"]], teamRows, 0) : empty}
 </section>
 `;
 
