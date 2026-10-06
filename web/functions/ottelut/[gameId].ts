@@ -20,7 +20,17 @@
 
 import { getBoxScore, type ParsedBoxScore } from "../_shared/boxScoreCache";
 import { buildPreviewTeamStats, buildTimeline } from "../_shared/boxscore";
-import { fetchGameTeamXg, fetchTeamSeasonXg, teamXgStatRows } from "../_shared/xg";
+import {
+  fetchGameTeamXg,
+  fetchGoaliesSeasonGsaxMap,
+  fetchLeagueTeamXg,
+  fetchSkatersSeasonXgMap,
+  fetchTeamSeasonXg,
+  formatGsax,
+  formatXg,
+  teamXgfRanks,
+  teamXgStatRows,
+} from "../_shared/xg";
 import { fetchGameWinProb, winProbInfoText, winProbStatRow, type GameWinProb } from "../_shared/winProb";
 import { renderMatchTimeline } from "../_shared/matchTimeline";
 import { computeFormGuide, type FormGuideEntry } from "../_shared/formGuide";
@@ -196,9 +206,9 @@ function renderStatBarRows(rows: TeamStatRow[], awayAbbrev: string, homeAbbrev: 
       (stat) => `
       <div class="gd-stat-block">
         <div class="gd-stat-row">
-          <span class="gd-stat-value">${escapeHtml(stat.away_value)}</span>
+          <span class="gd-stat-value">${escapeHtml(stat.away_value)}${stat.away_badge ?? ""}</span>
           <span class="gd-stat-label">${escapeHtml(stat.label)}</span>
-          <span class="gd-stat-value">${escapeHtml(stat.home_value)}</span>
+          <span class="gd-stat-value">${escapeHtml(stat.home_value)}${stat.home_badge ?? ""}</span>
         </div>
         <div class="pts-bar">
           <span class="pts-bar-away" style="width: ${stat.away_pct ?? 50}%; background: ${awayColor}"></span>
@@ -228,50 +238,52 @@ function renderPreviewTeamStats(rows: TeamStatRow[], awayAbbrev: string, homeAbb
   return formRow + renderStatBarRows(rows, awayAbbrev, homeAbbrev);
 }
 
-// "Players to watch": each team's own points leader and goals leader
-// (skaters are already fetched ordered by points DESC, so [0] is the
-// points leader; the goals leader needs its own max since the top scorer
-// isn't always the top goal-scorer).
-function goalsLeader(skaters: TeamRosterSkaterRow[]): TeamRosterSkaterRow | null {
-  if (!skaters.length) return null;
-  return skaters.reduce((best, p) => (p.goals > best.goals ? p : best));
+// "Players to watch": each team's best point-scorer (any skater; the roster
+// query is ordered by points DESC) and its top-scoring defenceman (the next
+// one if the best scorer is himself a defenceman, so no card repeats).
+function pickWatchPlayers(skaters: TeamRosterSkaterRow[]): [TeamRosterSkaterRow | null, TeamRosterSkaterRow | null] {
+  const best = skaters[0] ?? null;
+  return [best, skaters.find((p) => p.position === "D" && p !== best) ?? null];
 }
 
-function renderPlayerWatchRow(label: string, away: TeamRosterSkaterRow | null, home: TeamRosterSkaterRow | null, awayValue: number, homeValue: number): string {
-  const side = (player: TeamRosterSkaterRow | null, value: number) =>
-    player
-      ? `
-      <a href="/pelaajat/${player.player_id}" class="pw-player">
-        <img src="${escapeHtml(player.headshot)}" alt="" loading="lazy" class="pw-headshot" onerror="this.style.visibility='hidden'">
-        <span class="pw-player-info">
-          <span class="pw-value">${value}</span>
-          <span class="pw-name">${escapeHtml(player.name)}</span>
-        </span>
-      </a>`
-      : `<span class="pw-player pw-player-empty">–</span>`;
-
+function renderWatchCard(p: TeamRosterSkaterRow | null, teamLogo: string, xg: Map<number, number>): string {
+  if (!p) return `<div class="stat-card pw-card pw-card-empty">–</div>`;
+  const cell = (label: string, value: string, highlight = false) =>
+    `<div class="stat-card-cell${highlight ? " stat-card-highlight" : ""}"><span class="stat-card-label">${label}</span><span class="stat-card-value">${value}</span></div>`;
+  const cells = [
+    cell("O", `${p.games_played}`),
+    cell("M", `${p.goals}`),
+    cell("S", `${p.assists}`),
+    cell("P", `${p.points}`, true),
+    cell("+/-", `${p.plus_minus > 0 ? "+" : ""}${p.plus_minus}`),
+    ...(xg.size ? [cell("xG", formatXg(xg.get(p.player_id)))] : []),
+  ].join("");
   return `
-    <div class="pw-row">
-      ${side(away, awayValue)}
-      <span class="gd-stat-label">${escapeHtml(label)}</span>
-      ${side(home, homeValue)}
+  <a href="/pelaajat/${p.player_id}" class="stat-card goalie-card pw-card">
+    <div class="stat-card-header">
+      <img src="${escapeHtml(p.headshot)}" alt="" class="stat-card-headshot" loading="lazy" onerror="this.style.visibility='hidden'">
+      <span class="stat-card-name">${escapeHtml(p.name)}</span>
+      <img src="${escapeHtml(teamLogo)}" alt="" class="stat-card-team-logo" loading="lazy">
+    </div>
+    <div class="stat-card-grid-cells">${cells}</div>
+  </a>`;
+}
+
+function renderPlayersToWatch(awaySkaters: TeamRosterSkaterRow[], homeSkaters: TeamRosterSkaterRow[], awayLogo: string, homeLogo: string, xg: Map<number, number>): string {
+  const [awayBest, awayD] = pickWatchPlayers(awaySkaters);
+  const [homeBest, homeD] = pickWatchPlayers(homeSkaters);
+  return `
+    <div class="pw-grid">
+      <p class="pw-grid-label">Paras pistemies</p>
+      ${renderWatchCard(awayBest, awayLogo, xg)}${renderWatchCard(homeBest, homeLogo, xg)}
+      <p class="pw-grid-label">Paras puolustaja</p>
+      ${renderWatchCard(awayD, awayLogo, xg)}${renderWatchCard(homeD, homeLogo, xg)}
     </div>`;
-}
-
-function renderPlayersToWatch(awaySkaters: TeamRosterSkaterRow[], homeSkaters: TeamRosterSkaterRow[]): string {
-  const awayPoints = awaySkaters[0] ?? null;
-  const homePoints = homeSkaters[0] ?? null;
-  const awayGoals = goalsLeader(awaySkaters);
-  const homeGoals = goalsLeader(homeSkaters);
-
-  return `
-    ${renderPlayerWatchRow("Pisteet", awayPoints, homePoints, awayPoints?.points ?? 0, homePoints?.points ?? 0)}
-    ${renderPlayerWatchRow("Maalit", awayGoals, homeGoals, awayGoals?.goals ?? 0, homeGoals?.goals ?? 0)}`;
 }
 
 // One compact stat card per team's presumed starter (reuses the .stat-card
 // component from the team page's Kausitilastot box) -- W-L-OTL/GAA/SV%/SO.
-function renderGoalieCard(g: TeamRosterGoalieRow, teamLogo: string): string {
+function renderGoalieCard(g: TeamRosterGoalieRow, teamLogo: string, gsax: Map<number, number>): string {
   return `
   <div class="stat-card goalie-card">
     <div class="stat-card-header">
@@ -282,7 +294,7 @@ function renderGoalieCard(g: TeamRosterGoalieRow, teamLogo: string): string {
     <div class="stat-card-table-wrap">
       <table class="stat-card-table">
         <thead>
-          <tr><th>O</th><th>V-H-JH</th><th>GAA</th><th>SV%</th><th>NP</th></tr>
+          <tr><th>O</th><th>V-H-JH</th><th>GAA</th><th>SV%</th><th>NP</th>${gsax.size ? "<th>GSAx</th>" : ""}</tr>
         </thead>
         <tbody>
           <tr>
@@ -291,6 +303,7 @@ function renderGoalieCard(g: TeamRosterGoalieRow, teamLogo: string): string {
             <td>${g.goals_against_average.toFixed(2)}</td>
             <td class="stat-card-highlight">${g.save_pct.toFixed(3)}</td>
             <td>${g.shutouts}</td>
+            ${gsax.size ? `<td>${formatGsax(gsax.get(g.player_id))}</td>` : ""}
           </tr>
         </tbody>
       </table>
@@ -310,12 +323,12 @@ function pickStarter(goalies: TeamRosterGoalieRow[]): TeamRosterGoalieRow | unde
   );
 }
 
-function renderGoaltending(awayGoalies: TeamRosterGoalieRow[], homeGoalies: TeamRosterGoalieRow[], awayLogo: string, homeLogo: string): string {
+function renderGoaltending(awayGoalies: TeamRosterGoalieRow[], homeGoalies: TeamRosterGoalieRow[], awayLogo: string, homeLogo: string, gsax: Map<number, number>): string {
   const starters = [
     [pickStarter(awayGoalies), awayLogo] as const,
     [pickStarter(homeGoalies), homeLogo] as const,
   ].filter((pair): pair is [TeamRosterGoalieRow, string] => !!pair[0]);
-  const cards = starters.map(([g, logo]) => renderGoalieCard(g, logo)).join("");
+  const cards = starters.map(([g, logo]) => renderGoalieCard(g, logo, gsax)).join("");
   return `<div class="stat-card-grid">${cards}</div>`;
 }
 
@@ -350,6 +363,8 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   let homeForm: FormGuideEntry | undefined;
   let xgRows: TeamStatRow[] = [];
   let winProb: GameWinProb | null = null;
+  let watchXg = new Map<number, number>();
+  let goalieGsax = new Map<number, number>();
 
   if (game.is_finished || isLive(game)) {
     ({ box, fetchError } = await getBoxScore(db, game));
@@ -400,8 +415,20 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     allSeasonStats = allSeasonRes.results;
     awayForm = computeFormGuide(awayRecentRes.results, [game.away_abbrev], FORM_GUIDE_WINDOW)[0];
     homeForm = computeFormGuide(homeRecentRes.results, [game.home_abbrev], FORM_GUIDE_WINDOW)[0];
-    const [awayXg, homeXg] = await Promise.all([fetchTeamSeasonXg(db, game.away_abbrev), fetchTeamSeasonXg(db, game.home_abbrev)]);
-    if (awayXg && homeXg) xgRows = teamXgStatRows(awayXg, homeXg);
+    const [awayXg, homeXg, leagueXg] = await Promise.all([
+      fetchTeamSeasonXg(db, game.away_abbrev),
+      fetchTeamSeasonXg(db, game.home_abbrev),
+      fetchLeagueTeamXg(db),
+    ]);
+    if (awayXg && homeXg) {
+      xgRows = teamXgStatRows(awayXg, homeXg, false, { away: teamXgfRanks(leagueXg, game.away_abbrev), home: teamXgfRanks(leagueXg, game.home_abbrev) });
+    }
+    const watched = [...pickWatchPlayers(awaySkaters), ...pickWatchPlayers(homeSkaters)].filter((p): p is TeamRosterSkaterRow => !!p);
+    const starters = [pickStarter(awayGoalies), pickStarter(homeGoalies)].filter((g): g is TeamRosterGoalieRow => !!g);
+    [watchXg, goalieGsax] = await Promise.all([
+      fetchSkatersSeasonXgMap(db, watched.map((p) => p.player_id)),
+      fetchGoaliesSeasonGsaxMap(db, starters.map((g) => g.player_id)),
+    ]);
   }
 
   const hasPreviewData = awaySkaters.length > 0 && homeSkaters.length > 0;
@@ -463,7 +490,7 @@ ${
         <span class="gd-stat-team">${escapeHtml(game.away_abbrev)}</span>
         <span class="gd-stat-team">${escapeHtml(game.home_abbrev)}</span>
       </div>
-      ${renderPlayersToWatch(awaySkaters, homeSkaters)}
+      ${renderPlayersToWatch(awaySkaters, homeSkaters, game.away_logo, game.home_logo, watchXg)}
     </div>
 
     ${
@@ -471,7 +498,7 @@ ${
         ? `
     <div class="tp-section">
       <p class="tp-section-title">Maalivahdit</p>
-      ${renderGoaltending(awayGoalies, homeGoalies, game.away_logo, game.home_logo)}
+      ${renderGoaltending(awayGoalies, homeGoalies, game.away_logo, game.home_logo, goalieGsax)}
     </div>`
         : ""
     }

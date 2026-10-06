@@ -189,9 +189,15 @@ export async function fetchGameTeamXg(db: D1Database, gameId: number, awayAbbrev
 }
 
 // Two TeamStatRow-shaped rows (all situations, 5v5) for the stat-bar renderer.
-export function teamXgStatRows(away: TeamXg, home: TeamXg, withTotals = false): { label: string; away_value: string; home_value: string; away_pct?: number; home_pct?: number }[] {
-  const row = (label: string, a: number | null, h: number | null) => ({
+export function teamXgStatRows(
+  away: TeamXg,
+  home: TeamXg,
+  withTotals = false,
+  ranks?: { away: { pct?: number; pct5v5?: number }; home: { pct?: number; pct5v5?: number } },
+): { label: string; away_value: string; home_value: string; away_pct?: number; home_pct?: number; away_badge?: string; home_badge?: string }[] {
+  const row = (label: string, a: number | null, h: number | null, key?: "pct" | "pct5v5") => ({
     label,
+    ...(key && ranks ? { away_badge: rankBadge(ranks.away[key]), home_badge: rankBadge(ranks.home[key]) } : {}),
     away_value: formatPct(a),
     home_value: formatPct(h),
     ...(a !== null && h !== null && a + h > 0 ? { away_pct: (100 * a) / (a + h), home_pct: (100 * h) / (a + h) } : {}),
@@ -201,8 +207,8 @@ export function teamXgStatRows(away: TeamXg, home: TeamXg, withTotals = false): 
     : [];
   return [
     ...total,
-    row("xGF%", xgfPct(away.xgf, away.xga), xgfPct(home.xgf, home.xga)),
-    row("xGF% 5v5", xgfPct(away.xgf5v5, away.xga5v5), xgfPct(home.xgf5v5, home.xga5v5)),
+    row("xGF%", xgfPct(away.xgf, away.xga), xgfPct(home.xgf, home.xga), "pct"),
+    row("xGF% 5v5", xgfPct(away.xgf5v5, away.xga5v5), xgfPct(home.xgf5v5, home.xga5v5), "pct5v5"),
   ];
 }
 
@@ -239,3 +245,42 @@ export async function fetchLeagueTeamXg(db: D1Database): Promise<Map<number, Tea
     return new Map();
   }
 }
+
+// Rank = 1 + teams strictly ahead (ties share a rank).
+export function rankIn(own: number, all: number[], higherIsBetter: boolean): number {
+  return 1 + all.filter((v) => (higherIsBetter ? v > own : v < own)).length;
+}
+
+export function rankBadge(rank: number | undefined): string {
+  return rank ? `<span class="rank-badge" title="Sija NHL:ssä">#${rank}</span>` : "";
+}
+
+// League rank of a team's xGF% (all situations / 5v5) among fetchLeagueTeamXg's teams.
+export function teamXgfRanks(league: Map<number, TeamXg & { games: number }>, abbrev: string): { pct?: number; pct5v5?: number } {
+  const id = TEAM_IDS[abbrev];
+  const own = id === undefined ? undefined : league.get(id);
+  if (!own) return {};
+  const all = [...league.values()];
+  const pct = (r: TeamXg, five: boolean) => xgfPct(five ? r.xgf5v5 : r.xgf, five ? r.xga5v5 : r.xga) ?? 0;
+  return { pct: rankIn(pct(own, false), all.map((r) => pct(r, false)), true), pct5v5: rankIn(pct(own, true), all.map((r) => pct(r, true)), true) };
+}
+
+// Latest season's per-player xG (skaters) / GSAx (goalies) for a few players in one query.
+async function fetchSeasonSums(db: D1Database, table: string, expr: string, ids: number[]): Promise<Map<number, number>> {
+  if (!ids.length) return new Map();
+  try {
+    const { results } = await db
+      .prepare(
+        `SELECT player_id, SUM(${expr}) AS v FROM ${table} WHERE player_id IN (${ids.map(() => "?").join(",")}) AND season = (SELECT MAX(season) FROM ${table}) GROUP BY player_id`,
+      )
+      .bind(...ids)
+      .all<{ player_id: number; v: number | null }>();
+    return new Map(results.filter((r) => r.v !== null).map((r) => [r.player_id, r.v as number]));
+  } catch (error) {
+    console.error(`Season ${table} lookup failed:`, error);
+    return new Map();
+  }
+}
+
+export const fetchSkatersSeasonXgMap = (db: D1Database, ids: number[]) => fetchSeasonSums(db, "skater_game_xg", "xg", ids);
+export const fetchGoaliesSeasonGsaxMap = (db: D1Database, ids: number[]) => fetchSeasonSums(db, "goalie_game_xg", "xga - goals_against", ids);
