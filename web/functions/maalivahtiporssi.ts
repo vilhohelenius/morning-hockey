@@ -23,7 +23,9 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
        LEFT JOIN (
          SELECT player_id, season, SUM(xga) AS xga, SUM(goals_against) AS goals_against,
                 SUM(shots_against) AS shots_against
-         FROM goalie_game_xg GROUP BY player_id, season
+         FROM goalie_game_xg
+         WHERE season IN (SELECT DISTINCT season_id FROM goalie_season_stats)
+         GROUP BY player_id, season
        ) x ON x.player_id = g.player_id AND x.season = g.season_id
        ORDER BY g.save_pct DESC, g.wins DESC, g.name ASC`,
     )
