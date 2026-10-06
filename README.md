@@ -6,8 +6,7 @@ Ei ilmoituksia eikä yhtä kovakoodattua joukkuetta: kirjautuminen on kevyt
 (käyttäjätunnus, salasana valinnainen), ja oma tili tallentaa suosikkijoukkueet,
 suosikkipelaajat, teeman ja tulospiilo-asetuksen.
 
-<!-- TODO: lisää screenshot -->
-<img src="docs/screenshots/etusivu.png" alt="Etusivu" width="300">
+<img src="docs/screenshots/etusivu.png" alt="Etusivu" width="250">
 
 ## Sivut
 
@@ -24,19 +23,14 @@ kirjautuneen käyttäjän suosikkijoukkueiden minilaatikot sekä seuraavan kierr
 ottelut (manuaalinen päivitysnappi). Jos tulospiilo on päällä, `/` ohjaa
 sivulle `/tulospiilo`.
 
-<!-- TODO: lisää screenshot -->
-<img src="docs/screenshots/etusivu-ottelukortti.png" alt="Etusivu, ottelukortti" width="300">
+<img src="docs/screenshots/etusivu-ottelukortti.png" alt="Etusivu, ottelukortti" width="250">
 
 ### Sarjataulukko (`/sarjataulukko`)
 Divisioonittainen sarjataulukko sekä **Kuntopuntari**: joukkueiden viimeisten
 ottelujen form-taulukko (W/L/OTL, järjestys pistekeskiarvon mukaan). Joukkueen
 klikkaus avaa pikakatsauksen.
 
-<!-- TODO: lisää screenshot -->
-<img src="docs/screenshots/sarjataulukko.png" alt="Sarjataulukko" width="300">
-
-<!-- TODO: lisää screenshot -->
-<img src="docs/screenshots/kuntopuntari.png" alt="Kuntopuntari" width="300">
+<img src="docs/screenshots/sarjataulukko.png" alt="Sarjataulukko" width="250"> <img src="docs/screenshots/kuntopuntari.png" alt="Kuntopuntari" width="250">
 
 ### Tilastot
 - `/tilastot` Pistepörssi (myös rookie-pörssi)
@@ -47,21 +41,13 @@ klikkaus avaa pikakatsauksen.
   Pistepörssi-näkymässä nykyisen top-10-pelaajan kumulatiivinen pistekertymä
   (NHL:n game log, välimuistitettu D1:een)
 
-<!-- TODO: lisää screenshot -->
-<img src="docs/screenshots/pisteporssi.png" alt="Pistepörssi" width="300">
-
-<!-- TODO: lisää screenshot -->
-<img src="docs/screenshots/suomiporssi.png" alt="Suomipörssi" width="300">
-
-<!-- TODO: lisää screenshot -->
-<img src="docs/screenshots/analytiikka.png" alt="Analytiikka" width="300">
+<img src="docs/screenshots/pisteporssi.png" alt="Pistepörssi" width="250"> <img src="docs/screenshots/suomiporssi.png" alt="Suomipörssi" width="250"> <img src="docs/screenshots/analytiikka.png" alt="Analytiikka" width="250">
 
 ### Playoff-bracket (`/playoffit`)
 Ensimmäisen kierroksen pelipari johdettuna sarjataulukosta (divisioonien
 kärkikaksikot ja wild cardit).
 
-<!-- TODO: lisää screenshot -->
-<img src="docs/screenshots/playoffit.png" alt="Playoff-bracket" width="300">
+<img src="docs/screenshots/playoffit.png" alt="Playoff-bracket" width="250">
 
 ### Ottelut
 - `/otteluohjelma` Otteluohjelma: seuraavat 8 päivää, kaikki ottelut
@@ -72,14 +58,7 @@ kärkikaksikot ja wild cardit).
   otteluista **ottelun esikatselu** (joukkueiden kausitilastovertailu,
   kuntopuntari, kokoonpanot)
 
-<!-- TODO: lisää screenshot -->
-<img src="docs/screenshots/otteluohjelma.png" alt="Otteluohjelma" width="300">
-
-<!-- TODO: lisää screenshot -->
-<img src="docs/screenshots/ottelun-raportti.png" alt="Ottelun raportti" width="300">
-
-<!-- TODO: lisää screenshot -->
-<img src="docs/screenshots/ottelun-esikatselu.png" alt="Ottelun esikatselu" width="300">
+<img src="docs/screenshots/otteluohjelma.png" alt="Otteluohjelma" width="250"> <img src="docs/screenshots/ottelun-raportti.png" alt="Ottelun raportti" width="250"> <img src="docs/screenshots/ottelun-esikatselu.png" alt="Ottelun esikatselu" width="250">
 
 ### Joukkue- ja pelaajasivut
 - `/joukkueet/<lyhenne>` Joukkuesivu (kaikki 32): rosteri, kausitilastot, viimeisimmät/seuraavat ottelut;
@@ -87,18 +66,13 @@ kärkikaksikot ja wild cardit).
 - `/pelaajat/<id>` Pelaajakortti: bio, kausi- ja uratilastot sekä kauden ottelukohtainen
   loki, haetaan suoraan NHL:n API:sta (ei tallenneta D1:een)
 
-<!-- TODO: lisää screenshot -->
-<img src="docs/screenshots/joukkue.png" alt="Joukkuesivu" width="300">
-
-<!-- TODO: lisää screenshot -->
-<img src="docs/screenshots/pelaaja.png" alt="Pelaajakortti" width="300">
+<img src="docs/screenshots/joukkue.png" alt="Joukkuesivu" width="250"> <img src="docs/screenshots/pelaaja.png" alt="Pelaajakortti" width="250">
 
 ### Arkisto (`/arkisto`)
 Kauden pelipäivät uusimmasta vanhimpaan; `/arkisto/<päivä>` näyttää päivän
 ottelut ottelukortteina. Perustuu `games`-tauluun, joka ei koskaan poista rivejä.
 
-<!-- TODO: lisää screenshot -->
-<img src="docs/screenshots/arkisto.png" alt="Arkisto" width="300">
+<img src="docs/screenshots/arkisto.png" alt="Arkisto" width="250">
 
 ### Tili, suosikit ja asetukset
 - `/kirjaudu`: kirjautuminen/rekisteröityminen yhdellä lomakkeella (tuntematon
@@ -110,11 +84,7 @@ ottelut ottelukortteina. Perustuu `games`-tauluun, joka ei koskaan poista rivej�
 - `/tulospiilo`: edellisen kierroksen ottelut ilman tuloksia, vain highlights-linkki;
   tulos paljastuu vasta kun "olen katsonut highlightit" on ruksattu
 
-<!-- TODO: lisää screenshot -->
-<img src="docs/screenshots/asetukset.png" alt="Asetukset" width="300">
-
-<!-- TODO: lisää screenshot -->
-<img src="docs/screenshots/tulospiilo.png" alt="Tulospiilo" width="300">
+<img src="docs/screenshots/asetukset.png" alt="Asetukset" width="250"> <img src="docs/screenshots/tulospiilo.png" alt="Tulospiilo" width="250">
 
 ## Miten se toimii
 
