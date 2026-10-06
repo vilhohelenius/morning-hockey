@@ -29,9 +29,11 @@ import {
   XG_INFO_TEXT,
   fetchGameXg,
   fetchGoalieSeasonXg,
+  fetchSkaterOnIceXg,
   fetchSkaterSeasonXg,
   formatGsax,
   formatXg,
+  xgPercent,
   gsaxPer100,
 } from "../_shared/xg";
 
@@ -317,7 +319,12 @@ async function latestSeasonXgCells(
     return statCell("GSAx", formatGsax(gsax)) + statCell("GSAx/100", formatGsax(per100, 2));
   }
   const x = await fetchSkaterSeasonXg(db, playerId, season);
-  return x ? statCell("xG", formatXg(x.xg)) : "";
+  if (!x) return "";
+  const onIce = await fetchSkaterOnIceXg(db, playerId, season);
+  return (
+    statCell("xG", formatXg(x.xg)) +
+    (onIce ? statCell("xGF%", xgPercent(onIce.xgf, onIce.xga)) + statCell("xGF% 5v5", xgPercent(onIce.xgf5v5, onIce.xga5v5)) : "")
+  );
 }
 
 interface StatPeriod {
