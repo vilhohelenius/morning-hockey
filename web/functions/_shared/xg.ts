@@ -284,3 +284,19 @@ async function fetchSeasonSums(db: D1Database, table: string, expr: string, ids:
 
 export const fetchSkatersSeasonXgMap = (db: D1Database, ids: number[]) => fetchSeasonSums(db, "skater_game_xg", "xg", ids);
 export const fetchGoaliesSeasonGsaxMap = (db: D1Database, ids: number[]) => fetchSeasonSums(db, "goalie_game_xg", "xga - goals_against", ids);
+
+// --- Finished-game report: per-player xG / GSAx for one game ---------------
+// player_id -> ixG (skaters) and player_id -> GSAx (goalies); empty maps when
+// the sync hasn't processed the game, so the report hides the columns.
+export async function fetchGamePlayerXg(db: D1Database, gameId: number): Promise<{ ixg: Map<number, number>; gsax: Map<number, number> }> {
+  try {
+    const [s, g] = await Promise.all([
+      db.prepare("SELECT player_id, xg AS v FROM skater_game_xg WHERE game_id = ?").bind(gameId).all<{ player_id: number; v: number }>(),
+      db.prepare("SELECT player_id, xga - goals_against AS v FROM goalie_game_xg WHERE game_id = ?").bind(gameId).all<{ player_id: number; v: number }>(),
+    ]);
+    return { ixg: new Map(s.results.map((r) => [r.player_id, r.v])), gsax: new Map(g.results.map((r) => [r.player_id, r.v])) };
+  } catch (error) {
+    console.error(`Game player xG lookup failed for ${gameId}:`, error);
+    return { ixg: new Map(), gsax: new Map() };
+  }
+}

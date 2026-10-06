@@ -445,7 +445,7 @@ function renderSkaterGameLog(games: any[], xgByGame: Map<number, number>, onIceB
           <th>Pvm</th>
           <th>Vast</th>
           <th>M</th>
-          ${xgByGame.size ? "<th>xG</th>" : ""}
+          ${xgByGame.size ? '<th title="Yksilöllinen odotettu maalimäärä">ixG</th>' : ""}
           <th>S</th>
           <th>P</th>
           <th>+/-</th>

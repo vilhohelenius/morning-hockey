@@ -21,6 +21,7 @@
 import { getBoxScore, type ParsedBoxScore } from "../_shared/boxScoreCache";
 import { buildPreviewTeamStats, buildTimeline } from "../_shared/boxscore";
 import {
+  fetchGamePlayerXg,
   fetchGameTeamXg,
   fetchGoaliesSeasonGsaxMap,
   fetchLeagueTeamXg,
@@ -71,7 +72,7 @@ function emptySeasonStats(abbrev: string): TeamSeasonStatsRow {
   };
 }
 
-function renderSkaterTable(skaters: PlayerGameStat[]): string {
+function renderSkaterTable(skaters: PlayerGameStat[], ixg: Map<number, number>): string {
   const rows = skaters
     .map(
       (p, i) => `
@@ -91,6 +92,7 @@ function renderSkaterTable(skaters: PlayerGameStat[]): string {
         <td class="stat-strong">${p.points}</td>
         <td>${p.plus_minus > 0 ? "+" : ""}${p.plus_minus}</td>
         <td>${p.shots}</td>
+        ${ixg.size ? `<td>${(ixg.get(p.player_id) ?? 0).toFixed(2)}</td>` : ""}
         <td>${p.blocked_shots}</td>
         <td>${p.hits}</td>
         <td>${p.giveaways}</td>
@@ -114,6 +116,7 @@ function renderSkaterTable(skaters: PlayerGameStat[]): string {
         <th title="Pisteet">P</th>
         <th title="Plus/miinus">+/-</th>
         <th title="Laukaukset">L</th>
+        ${ixg.size ? '<th title="Yksilöllinen odotettu maalimäärä (ixG)">ixG</th>' : ""}
         <th title="Blokatut laukaukset">Blokit</th>
         <th title="Taklaukset">Taklat</th>
         <th title="Kiekon menetykset">Menet.</th>
@@ -139,7 +142,7 @@ function goalsAgainstBreakdown(g: GoalieGameStat): string {
   return tags.length ? `${total} (${tags.join(", ")})` : String(total);
 }
 
-function renderGoalieTable(goalies: GoalieGameStat[]): string {
+function renderGoalieTable(goalies: GoalieGameStat[], gsax: Map<number, number>): string {
   const rows = goalies
     .map(
       (g, i) => `
@@ -158,6 +161,7 @@ function renderGoalieTable(goalies: GoalieGameStat[]): string {
         <td>${g.saves}</td>
         <td>${goalsAgainstBreakdown(g)}</td>
         <td class="stat-strong">${g.save_pct.toFixed(3)}</td>
+        ${gsax.size ? `<td>${gsax.has(g.player_id) ? formatGsax(gsax.get(g.player_id), 2) : "–"}</td>` : ""}
         <td>${escapeHtml(g.toi)}</td>
       </tr>`,
     )
@@ -174,6 +178,7 @@ function renderGoalieTable(goalies: GoalieGameStat[]): string {
         <th title="Torjunnat">Torj.</th>
         <th title="Päästetyt maalit">Päästi</th>
         <th title="Torjuntaprosentti">SV%</th>
+        ${gsax.size ? '<th title="Torjutut maalit yli odotuksen (GSAx)">GSAx</th>' : ""}
         <th>Peliaika</th>
       </tr>
     </thead>
@@ -365,12 +370,14 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   let winProb: GameWinProb | null = null;
   let watchXg = new Map<number, number>();
   let goalieGsax = new Map<number, number>();
+  let playerXg: Awaited<ReturnType<typeof fetchGamePlayerXg>> = { ixg: new Map(), gsax: new Map() };
 
   if (game.is_finished || isLive(game)) {
     ({ box, fetchError } = await getBoxScore(db, game));
     if (game.is_finished) {
       youtubeUrl = await resolveHighlightsUrl(db, context.env, game);
       const gameXg = await fetchGameTeamXg(db, game.game_id, game.away_abbrev, game.home_abbrev);
+      playerXg = await fetchGamePlayerXg(db, game.game_id);
       if (gameXg) xgRows = teamXgStatRows(gameXg.away, gameXg.home, true);
     }
   } else {
@@ -559,15 +566,15 @@ ${
 <div class="roster-team-section" data-team="away">
   <section>
     <h2 class="section-title"><img src="${escapeHtml(game.away_logo)}" alt="" class="nav-icon">${escapeHtml(game.away_name)}</h2>
-    ${renderSkaterTable(box.awaySkaters)}
-    ${box.awayGoalies.length ? renderGoalieTable(box.awayGoalies) : ""}
+    ${renderSkaterTable(box.awaySkaters, playerXg.ixg)}
+    ${box.awayGoalies.length ? renderGoalieTable(box.awayGoalies, playerXg.gsax) : ""}
   </section>
 </div>
 <div class="roster-team-section is-hidden" data-team="home">
   <section>
     <h2 class="section-title"><img src="${escapeHtml(game.home_logo)}" alt="" class="nav-icon">${escapeHtml(game.home_name)}</h2>
-    ${renderSkaterTable(box.homeSkaters)}
-    ${box.homeGoalies.length ? renderGoalieTable(box.homeGoalies) : ""}
+    ${renderSkaterTable(box.homeSkaters, playerXg.ixg)}
+    ${box.homeGoalies.length ? renderGoalieTable(box.homeGoalies, playerXg.gsax) : ""}
   </section>
 </div>`
         : ""
