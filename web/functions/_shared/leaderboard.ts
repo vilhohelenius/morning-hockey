@@ -102,11 +102,10 @@ function renderRow(row: SkaterStatsRow, rank: number, hl: HighlightOptions): str
             <img src="${escapeHtml(row.headshot)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
             <span class="player-name">
               <span class="player-name-line">${escapeHtml(row.name)}${highlightDots(row.nationality, row.team_abbrev, hl)}</span>
-              <span class="player-meta">${nationalityFlag(row.nationality)} ${escapeHtml(row.nationality)} · ${escapeHtml(row.position)}</span>
+              <span class="player-meta">${nationalityFlag(row.nationality)} ${escapeHtml(row.nationality)} · ${escapeHtml(row.position)} · <img src="${escapeHtml(row.logo)}" alt="${escapeHtml(row.team_abbrev)}" class="table-team-logo" loading="lazy"></span>
             </span>
           </a>
         </td>
-        <td><img src="${escapeHtml(row.logo)}" alt="${escapeHtml(row.team_abbrev)}" class="table-team-logo" loading="lazy"></td>
         <td>${row.games_played}</td>
         <td>${row.goals}</td>
         <td>${row.assists}</td>
@@ -144,7 +143,6 @@ export function renderSkaterLeaderboard(options: LeaderboardOptions): string {
         <tr>
           <th class="col-rank">#</th>
           <th data-sort="name" data-type="text">Pelaaja</th>
-          <th data-sort="team" data-type="text">Jkk</th>
           <th data-sort="gp">O</th>
           <th data-sort="goals">M</th>
           <th data-sort="assists">S</th>
@@ -169,11 +167,10 @@ function renderGoalieRow(row: GoalieStatsRow, rank: number, hl: HighlightOptions
             <img src="${escapeHtml(row.headshot)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
             <span class="player-name">
               <span class="player-name-line">${escapeHtml(row.name)}${highlightDots(row.nationality, row.team_abbrev, hl)}</span>
-              <span class="player-meta">${nationalityFlag(row.nationality)} ${escapeHtml(row.nationality)}</span>
+              <span class="player-meta">${nationalityFlag(row.nationality)} ${escapeHtml(row.nationality)} · <img src="${escapeHtml(row.logo)}" alt="${escapeHtml(row.team_abbrev)}" class="table-team-logo" loading="lazy"></span>
             </span>
           </a>
         </td>
-        <td><img src="${escapeHtml(row.logo)}" alt="${escapeHtml(row.team_abbrev)}" class="table-team-logo" loading="lazy"></td>
         <td>${row.games_played}</td>
         <td>${row.wins}</td>
         <td>${row.goals_against_average.toFixed(2)}</td>
@@ -211,7 +208,6 @@ export function renderGoalieLeaderboard(options: GoalieLeaderboardOptions): stri
         <tr>
           <th class="col-rank">#</th>
           <th data-sort="name" data-type="text">Pelaaja</th>
-          <th data-sort="team" data-type="text">Jkk</th>
           <th data-sort="gp">O</th>
           <th data-sort="wins">V</th>
           <th data-sort="gaa">GAA</th>

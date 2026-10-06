@@ -26,11 +26,10 @@ function renderSkaterTable(rows: FinnishSkaterRow[], hl: HighlightOptions): stri
             <img src="${escapeHtml(row.headshot)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
             <span class="player-name">
               <span class="player-name-line">${escapeHtml(row.name)}${highlightDots("", row.team_abbrev, hl)}</span>
-              <span class="player-meta">${escapeHtml(row.position)}</span>
+              <span class="player-meta">${escapeHtml(row.position)} · <img src="${escapeHtml(row.logo)}" alt="${escapeHtml(row.team_abbrev)}" class="table-team-logo" loading="lazy"></span>
             </span>
           </a>
         </td>
-        <td><img src="${escapeHtml(row.logo)}" alt="${escapeHtml(row.team_abbrev)}" class="table-team-logo" loading="lazy"></td>
         <td>${row.games_played}</td>
         <td>${row.goals}</td>
         <td>${row.assists}</td>
@@ -46,7 +45,6 @@ function renderSkaterTable(rows: FinnishSkaterRow[], hl: HighlightOptions): stri
         <tr>
           <th class="col-rank">#</th>
           <th data-sort="name" data-type="text">Pelaaja</th>
-          <th data-sort="team" data-type="text">Jkk</th>
           <th data-sort="gp">O</th>
           <th data-sort="goals">M</th>
           <th data-sort="assists">S</th>
@@ -69,10 +67,12 @@ function renderGoalieTable(rows: FinnishGoalieRow[], hl: HighlightOptions): stri
         <td>
           <a href="/pelaajat/${row.player_id}" class="player-cell">
             <img src="${escapeHtml(row.headshot)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
-            <span class="player-name"><span class="player-name-line">${escapeHtml(row.name)}${highlightDots("", row.team_abbrev, hl)}</span></span>
+            <span class="player-name">
+              <span class="player-name-line">${escapeHtml(row.name)}${highlightDots("", row.team_abbrev, hl)}</span>
+              <span class="player-meta"><img src="${escapeHtml(row.logo)}" alt="${escapeHtml(row.team_abbrev)}" class="table-team-logo" loading="lazy"></span>
+            </span>
           </a>
         </td>
-        <td><img src="${escapeHtml(row.logo)}" alt="${escapeHtml(row.team_abbrev)}" class="table-team-logo" loading="lazy"></td>
         <td>${row.games_played}</td>
         <td>${row.wins}</td>
         <td>${row.losses}</td>
@@ -91,7 +91,6 @@ function renderGoalieTable(rows: FinnishGoalieRow[], hl: HighlightOptions): stri
         <tr>
           <th class="col-rank">#</th>
           <th data-sort="name" data-type="text">Pelaaja</th>
-          <th data-sort="team" data-type="text">Jkk</th>
           <th data-sort="gp">O</th>
           <th data-sort="wins">V</th>
           <th data-sort="losses">H</th>

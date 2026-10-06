@@ -2087,20 +2087,13 @@ main {
   font-size: 0.82rem;
 }
 
-.porssi-table .table-team-logo {
-  width: 28px;
-  height: 28px;
-  vertical-align: middle;
-  margin-right: 6px;
-}
-
-/* Suosikkipelaajat: logo smaller than in the leaderboards */
-.porssi-table-fav .table-team-logo,
-.porssi-table-fav .player-cell img.table-team-logo {
+.porssi-table .table-team-logo,
+.porssi-table .player-cell img.table-team-logo {
   width: 18px;
   height: 18px;
   border-radius: 0;
-  margin-right: 4px;
+  vertical-align: middle;
+  margin-right: 0;
 }
 
 /* ---------- Standings team info panel ---------- */
