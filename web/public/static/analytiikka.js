@@ -37,7 +37,9 @@
   // empty space just because some other entity, many games behind, happened
   // to reach the same points total. Processed in y order (top first) so a
   // push-down can cascade onto a point it now collides with that it didn't
-  // originally.
+  // originally. The 1e-6 slack matters: after point.y = other.y + minGap,
+  // floating-point rounding can leave (point.y - other.y) a hair under
+  // minGap, which without it re-collides forever and hangs the page.
   function declutter(endpoints, minGap) {
     var placed = [];
     endpoints
@@ -51,7 +53,7 @@
           collided = false;
           for (var i = 0; i < placed.length; i++) {
             var other = placed[i];
-            if (Math.abs(point.x - other.x) < minGap && point.y - other.y < minGap) {
+            if (Math.abs(point.x - other.x) < minGap && point.y - other.y < minGap - 1e-6) {
               point.y = other.y + minGap;
               collided = true;
             }
