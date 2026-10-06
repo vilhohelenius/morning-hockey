@@ -34,6 +34,26 @@ async function fetchJson(path: string): Promise<any> {
   return response.json();
 }
 
+const STATS_BASE = "https://api.nhle.com/stats/rest/en";
+
+// The sporting nationality (what Suomipörssi filters on and NHL.com shows),
+// from the stats REST bios report's nationalityCode. landing.birthCountry is
+// where the player was *born*, which differs for e.g. US-born Finnish
+// Samuel Helenius (birthCountry USA, nationalityCode FIN). Best-effort: any
+// failure or empty result returns "" so the caller falls back to birthCountry.
+async function fetchNationalityCode(playerId: number, isGoalie: boolean): Promise<string> {
+  try {
+    const report = isGoalie ? "goalie" : "skater";
+    const response = await fetch(`${STATS_BASE}/${report}/bios?cayenneExp=playerId=${playerId}&limit=1`);
+    if (!response.ok) return "";
+    const body: any = await response.json();
+    return body?.data?.[0]?.nationalityCode ?? "";
+  } catch (error) {
+    console.error(`Player nationality fetch failed for ${playerId}:`, error);
+    return "";
+  }
+}
+
 // Same season-id math as _shared/boxScoreCache.ts's seasonIdForDate, just
 // based on today's date instead of a game's -- there's no game here to
 // derive a season from until the user's picked one, and this is only ever
@@ -322,10 +342,11 @@ function renderPlayerHeroBack(landing: any, age: number | null): string {
   }
   const place = birthPlace(landing);
   if (place) rows.push({ label: "Syntymäpaikka", value: escapeHtml(place) });
-  if (landing.birthCountry) {
+  const nationality = landing.nationalityCode || landing.birthCountry;
+  if (nationality) {
     rows.push({
       label: "Kansallisuus",
-      value: `${nationalityFlag(landing.birthCountry)} ${escapeHtml(landing.birthCountry)}`,
+      value: `${nationalityFlag(nationality)} ${escapeHtml(nationality)}`,
     });
   }
 
@@ -495,6 +516,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   }
 
   const isGoalie = landing.position === "G";
+  landing.nationalityCode = await fetchNationalityCode(playerId, isGoalie);
   const name = `${landing.firstName?.default ?? ""} ${landing.lastName?.default ?? ""}`.trim();
 
   const seasonTotals: SeasonTotal[] = (landing.seasonTotals ?? []).filter(

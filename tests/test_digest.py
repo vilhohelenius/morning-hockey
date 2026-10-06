@@ -131,6 +131,15 @@ EMPTY_ROSTER = {"forwards": [], "defensemen": [], "goalies": []}
 
 
 class FakeClient:
+    def standings(self, date="now"):
+        return {"standings": [{"seasonId": 20262027}]}
+
+    def skater_bios(self, cayenne_exp, sort, limit=-1):
+        return []
+
+    def goalie_bios(self, cayenne_exp, sort, limit=-1):
+        return []
+
     def scoreboard(self, date):
         return SCOREBOARD
 

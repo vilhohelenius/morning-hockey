@@ -28,6 +28,7 @@ ROSTERS = {
                 "firstName": {"default": "Auston"},
                 "lastName": {"default": "Matthews"},
                 "positionCode": "C",
+                "birthCountry": "USA",  # but nationalityCode FIN (like Samuel Helenius)
                 "sweaterNumber": 34,
                 "headshot": "https://assets.nhle.com/mugs/nhl/20262027/TOR/1.png",
             }
@@ -39,6 +40,7 @@ ROSTERS = {
                 "firstName": {"default": "Joseph"},
                 "lastName": {"default": "Woll"},
                 "positionCode": "G",
+                "birthCountry": "CAN",  # not in bios report -> falls back to this
                 "sweaterNumber": 60,
                 "headshot": "https://assets.nhle.com/mugs/nhl/20262027/TOR/2.png",
             }
@@ -101,6 +103,12 @@ class FakeClient:
     def goalie_summary(self, cayenne_exp, sort, limit=-1):
         return GOALIE_STATS
 
+    def skater_bios(self, cayenne_exp, sort, limit=-1):
+        return [{"playerId": 1, "nationalityCode": "FIN"}]
+
+    def goalie_bios(self, cayenne_exp, sort, limit=-1):
+        return []
+
     def team_summary(self, cayenne_exp, sort, limit=-1):
         return TEAM_SUMMARY
 
@@ -122,12 +130,14 @@ def test_build_all_team_rosters_merges_roster_identity_with_season_stats():
     assert tor_skaters[0].goals == 2
     assert tor_skaters[0].plus_minus == -1
     assert tor_skaters[0].avg_toi == "17:05"
+    assert tor_skaters[0].nationality == "FIN"
 
     assert len(tor_goalies) == 1
     assert isinstance(tor_goalies[0], RosterGoalie)
     assert tor_goalies[0].name == "Joseph Woll"
     assert tor_goalies[0].save_pct == 0.955
     assert tor_goalies[0].shutouts == 1
+    assert tor_goalies[0].nationality == "CAN"
 
     nsh_skaters, nsh_goalies = rosters["NSH"]
     assert nsh_skaters == []
