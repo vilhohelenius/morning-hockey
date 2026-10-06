@@ -24,6 +24,7 @@
 
 import { periodLabel } from "./boxscore";
 import type { LiveStatus } from "./boxScoreCache";
+import { isGameLive } from "./dayGames";
 import { decisionFi, escapeHtml, finalTypeFi, helsinkiParts } from "./format";
 import type { GameRow, GoalieGameStat, PlayerGameStat } from "./types";
 
@@ -62,10 +63,10 @@ export function finnishGoalieLines(goalies: GoalieGameStat[], teamAbbrev: string
 // is treated as live too even while game_state still says "FUT": otherwise
 // a just-started game would keep showing its pre-game preview (score text
 // box score etc.) for up to half an hour.
+//
+// The logic itself lives in dayGames.ts (pure, unit-tested).
 export function isLive(game: GameRow): boolean {
-  if (game.is_finished) return false;
-  if (game.game_state !== "FUT") return true;
-  return new Date(game.start_time_utc).getTime() <= Date.now();
+  return isGameLive(game);
 }
 
 function liveBadgeText(live: LiveStatus | null): string {

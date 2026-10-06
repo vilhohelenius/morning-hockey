@@ -1110,6 +1110,25 @@ main {
   flex-shrink: 0;
 }
 
+/* Dashboard day browser (?pv=-1/0/1): prev/next arrows flank the title. */
+.section-title-row .section-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.day-nav-btn {
+  flex-shrink: 0;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.day-nav-btn.is-disabled {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
 /* ---------- Stat cards (team Kausitilastot, player Kausi/Uran tilastot) ----------
    A boxed card per stat period, its own header bar + a dense, centered,
    abbreviated-column table -- closer to the separate "2026-27 Season" /

@@ -2,7 +2,8 @@
 // started) results with Finnish highlights and a click-to-expand goal/
 // team-stats info box, top-5 Suomipörssi, top-5 Tilastot, the signed-in
 // user's favorite-team mini-boxes (recent/next game + current top scorer),
-// and the next upcoming round of games.
+// and the day's games (Helsinki calendar day, live carry-over past
+// midnight, ?pv=-1/0/1 to browse a day back/forward) plus the next round.
 //
 // "Last night's games" used to be keyed off the once-daily digest sync
 // job's own `digests` table, which meant the section could only ever
@@ -40,7 +41,8 @@ import {
   type FinnScorerLine,
 } from "./_shared/gameCard";
 import { resolveHighlightsUrl } from "./_shared/youtube";
-import { escapeHtml, helsinkiParts, humanDate, nationalityFlag, shortDate, teamHeroBackgroundStyle } from "./_shared/format";
+import { clampDayOffset, selectDayGames } from "./_shared/dayGames";
+import { addDays, escapeHtml, helsinkiParts, helsinkiToday, humanDate, nationalityFlag, shortDate, teamHeroBackgroundStyle } from "./_shared/format";
 import { renderLayout } from "./_shared/layout";
 import type {
   Env,
@@ -202,7 +204,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   const url = new URL(context.request.url);
   const db = context.env.DB;
 
-  // ---------- Last night's (or tonight's) games ----------
+  // ---------- The day's games ----------
 
   const currentRound = await db
     .prepare("SELECT date FROM games WHERE game_state != 'FUT' ORDER BY date DESC LIMIT 1")
@@ -225,16 +227,22 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
   const username = currentUsername(context.request);
 
+  // Which Helsinki calendar day to show: ?pv=-1/0/1 (clamped). Only the
+  // today view carries over still-live games from the previous date.
+  const dayOffset = clampDayOffset(url.searchParams.get("pv"));
+  const todayDate = helsinkiToday();
+  const viewDate = addDays(todayDate, dayOffset);
+
   let roundGames: GameRow[] = [];
   let gameCardsHtml = "";
   const gameDetails: Record<number, { goals?: unknown; team_stats?: unknown; youtube_url?: string }> = {};
 
-  if (currentRound) {
+  {
     const { results } = await db
-      .prepare("SELECT * FROM games WHERE date = ? ORDER BY start_time_utc ASC")
-      .bind(currentRound.date)
+      .prepare("SELECT * FROM games WHERE date = ? OR (date = ? AND is_finished = 0) ORDER BY start_time_utc ASC")
+      .bind(viewDate, addDays(viewDate, -1))
       .all<GameRow>();
-    roundGames = results;
+    roundGames = selectDayGames(results, viewDate, dayOffset === 0);
 
     for (const game of roundGames) {
       let scorers: FinnScorerLine[] = [];
@@ -330,17 +338,13 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
   // ---------- Next upcoming round ----------
 
-  // Strictly after currentRound's date, not just "any unfinished game" --
-  // otherwise, once tonight's round has started (so it's showing up top as
-  // currentRound) but not every one of its games has tipped off yet, this
-  // would show the same round a second time down here instead of the one
-  // after it.
-  const nextRound = currentRound
-    ? await db
-        .prepare("SELECT date FROM games WHERE is_finished = 0 AND date > ? ORDER BY date ASC LIMIT 1")
-        .bind(currentRound.date)
-        .first<{ date: string }>()
-    : await db.prepare("SELECT date FROM games WHERE is_finished = 0 ORDER BY date ASC LIMIT 1").first<{ date: string }>();
+  // Strictly after the day being shown above, not just "any unfinished
+  // game" -- otherwise today's still-unfinished games would show up a
+  // second time down here instead of the next day's.
+  const nextRound = await db
+    .prepare("SELECT date FROM games WHERE is_finished = 0 AND date > ? ORDER BY date ASC LIMIT 1")
+    .bind(viewDate)
+    .first<{ date: string }>();
 
   let upcomingHtml = "";
   if (nextRound) {
@@ -367,24 +371,25 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   // purely for the look (jersey texture + wires outline) -- neither teaser
   // is about a single team, and there's no "wires" crest for "Finland" or
   // "the NHL" to use instead.
+  const dayHref = (offset: number) => (offset === 0 ? "/" : `/?pv=${offset}`);
+  const dayTitle =
+    dayOffset === 0 ? `Tämän päivän ottelut, ${humanDate(viewDate)}` : `${dayOffset < 0 ? "Eilisen" : "Huomisen"} ottelut, ${humanDate(viewDate)}`;
+
   const content = `
 <header class="page-header">
   <img src="/static/banner_light.png" alt="Morning Hockey" class="brand-banner brand-banner-light">
   <img src="/static/banner_dark.png" alt="Morning Hockey" class="brand-banner brand-banner-dark">
-  ${currentRound ? "" : `<p class="subtitle">Ei vielä otteluita tällä kaudella</p>`}
 </header>
 
-${
-  currentRound
-    ? `<section>
+<section>
   <div class="section-title-row">
-    <h2 class="section-title">${escapeHtml(humanDate(currentRound.date))} · ${roundGames.length} ottelua</h2>
+    <a class="icon-btn day-nav-btn${dayOffset <= -1 ? " is-disabled" : ""}" ${dayOffset <= -1 ? 'aria-disabled="true"' : `href="${dayHref(dayOffset - 1)}"`} title="Edellinen päivä" aria-label="Edellinen päivä">‹</a>
+    <h2 class="section-title">${escapeHtml(dayTitle)} · ${roundGames.length} ${roundGames.length === 1 ? "ottelu" : "ottelua"}</h2>
+    <a class="icon-btn day-nav-btn${dayOffset >= 1 ? " is-disabled" : ""}" ${dayOffset >= 1 ? 'aria-disabled="true"' : `href="${dayHref(dayOffset + 1)}"`} title="Seuraava päivä" aria-label="Seuraava päivä">›</a>
     <button type="button" class="icon-btn refresh-btn" title="Päivitä ottelutiedot" aria-label="Päivitä ottelutiedot" onclick="location.reload()">⟳</button>
   </div>
-  <div class="game-list">${gameCardsHtml}</div>
-</section>`
-    : ""
-}
+  ${roundGames.length ? `<div class="game-list">${gameCardsHtml}</div>` : `<p class="empty-note">Ei otteluita tänä päivänä.</p>`}
+</section>
 
 ${favoriteTeamsHtml}
 
