@@ -61,10 +61,9 @@ function renderFinnishSkaterRow(row: FinnishSkaterRow, rank: number): string {
         <td>
           <a href="/pelaajat/${row.player_id}" class="player-cell">
             <img src="${escapeHtml(row.headshot)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
-            <span class="player-name">${escapeHtml(row.name)}<span class="player-meta">${escapeHtml(row.position)}</span></span>
+            <span class="player-name">${escapeHtml(row.name)}<span class="player-meta">${escapeHtml(row.position)} · <img src="${escapeHtml(row.logo)}" alt="${escapeHtml(row.team_abbrev)}" class="table-team-logo" loading="lazy"></span></span>
           </a>
         </td>
-        <td><img src="${escapeHtml(row.logo)}" alt="" class="table-team-logo" loading="lazy">${escapeHtml(row.team_abbrev)}</td>
         <td>${row.games_played}</td>
         <td>${row.goals}</td>
         <td>${row.assists}</td>
@@ -81,11 +80,10 @@ function renderLeagueSkaterRow(row: SkaterStatsRow, rank: number): string {
             <img src="${escapeHtml(row.headshot)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
             <span class="player-name">
               ${escapeHtml(row.name)}
-              <span class="player-meta">${nationalityFlag(row.nationality)} ${escapeHtml(row.nationality)} · ${escapeHtml(row.position)}</span>
+              <span class="player-meta">${nationalityFlag(row.nationality)} ${escapeHtml(row.nationality)} · ${escapeHtml(row.position)} · <img src="${escapeHtml(row.logo)}" alt="${escapeHtml(row.team_abbrev)}" class="table-team-logo" loading="lazy"></span>
             </span>
           </a>
         </td>
-        <td><img src="${escapeHtml(row.logo)}" alt="" class="table-team-logo" loading="lazy">${escapeHtml(row.team_abbrev)}</td>
         <td>${row.games_played}</td>
         <td>${row.goals}</td>
         <td>${row.assists}</td>
@@ -107,12 +105,11 @@ function statTeaserTable(
   ${
     rows.length
       ? `<div class="stats-table-wrap">
-    <table class="stats-table">
+    <table class="stats-table porssi-table">
       <thead>
         <tr>
           <th class="col-rank">#</th>
           <th>Pelaaja</th>
-          <th>Jkk</th>
           <th>O</th>
           <th>M</th>
           <th>S</th>
