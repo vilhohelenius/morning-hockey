@@ -17,7 +17,9 @@ from .nhl_api import NHLClient
 from .xg.compute import compute_game
 
 _FINISHED_STATES = {"OFF", "FINAL"}
-_REGULAR_SEASON_GAMES = 1312  # 32 teams x 82 games / 2
+# Upper bound on regular-season game numbers: 32 teams x 84 games / 2 from 2026-27
+# (it was 1312 at 82 games). Numbers a season never used 404 and are skipped.
+_REGULAR_SEASON_GAMES = 1344
 _WRITE_EVERY = 25  # games per D1 write during a backfill
 _MAX_PER_RUN = 150  # incremental safety cap; the next digest run picks up the rest
 
