@@ -514,6 +514,30 @@ CREATE TABLE IF NOT EXISTS goalie_game_xg (
 
 CREATE INDEX IF NOT EXISTS idx_goalie_game_xg_player ON goalie_game_xg(player_id, season);
 
+-- On-ice xG for/against per skater and game (2026-10-06), from the NHL shift
+-- chart + the xG models (src/morning_hockey/xg/onice.py), synced by
+-- `sync_xg --backfill-onice SEASON`. xgf/xga = xG the player's team
+-- generated/conceded while he was on the ice (all situations); *_5v5 the same
+-- restricted to 5v5 with both goalies in; toi_* in seconds. Season xGF% is
+-- SUM(xgf)/(SUM(xgf)+SUM(xga)) in the web queries. Skaters only (no goalies).
+-- Idempotent; in the D1 Console run the statements one at a time.
+CREATE TABLE IF NOT EXISTS skater_game_onice_xg (
+    game_id INTEGER NOT NULL,
+    player_id INTEGER NOT NULL,
+    team_id INTEGER NOT NULL,
+    season INTEGER NOT NULL,
+    game_date TEXT NOT NULL,
+    toi_sec INTEGER NOT NULL,
+    toi_5v5_sec INTEGER NOT NULL,
+    xgf REAL NOT NULL,
+    xga REAL NOT NULL,
+    xgf_5v5 REAL NOT NULL,
+    xga_5v5 REAL NOT NULL,
+    PRIMARY KEY (game_id, player_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_skater_game_onice_xg_player ON skater_game_onice_xg(player_id, season);
+
 -- Team xGF/xGA per game (all situations and 5v5), written by sync_xg.py.
 CREATE TABLE IF NOT EXISTS team_game_xg (
     game_id INTEGER NOT NULL,

@@ -93,7 +93,40 @@ export const XG_INFO_TEXT = `
   <p>Malli on koulutettu NHL:n play-by-play-datalla kausilta 2023–24 – 2025–26 (tarkkuus AUC noin 0,79). Luvut ovat
   mallin raakatulosta eikä niitä ole skaalattu kauden maalimäärään, joten yksittäisen ottelun xG on kohinaista ja
   kausisummat ovat luotettavampia. Vain runkosarja.</p>
+  <p><strong>xGF%</strong>: kentällä olon aikana pelaajan joukkueen luoma xG jaettuna luodun ja päästetyn xG:n summalla.
+  Yli 50 % tarkoittaa, että joukkue on hallinnut pelaajan jäällä ollessa. 5v5 laskee vain viisi viittä -tilanteet.</p>
 </details>`;
+
+// Skater on-ice xG (skater_game_onice_xg, `sync_xg --backfill-onice`): the xG
+// the player's team generated/conceded while he was on the ice. xGF% =
+// xGF / (xGF + xGA).
+export interface SkaterOnIceXg {
+  xgf: number;
+  xga: number;
+  xgf5v5: number;
+  xga5v5: number;
+}
+
+export async function fetchSkaterOnIceXg(db: D1Database, playerId: number, season: number): Promise<SkaterOnIceXg | null> {
+  try {
+    const row = await db
+      .prepare(
+        "SELECT SUM(xgf) AS xgf, SUM(xga) AS xga, SUM(xgf_5v5) AS xgf5, SUM(xga_5v5) AS xga5 FROM skater_game_onice_xg WHERE player_id = ? AND season = ?",
+      )
+      .bind(playerId, season)
+      .first<{ xgf: number | null; xga: number | null; xgf5: number | null; xga5: number | null }>();
+    return row && row.xgf !== null
+      ? { xgf: row.xgf, xga: row.xga ?? 0, xgf5v5: row.xgf5 ?? 0, xga5v5: row.xga5 ?? 0 }
+      : null;
+  } catch (error) {
+    console.error(`Skater on-ice xG lookup failed for ${playerId}:`, error);
+    return null;
+  }
+}
+
+export function xgPercent(xgf: number, xga: number): string {
+  return xgf + xga > 0 ? `${((xgf / (xgf + xga)) * 100).toFixed(1)} %` : "–";
+}
 
 // ---- Team xGF% (team_game_xg) ----
 
