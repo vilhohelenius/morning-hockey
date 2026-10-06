@@ -354,7 +354,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     if (game.is_finished) {
       youtubeUrl = await resolveHighlightsUrl(db, context.env, game);
       const gameXg = await fetchGameTeamXg(db, game.game_id, game.away_abbrev, game.home_abbrev);
-      if (gameXg) xgRows = teamXgStatRows(gameXg.away, gameXg.home);
+      if (gameXg) xgRows = teamXgStatRows(gameXg.away, gameXg.home, true);
     }
   } else {
     const skaterQuery = (abbrev: string) =>

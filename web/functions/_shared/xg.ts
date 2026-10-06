@@ -189,15 +189,33 @@ export async function fetchGameTeamXg(db: D1Database, gameId: number, awayAbbrev
 }
 
 // Two TeamStatRow-shaped rows (all situations, 5v5) for the stat-bar renderer.
-export function teamXgStatRows(away: TeamXg, home: TeamXg): { label: string; away_value: string; home_value: string; away_pct?: number; home_pct?: number }[] {
+export function teamXgStatRows(away: TeamXg, home: TeamXg, withTotals = false): { label: string; away_value: string; home_value: string; away_pct?: number; home_pct?: number }[] {
   const row = (label: string, a: number | null, h: number | null) => ({
     label,
     away_value: formatPct(a),
     home_value: formatPct(h),
     ...(a !== null && h !== null && a + h > 0 ? { away_pct: (100 * a) / (a + h), home_pct: (100 * h) / (a + h) } : {}),
   });
+  const total = withTotals
+    ? [{ label: "xG", away_value: away.xgf.toFixed(2), home_value: home.xgf.toFixed(2), ...(away.xgf + home.xgf > 0 ? { away_pct: (100 * away.xgf) / (away.xgf + home.xgf), home_pct: (100 * home.xgf) / (away.xgf + home.xgf) } : {}) }]
+    : [];
   return [
+    ...total,
     row("xGF%", xgfPct(away.xgf, away.xga), xgfPct(home.xgf, home.xga)),
     row("xGF% 5v5", xgfPct(away.xgf5v5, away.xga5v5), xgfPct(home.xgf5v5, home.xga5v5)),
   ];
+}
+
+// game_id -> on-ice xGF% (all situations, 0-100) for one skater's season.
+export async function fetchSkaterGameOnIcePct(db: D1Database, playerId: number, season: number): Promise<Map<number, number>> {
+  try {
+    const { results } = await db
+      .prepare("SELECT game_id, xgf, xga FROM skater_game_onice_xg WHERE player_id = ? AND season = ?")
+      .bind(playerId, season)
+      .all<{ game_id: number; xgf: number; xga: number }>();
+    return new Map(results.filter((r) => r.xgf + r.xga > 0).map((r) => [r.game_id, (100 * r.xgf) / (r.xgf + r.xga)]));
+  } catch (error) {
+    console.error(`Per-game on-ice xG lookup failed for ${playerId}/${season}:`, error);
+    return new Map();
+  }
 }

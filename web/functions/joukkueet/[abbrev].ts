@@ -92,7 +92,7 @@ function renderSeasonStats(stats: TeamSeasonStatsRow | null, xg: TeamXg | null):
             <th>PM</th>
             <th>+/-</th>
             <th>LKT/O</th>
-            <th>NP</th>${xg ? "<th>xGF%</th><th>xGF% 5v5</th>" : ""}
+            <th>NP</th>${xg ? "<th>xGF</th><th>xGA</th><th>xGF%</th><th>xGF% 5v5</th>" : ""}
           </tr>
         </thead>
         <tbody>
@@ -105,7 +105,7 @@ function renderSeasonStats(stats: TeamSeasonStatsRow | null, xg: TeamXg | null):
             <td>${stats.goals_against}</td>
             <td class="stat-card-highlight">${goalDifferential > 0 ? "+" : ""}${goalDifferential}</td>
             <td>${stats.shots_for_per_game.toFixed(1)}</td>
-            <td>${stats.shutouts}</td>${xg ? `<td>${formatPct(xgfPct(xg.xgf, xg.xga))}</td><td>${formatPct(xgfPct(xg.xgf5v5, xg.xga5v5))}</td>` : ""}
+            <td>${stats.shutouts}</td>${xg ? `<td>${xg.xgf.toFixed(1)}</td><td>${xg.xga.toFixed(1)}</td><td>${formatPct(xgfPct(xg.xgf, xg.xga))}</td><td>${formatPct(xgfPct(xg.xgf5v5, xg.xga5v5))}</td>` : ""}
           </tr>
         </tbody>
       </table>

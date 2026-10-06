@@ -28,6 +28,7 @@ import type { Env } from "../_shared/types";
 import {
   XG_INFO_TEXT,
   fetchGameXg,
+  fetchSkaterGameOnIcePct,
   fetchGoalieSeasonXg,
   fetchSkaterOnIceXg,
   fetchSkaterSeasonXg,
@@ -413,7 +414,7 @@ function opponentCell(homeRoadFlag: string, abbrev: string): string {
 
 const GAME_LOG_COLLAPSE_AT = 5;
 
-function renderSkaterGameLog(games: any[], xgByGame: Map<number, number>): string {
+function renderSkaterGameLog(games: any[], xgByGame: Map<number, number>, onIceByGame: Map<number, number>): string {
   const rows = games
     .map(
       (g) => `
@@ -427,6 +428,7 @@ function renderSkaterGameLog(games: any[], xgByGame: Map<number, number>): strin
         <td>${g.plusMinus > 0 ? "+" : ""}${g.plusMinus}</td>
         <td>${g.pim}</td>
         <td>${escapeHtml(g.toi)}</td>
+        ${onIceByGame.size ? `<td>${onIceByGame.has(g.gameId) ? `${onIceByGame.get(g.gameId)!.toFixed(1)} %` : "–"}</td>` : ""}
       </tr>`,
     )
     .join("");
@@ -449,6 +451,7 @@ function renderSkaterGameLog(games: any[], xgByGame: Map<number, number>): strin
           <th>+/-</th>
           <th>JH</th>
           <th>Peliaika</th>
+          ${onIceByGame.size ? "<th>xGF%</th>" : ""}
         </tr>
       </thead>
       <tbody>${rows}</tbody>
@@ -707,10 +710,11 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     const gameLog = await fetchJson(`/player/${playerId}/game-log/${selectedSeason}/2`);
     const games = gameLog.gameLog ?? [];
     const xgByGame = await fetchGameXg(context.env.DB, playerId, selectedSeason, isGoalie);
+    const onIceByGame = isGoalie ? new Map<number, number>() : await fetchSkaterGameOnIcePct(context.env.DB, playerId, selectedSeason);
     gameLogHtml = games.length
       ? isGoalie
         ? renderGoalieGameLog(games, xgByGame)
-        : renderSkaterGameLog(games, xgByGame)
+        : renderSkaterGameLog(games, xgByGame, onIceByGame)
       : `<p class="empty-note">Ei pelattuja otteluita tälle kaudelle.</p>`;
   } catch (error) {
     console.error(`Player game log fetch failed for ${playerId}/${selectedSeason}:`, error);
