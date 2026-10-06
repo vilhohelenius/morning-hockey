@@ -265,7 +265,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       }
 
       if (box) {
-        gameDetails[game.game_id] = { ...gameDetails[game.game_id], timeline: buildTimeline(box.goals, box.penalties, game.away_abbrev), team_stats: box.teamStats };
+        gameDetails[game.game_id] = { ...gameDetails[game.game_id], timeline: buildTimeline(box.goals, box.penalties, game.away_abbrev, box.shootout), team_stats: box.teamStats };
         scorers = [
           ...finnishScorerLines(box.awaySkaters, game.away_abbrev),
           ...finnishScorerLines(box.homeSkaters, game.home_abbrev),

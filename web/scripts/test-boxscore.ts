@@ -11,6 +11,8 @@ import assert from "node:assert/strict";
 import {
   attachGoalClips,
   buildGoalEvents,
+  buildShootoutAttempts,
+  resolveFinalType,
   buildPenaltyEvents,
   buildPreviewTeamStats,
   buildTeamStats,
@@ -330,12 +332,12 @@ const PBP = {
 {
   const goals = buildGoalEvents(SCORING_BY_PERIOD, "FLA", "CAR", new Set());
   const penalties = buildPenaltyEvents(PBP, "FLA", "CAR", new Set());
-  const round = parseTimeline(serializeTimeline({ goals, penalties, complete: true }));
+  const round = parseTimeline(serializeTimeline({ goals, penalties, shootout: [], complete: true }));
   assert.deepEqual(round.goals, goals);
   assert.deepEqual(round.penalties, penalties);
   assert.equal(round.complete, true);
-  assert.ok(serializeTimeline({ goals, penalties, complete: true }).startsWith('{"v":2,"complete":true'));
-  assert.equal(parseTimeline(serializeTimeline({ goals, penalties: [], complete: false })).complete, false);
+  assert.ok(serializeTimeline({ goals, penalties, shootout: [], complete: true }).startsWith('{"v":3,"complete":true'));
+  assert.equal(parseTimeline(serializeTimeline({ goals, penalties: [], shootout: [], complete: false })).complete, false);
 
   // legacy cache row: a bare goals array, no period field
   const legacy = parseTimeline(JSON.stringify(goals.map(({ period, ...rest }) => rest)));
@@ -343,4 +345,59 @@ const PBP = {
   assert.deepEqual(legacy.penalties, []);
   assert.deepEqual(legacy.goals.map((g) => g.period), [2, 4]);
   console.log("ok: goals_json envelope round-trips and still reads legacy rows");
+}
+
+// ---------- shootout + final type ----------
+
+{
+  assert.equal(resolveFinalType({ periodDescriptor: { periodType: "SO" } }, null, true), "SO", "landing has no gameOutcome: use last period when finished");
+  assert.equal(resolveFinalType({ periodDescriptor: { periodType: "OT" } }, undefined, true), "OT");
+  assert.equal(resolveFinalType({ periodDescriptor: { periodType: "SO" } }, null, false), "REG", "an unfinished game's current period is not its final type");
+  assert.equal(resolveFinalType({ periodDescriptor: { periodType: "REG" } }, null, true), "REG");
+  assert.equal(resolveFinalType({ periodDescriptor: { periodType: "OT" } }, { gameOutcome: { lastPeriodType: "SO" } }, false), "SO", "play-by-play gameOutcome wins");
+  assert.equal(resolveFinalType({ gameOutcome: { lastPeriodType: "OT" } }, null, false), "OT");
+  assert.equal(resolveFinalType(null, null, true), "REG");
+  console.log("ok: resolve_final_type finds OT/SO without landing.gameOutcome");
+}
+
+const RAW_SO = [
+  { sequence: 1, playerId: 5, teamAbbrev: { default: "CAR" }, firstName: { default: "Seth" }, lastName: { default: "Jarvis" }, result: "save", gameWinner: false, homeScore: 0, awayScore: 0 },
+  { sequence: 2, playerId: 6, teamAbbrev: { default: "FLA" }, firstName: { default: "Aleksander" }, lastName: { default: "Barkov" }, result: "goal", gameWinner: false, homeScore: 0, awayScore: 1 },
+  { sequence: 3, playerId: 7, teamAbbrev: { default: "CAR" }, firstName: { default: "Sebastian" }, lastName: { default: "Aho" }, result: "missed", gameWinner: false, homeScore: 0, awayScore: 1 },
+  { sequence: 4, playerId: 8, teamAbbrev: { default: "FLA" }, firstName: { default: "Sam" }, lastName: { default: "Reinhart" }, result: "goal", gameWinner: true, homeScore: 0, awayScore: 2 },
+];
+
+{
+  const attempts = buildShootoutAttempts(RAW_SO, new Set([7]));
+  assert.deepEqual(attempts.map((a) => a.result), ["save", "goal", "miss", "goal"]);
+  assert.equal(attempts[0].player, "Jarvis S.");
+  assert.equal(attempts[2].player, "Aho S. 🇫🇮");
+  assert.equal(attempts[3].winner, true);
+  assert.deepEqual(buildShootoutAttempts(undefined, new Set()), []);
+
+  const scoring = [
+    ...SCORING_BY_PERIOD,
+    { periodDescriptor: { number: 5, periodType: "SO" }, goals: [{ playerId: 8, firstName: { default: "Sam" }, lastName: { default: "Reinhart" }, teamAbbrev: { default: "FLA" }, timeInPeriod: "00:00", assists: [] }] },
+  ];
+  const goals = buildGoalEvents(scoring, "FLA", "CAR", new Set());
+  const withAttempts = buildTimeline(goals, [], "FLA", attempts);
+  const last = withAttempts[withAttempts.length - 1];
+  assert.equal(last.label, "Voittolaukaukset");
+  assert.equal(last.shootout?.length, 4);
+  assert.deepEqual([last.away_goals, last.home_goals], [2, 0]);
+  assert.equal(withAttempts.filter((p) => p.label === "Voittolaukaukset").length, 1, "SO winner goal is not duplicated as a goal event");
+  assert.equal(withAttempts.flatMap((p) => p.events).filter((e) => e.kind === "goal").length, 2);
+
+  // no attempts known (e.g. legacy row): fall back to the goal event
+  const fallback = buildTimeline(goals, [], "FLA");
+  assert.equal(fallback[fallback.length - 1].events.length, 1);
+  console.log("ok: shootout attempts form their own band without duplicating the winner goal");
+}
+
+{
+  const attempts = buildShootoutAttempts(RAW_SO, new Set());
+  const round = parseTimeline(serializeTimeline({ goals: [], penalties: [], shootout: attempts, complete: true }));
+  assert.deepEqual(round.shootout, attempts);
+  assert.deepEqual(parseTimeline('{"v":2,"complete":true,"goals":[],"penalties":[]}').shootout, []);
+  console.log("ok: envelope v3 carries the shootout");
 }

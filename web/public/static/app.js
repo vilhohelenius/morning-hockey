@@ -462,6 +462,28 @@
       return row;
     }
 
+    function shootoutEvent(attempt, awayAbbrev) {
+      var side = attempt.team_abbrev === awayAbbrev ? "away" : "home";
+      var row = el("div", "mt-event mt-" + side + " mt-so mt-so-" + attempt.result);
+      var main = el("div", "mt-main");
+      main.appendChild(el("span", "mt-time", attempt.sequence + "."));
+      if (attempt.result === "goal") {
+        var pill = el("span", "mt-pill");
+        var puck = el("span", "mt-icon");
+        puck.innerHTML = MT_PUCK_ICON;
+        pill.appendChild(puck);
+        pill.appendChild(el("span", "mt-pill-score", attempt.away_score + " - " + attempt.home_score));
+        main.appendChild(pill);
+      } else {
+        main.appendChild(el("span", "mt-so-miss", attempt.result === "save" ? "Torjuttu" : "Ohi"));
+      }
+      var who = el("span", "mt-who");
+      who.appendChild(el("strong", null, attempt.player));
+      main.appendChild(who);
+      row.appendChild(main);
+      return row;
+    }
+
     function renderTimeline(periods, awayAbbrev) {
       var wrap = section("Ottelun kulku");
       if (!periods.length) {
@@ -476,6 +498,9 @@
         list.appendChild(band);
         period.events.forEach(function (event) {
           list.appendChild(timelineEvent(event, awayAbbrev));
+        });
+        (period.shootout || []).forEach(function (attempt) {
+          list.appendChild(shootoutEvent(attempt, awayAbbrev));
         });
       });
       wrap.appendChild(list);

@@ -4,7 +4,7 @@
 // Pure functions, no D1/fetch involved, so they're plain-node testable
 // (see scripts/test-boxscore.mjs).
 
-import type { GoalEvent, PenaltyEvent, TeamSeasonStatsRow, TeamStatRow } from "./types";
+import type { GoalEvent, PenaltyEvent, ShootoutAttempt, TeamSeasonStatsRow, TeamStatRow } from "./types";
 
 const PERIOD_NUMBER_LABELS: Record<number, string> = { 1: "1. erä", 2: "2. erä", 3: "3. erä" };
 const STRENGTH_LABELS: Record<string, string> = { pp: "YV", sh: "AV" };
@@ -424,6 +424,7 @@ interface RawPbpRosterSpot {
 }
 
 export interface RawPlayByPlay {
+  gameOutcome?: { lastPeriodType?: string };
   awayTeam?: { id?: number };
   homeTeam?: { id?: number };
   plays?: RawPbpPlay[];
@@ -497,6 +498,8 @@ export interface TimelinePeriod {
   away_goals: number;
   home_goals: number;
   events: TimelineEvent[];
+  // Set only on the shootout band: the individual attempts (events is empty).
+  shootout?: ShootoutAttempt[];
 }
 
 function timeToSeconds(time: string): number {
@@ -507,11 +510,16 @@ function timeToSeconds(time: string): number {
 // Groups goals + penalties into one band per period, events in clock order
 // (a penalty sorts before a goal at the exact same second -- it was called
 // first). Period score counts that period's goals only, as Flashscore does.
-export function buildTimeline(goals: GoalEvent[], penalties: PenaltyEvent[], awayAbbrev: string): TimelinePeriod[] {
+// With `shootout` attempts, the shootout winner "goal" that landing's
+// scoring list also carries is dropped (the attempts already include it) and
+// the shootout band's score is the attempts' own tally.
+export function buildTimeline(goals: GoalEvent[], penalties: PenaltyEvent[], awayAbbrev: string, shootout: ShootoutAttempt[] = []): TimelinePeriod[] {
   const entries: { period: number; label: string; seconds: number; rank: number; event: TimelineEvent }[] = [];
   for (const goal of goals) {
+    const period = goal.period ?? periodFromLabel(goal.period_label);
+    if (shootout.length && period >= 100) continue;
     entries.push({
-      period: goal.period ?? periodFromLabel(goal.period_label),
+      period,
       label: goal.period_label,
       seconds: timeToSeconds(goal.time_in_period),
       rank: 1,
@@ -544,7 +552,63 @@ export function buildTimeline(goals: GoalEvent[], penalties: PenaltyEvent[], awa
       else current.home_goals += 1;
     }
   }
+
+  if (shootout.length) {
+    const scored = shootout.filter((a) => a.result === "goal");
+    periods.push({
+      label: periodLabel({ periodType: "SO" }),
+      away_goals: scored.filter((a) => a.team_abbrev === awayAbbrev).length,
+      home_goals: scored.filter((a) => a.team_abbrev !== awayAbbrev).length,
+      events: [],
+      shootout,
+    });
+  }
   return periods;
+}
+
+interface RawShootoutEvent {
+  sequence?: number;
+  playerId: number;
+  teamAbbrev: { default: string };
+  firstName: { default: string };
+  lastName: { default: string };
+  result?: string;
+  gameWinner?: boolean;
+  homeScore?: number;
+  awayScore?: number;
+}
+
+// landing.summary.shootout.events -> one entry per attempt (shooter, team,
+// goal/save/miss, running shootout score).
+export function buildShootoutAttempts(events: RawShootoutEvent[] | undefined, finnishIds: Set<number>): ShootoutAttempt[] {
+  if (!Array.isArray(events)) return [];
+  return events.map((e, i) => ({
+    sequence: e.sequence ?? i + 1,
+    team_abbrev: e.teamAbbrev.default,
+    player: shortNameWithFlag(e, finnishIds),
+    result: e.result === "goal" ? "goal" : e.result === "save" ? "save" : "miss",
+    away_score: e.awayScore ?? 0,
+    home_score: e.homeScore ?? 0,
+    winner: !!e.gameWinner,
+  }));
+}
+
+// landing has no gameOutcome (it lives on the schedule + play-by-play
+// payloads). Order: play-by-play's gameOutcome, landing's if present, then --
+// for a finished game only -- landing's own periodDescriptor, which for a
+// settled game is its last period (REG/OT/SO, confirmed on a real shootout).
+export function resolveFinalType(
+  landing: { gameOutcome?: { lastPeriodType?: string }; periodDescriptor?: { periodType?: string } } | null | undefined,
+  playByPlay: { gameOutcome?: { lastPeriodType?: string } } | null | undefined,
+  finished: boolean,
+): string {
+  const explicit = playByPlay?.gameOutcome?.lastPeriodType ?? landing?.gameOutcome?.lastPeriodType;
+  if (explicit) return explicit;
+  if (finished) {
+    const type = landing?.periodDescriptor?.periodType;
+    if (type === "OT" || type === "SO") return type;
+  }
+  return "REG";
 }
 
 // ---- cache envelope: goals_json holds goals + penalties with no schema change ----
@@ -552,6 +616,7 @@ export function buildTimeline(goals: GoalEvent[], penalties: PenaltyEvent[], awa
 export interface Timeline {
   goals: GoalEvent[];
   penalties: PenaltyEvent[];
+  shootout: ShootoutAttempt[];
   // False when the play-by-play fetch failed (or the row predates the
   // timeline) -- penalties/clips are then missing, so the cache row is
   // treated as stale and retried on the next view.
@@ -559,7 +624,7 @@ export interface Timeline {
 }
 
 export function serializeTimeline(timeline: Timeline): string {
-  return JSON.stringify({ v: 2, complete: timeline.complete, goals: timeline.goals, penalties: timeline.penalties });
+  return JSON.stringify({ v: 3, complete: timeline.complete, goals: timeline.goals, penalties: timeline.penalties, shootout: timeline.shootout });
 }
 
 // Reads both the current envelope and the legacy bare goals array.
@@ -569,8 +634,9 @@ export function parseTimeline(goalsJson: string): Timeline {
     return {
       goals: parsed.map((g: GoalEvent) => ({ ...g, period: g.period ?? periodFromLabel(g.period_label) })),
       penalties: [],
+      shootout: [],
       complete: false,
     };
   }
-  return { goals: parsed.goals ?? [], penalties: parsed.penalties ?? [], complete: parsed.complete !== false };
+  return { goals: parsed.goals ?? [], penalties: parsed.penalties ?? [], shootout: parsed.shootout ?? [], complete: parsed.complete !== false };
 }

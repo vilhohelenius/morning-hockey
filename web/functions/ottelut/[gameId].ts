@@ -485,7 +485,7 @@ ${
   <div class="team-detail-body">
     <div class="tp-section">
       <p class="tp-section-title">Ottelun kulku</p>
-      ${renderMatchTimeline(buildTimeline(box.goals, box.penalties, game.away_abbrev), game.away_abbrev)}
+      ${renderMatchTimeline(buildTimeline(box.goals, box.penalties, game.away_abbrev, box.shootout), game.away_abbrev)}
     </div>
 
     <div class="tp-section">

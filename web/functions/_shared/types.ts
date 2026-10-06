@@ -157,6 +157,16 @@ export interface GoalEvent {
   clip_url?: string;
 }
 
+export interface ShootoutAttempt {
+  sequence: number;
+  team_abbrev: string;
+  player: string; // "Last F." (+ flag)
+  result: "goal" | "save" | "miss";
+  away_score: number; // running shootout score after this attempt
+  home_score: number;
+  winner: boolean;
+}
+
 export interface PenaltyEvent {
   period: number;
   period_label: string;

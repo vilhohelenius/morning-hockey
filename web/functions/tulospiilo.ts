@@ -102,7 +102,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
         gameDetails[game.game_id] = {
           youtube_url: youtubeUrl ?? undefined,
-          ...(box ? { timeline: buildTimeline(box.goals, box.penalties, game.away_abbrev), team_stats: box.teamStats } : {}),
+          ...(box ? { timeline: buildTimeline(box.goals, box.penalties, game.away_abbrev, box.shootout), team_stats: box.teamStats } : {}),
         };
 
         gamesHtml += renderSpoilerGame(game, youtubeUrl);

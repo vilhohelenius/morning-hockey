@@ -3001,3 +3001,17 @@ main {
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
+
+/* Shootout attempts (mt-so) */
+.mt-so-miss {
+  flex-shrink: 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.mt-so-save strong,
+.mt-so-miss strong {
+  font-weight: 500;
+  color: var(--muted);
+}

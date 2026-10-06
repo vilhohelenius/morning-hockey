@@ -5,7 +5,7 @@
 
 import { escapeHtml } from "./format";
 import type { TimelineEvent, TimelinePeriod } from "./boxscore";
-import type { GoalEvent, PenaltyEvent } from "./types";
+import type { GoalEvent, PenaltyEvent, ShootoutAttempt } from "./types";
 
 const STRENGTH_FI: Record<string, string> = { YV: "Ylivoima", AV: "Alivoima" };
 
@@ -42,6 +42,24 @@ function penaltyHtml(penalty: PenaltyEvent, side: "away" | "home"): string {
     </div>`;
 }
 
+const SO_RESULT_FI: Record<string, string> = { save: "Torjuttu", miss: "Ohi" };
+
+function shootoutHtml(attempt: ShootoutAttempt, awayAbbrev: string): string {
+  const side = attempt.team_abbrev === awayAbbrev ? "away" : "home";
+  const outcome =
+    attempt.result === "goal"
+      ? `<span class="mt-pill"><span class="mt-icon">${PUCK_ICON}</span><span class="mt-pill-score">${attempt.away_score} - ${attempt.home_score}</span></span>`
+      : `<span class="mt-so-miss">${SO_RESULT_FI[attempt.result]}</span>`;
+  return `
+    <div class="mt-event mt-${side} mt-so mt-so-${attempt.result}">
+      <div class="mt-main">
+        <span class="mt-time">${attempt.sequence}.</span>
+        ${outcome}
+        <span class="mt-who"><strong>${escapeHtml(attempt.player)}</strong></span>
+      </div>
+    </div>`;
+}
+
 function eventHtml(event: TimelineEvent, awayAbbrev: string): string {
   if (event.kind === "goal") return goalHtml(event.goal, event.goal.team_abbrev === awayAbbrev ? "away" : "home");
   return penaltyHtml(event.penalty, event.penalty.team_abbrev === awayAbbrev ? "away" : "home");
@@ -53,7 +71,7 @@ export function renderMatchTimeline(periods: TimelinePeriod[], awayAbbrev: strin
     .map(
       (period) => `
     <div class="mt-band"><span>${escapeHtml(period.label)}</span><span class="mt-band-score">${period.away_goals} - ${period.home_goals}</span></div>
-    ${period.events.map((event) => eventHtml(event, awayAbbrev)).join("")}`,
+    ${period.events.map((event) => eventHtml(event, awayAbbrev)).join("")}${(period.shootout ?? []).map((a) => shootoutHtml(a, awayAbbrev)).join("")}`,
     )
     .join("");
   return `<div class="mt">${bands}</div>`;

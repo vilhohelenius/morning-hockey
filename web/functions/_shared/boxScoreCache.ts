@@ -5,9 +5,9 @@
 // route). Extracted here so both places share one cache-read/fetch/write
 // path instead of the dashboard re-implementing its own copy.
 
-import { attachGoalClips, buildGoalEvents, buildPenaltyEvents, buildTeamStats, parseTimeline, serializeTimeline, type RawPlayByPlay } from "./boxscore";
+import { attachGoalClips, buildGoalEvents, buildPenaltyEvents, buildShootoutAttempts, buildTeamStats, parseTimeline, resolveFinalType, serializeTimeline, type RawPlayByPlay } from "./boxscore";
 import { rosterNationalities, teamPlayerStats } from "./gameReport";
-import type { GameBoxScoreRow, GameRow, GoalEvent, GoalieGameStat, PenaltyEvent, PlayerGameStat, TeamStatRow } from "./types";
+import type { GameBoxScoreRow, GameRow, GoalEvent, GoalieGameStat, PenaltyEvent, PlayerGameStat, ShootoutAttempt, TeamStatRow } from "./types";
 
 function seasonIdForDate(dateStr: string): number {
   const [year, month] = dateStr.split("-").map(Number);
@@ -41,6 +41,7 @@ export interface ParsedBoxScore {
   // From play-by-play; stored alongside goals in game_box_scores.goals_json
   // (see serializeTimeline) so the timeline needed no D1 schema change.
   penalties: PenaltyEvent[];
+  shootout: ShootoutAttempt[];
   // False if play-by-play could not be fetched/is missing from the cache row.
   timelineComplete: boolean;
   teamStats: TeamStatRow[];
@@ -76,7 +77,6 @@ async function fetchAndParseBoxScore(game: GameRow): Promise<ParsedBoxScore> {
     }) as Promise<RawPlayByPlay | null>,
   ]);
 
-  const finalType: string = landing?.gameOutcome?.lastPeriodType ?? "REG";
 
   const finnishIds = new Set<number>();
   const awayNationalities = rosterNationalities(awayRoster);
@@ -115,8 +115,10 @@ async function fetchAndParseBoxScore(game: GameRow): Promise<ParsedBoxScore> {
       : null;
 
   const nhlGameState: string = landing?.gameState ?? game.game_state;
+  const finalType = resolveFinalType(landing, playByPlay, NHL_FINISHED_STATES.has(nhlGameState));
+  const shootout = buildShootoutAttempts(landing?.summary?.shootout?.events, finnishIds);
 
-  return { finalType, goals, penalties, timelineComplete: playByPlay !== null, teamStats, awaySkaters, homeSkaters, awayGoalies, homeGoalies, live, nhlGameState };
+  return { finalType, goals, penalties, shootout, timelineComplete: playByPlay !== null, teamStats, awaySkaters, homeSkaters, awayGoalies, homeGoalies, live, nhlGameState };
 }
 
 function fromCacheRow(cached: GameBoxScoreRow): ParsedBoxScore {
@@ -125,6 +127,7 @@ function fromCacheRow(cached: GameBoxScoreRow): ParsedBoxScore {
     finalType: cached.final_type,
     goals: timeline.goals,
     penalties: timeline.penalties,
+    shootout: timeline.shootout,
     timelineComplete: timeline.complete,
     teamStats: JSON.parse(cached.team_stats_json),
     awaySkaters: JSON.parse(cached.away_skaters_json),
@@ -181,10 +184,10 @@ function isStale(cached: GameBoxScoreRow, game: GameRow): boolean {
   // already-cached finished game picks up the new wording on next view
   // instead of being stuck with whatever text was cached before the rename.
   if (cached.team_stats_json.includes('"Torjutut laukaukset"') || cached.team_stats_json.includes('"Menetetyt kiekot"') || cached.team_stats_json.includes('"Riistetyt kiekot"')) return true;
-  // 2026-10-06: goals_json became {v:2, complete, goals, penalties} (match
+  // 2026-10-06: goals_json became {v:3, complete, goals, penalties, shootout} (match
   // timeline). A legacy bare-array row, or one whose play-by-play fetch
   // failed (complete:false), is refetched -- again no migration needed.
-  if (!cached.goals_json.startsWith('{"v":2,"complete":true')) return true;
+  if (!cached.goals_json.startsWith('{"v":3,"complete":true')) return true;
   // A cache row is only a trustworthy "settled result" if it was itself
   // captured after the game looked over -- `live_json` is non-null exactly
   // when the fetch that produced this row still saw a clock/period (see
@@ -217,7 +220,7 @@ export async function getBoxScore(
     const box = await fetchAndParseBoxScore(game);
     const params = [
       box.finalType,
-      serializeTimeline({ goals: box.goals, penalties: box.penalties, complete: box.timelineComplete }),
+      serializeTimeline({ goals: box.goals, penalties: box.penalties, shootout: box.shootout, complete: box.timelineComplete }),
       JSON.stringify(box.teamStats),
       JSON.stringify(box.awaySkaters),
       JSON.stringify(box.homeSkaters),
