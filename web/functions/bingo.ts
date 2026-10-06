@@ -128,10 +128,37 @@ document.getElementById("bingo-reveal").addEventListener("click", function () {
   </p>
   ${slipHtml}
   <form method="get" action="/bingo" class="table-filters">
-    <input type="search" name="q" placeholder="Hae pelaajaa nimellä..." value="${escapeHtml(query)}">
+    <input type="search" name="q" id="bingo-search" placeholder="Hae pelaajaa nimellä (vähintään 3 merkkiä)..." value="${escapeHtml(query)}" autocomplete="off">
     <button type="submit" class="filter-btn">Hae</button>
   </form>
-  ${searchHtml}
+  <div id="bingo-search-results">${searchHtml}</div>
+<script>
+// Live suggestions: from 3 characters on, fetch the server-rendered result
+// list (same /bingo?q= markup, each row has its own "+ Lisää" form).
+(function () {
+  var input = document.getElementById("bingo-search");
+  var box = document.getElementById("bingo-search-results");
+  var timer = null;
+  var seq = 0;
+  input.addEventListener("input", function () {
+    clearTimeout(timer);
+    var q = input.value.trim();
+    if (q.length < 3) { if (!q.length) box.innerHTML = ""; return; }
+    timer = setTimeout(function () {
+      var mine = ++seq;
+      fetch("/bingo?q=" + encodeURIComponent(q), { credentials: "same-origin" })
+        .then(function (r) { return r.text(); })
+        .then(function (text) {
+          if (mine !== seq) return;
+          var doc = new DOMParser().parseFromString(text, "text/html");
+          var fresh = doc.getElementById("bingo-search-results");
+          if (fresh) box.innerHTML = fresh.innerHTML;
+        })
+        .catch(function () {});
+    }, 200);
+  });
+})();
+</script>
 </section>
 
 <section>
