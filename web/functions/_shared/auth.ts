@@ -93,8 +93,8 @@ export function readTulospiiloBypassDate(request: Request): string | null {
 
 // Pörssi row highlight dots (Finnish player / favorite team, see
 // _shared/leaderboard.ts's highlightDots). Default ON, so only an explicit
-// "0" turns them off. Cookie-only (no D1 column, unlike theme/tulospiilo):
-// it's a cosmetic per-browser preference and needs no schema migration.
+// "0" turns them off. Same cookie-mirrors-D1 pattern as theme/tulospiilo
+// (user_settings.highlights is the source of truth).
 const HIGHLIGHTS_COOKIE = "highlights";
 
 export function readHighlightsCookie(request: Request): boolean {

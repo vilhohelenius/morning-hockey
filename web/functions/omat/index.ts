@@ -173,7 +173,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
   const currentTheme = settings?.theme ?? readThemeCookie(context.request) ?? "system";
   const tulospiiloEnabled = !!settings?.tulospiilo_mode;
-  const highlightsEnabled = readHighlightsCookie(context.request);
+  const highlightsEnabled = settings ? !!settings.highlights : readHighlightsCookie(context.request);
 
   const content = `
 <header class="page-header">
