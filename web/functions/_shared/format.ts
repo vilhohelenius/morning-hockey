@@ -181,6 +181,13 @@ export function helsinkiParts(isoUtc: string): { date: string; hour: number; min
   return { date: `${get("year")}-${get("month")}-${get("day")}`, hour: Number(get("hour")), minute: Number(get("minute")) };
 }
 
+// Seconds until the next Helsinki midnight (DST-safe: derived from the
+// current Helsinki wall-clock time, minute precision is plenty).
+export function secondsToHelsinkiMidnight(now: Date = new Date()): number {
+  const { hour, minute } = helsinkiParts(now.toISOString());
+  return Math.max(1, (24 * 60 - (hour * 60 + minute)) * 60 - now.getUTCSeconds());
+}
+
 export function helsinkiToday(): string {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: "Europe/Helsinki",

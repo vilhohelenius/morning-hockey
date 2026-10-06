@@ -27,6 +27,11 @@ export function currentUsername(request: Request): string | null {
   return readCookie(request, SESSION_COOKIE);
 }
 
+// Cache-version cookie bumped by functions/_middleware.ts on every POST.
+export function readVersionCookie(request: Request): string {
+  return readCookie(request, "mh_v") ?? "";
+}
+
 export function sessionCookieHeader(username: string): string {
   return `${SESSION_COOKIE}=${encodeURIComponent(username)}; Path=/; Max-Age=${SESSION_MAX_AGE}; SameSite=Lax; HttpOnly`;
 }
