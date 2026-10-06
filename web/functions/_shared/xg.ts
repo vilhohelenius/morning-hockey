@@ -299,7 +299,8 @@ export async function fetchGamePlayerXg(db: D1Database, gameId: number): Promise
     console.error(`Game player xG lookup failed for ${gameId}:`, error);
     return { ixg: new Map(), gsax: new Map() };
   }
-=======
+}
+
 // ---- League team table (/joukkueet, /odotetut) ----
 
 export interface RankedTeamXg {
@@ -328,5 +329,4 @@ export function rankedTeamXg(league: Map<number, TeamXg & { games: number }>): R
       rankXga: rankIn(pg(r.xga, r.games), rows.map((x) => pg(x.xga, x.games)), false),
     }))
     .sort((a, b) => b.pct - a.pct);
->>>>>>> worktree-agent-a2001cc6326670a07
 }
