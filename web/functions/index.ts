@@ -30,7 +30,7 @@
 // The "Aiemmat yöt" archive footer linking to nights/<date>.html isn't
 // ported -- superseded by /arkisto, a real route here.
 
-import { currentUsername, readTulospiiloBypassDate, readTulospiiloCookie } from "./_shared/auth";
+import { currentUsername, readVersionCookie, readTulospiiloBypassDate, readTulospiiloCookie } from "./_shared/auth";
 import { getBoxScore } from "./_shared/boxScoreCache";
 import { buildTimeline } from "./_shared/boxscore";
 import {
@@ -44,7 +44,7 @@ import {
 } from "./_shared/gameCard";
 import { resolveHighlightsUrl } from "./_shared/youtube";
 import { MAX_DAY_OFFSET, MIN_DAY_OFFSET, clampDayOffset, selectDayGames } from "./_shared/dayGames";
-import { addDays, escapeHtml, helsinkiParts, helsinkiToday, humanDate, nationalityFlag, shortDate, teamHeroBackgroundStyle } from "./_shared/format";
+import { addDays, escapeHtml, helsinkiParts, helsinkiToday, secondsToHelsinkiMidnight, humanDate, nationalityFlag, shortDate, teamHeroBackgroundStyle } from "./_shared/format";
 import { buildFinnishNight, renderFinnishNightSection, type NightGame } from "./_shared/finnishNight";
 import { renderLayout } from "./_shared/layout";
 import type {
@@ -240,6 +240,10 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   // All three days (yesterday/today/tomorrow) are rendered up front as
   // hidden panels, so the arrows switch client-side (app.js) with no reload.
   // Only today's panel carries over still-live games from the previous date.
+  // For the HTTP cache lifetime below: any live game / earliest upcoming start on today's panel.
+  let anyLive = false;
+  let nextStartMs = Infinity;
+
   async function renderDay(offset: number): Promise<{ title: string; html: string; count: number }> {
     const date = addDays(todayDate, offset);
     const { results } = await db
@@ -247,6 +251,13 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       .bind(date, addDays(date, -1))
       .all<GameRow>();
     const roundGames = selectDayGames(results, date, offset === 0);
+    if (offset === 0) {
+      for (const g of roundGames) {
+        if (g.is_finished) continue;
+        if (isLive(g)) anyLive = true;
+        else nextStartMs = Math.min(nextStartMs, new Date(g.start_time_utc).getTime());
+      }
+    }
     let gameCardsHtml = "";
 
     for (const game of roundGames) {
@@ -405,6 +416,14 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   // purely for the look (jersey texture + wires outline) -- neither teaser
   // is about a single team, and there's no "wires" crest for "Finland" or
   // "the NHL" to use instead.
+  // Browser-cache lifetime (private + Vary: Cookie): 60 s while a game is
+  // live, otherwise up to 30 min, never past the next game start or the
+  // Helsinki midnight (the "today" panel changes then).
+  const cacheTtl = Math.max(
+    15,
+    Math.floor(anyLive ? 60 : Math.min(1800, secondsToHelsinkiMidnight(), (nextStartMs - Date.now()) / 1000)),
+  );
+
   const dayHref = (offset: number) => (offset === 0 ? "/" : `/?pv=${offset}`);
   const dayTitle = days[dayOffset - MIN_DAY_OFFSET].title;
 
@@ -415,7 +434,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 </header>
 
 <section>
-  <div class="section-title-row" id="day-nav" data-offset="${dayOffset}">
+  <div class="section-title-row" id="day-nav" data-offset="${dayOffset}" data-rendered="${Date.now()}" data-ttl="${cacheTtl}" data-ver="${escapeHtml(readVersionCookie(context.request))}">
     <a class="icon-btn day-nav-btn${dayOffset <= MIN_DAY_OFFSET ? " is-disabled" : ""}" ${dayOffset <= MIN_DAY_OFFSET ? 'aria-disabled="true"' : `href="${dayHref(dayOffset - 1)}"`} data-dir="-1" title="Edellinen päivä" aria-label="Edellinen päivä">‹</a>
     <h2 class="section-title" id="day-title">${escapeHtml(dayTitle)}</h2>
     <a class="icon-btn day-nav-btn${dayOffset >= MAX_DAY_OFFSET ? " is-disabled" : ""}" ${dayOffset >= MAX_DAY_OFFSET ? 'aria-disabled="true"' : `href="${dayHref(dayOffset + 1)}"`} data-dir="1" title="Seuraava päivä" aria-label="Seuraava päivä">›</a>
@@ -446,5 +465,5 @@ ${upcomingHtml}
     env: context.env,
   });
 
-  return new Response(html, { headers: { "content-type": "text/html; charset=utf-8", "Cache-Control": "no-store" } });
+  return new Response(html, { headers: { "content-type": "text/html; charset=utf-8", "Cache-Control": `private, max-age=${cacheTtl}`, Vary: "Cookie" } });
 };

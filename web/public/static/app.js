@@ -108,6 +108,37 @@
         if (target >= DAY_MIN && target <= DAY_MAX) showDay(target);
       });
     });
+
+    // The home page is served from the browser cache (Cache-Control: private,
+    // max-age=ttl, Vary: Cookie), and back/forward may restore it from bfcache
+    // or from an expired cache entry. Reload when it is older than its ttl or
+    // the mh_v version cookie (bumped by every settings/favorites POST) has
+    // changed since it was rendered. The refresh button is location.reload().
+    var cookieVer = function () {
+      var m = document.cookie.match(/(?:^|;\s*)mh_v=([^;]*)/);
+      return m ? decodeURIComponent(m[1]) : "";
+    };
+    var checkHomeFreshness = function () {
+      var rendered = parseInt(dayNav.getAttribute("data-rendered") || "0", 10);
+      var ttl = parseInt(dayNav.getAttribute("data-ttl") || "0", 10);
+      if (!rendered || !ttl) return;
+      if (Date.now() - rendered > ttl * 1000 || cookieVer() !== (dayNav.getAttribute("data-ver") || "")) {
+        // Guard against reload loops (e.g. a badly skewed client clock).
+        try {
+          var last = parseInt(sessionStorage.getItem("homeFreshReloadAt") || "0", 10);
+          if (Date.now() - last < 15000) return;
+          sessionStorage.setItem("homeFreshReloadAt", String(Date.now()));
+        } catch (e) {}
+        location.reload();
+      }
+    };
+    window.addEventListener("pageshow", function (event) {
+      if (event.persisted) checkHomeFreshness();
+    });
+    document.addEventListener("visibilitychange", function () {
+      if (document.visibilityState === "visible") checkHomeFreshness();
+    });
+    checkHomeFreshness();
   }
 
   // Sarjataulukko tabs: remember the last selected tab (storage may be
