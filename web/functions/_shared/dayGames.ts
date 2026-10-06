@@ -9,7 +9,9 @@
 
 import type { GameRow } from "./types";
 
-export const MAX_DAY_OFFSET = 1;
+// Browsable window: yesterday .. three days ahead (asymmetric).
+export const MIN_DAY_OFFSET = -1;
+export const MAX_DAY_OFFSET = 3;
 
 // A game that has started but isn't finished yet. Primarily per the fast
 // tier's own game_state, but that only updates every ~30 min, so a game
@@ -28,10 +30,10 @@ export function isGameLive(game: GameRow, now: number = Date.now()): boolean {
 export const MAX_LIVE_AGE_MS = 8 * 60 * 60 * 1000;
 
 // Parses the ?pv= query value: anything not an integer becomes 0, otherwise
-// clamped to -1..+1.
+// clamped to MIN_DAY_OFFSET..MAX_DAY_OFFSET (-1..+3).
 export function clampDayOffset(raw: string | null | undefined): number {
   if (raw == null || !/^[+-]?\d+$/.test(raw.trim())) return 0;
-  return Math.max(-MAX_DAY_OFFSET, Math.min(MAX_DAY_OFFSET, parseInt(raw, 10)));
+  return Math.max(MIN_DAY_OFFSET, Math.min(MAX_DAY_OFFSET, parseInt(raw, 10)));
 }
 
 // Picks the games to show for `day` (YYYY-MM-DD, Helsinki). `rows` may
