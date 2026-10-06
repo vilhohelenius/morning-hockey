@@ -434,6 +434,10 @@ CREATE TABLE IF NOT EXISTS users (
 -- without a D1 round-trip.
 ALTER TABLE user_settings ADD COLUMN tulospiilo_mode INTEGER NOT NULL DEFAULT 0;
 
+-- Pörssi highlight dots (Finnish player / favorite team) on/off; default on.
+-- Mirrored into the `highlights` cookie like tulospiilo_mode.
+ALTER TABLE user_settings ADD COLUMN highlights INTEGER NOT NULL DEFAULT 1;
+
 -- Analytiikka's Pistepörssi points-race chart (2026-10-01): per-player
 -- game-by-game cumulative points, for the current top-20 skaters only (from
 -- skater_season_stats), fetched on demand from the NHL

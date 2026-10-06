@@ -1,5 +1,5 @@
-// Per-team accent colors for the favorite-team row highlight (see
-// leaderboard.ts's row-team-fav class). Not a canonical team list used
+// Per-team accent colors for the favorite-team highlight dot (see
+// leaderboard.ts's highlight dots). Not a canonical team list used
 // anywhere else -- nothing in this codebase hardcodes the 32 teams; every
 // route derives them dynamically from D1 (synced from the NHL API). These
 // are just a visual hint, so an unmapped or renamed abbrev falls back to

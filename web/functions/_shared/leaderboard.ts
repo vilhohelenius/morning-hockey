@@ -66,24 +66,33 @@ function expandToggle(tableId: string, totalRows: number): string {
     : "";
 }
 
-// Shared by renderRow/renderGoalieRow: the row-team-fav class + the inline
-// --team-fav-color custom property the CSS rule reads. The color always
-// comes from the fixed TEAM_COLORS map, never from request/user input, so
-// it's safe to drop straight into a style attribute with no escaping.
-function teamFavAttrs(teamAbbrev: string, favoriteTeamAbbrevs: Set<string>): { class: string; style: string } {
-  const isFavTeam = favoriteTeamAbbrevs.has(teamAbbrev);
-  return {
-    class: isFavTeam ? "row-team-fav" : "",
-    style: isFavTeam ? ` style="--team-fav-color:${TEAM_COLORS[teamAbbrev] ?? "var(--accent)"}"` : "",
-  };
+// Small colored dots after a player's name (replacing the old left-edge row
+// stripes): blue = Finnish, team color = on one of the user's favorite
+// teams. The team color always comes from the fixed TEAM_COLORS map, never
+// from request/user input, so it's safe in a style attribute with no
+// escaping. highlights=false (the user's Asetukset toggle) -> no dots.
+export interface HighlightOptions {
+  highlights: boolean;
+  favoriteTeamAbbrevs: Set<string>;
 }
 
-function renderRow(row: SkaterStatsRow, rank: number, favoriteTeamAbbrevs: Set<string>): string {
-  const favAttrs = teamFavAttrs(row.team_abbrev, favoriteTeamAbbrevs);
-  const rowClasses = [row.nationality === "FIN" ? "row-fin" : "", favAttrs.class].filter(Boolean).join(" ");
+export function highlightDots(nationality: string, teamAbbrev: string, options: HighlightOptions): string {
+  if (!options.highlights) return "";
+  const dots: string[] = [];
+  if (nationality === "FIN") {
+    dots.push(`<span class="hl-dot hl-dot-fin" title="Suomalainen pelaaja" aria-label="Suomalainen pelaaja"></span>`);
+  }
+  if (options.favoriteTeamAbbrevs.has(teamAbbrev)) {
+    const color = TEAM_COLORS[teamAbbrev] ?? "var(--accent)";
+    const label = `Suosikkijoukkue ${escapeHtml(teamAbbrev)}`;
+    dots.push(`<span class="hl-dot hl-dot-team" style="--dot-color:${color}" title="${label}" aria-label="${label}"></span>`);
+  }
+  return dots.length ? `<span class="hl-dots">${dots.join("")}</span>` : "";
+}
 
+function renderRow(row: SkaterStatsRow, rank: number, hl: HighlightOptions): string {
   return `
-      <tr class="${rowClasses}"${favAttrs.style} data-name="${escapeHtml(row.name)}" data-team="${escapeHtml(row.team_abbrev)}"
+      <tr data-name="${escapeHtml(row.name)}" data-team="${escapeHtml(row.team_abbrev)}"
           data-nationality="${escapeHtml(row.nationality)}"
           data-gp="${row.games_played}" data-goals="${row.goals}" data-assists="${row.assists}"
           data-rank="${rank}" data-position="${escapeHtml(row.position)}">
@@ -92,7 +101,7 @@ function renderRow(row: SkaterStatsRow, rank: number, favoriteTeamAbbrevs: Set<s
           <a href="/pelaajat/${row.player_id}" class="player-cell">
             <img src="${escapeHtml(row.headshot)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
             <span class="player-name">
-              ${escapeHtml(row.name)}
+              <span class="player-name-line">${escapeHtml(row.name)}${highlightDots(row.nationality, row.team_abbrev, hl)}</span>
               <span class="player-meta">${nationalityFlag(row.nationality)} ${escapeHtml(row.nationality)} · ${escapeHtml(row.position)}</span>
             </span>
           </a>
@@ -110,16 +119,18 @@ export interface LeaderboardOptions {
   rows: SkaterStatsRow[];
   emptyMessage?: string;
   favoriteTeamAbbrevs?: Set<string>;
+  highlights?: boolean;
 }
 
 export function renderSkaterLeaderboard(options: LeaderboardOptions): string {
-  const { tableId, rows, emptyMessage, favoriteTeamAbbrevs = new Set<string>() } = options;
+  const { tableId, rows, emptyMessage, favoriteTeamAbbrevs = new Set<string>(), highlights = true } = options;
+  const hl = { highlights, favoriteTeamAbbrevs };
 
   if (!rows.length && emptyMessage) {
     return `<p class="empty-note">${escapeHtml(emptyMessage)}</p>`;
   }
 
-  const body = rows.map((row, index) => renderRow(row, index + 1, favoriteTeamAbbrevs)).join("");
+  const body = rows.map((row, index) => renderRow(row, index + 1, hl)).join("");
 
   return `
   <div class="table-filters" data-table-id="${tableId}">
@@ -128,7 +139,7 @@ export function renderSkaterLeaderboard(options: LeaderboardOptions): string {
     ${nationalityFilterDropdown(rows)}
   </div>
   <div class="stats-table-wrap">
-    <table class="stats-table" id="${tableId}" data-collapse-at="${COLLAPSE_AT}">
+    <table class="stats-table porssi-table" id="${tableId}" data-collapse-at="${COLLAPSE_AT}">
       <thead>
         <tr>
           <th class="col-rank">#</th>
@@ -146,12 +157,9 @@ export function renderSkaterLeaderboard(options: LeaderboardOptions): string {
   ${expandToggle(tableId, rows.length)}`;
 }
 
-function renderGoalieRow(row: GoalieStatsRow, rank: number, favoriteTeamAbbrevs: Set<string>): string {
-  const favAttrs = teamFavAttrs(row.team_abbrev, favoriteTeamAbbrevs);
-  const rowClasses = [row.nationality === "FIN" ? "row-fin" : "", favAttrs.class].filter(Boolean).join(" ");
-
+function renderGoalieRow(row: GoalieStatsRow, rank: number, hl: HighlightOptions): string {
   return `
-      <tr class="${rowClasses}"${favAttrs.style} data-name="${escapeHtml(row.name)}" data-team="${escapeHtml(row.team_abbrev)}"
+      <tr data-name="${escapeHtml(row.name)}" data-team="${escapeHtml(row.team_abbrev)}"
           data-nationality="${escapeHtml(row.nationality)}"
           data-gp="${row.games_played}" data-wins="${row.wins}" data-shutouts="${row.shutouts}"
           data-gaa="${row.goals_against_average}" data-rank="${rank}">
@@ -160,7 +168,7 @@ function renderGoalieRow(row: GoalieStatsRow, rank: number, favoriteTeamAbbrevs:
           <a href="/pelaajat/${row.player_id}" class="player-cell">
             <img src="${escapeHtml(row.headshot)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
             <span class="player-name">
-              ${escapeHtml(row.name)}
+              <span class="player-name-line">${escapeHtml(row.name)}${highlightDots(row.nationality, row.team_abbrev, hl)}</span>
               <span class="player-meta">${nationalityFlag(row.nationality)} ${escapeHtml(row.nationality)}</span>
             </span>
           </a>
@@ -179,16 +187,18 @@ export interface GoalieLeaderboardOptions {
   rows: GoalieStatsRow[];
   emptyMessage?: string;
   favoriteTeamAbbrevs?: Set<string>;
+  highlights?: boolean;
 }
 
 export function renderGoalieLeaderboard(options: GoalieLeaderboardOptions): string {
-  const { tableId, rows, emptyMessage, favoriteTeamAbbrevs = new Set<string>() } = options;
+  const { tableId, rows, emptyMessage, favoriteTeamAbbrevs = new Set<string>(), highlights = true } = options;
+  const hl = { highlights, favoriteTeamAbbrevs };
 
   if (!rows.length && emptyMessage) {
     return `<p class="empty-note">${escapeHtml(emptyMessage)}</p>`;
   }
 
-  const body = rows.map((row, index) => renderGoalieRow(row, index + 1, favoriteTeamAbbrevs)).join("");
+  const body = rows.map((row, index) => renderGoalieRow(row, index + 1, hl)).join("");
 
   return `
   <div class="table-filters" data-table-id="${tableId}">
@@ -196,7 +206,7 @@ export function renderGoalieLeaderboard(options: GoalieLeaderboardOptions): stri
     ${nationalityFilterDropdown(rows)}
   </div>
   <div class="stats-table-wrap">
-    <table class="stats-table" id="${tableId}" data-collapse-at="${COLLAPSE_AT}">
+    <table class="stats-table porssi-table" id="${tableId}" data-collapse-at="${COLLAPSE_AT}">
       <thead>
         <tr>
           <th class="col-rank">#</th>
@@ -231,10 +241,14 @@ function teamMetaLogo(abbrev: string): string {
   return `<img src="${escapeHtml(teamLogoUrl(abbrev))}" alt="${escapeHtml(abbrev)}" class="table-team-logo" loading="lazy">`;
 }
 
+// `hl` (only passed by /omat/pelaajat) makes the roster table pörssi-style:
+// larger rows plus highlight dots. Team/game pages omit it and keep the
+// compact table.
 export function renderRosterSkaterTable(
   skaters: TeamRosterSkaterRow[],
   sectionTitle: string,
   showTeam = false,
+  hl?: HighlightOptions,
 ): string {
   const rows = skaters
     .map(
@@ -247,7 +261,7 @@ export function renderRosterSkaterTable(
           <a href="/pelaajat/${player.player_id}" class="player-cell">
             <img src="${escapeHtml(player.headshot)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
             <span class="player-name">
-              ${escapeHtml(player.name)}
+              <span class="player-name-line">${escapeHtml(player.name)}${hl ? highlightDots(player.nationality, player.team_abbrev, hl) : ""}</span>
               <span class="player-meta">#${player.sweater_number} · ${nationalityFlag(player.nationality)} ${escapeHtml(player.position)}${showTeam ? ` · ${teamMetaLogo(player.team_abbrev)}` : ""}</span>
             </span>
           </a>
@@ -266,7 +280,7 @@ export function renderRosterSkaterTable(
 <section>
   <h2 class="section-title">${sectionTitle}</h2>
   <div class="stats-table-wrap">
-    <table class="stats-table">
+    <table class="stats-table${hl ? " porssi-table" : ""}">
       <thead>
         <tr>
           <th class="col-rank">#</th>
@@ -289,6 +303,7 @@ export function renderRosterGoalieTable(
   goalies: TeamRosterGoalieRow[],
   sectionTitle: string,
   showTeam = false,
+  hl?: HighlightOptions,
 ): string {
   const rows = goalies
     .map(
@@ -301,7 +316,7 @@ export function renderRosterGoalieTable(
           <a href="/pelaajat/${player.player_id}" class="player-cell">
             <img src="${escapeHtml(player.headshot)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
             <span class="player-name">
-              ${escapeHtml(player.name)}
+              <span class="player-name-line">${escapeHtml(player.name)}${hl ? highlightDots(player.nationality, player.team_abbrev, hl) : ""}</span>
               <span class="player-meta">#${player.sweater_number} · ${nationalityFlag(player.nationality)}${showTeam ? ` · ${teamMetaLogo(player.team_abbrev)}` : ""}</span>
             </span>
           </a>
@@ -319,7 +334,7 @@ export function renderRosterGoalieTable(
 <section>
   <h2 class="section-title">${sectionTitle}</h2>
   <div class="stats-table-wrap">
-    <table class="stats-table">
+    <table class="stats-table${hl ? " porssi-table" : ""}">
       <thead>
         <tr>
           <th class="col-rank">#</th>

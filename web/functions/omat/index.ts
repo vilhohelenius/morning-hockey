@@ -9,7 +9,7 @@
 // Path kept as /omat (not renamed to /asetukset) so the favorites/theme
 // POST routes under omat/* don't need their redirect targets changed.
 
-import { currentUsername, readThemeCookie } from "../_shared/auth";
+import { currentUsername, readHighlightsCookie, readThemeCookie } from "../_shared/auth";
 import { escapeHtml, formatToi, teamLogoUrl } from "../_shared/format";
 import { renderLayout } from "../_shared/layout";
 import type {
@@ -173,6 +173,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
   const currentTheme = settings?.theme ?? readThemeCookie(context.request) ?? "system";
   const tulospiiloEnabled = !!settings?.tulospiilo_mode;
+  const highlightsEnabled = settings ? !!settings.highlights : readHighlightsCookie(context.request);
 
   const content = `
 <header class="page-header">
@@ -224,6 +225,24 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     <form method="post" action="/omat/tulospiilo">
       <input type="hidden" name="enabled" value="0">
       <button type="submit" class="toggle-segment ${tulospiiloEnabled ? "" : "active"}">Pois päältä</button>
+    </form>
+  </div>
+</section>
+
+<section>
+  <h2 class="section-title">🔵 Pörssien korostukset</h2>
+  <p class="standings-legend">
+    Pörsseissä (Pistepörssi, Maalivahtipörssi, Suomipörssi, Suosikkipelaajat) pelaajan nimen perässä
+    näkyy pieni pallura: sininen = suomalainen pelaaja, joukkueen värinen = suosikkijoukkueen pelaaja.
+  </p>
+  <div class="toggle-group">
+    <form method="post" action="/omat/highlights">
+      <input type="hidden" name="enabled" value="1">
+      <button type="submit" class="toggle-segment ${highlightsEnabled ? "active" : ""}">Päällä</button>
+    </form>
+    <form method="post" action="/omat/highlights">
+      <input type="hidden" name="enabled" value="0">
+      <button type="submit" class="toggle-segment ${highlightsEnabled ? "" : "active"}">Pois päältä</button>
     </form>
   </div>
 </section>

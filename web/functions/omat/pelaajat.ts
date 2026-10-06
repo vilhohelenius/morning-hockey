@@ -6,7 +6,7 @@
 // span several teams). Adding/removing favorites happens on /omat
 // (Asetukset), not here -- this page is read-only.
 
-import { currentUsername } from "../_shared/auth";
+import { currentUsername, favoriteTeamAbbrevs, readHighlightsCookie } from "../_shared/auth";
 import { renderLayout } from "../_shared/layout";
 import { renderRosterGoalieTable, renderRosterSkaterTable } from "../_shared/leaderboard";
 import type { Env, FavoritePlayerRow, TeamRosterGoalieRow, TeamRosterSkaterRow } from "../_shared/types";
@@ -60,6 +60,11 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   favoriteSkaters.sort((a, b) => b.points - a.points || b.goals - a.goals || a.name.localeCompare(b.name));
   favoriteGoalies.sort((a, b) => b.save_pct - a.save_pct);
 
+  const hl = {
+    highlights: readHighlightsCookie(context.request),
+    favoriteTeamAbbrevs: await favoriteTeamAbbrevs(context.request, context.env),
+  };
+
   const content = `
 <a class="back-link js-back" href="/">← Takaisin</a>
 
@@ -73,8 +78,8 @@ ${
     : `<p class="empty-note">Ei vielä suosikkipelaajia. Lisää niitä <a href="/omat">Asetukset</a>-sivulla.</p>`
 }
 
-${favoriteSkaters.length ? renderRosterSkaterTable(favoriteSkaters, "🏒 Kenttäpelaajat", true) : ""}
-${favoriteGoalies.length ? renderRosterGoalieTable(favoriteGoalies, "🥅 Maalivahdit", true) : ""}
+${favoriteSkaters.length ? renderRosterSkaterTable(favoriteSkaters, "🏒 Kenttäpelaajat", true, hl) : ""}
+${favoriteGoalies.length ? renderRosterGoalieTable(favoriteGoalies, "🥅 Maalivahdit", true, hl) : ""}
 `;
 
   const html = await renderLayout({

@@ -281,6 +281,7 @@ export interface UserSettingsRow {
   username: string;
   theme: string;
   tulospiilo_mode: number;
+  highlights: number;
   updated_at: string;
 }
 

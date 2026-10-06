@@ -91,9 +91,23 @@ export function readTulospiiloBypassDate(request: Request): string | null {
   return readCookie(request, TULOSPIILO_BYPASS_COOKIE);
 }
 
+// Pörssi row highlight dots (Finnish player / favorite team, see
+// _shared/leaderboard.ts's highlightDots). Default ON, so only an explicit
+// "0" turns them off. Same cookie-mirrors-D1 pattern as theme/tulospiilo
+// (user_settings.highlights is the source of truth).
+const HIGHLIGHTS_COOKIE = "highlights";
+
+export function readHighlightsCookie(request: Request): boolean {
+  return readCookie(request, HIGHLIGHTS_COOKIE) !== "0";
+}
+
+export function highlightsCookieHeader(enabled: boolean): string {
+  return `${HIGHLIGHTS_COOKIE}=${enabled ? "1" : "0"}; Path=/; Max-Age=31536000; SameSite=Lax`;
+}
+
 // The signed-in user's favorite team abbrevs, for highlighting their rows
 // in the leaderboard tables (Pistepörssi/Maalivahtipörssi/Rookie-pörssi --
-// see _shared/leaderboard.ts's row-team-fav class). Not logged in -> empty
+// see _shared/leaderboard.ts's highlightDots). Not logged in -> empty
 // set, same "no highlight" result as any team that just isn't a favorite.
 export async function favoriteTeamAbbrevs(request: Request, env: Env): Promise<Set<string>> {
   const username = currentUsername(request);
