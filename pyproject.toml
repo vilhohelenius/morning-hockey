@@ -14,12 +14,21 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# xG/GSAx sync (sync_xg.py). Only the digest workflow and the tests need these.
+xg = [
+    "xgboost>=3.4,<4",  # model JSON loading across major versions isn't guaranteed
+    "pandas>=2.2",
+    "numpy>=2.0",
+]
 dev = [
     "pytest>=8.0",
 ]
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+"morning_hockey.xg" = ["models/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

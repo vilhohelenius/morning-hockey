@@ -3885,3 +3885,18 @@ main {
   text-align: center;
   text-decoration: none;
 }
+
+/* xG/GSAx explainer (player card, maalivahtipörssi) -- collapsed by default. */
+.xg-info {
+  margin: 12px 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.xg-info summary {
+  cursor: pointer;
+}
+
+.xg-info p {
+  margin: 6px 0 0;
+}

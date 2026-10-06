@@ -34,7 +34,7 @@ klikkaus avaa pikakatsauksen.
 
 ### Tilastot
 - `/tilastot` Pistepörssi (myös rookie-pörssi)
-- `/maalivahtiporssi` Maalivahtipörssi
+- `/maalivahtiporssi` Maalivahtipörssi, sarakkeina myös GSAx ja GSAx/100 (vähintään 500 kohdattua laukausta)
 - `/suomiporssi` Suomipörssi: suomalaisten oma pistepörssi ja maalivahdit
 - `/analytiikka` Analytiikka: D3-viivakaaviot. Joukkueet-näkymässä divisioonittain
   sarjapisteiden kertymä kauden aikana (rakennetaan `games`-taulusta),
@@ -64,7 +64,8 @@ kärkikaksikot ja wild cardit).
 - `/joukkueet/<lyhenne>` Joukkuesivu (kaikki 32): rosteri, kausitilastot, viimeisimmät/seuraavat ottelut;
   `/joukkueet/<lyhenne>/ottelut` koko kauden otteluohjelma
 - `/pelaajat/<id>` Pelaajakortti: bio, kausi- ja uratilastot sekä kauden ottelukohtainen
-  loki, haetaan suoraan NHL:n API:sta (ei tallenneta D1:een)
+  loki, haetaan suoraan NHL:n API:sta (ei tallenneta D1:een). Kausikortissa ja
+  ottelulokissa myös xG (hyökkääjät) tai GSAx (maalivahdit) D1:n xG-taulusta
 
 <img src="docs/screenshots/joukkue.png" alt="Joukkuesivu" width="250"> <img src="docs/screenshots/pelaaja.png" alt="Pelaajakortti" width="250">
 
@@ -134,6 +135,7 @@ NHL Highlights -videon; ilman sitä käytetään YouTube-hakulinkkiä.
   `standings_rows`, `finnish_skater_stats`, `finnish_goalie_stats`
 - Joukkueet: `team_roster_skaters`, `team_roster_goalies`, `team_season_stats`
 - Digest: `digests`, `digest_games`, `digest_scorers`, `digest_goalies`
+- xG/GSAx: `skater_game_xg`, `goalie_game_xg` (ottelukohtaiset rivit, kausisummat lasketaan kyselyissä)
 - Käyttäjät: `users`, `favorite_teams`, `favorite_players`, `user_settings`
 - Välimuisti: `skater_game_log_cache` (analytiikan pistekaavio)
 
@@ -156,6 +158,9 @@ src/morning_hockey/
   sync_fast_tier.py       CLI: ottelut → D1 (10 min välein)
   sync_slow_tier.py       CLI: kausitilastot → D1 (2 h välein)
   sync_digest.py          CLI: suomalaiset → D1 (6 h välein)
+  sync_xg.py              CLI: xG/GSAx → D1 (digest-workflow'ssa); `--backfill 20252026`
+  xg/                     xGoalBoost-mallit (models/), features.py (kopio sellaisenaan
+                          xGoalBoostista) ja compute.py (play-by-play → xG-rivit)
 
 web/
   functions/            Cloudflare Pages Functions (TypeScript), yksi
@@ -182,7 +187,7 @@ tests/                 Pytest-yksikkötestit Python-puolelle
 .github/workflows/
   sync-fast-tier.yml    Ottelut D1:een (Workerin ajastamana, 10 min)
   sync-slow-tier.yml    Kausitilastot D1:een (2 h)
-  sync-digest.yml       Suomalaiset pelaajat D1:een (6 h)
+  sync-digest.yml       Suomalaiset pelaajat + xG/GSAx D1:een (6 h)
   deploy-pages.yml       web/ → Cloudflare Pages jokaisella pushilla mainiin
   web-typecheck.yml      tsc + web-testit jokaisella web/-pushilla
   tests.yml               pytest jokaisella pushilla/PR:llä
@@ -236,3 +241,20 @@ Samat lausekkeet pitää päivittää täsmälleen samassa muodossa
 `cron-trigger/src/index.ts`:n `WORKFLOW_BY_CRON`-karttaan. Jokaista synkkaa voi
 myös laukaista käsin milloin vain: Actions-välilehti → valitse synkka → *Run
 workflow*.
+
+## xG ja GSAx
+
+Mallit koulutetaan erillisessä xGoalBoost-repossa (`nhl_pbp/`), ja tähän repoon
+on kopioitu vain valmiit mallitiedostot (`src/morning_hockey/xg/models/`) sekä
+`features.py` muuttamattomana. Päivitys: kouluta uudelleen xGoalBoostissa,
+kopioi `model_*.json`, `model_meta.json` ja `features.py`, päivitä
+`tests/fixtures/golden_2024020001.csv` ja aja `sync_xg --backfill` kausille uudelleen.
+Mallit on koulutettu kausilla 2023–24 – 2025–26 (AUC noin 0,79), vain runkosarja.
+Arvoja ei skaalata kauden maalimäärään.
+
+Backfill (tarvitsee `CF_*`-ympäristömuuttujat, ks. Ajaminen paikallisesti):
+
+```
+pip install -e ".[xg]"
+python -m morning_hockey.sync_xg --backfill 20232024   # sama 20242025, 20252026
+```

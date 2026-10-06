@@ -25,6 +25,15 @@ import {
 } from "../_shared/format";
 import { renderLayout } from "../_shared/layout";
 import type { Env } from "../_shared/types";
+import {
+  XG_INFO_TEXT,
+  fetchGameXg,
+  fetchGoalieSeasonXg,
+  fetchSkaterSeasonXg,
+  formatGsax,
+  formatXg,
+  gsaxPer100,
+} from "../_shared/xg";
 
 const NHL_BASE = "https://api-web.nhle.com/v1";
 
@@ -291,11 +300,32 @@ async function fetchLeagueRanks(
       };
 }
 
+// The latest season's xG (skaters) or GSAx + GSAx/100 (goalies) as extra
+// stat-card cells, or "" when sync_xg hasn't produced rows for that season.
+async function latestSeasonXgCells(
+  db: D1Database,
+  playerId: number,
+  season: number | undefined,
+  isGoalie: boolean,
+): Promise<string> {
+  if (season === undefined) return "";
+  if (isGoalie) {
+    const x = await fetchGoalieSeasonXg(db, playerId, season);
+    if (!x) return "";
+    const gsax = x.xga - x.goalsAgainst;
+    const per100 = gsaxPer100(gsax, x.shotsAgainst);
+    return statCell("GSAx", formatGsax(gsax)) + statCell("GSAx/100", formatGsax(per100, 2));
+  }
+  const x = await fetchSkaterSeasonXg(db, playerId, season);
+  return x ? statCell("xG", formatXg(x.xg)) : "";
+}
+
 interface StatPeriod {
   label: string;
   total: SeasonTotal;
   ranks?: LeagueRanks;
   teams?: string;
+  extraCells?: string; // e.g. the xG/GSAx cells, appended after the NHL API's own stats
 }
 
 function renderPeriodStatsSection(
@@ -314,7 +344,7 @@ function renderPeriodStatsSection(
         <span class="stat-card-title">${escapeHtml(p.label)}</span>
         ${p.teams ? `<span class="stat-card-teams">${p.teams}</span>` : ""}
       </div>
-      <div class="stat-card-grid-cells">${cellsFn(p.total, p.ranks)}</div>
+      <div class="stat-card-grid-cells">${cellsFn(p.total, p.ranks)}${p.extraCells ?? ""}</div>
     </div>`,
     )
     .join("");
@@ -376,7 +406,7 @@ function opponentCell(homeRoadFlag: string, abbrev: string): string {
 
 const GAME_LOG_COLLAPSE_AT = 5;
 
-function renderSkaterGameLog(games: any[]): string {
+function renderSkaterGameLog(games: any[], xgByGame: Map<number, number>): string {
   const rows = games
     .map(
       (g) => `
@@ -384,6 +414,7 @@ function renderSkaterGameLog(games: any[]): string {
         <td>${escapeHtml(shortDate(g.gameDate))}</td>
         <td>${opponentCell(g.homeRoadFlag, g.opponentAbbrev)}</td>
         <td>${g.goals}</td>
+        ${xgByGame.size ? `<td>${formatXg(xgByGame.get(g.gameId))}</td>` : ""}
         <td>${g.assists}</td>
         <td class="stat-strong">${g.points}</td>
         <td>${g.plusMinus > 0 ? "+" : ""}${g.plusMinus}</td>
@@ -405,6 +436,7 @@ function renderSkaterGameLog(games: any[]): string {
           <th>Pvm</th>
           <th>Vast</th>
           <th>M</th>
+          ${xgByGame.size ? "<th>xG</th>" : ""}
           <th>S</th>
           <th>P</th>
           <th>+/-</th>
@@ -578,7 +610,7 @@ function renderSeasonHistorySection(
 </section>`;
 }
 
-function renderGoalieGameLog(games: any[]): string {
+function renderGoalieGameLog(games: any[], gsaxByGame: Map<number, number>): string {
   const rows = games
     .map((g) => {
       const saves = (g.shotsAgainst ?? 0) - (g.goalsAgainst ?? 0);
@@ -589,6 +621,7 @@ function renderGoalieGameLog(games: any[]): string {
         <td>${g.decision ? escapeHtml(GOALIE_DECISION_FI[g.decision] ?? g.decision) : "–"}</td>
         <td>${saves}/${g.shotsAgainst ?? 0}</td>
         <td class="stat-strong">${(g.savePctg ?? 0).toFixed(3)}</td>
+        ${gsaxByGame.size ? `<td>${formatGsax(gsaxByGame.get(g.gameId))}</td>` : ""}
         <td>${escapeHtml(g.toi)}</td>
       </tr>`;
     })
@@ -607,6 +640,7 @@ function renderGoalieGameLog(games: any[]): string {
           <th>Rat.</th>
           <th>Torj.</th>
           <th>SV%</th>
+          ${gsaxByGame.size ? "<th>GSAx</th>" : ""}
           <th>Peliaika</th>
         </tr>
       </thead>
@@ -665,10 +699,11 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   try {
     const gameLog = await fetchJson(`/player/${playerId}/game-log/${selectedSeason}/2`);
     const games = gameLog.gameLog ?? [];
+    const xgByGame = await fetchGameXg(context.env.DB, playerId, selectedSeason, isGoalie);
     gameLogHtml = games.length
       ? isGoalie
-        ? renderGoalieGameLog(games)
-        : renderSkaterGameLog(games)
+        ? renderGoalieGameLog(games, xgByGame)
+        : renderSkaterGameLog(games, xgByGame)
       : `<p class="empty-note">Ei pelattuja otteluita tälle kaudelle.</p>`;
   } catch (error) {
     console.error(`Player game log fetch failed for ${playerId}/${selectedSeason}:`, error);
@@ -681,6 +716,8 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     seasons.length && seasons[0] === currentSeasonId()
       ? await fetchLeagueRanks(context.env.DB, playerId, seasons[0], isGoalie)
       : {};
+
+  const xgCells = await latestSeasonXgCells(context.env.DB, playerId, seasons[0], isGoalie);
 
   const age = landing.birthDate ? ageFromBirthDate(landing.birthDate) : null;
 
@@ -741,11 +778,13 @@ ${renderPeriodStatsSection(
   isGoalie,
   ([
     latestSeasonTotal
-      ? { label: `Kausi ${seasonLabel(seasons[0])}`, total: latestSeasonTotal, ranks: latestRanks, teams: latestSeasonTeams }
+      ? { label: `Kausi ${seasonLabel(seasons[0])}`, total: latestSeasonTotal, ranks: latestRanks, teams: latestSeasonTeams, extraCells: xgCells }
       : null,
     careerTotal ? { label: "Uran tilastot", total: careerTotal } : null,
   ] as (StatPeriod | null)[]).filter((p): p is StatPeriod => p !== null),
 )}
+
+${xgCells ? XG_INFO_TEXT : ""}
 
 ${renderSeasonHistorySection(isGoalie, regularSeasonHistory, playoffHistory, careerTotal, careerPlayoffsTotal)}
 

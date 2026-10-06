@@ -8,6 +8,7 @@
 
 import { escapeHtml, formatToi, nationalityFlag, teamLogoUrl } from "./format";
 import { TEAM_COLORS } from "./teamColors";
+import { formatGsax, gsaxPer100 } from "./xg";
 import type { GoalieStatsRow, SkaterStatsRow, TeamRosterGoalieRow, TeamRosterSkaterRow } from "./types";
 
 const COLLAPSE_AT = 25;
@@ -155,12 +156,21 @@ export function renderSkaterLeaderboard(options: LeaderboardOptions): string {
   ${expandToggle(tableId, rows.length)}`;
 }
 
-function renderGoalieRow(row: GoalieStatsRow, rank: number, hl: HighlightOptions): string {
+// Missing xG sorts last in either direction's usual use (-1000 is below any
+// real GSAx), and shows as "–".
+function gsaxValues(row: GoalieStatsRow): { gsax: number | null; per100: number | null } {
+  if (row.xga === null || row.xga === undefined) return { gsax: null, per100: null };
+  const gsax = row.xga - (row.xg_goals_against ?? 0);
+  return { gsax, per100: gsaxPer100(gsax, row.shots_against ?? 0) };
+}
+
+function renderGoalieRow(row: GoalieStatsRow, rank: number, hl: HighlightOptions, withXg: boolean): string {
+  const { gsax, per100 } = gsaxValues(row);
   return `
       <tr data-name="${escapeHtml(row.name)}" data-team="${escapeHtml(row.team_abbrev)}"
           data-nationality="${escapeHtml(row.nationality)}"
           data-gp="${row.games_played}" data-wins="${row.wins}" data-shutouts="${row.shutouts}"
-          data-gaa="${row.goals_against_average}" data-rank="${rank}">
+          data-gaa="${row.goals_against_average}" data-gsax="${gsax ?? -1000}" data-gsax100="${per100 ?? -1000}" data-rank="${rank}">
         <td class="col-rank">${rank}</td>
         <td>
           <a href="/pelaajat/${row.player_id}" class="player-cell">
@@ -176,6 +186,7 @@ function renderGoalieRow(row: GoalieStatsRow, rank: number, hl: HighlightOptions
         <td>${row.goals_against_average.toFixed(2)}</td>
         <td class="stat-strong">${row.save_pct.toFixed(3)}</td>
         <td>${row.shutouts}</td>
+        ${withXg ? `<td>${formatGsax(gsax)}</td><td>${formatGsax(per100, 2)}</td>` : ""}
       </tr>`;
 }
 
@@ -195,7 +206,8 @@ export function renderGoalieLeaderboard(options: GoalieLeaderboardOptions): stri
     return `<p class="empty-note">${escapeHtml(emptyMessage)}</p>`;
   }
 
-  const body = rows.map((row, index) => renderGoalieRow(row, index + 1, hl)).join("");
+  const withXg = rows.some((row) => row.xga !== null && row.xga !== undefined);
+  const body = rows.map((row, index) => renderGoalieRow(row, index + 1, hl, withXg)).join("");
 
   return `
   <div class="table-filters" data-table-id="${tableId}">
@@ -213,6 +225,7 @@ export function renderGoalieLeaderboard(options: GoalieLeaderboardOptions): stri
           <th data-sort="gaa">GAA</th>
           <th data-sort="rank" data-first-dir="asc" class="sort-asc">SV%</th>
           <th data-sort="shutouts">NP</th>
+          ${withXg ? '<th data-sort="gsax">GSAx</th><th data-sort="gsax100">GSAx/100</th>' : ""}
         </tr>
       </thead>
       <tbody>${body}</tbody>

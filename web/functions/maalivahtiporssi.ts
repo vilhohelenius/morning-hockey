@@ -11,12 +11,22 @@ import { escapeHtml, seasonLabel } from "./_shared/format";
 import { renderGoalieLeaderboard } from "./_shared/leaderboard";
 import { renderLayout } from "./_shared/layout";
 import type { Env, GoalieStatsRow } from "./_shared/types";
+import { XG_INFO_TEXT } from "./_shared/xg";
 
 export const onRequestGet: PagesFunction<Env> = async (context) => {
   const db = context.env.DB;
 
   const { results: goalies } = await db
-    .prepare("SELECT * FROM goalie_season_stats ORDER BY save_pct DESC, wins DESC, name ASC")
+    .prepare(
+      `SELECT g.*, x.xga, x.goals_against AS xg_goals_against, x.shots_against
+       FROM goalie_season_stats g
+       LEFT JOIN (
+         SELECT player_id, season, SUM(xga) AS xga, SUM(goals_against) AS goals_against,
+                SUM(shots_against) AS shots_against
+         FROM goalie_game_xg GROUP BY player_id, season
+       ) x ON x.player_id = g.player_id AND x.season = g.season_id
+       ORDER BY g.save_pct DESC, g.wins DESC, g.name ASC`,
+    )
     .all<GoalieStatsRow>();
 
   const seasonText = goalies.length ? seasonLabel(goalies[0].season_id) : "";
@@ -32,6 +42,8 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 <section>
   ${renderGoalieLeaderboard({ tableId: "goalie-stats-table", rows: goalies, favoriteTeamAbbrevs: favTeams, highlights: readHighlightsCookie(context.request) })}
 </section>
+
+${goalies.some((g) => g.xga !== null && g.xga !== undefined) ? XG_INFO_TEXT : ""}
 `;
 
   const html = await renderLayout({

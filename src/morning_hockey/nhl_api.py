@@ -80,6 +80,12 @@ class NHLClient:
             self._cache[path] = self._request(f"{BASE_URL}{path}").json()
         return self._cache[path]
 
+    def play_by_play(self, game_id: int) -> dict:
+        """Uncached on purpose: one play-by-play is ~150 kB and an xG
+        backfill reads over a thousand of them, so keeping each in
+        self._cache would pile up hundreds of MB for nothing."""
+        return self._request(f"{BASE_URL}/gamecenter/{game_id}/play-by-play").json()
+
     def scoreboard(self, date: str = "now") -> dict:
         """Scores for a given date (YYYY-MM-DD) or the current slate ("now")."""
         return self._get(f"/score/{date}")

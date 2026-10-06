@@ -12,6 +12,7 @@ from morning_hockey.d1_sync import (
     sync_standings,
     sync_team_rosters,
     sync_team_season_stats,
+    sync_xg_games,
 )
 from morning_hockey.league_stats import GoalieStatRow, SkaterStatRow
 from morning_hockey.models import Digest, GameResult, GoalieLine, ScorerLine, TeamInfo
@@ -459,3 +460,26 @@ def test_sync_team_season_stats_upserts_and_skips_missing_teams():
     assert params[0] == "CHI"
     assert params[4] == 0.22  # power_play_pct
     assert params[9] == 1  # shutouts
+
+
+def test_sync_xg_games_inlines_values_and_chunks_rows():
+    session = FakeSession()
+    client = D1Client("acc", "db", "tok", session=session)
+    skaters = [
+        {"game_id": 2024020001, "player_id": 8000000 + i, "team_id": 1, "season": 20242025,
+         "game_date": "2024-10-04", "shots": 3, "on_goal": 2, "goals": 1, "xg": 0.25}
+        for i in range(201)
+    ]
+    goalies = [
+        {"game_id": 2024020001, "player_id": 8480045, "opp_team_id": 2, "season": 20242025,
+         "game_date": "2024-10-04", "shots_against": 30, "goals_against": 2, "xga": 2.5}
+    ]
+
+    sync_xg_games(client, skaters, goalies)
+
+    assert len(session.calls) == 3  # 200 + 1 skater rows, then the goalie row
+    first = session.calls[0]["json"]
+    assert first["params"] == []
+    assert first["sql"].startswith("INSERT OR REPLACE INTO skater_game_xg (game_id,player_id,")
+    assert "(2024020001,8000000,1,20242025,'2024-10-04',3,2,1,0.25)" in first["sql"]
+    assert session.calls[2]["json"]["sql"].endswith("(2024020001,8480045,2,20242025,'2024-10-04',30,2,2.5)")

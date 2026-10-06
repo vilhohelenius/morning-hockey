@@ -17,7 +17,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install project
-        run: pip install .
+        run: pip install ".[xg]"
 
       - name: Sync digest to D1
         env:
@@ -25,3 +25,13 @@ jobs:
           CF_D1_DATABASE_ID: ${{ secrets.CF_D1_DATABASE_ID }}
           CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
         run: python -m morning_hockey.sync_digest
+
+      # Own step so an xG failure doesn't hide the digest's result (and the
+      # other way around). Scores the finished games that have no xG rows yet.
+      - name: Sync xG/GSAx to D1
+        if: ${{ !cancelled() }}
+        env:
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          CF_D1_DATABASE_ID: ${{ secrets.CF_D1_DATABASE_ID }}
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+        run: python -m morning_hockey.sync_xg

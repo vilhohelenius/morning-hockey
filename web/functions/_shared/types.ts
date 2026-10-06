@@ -52,6 +52,11 @@ export interface SkaterStatsRow {
 }
 
 export interface GoalieStatsRow {
+  // Optional xG columns, joined in only by /maalivahtiporssi (null = no
+  // sync_xg rows for this goalie/season).
+  xga?: number | null;
+  xg_goals_against?: number | null;
+  shots_against?: number | null;
   player_id: number;
   season_id: number;
   name: string;

@@ -478,3 +478,38 @@ CREATE TABLE IF NOT EXISTS bingo_picks (
 );
 
 CREATE INDEX IF NOT EXISTS idx_bingo_picks_user ON bingo_picks(username);
+
+-- xG / GSAx (2026-10-06): per-game expected goals from the xGoalBoost models
+-- (src/morning_hockey/xg/), synced by sync_xg.py in the digest workflow.
+-- Season totals are SUMmed in the web queries, not stored. goalie_game_xg
+-- excludes empty-net shots; shots are charged to the goalie in net at the
+-- time of the shot. Regular season only. Idempotent; in the D1 Console run
+-- the statements one at a time.
+CREATE TABLE IF NOT EXISTS skater_game_xg (
+    game_id INTEGER NOT NULL,
+    player_id INTEGER NOT NULL,
+    team_id INTEGER NOT NULL,
+    season INTEGER NOT NULL,
+    game_date TEXT NOT NULL,
+    shots INTEGER NOT NULL,           -- unblocked shot attempts
+    on_goal INTEGER NOT NULL,
+    goals INTEGER NOT NULL,
+    xg REAL NOT NULL,
+    PRIMARY KEY (game_id, player_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_skater_game_xg_player ON skater_game_xg(player_id, season);
+
+CREATE TABLE IF NOT EXISTS goalie_game_xg (
+    game_id INTEGER NOT NULL,
+    player_id INTEGER NOT NULL,
+    opp_team_id INTEGER NOT NULL,
+    season INTEGER NOT NULL,
+    game_date TEXT NOT NULL,
+    shots_against INTEGER NOT NULL,
+    goals_against INTEGER NOT NULL,
+    xga REAL NOT NULL,
+    PRIMARY KEY (game_id, player_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_goalie_game_xg_player ON goalie_game_xg(player_id, season);

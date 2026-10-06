@@ -10,6 +10,7 @@ this module only ever writes.
 from __future__ import annotations
 
 import datetime as dt
+import re
 
 import requests
 
@@ -408,3 +409,49 @@ def sync_team_season_stats(client: D1Client, stats_by_team: dict) -> int:
         )
         count += 1
     return count
+
+
+# ---------- xG / GSAx (per-game rows from play-by-play, see xg/ and sync_xg.py) ----------
+
+_XG_SKATER_COLUMNS = ["game_id", "player_id", "team_id", "season", "game_date", "shots", "on_goal", "goals", "xg"]
+_XG_GOALIE_COLUMNS = [
+    "game_id", "player_id", "opp_team_id", "season", "game_date", "shots_against", "goals_against", "xga",
+]
+_XG_INSERT_CHUNK = 200
+
+
+def _sql_literal(value) -> str:
+    """Inlined instead of bound: D1 caps a statement at 100 bound parameters,
+    which would mean one HTTP call per ~11 rows -- far too slow for a
+    backfill of tens of thousands of rows. Only ever called with values
+    compute_game() produced (ints, floats, an ISO date string)."""
+    if isinstance(value, str):
+        if not re.fullmatch(r"[0-9A-Za-z:\-]+", value):
+            raise ValueError(f"unexpected string in xG row: {value!r}")
+        return f"'{value}'"
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise TypeError(f"unexpected value in xG row: {value!r}")
+    return repr(value)
+
+
+def _insert_rows(client: D1Client, table: str, columns: list[str], rows: list[dict]) -> None:
+    for start in range(0, len(rows), _XG_INSERT_CHUNK):
+        values = ",".join(
+            "(" + ",".join(_sql_literal(row[c]) for c in columns) + ")"
+            for row in rows[start : start + _XG_INSERT_CHUNK]
+        )
+        client.execute(f"INSERT OR REPLACE INTO {table} ({','.join(columns)}) VALUES {values}")
+
+
+def sync_xg_games(client: D1Client, skater_rows: list[dict], goalie_rows: list[dict]) -> None:
+    """Upserts per-game xG rows (primary key (game_id, player_id), so safe to
+    re-run for the same game). Season totals are summed in the web queries
+    rather than stored, so there is one source of truth."""
+    _insert_rows(client, "skater_game_xg", _XG_SKATER_COLUMNS, skater_rows)
+    _insert_rows(client, "goalie_game_xg", _XG_GOALIE_COLUMNS, goalie_rows)
+
+
+def query_game_ids(client: D1Client, sql: str, params: list | None = None) -> list[int]:
+    """Runs a SELECT returning a single game_id column."""
+    result = client.execute(sql, params)["result"][0]["results"]
+    return [row["game_id"] for row in result]
