@@ -455,3 +455,14 @@ def query_game_ids(client: D1Client, sql: str, params: list | None = None) -> li
     """Runs a SELECT returning a single game_id column."""
     result = client.execute(sql, params)["result"][0]["results"]
     return [row["game_id"] for row in result]
+
+
+_ONICE_COLUMNS = [
+    "game_id", "player_id", "team_id", "season", "game_date",
+    "toi_sec", "toi_5v5_sec", "xgf", "xga", "xgf_5v5", "xga_5v5",
+]
+
+
+def sync_onice_games(client: D1Client, rows: list[dict]) -> None:
+    """Upserts per-skater on-ice xG rows (primary key (game_id, player_id))."""
+    _insert_rows(client, "skater_game_onice_xg", _ONICE_COLUMNS, rows)

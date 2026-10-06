@@ -4,6 +4,7 @@ shipped models (xg/), and writes per-game skater/goalie rows to D1.
 
   python -m morning_hockey.sync_xg                      # incremental (digest workflow)
   python -m morning_hockey.sync_xg --backfill 20242025  # every game of one season
+  python -m morning_hockey.sync_xg --backfill-onice 20242025  # skater on-ice xGF/xGA (shift charts)
 """
 from __future__ import annotations
 
@@ -12,9 +13,10 @@ import os
 
 import requests
 
-from .d1_sync import D1Client, query_game_ids, sync_xg_games
+from .d1_sync import D1Client, query_game_ids, sync_onice_games, sync_xg_games
 from .nhl_api import NHLClient
 from .xg.compute import compute_game
+from .xg.onice import onice_game
 
 _FINISHED_STATES = {"OFF", "FINAL"}
 # Upper bound on regular-season game numbers: 32 teams x 84 games / 2 from 2026-27
@@ -66,12 +68,41 @@ def backfill_games(d1: D1Client, season: int) -> list[int]:
     return [game_id for game_id in ids if game_id not in have]
 
 
+def backfill_onice_games(d1: D1Client, season: int) -> list[int]:
+    """Games of the season that have xG rows (so are finished) but no on-ice rows yet."""
+    have = set(query_game_ids(d1, "SELECT DISTINCT game_id FROM skater_game_onice_xg WHERE season = ?", [season]))
+    return [g for g in query_game_ids(d1, "SELECT DISTINCT game_id FROM skater_game_xg WHERE season = ? ORDER BY game_id", [season]) if g not in have]
+
+
+def _process_onice(client: NHLClient, d1: D1Client, game_ids: list[int]) -> int:
+    rows: list[dict] = []
+    done = 0
+    for index, game_id in enumerate(game_ids, 1):
+        try:
+            game_rows = onice_game(client.play_by_play(game_id), client.shifts(game_id))
+        except requests.HTTPError as error:
+            print(f"Skipping {game_id}: {error}")
+            continue
+        rows += game_rows
+        done += bool(game_rows)
+        if index % _WRITE_EVERY == 0 or index == len(game_ids):
+            sync_onice_games(d1, rows)
+            rows = []
+            print(f"{index}/{len(game_ids)} games processed")
+    return done
+
+
 def run() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--backfill", type=int, metavar="SEASON", help="e.g. 20242025")
+    parser.add_argument("--backfill-onice", type=int, metavar="SEASON", help="skater on-ice xG, e.g. 20242025")
     args = parser.parse_args()
 
     d1 = D1Client(os.environ["CF_ACCOUNT_ID"], os.environ["CF_D1_DATABASE_ID"], os.environ["CF_API_TOKEN"])
+    if args.backfill_onice:
+        done = _process_onice(NHLClient(), d1, backfill_onice_games(d1, args.backfill_onice))
+        print(f"Synced on-ice xG for {done} game(s) to D1.")
+        return
     game_ids = backfill_games(d1, args.backfill) if args.backfill else unprocessed_games(d1)
     done = _process(NHLClient(), d1, game_ids)
     print(f"Synced xG for {done} game(s) to D1.")

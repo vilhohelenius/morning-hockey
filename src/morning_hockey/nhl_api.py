@@ -86,6 +86,12 @@ class NHLClient:
         self._cache would pile up hundreds of MB for nothing."""
         return self._request(f"{BASE_URL}/gamecenter/{game_id}/play-by-play").json()
 
+    def shifts(self, game_id: int) -> list[dict]:
+        """Shift chart rows for a game (typeCode 517 = shift, 505 = goal
+        event). Uncached like play_by_play: ~300 kB per game."""
+        url = f"{STATS_BASE_URL}/shiftcharts"
+        return self._request(url, params={"cayenneExp": f"gameId={game_id}"}).json()["data"]
+
     def scoreboard(self, date: str = "now") -> dict:
         """Scores for a given date (YYYY-MM-DD) or the current slate ("now")."""
         return self._get(f"/score/{date}")
