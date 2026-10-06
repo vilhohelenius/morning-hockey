@@ -9,17 +9,71 @@
 // than reusing _shared/leaderboard.ts, which assumes both of those.
 
 import { favoriteTeamAbbrevs, readHighlightsCookie } from "./_shared/auth";
-import { escapeHtml, seasonLabel } from "./_shared/format";
+import { escapeHtml, formatToi, seasonLabel } from "./_shared/format";
 import { highlightDots, type HighlightOptions } from "./_shared/leaderboard";
 import { renderLayout } from "./_shared/layout";
+import { formatPct, xgfPct } from "./_shared/xg";
 import type { Env, FinnishGoalieRow, FinnishSkaterRow } from "./_shared/types";
 
-function renderSkaterTable(rows: FinnishSkaterRow[], hl: HighlightOptions): string {
+// finnish_skater_stats has no +/-, TOI or PIM. +/- and avg TOI come from
+// team_roster_skaters (same D1 sync, no API call); PIM isn't stored anywhere in
+// D1, so it comes from ONE league-wide stats-REST call (not per player).
+interface Extra {
+  plusMinus?: number;
+  toi?: number;
+  pim?: number;
+  xgf?: number;
+  xgf5?: number;
+}
+
+async function fetchPim(seasonId: number): Promise<Map<number, number>> {
+  const pim = new Map<number, number>();
+  try {
+    const url = `https://api.nhle.com/stats/rest/en/skater/summary?limit=-1&cayenneExp=${encodeURIComponent(`seasonId=${seasonId} and gameTypeId=2`)}`;
+    const response = await fetch(url, { cf: { cacheTtl: 900, cacheEverything: true } } as RequestInit);
+    if (!response.ok) return pim;
+    const body: any = await response.json();
+    for (const r of body?.data ?? []) pim.set(r.playerId, r.penaltyMinutes ?? 0);
+  } catch (error) {
+    console.error("Suomipörssi PIM fetch failed:", error);
+  }
+  return pim;
+}
+
+async function fetchExtras(db: D1Database, rows: FinnishSkaterRow[]): Promise<Map<number, Extra>> {
+  const extras = new Map<number, Extra>();
+  if (!rows.length) return extras;
+  const get = (id: number) => extras.get(id) ?? extras.set(id, {}).get(id)!;
+  const season = rows[0].season_id;
+  try {
+    const { results } = await db.prepare("SELECT player_id, plus_minus, avg_toi_seconds FROM team_roster_skaters").all<{ player_id: number; plus_minus: number; avg_toi_seconds: number }>();
+    for (const r of results) Object.assign(get(r.player_id), { plusMinus: r.plus_minus, toi: r.avg_toi_seconds });
+  } catch (error) {
+    console.error("Suomipörssi roster lookup failed:", error);
+  }
+  try {
+    const { results } = await db
+      .prepare("SELECT player_id, SUM(xgf) AS xgf, SUM(xga) AS xga, SUM(xgf_5v5) AS xgf5, SUM(xga_5v5) AS xga5 FROM skater_game_onice_xg WHERE season = ? GROUP BY player_id")
+      .bind(season)
+      .all<{ player_id: number; xgf: number; xga: number; xgf5: number; xga5: number }>();
+    for (const r of results) Object.assign(get(r.player_id), { xgf: xgfPct(r.xgf, r.xga) ?? undefined, xgf5: xgfPct(r.xgf5, r.xga5) ?? undefined });
+  } catch (error) {
+    console.error("Suomipörssi on-ice xG lookup failed:", error);
+  }
+  const pim = await fetchPim(season);
+  for (const row of rows) if (pim.has(row.player_id)) get(row.player_id).pim = pim.get(row.player_id);
+  return extras;
+}
+
+function renderSkaterTable(rows: FinnishSkaterRow[], hl: HighlightOptions, extras: Map<number, Extra>): string {
+  const num = (v: number | undefined) => (v === undefined ? -1 : v);
   const body = rows
-    .map(
-      (row, index) => `
+    .map((row, index) => {
+      const x = extras.get(row.player_id) ?? {};
+      return `
       <tr data-name="${escapeHtml(row.name)}" data-team="${escapeHtml(row.team_abbrev)}"
-          data-gp="${row.games_played}" data-goals="${row.goals}" data-assists="${row.assists}" data-rank="${index + 1}">
+          data-gp="${row.games_played}" data-goals="${row.goals}" data-assists="${row.assists}" data-rank="${index + 1}"
+          data-plusminus="${x.plusMinus ?? -999}" data-toi="${num(x.toi)}" data-pim="${num(x.pim)}" data-xgf="${num(x.xgf)}" data-xgf5="${num(x.xgf5)}">
         <td class="col-rank">${index + 1}</td>
         <td>
           <a href="/pelaajat/${row.player_id}" class="player-cell">
@@ -34,8 +88,13 @@ function renderSkaterTable(rows: FinnishSkaterRow[], hl: HighlightOptions): stri
         <td>${row.goals}</td>
         <td>${row.assists}</td>
         <td class="stat-strong">${row.points}</td>
-      </tr>`,
-    )
+        <td>${x.plusMinus === undefined ? "–" : (x.plusMinus > 0 ? "+" : "") + x.plusMinus}</td>
+        <td>${x.toi === undefined ? "–" : formatToi(x.toi)}</td>
+        <td>${x.pim ?? "–"}</td>
+        <td>${formatPct(x.xgf ?? null)}</td>
+        <td>${formatPct(x.xgf5 ?? null)}</td>
+      </tr>`;
+    })
     .join("");
 
   return `
@@ -49,6 +108,11 @@ function renderSkaterTable(rows: FinnishSkaterRow[], hl: HighlightOptions): stri
           <th data-sort="goals">M</th>
           <th data-sort="assists">S</th>
           <th data-sort="rank" data-first-dir="asc" class="sort-asc">P</th>
+          <th data-sort="plusminus">+/-</th>
+          <th data-sort="toi">KA</th>
+          <th data-sort="pim">JM</th>
+          <th data-sort="xgf">xGF%</th>
+          <th data-sort="xgf5">xGF% 5v5</th>
         </tr>
       </thead>
       <tbody>${body}</tbody>
@@ -132,7 +196,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
 <section>
   <h2 class="section-title">🏒 Pistepörssi · ${skaters.length} pelaajaa</h2>
-  ${skaters.length ? renderSkaterTable(skaters, hl) : `<p class="empty-note">Ei tilastoituja suomalaispelaajia tälle kaudelle vielä.</p>`}
+  ${skaters.length ? renderSkaterTable(skaters, hl, await fetchExtras(db, skaters)) : `<p class="empty-note">Ei tilastoituja suomalaispelaajia tälle kaudelle vielä.</p>`}
 </section>
 
 <section>
