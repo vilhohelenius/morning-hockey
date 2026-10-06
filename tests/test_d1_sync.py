@@ -222,6 +222,7 @@ FIN_SKATER = LeaderboardRow(
     goals=1,
     assists=1,
     points=2,
+    penalty_minutes=4,
 )
 
 FIN_GOALIE = GoalieLeaderboardRow(
@@ -253,6 +254,7 @@ def test_sync_finnish_skaters_deletes_then_reinserts_every_row():
     assert insert_params[1] == 20262027  # season_id
     assert insert_params[2] == "Mikko Rantanen"
     assert insert_params[3] == "DAL"  # team_abbrev
+    assert 4 in insert_params  # penalty_minutes
 
 
 def test_sync_finnish_goalies_deletes_then_reinserts_every_row():

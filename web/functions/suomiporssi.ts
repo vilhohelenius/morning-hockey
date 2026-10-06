@@ -15,32 +15,14 @@ import { renderLayout } from "./_shared/layout";
 import { fetchGoaliesSeasonGsaxMap, formatGsax, formatPct, xgfPct } from "./_shared/xg";
 import type { Env, FinnishGoalieRow, FinnishSkaterRow } from "./_shared/types";
 
-// finnish_skater_stats has no +/-, TOI or PIM. +/- and avg TOI come from
-// team_roster_skaters (same D1 sync, no API call); PIM isn't stored anywhere in
-// D1, so it comes from ONE league-wide stats-REST call (not per player).
+// +/- and avg TOI come from team_roster_skaters (same D1 sync, no API call);
+// PIM is finnish_skater_stats.penalty_minutes.
 interface Extra {
   plusMinus?: number;
   toi?: number;
   pim?: number;
   xgf?: number;
   xgf5?: number;
-}
-
-async function fetchPim(seasonId: number): Promise<Map<number, number>> {
-  const pim = new Map<number, number>();
-  try {
-    const url = `https://api.nhle.com/stats/rest/en/skater/summary?limit=-1&cayenneExp=${encodeURIComponent(`seasonId=${seasonId} and gameTypeId=2`)}`;
-    const response = await fetch(url);
-    if (!response.ok) {
-      console.error(`Suomipörssi PIM fetch status ${response.status}`);
-      return pim;
-    }
-    const body: any = await response.json();
-    for (const r of body?.data ?? []) pim.set(r.playerId, r.penaltyMinutes ?? 0);
-  } catch (error) {
-    console.error("Suomipörssi PIM fetch failed:", error);
-  }
-  return pim;
 }
 
 async function fetchExtras(db: D1Database, rows: FinnishSkaterRow[]): Promise<Map<number, Extra>> {
@@ -63,8 +45,8 @@ async function fetchExtras(db: D1Database, rows: FinnishSkaterRow[]): Promise<Ma
   } catch (error) {
     console.error("Suomipörssi on-ice xG lookup failed:", error);
   }
-  const pim = await fetchPim(season);
-  for (const row of rows) if (pim.has(row.player_id)) get(row.player_id).pim = pim.get(row.player_id);
+  // 0 for everyone = the penalty_minutes column hasn't been synced yet
+  if (rows.some((row) => row.penalty_minutes > 0)) for (const row of rows) get(row.player_id).pim = row.penalty_minutes;
   return extras;
 }
 

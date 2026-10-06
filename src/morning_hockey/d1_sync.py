@@ -182,8 +182,8 @@ def sync_rookie_stats(client: D1Client, rows: list, season_id: int) -> int:
 _INSERT_FINNISH_SKATER_SQL = """
 INSERT INTO finnish_skater_stats (
     player_id, season_id, name, team_abbrev, logo, headshot, position,
-    games_played, goals, assists, points, updated_at
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    games_played, goals, assists, points, penalty_minutes, updated_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 """
 
 _INSERT_FINNISH_GOALIE_SQL = """
@@ -197,7 +197,7 @@ INSERT INTO finnish_goalie_stats (
 def _finnish_skater_params(row, season_id: int, synced_at: str) -> list:
     return [
         row.player_id, season_id, row.name, row.team, row.logo, row.headshot,
-        row.position, row.games_played, row.goals, row.assists, row.points, synced_at,
+        row.position, row.games_played, row.goals, row.assists, row.points, row.penalty_minutes, synced_at,
     ]
 
 

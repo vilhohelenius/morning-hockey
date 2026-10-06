@@ -153,8 +153,10 @@ CREATE TABLE IF NOT EXISTS finnish_skater_stats (
     goals INTEGER NOT NULL,
     assists INTEGER NOT NULL,
     points INTEGER NOT NULL,
+    penalty_minutes INTEGER NOT NULL DEFAULT 0,
     updated_at TEXT NOT NULL
 );
+-- Added later (existing DBs): ALTER TABLE finnish_skater_stats ADD COLUMN penalty_minutes INTEGER NOT NULL DEFAULT 0;
 
 CREATE INDEX IF NOT EXISTS idx_finnish_skater_stats_points ON finnish_skater_stats(points DESC);
 

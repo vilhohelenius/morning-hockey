@@ -33,6 +33,7 @@ class LeaderboardRow:
     goals: int
     assists: int
     points: int
+    penalty_minutes: int = 0
 
 
 @dataclass(frozen=True)
@@ -81,6 +82,7 @@ def build_leaderboard(client: NHLClient, season_id: int) -> list[LeaderboardRow]
                 goals=row["goals"],
                 assists=row["assists"],
                 points=row["points"],
+                penalty_minutes=row.get("penaltyMinutes") or 0,
             )
         )
     return leaderboard

@@ -85,6 +85,7 @@ export interface FinnishSkaterRow {
   goals: number;
   assists: number;
   points: number;
+  penalty_minutes: number;
 }
 
 export interface FinnishGoalieRow {
