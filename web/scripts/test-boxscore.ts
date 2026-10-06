@@ -8,7 +8,18 @@
 // live check once deployed.
 
 import assert from "node:assert/strict";
-import { buildGoalEvents, buildPreviewTeamStats, buildTeamStats } from "../functions/_shared/boxscore.ts";
+import {
+  attachGoalClips,
+  buildGoalEvents,
+  buildPenaltyEvents,
+  buildPreviewTeamStats,
+  buildTeamStats,
+  buildTimeline,
+  parseTimeline,
+  penaltyReasonFi,
+  serializeTimeline,
+  shortName,
+} from "../functions/_shared/boxscore.ts";
 import type { TeamSeasonStatsRow } from "../functions/_shared/types.ts";
 
 const SCORING_BY_PERIOD = [
@@ -204,3 +215,132 @@ const TEAM_GAME_STATS = [
 }
 
 console.log("\nAll boxscore.ts parity tests passed.");
+
+// ---------- match timeline (ottelun kulku) ----------
+
+const PBP = {
+  awayTeam: { id: 10 },
+  homeTeam: { id: 20 },
+  rosterSpots: [
+    { playerId: 1, firstName: { default: "Gustav" }, lastName: { default: "Forsling" } },
+    { playerId: 3, firstName: { default: "Sebastian" }, lastName: { default: "Aho" } },
+    { playerId: 9, firstName: { default: "Brad" }, lastName: { default: "Marchand" } },
+  ],
+  plays: [
+    { typeDescKey: "faceoff", periodDescriptor: { number: 1, periodType: "REG" }, timeInPeriod: "00:00" },
+    {
+      typeDescKey: "penalty",
+      periodDescriptor: { number: 3, periodType: "REG" },
+      timeInPeriod: "10:00",
+      details: { descKey: "tripping", duration: 2, committedByPlayerId: 9, eventOwnerTeamId: 10 },
+    },
+    {
+      typeDescKey: "penalty",
+      periodDescriptor: { number: 1, periodType: "REG" },
+      timeInPeriod: "02:31",
+      details: { descKey: "some-new-thing", duration: 5, committedByPlayerId: 3, eventOwnerTeamId: 20 },
+    },
+    {
+      // bench minor: no committing player, served by #1
+      typeDescKey: "penalty",
+      periodDescriptor: { number: 2, periodType: "REG" },
+      timeInPeriod: "04:55",
+      details: { descKey: "too-many-men-on-the-ice", duration: 2, servedByPlayerId: 1, eventOwnerTeamId: 10 },
+    },
+    {
+      typeDescKey: "goal",
+      periodDescriptor: { number: 2, periodType: "REG" },
+      timeInPeriod: "04:55",
+      details: { eventOwnerTeamId: 10, highlightClipSharingUrl: "https://nhl.com/video/x-123" },
+    },
+    {
+      typeDescKey: "goal",
+      periodDescriptor: { number: 4, periodType: "OT" },
+      timeInPeriod: "01:23",
+      details: { eventOwnerTeamId: 20, highlightClipSharingUrl: "javascript:alert(1)" },
+    },
+  ],
+};
+
+{
+  assert.equal(shortName("Vladislav", "Podkolzin"), "Podkolzin V.");
+  assert.equal(shortName("", "Cher"), "Cher");
+  const events = buildGoalEvents(SCORING_BY_PERIOD, "FLA", "CAR", new Set([2]));
+  assert.equal(events[0].scorer_short, "Forsling G.");
+  assert.deepEqual(events[0].assists_short, ["Verhaeghe C. 🇫🇮"]);
+  assert.equal(events[0].period, 2);
+  assert.equal(events[1].period, 4);
+  console.log("ok: goal events carry short names and a sortable period number");
+}
+
+{
+  assert.equal(penaltyReasonFi("tripping"), "Kampitus");
+  assert.equal(penaltyReasonFi("interference"), "Estäminen");
+  assert.equal(penaltyReasonFi("roughing"), "Väkivaltaisuus");
+  assert.equal(penaltyReasonFi("some-new-thing"), "Some new thing");
+  assert.equal(penaltyReasonFi("ps-hooking-on-breakaway"), "Rangaistuslaukaus");
+  assert.equal(penaltyReasonFi(undefined), "");
+  console.log("ok: penalty reasons translate with a humanised fallback");
+}
+
+{
+  const penalties = buildPenaltyEvents(PBP, "FLA", "CAR", new Set([3]));
+  assert.equal(penalties.length, 3);
+  assert.deepEqual(penalties[0], {
+    period: 3,
+    period_label: "3. erä",
+    time_in_period: "10:00",
+    team_abbrev: "FLA",
+    player: "Marchand B.",
+    minutes: 2,
+    reason: "Kampitus",
+  });
+  assert.equal(penalties[1].team_abbrev, "CAR");
+  assert.equal(penalties[1].player, "Aho S. 🇫🇮");
+  assert.equal(penalties[1].minutes, 5);
+  assert.equal(penalties[2].player, "Forsling G.", "bench minor falls back to the serving player");
+  console.log("ok: build_penalty_events maps team, player, minutes and Finnish reason");
+}
+
+{
+  const goals = attachGoalClips(buildGoalEvents(SCORING_BY_PERIOD, "FLA", "CAR", new Set()), PBP, "FLA", "CAR");
+  assert.equal(goals[0].clip_url, "https://nhl.com/video/x-123");
+  assert.equal(goals[1].clip_url, undefined, "non-nhl.com links are dropped");
+  console.log("ok: goal clips are matched by period/time/team and restricted to nhl.com");
+}
+
+{
+  const goals = buildGoalEvents(SCORING_BY_PERIOD, "FLA", "CAR", new Set());
+  const penalties = buildPenaltyEvents(PBP, "FLA", "CAR", new Set());
+  const periods = buildTimeline(goals, penalties, "FLA");
+  assert.deepEqual(
+    periods.map((p) => [p.label, p.away_goals, p.home_goals, p.events.length]),
+    [
+      ["1. erä", 0, 0, 1],
+      ["2. erä", 1, 0, 2],
+      ["3. erä", 0, 0, 1],
+      ["Jatkoaika", 0, 1, 1],
+    ],
+  );
+  // same second: the penalty comes before the goal
+  assert.deepEqual(periods[1].events.map((e) => e.kind), ["penalty", "goal"]);
+  console.log("ok: build_timeline groups by period in clock order with per-period scores");
+}
+
+{
+  const goals = buildGoalEvents(SCORING_BY_PERIOD, "FLA", "CAR", new Set());
+  const penalties = buildPenaltyEvents(PBP, "FLA", "CAR", new Set());
+  const round = parseTimeline(serializeTimeline({ goals, penalties, complete: true }));
+  assert.deepEqual(round.goals, goals);
+  assert.deepEqual(round.penalties, penalties);
+  assert.equal(round.complete, true);
+  assert.ok(serializeTimeline({ goals, penalties, complete: true }).startsWith('{"v":2,"complete":true'));
+  assert.equal(parseTimeline(serializeTimeline({ goals, penalties: [], complete: false })).complete, false);
+
+  // legacy cache row: a bare goals array, no period field
+  const legacy = parseTimeline(JSON.stringify(goals.map(({ period, ...rest }) => rest)));
+  assert.equal(legacy.complete, false);
+  assert.deepEqual(legacy.penalties, []);
+  assert.deepEqual(legacy.goals.map((g) => g.period), [2, 4]);
+  console.log("ok: goals_json envelope round-trips and still reads legacy rows");
+}

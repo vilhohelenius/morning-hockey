@@ -19,7 +19,8 @@
 // game specifically when verifying this live.
 
 import { getBoxScore, type ParsedBoxScore } from "../_shared/boxScoreCache";
-import { buildPreviewTeamStats } from "../_shared/boxscore";
+import { buildPreviewTeamStats, buildTimeline } from "../_shared/boxscore";
+import { renderMatchTimeline } from "../_shared/matchTimeline";
 import { computeFormGuide, type FormGuideEntry } from "../_shared/formGuide";
 import { escapeHtml, finalTypeFi, helsinkiParts, humanDate, nationalityFlag } from "../_shared/format";
 import { isLive } from "../_shared/gameCard";
@@ -30,7 +31,6 @@ import { renderLayout } from "../_shared/layout";
 import type {
   Env,
   GameRow,
-  GoalEvent,
   GoalieGameStat,
   PlayerGameStat,
   TeamRosterGoalieRow,
@@ -57,34 +57,6 @@ function emptySeasonStats(abbrev: string): TeamSeasonStatsRow {
     shots_against_per_game: 0,
     shutouts: 0,
   };
-}
-
-function renderGoalTimeline(goals: GoalEvent[], awayAbbrev: string, awayLogo: string, homeLogo: string): string {
-  if (!goals.length) return `<p class="tp-empty">Ei maaleja.</p>`;
-
-  let html = "";
-  let currentPeriod: string | null = null;
-  for (const goal of goals) {
-    if (goal.period_label !== currentPeriod) {
-      currentPeriod = goal.period_label;
-      html += `<p class="gd-period">${escapeHtml(currentPeriod)}</p>`;
-    }
-    const logo = goal.team_abbrev === awayAbbrev ? awayLogo : homeLogo;
-    html += `
-      <div class="gd-goal-row">
-        <div class="gd-goal-main">
-          <span class="gd-goal-time">${escapeHtml(goal.time_in_period)}</span>
-          <img src="${escapeHtml(logo)}" alt="" class="gd-goal-logo">
-          <span class="gd-goal-who">
-            <strong>${escapeHtml(goal.scorer)}</strong>
-            ${goal.strength ? `<span class="gd-goal-strength">${escapeHtml(goal.strength)}</span>` : ""}
-          </span>
-          <span class="gd-goal-score">${goal.away_score}–${goal.home_score}</span>
-        </div>
-        ${goal.assists.length ? `<p class="gd-goal-assists">${escapeHtml(goal.assists.join(", "))}</p>` : ""}
-      </div>`;
-  }
-  return html;
 }
 
 function renderSkaterTable(skaters: PlayerGameStat[]): string {
@@ -451,6 +423,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       <img src="${escapeHtml(game.home_logo)}" alt="" class="logo" loading="lazy">
     </div>
   </div>
+  ${game.is_finished ? `<p class="mt-final-label">Lopputulos</p>` : ""}
   ${game.is_finished && game.final_type !== "REG" ? `<p class="ot-tag">${escapeHtml(finalTypeFi(game.final_type))}</p>` : ""}
   ${game.is_finished ? `<a class="game-card-youtube" href="${escapeHtml(youtubeUrl)}" target="_blank" rel="noopener">▶ Highlightit (YouTube)</a>` : ""}
 </section>
@@ -511,8 +484,8 @@ ${
 <section class="team-detail">
   <div class="team-detail-body">
     <div class="tp-section">
-      <p class="tp-section-title">Maalit</p>
-      ${renderGoalTimeline(box.goals, game.away_abbrev, game.away_logo, game.home_logo)}
+      <p class="tp-section-title">Ottelun kulku</p>
+      ${renderMatchTimeline(buildTimeline(box.goals, box.penalties, game.away_abbrev), game.away_abbrev)}
     </div>
 
     <div class="tp-section">

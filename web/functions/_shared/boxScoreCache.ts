@@ -5,9 +5,9 @@
 // route). Extracted here so both places share one cache-read/fetch/write
 // path instead of the dashboard re-implementing its own copy.
 
-import { buildGoalEvents, buildTeamStats } from "./boxscore";
+import { attachGoalClips, buildGoalEvents, buildPenaltyEvents, buildTeamStats, parseTimeline, serializeTimeline, type RawPlayByPlay } from "./boxscore";
 import { rosterNationalities, teamPlayerStats } from "./gameReport";
-import type { GameBoxScoreRow, GameRow, GoalEvent, GoalieGameStat, PlayerGameStat, TeamStatRow } from "./types";
+import type { GameBoxScoreRow, GameRow, GoalEvent, GoalieGameStat, PenaltyEvent, PlayerGameStat, TeamStatRow } from "./types";
 
 function seasonIdForDate(dateStr: string): number {
   const [year, month] = dateStr.split("-").map(Number);
@@ -38,6 +38,11 @@ export interface LiveStatus {
 export interface ParsedBoxScore {
   finalType: string;
   goals: GoalEvent[];
+  // From play-by-play; stored alongside goals in game_box_scores.goals_json
+  // (see serializeTimeline) so the timeline needed no D1 schema change.
+  penalties: PenaltyEvent[];
+  // False if play-by-play could not be fetched/is missing from the cache row.
+  timelineComplete: boolean;
   teamStats: TeamStatRow[];
   awaySkaters: PlayerGameStat[];
   homeSkaters: PlayerGameStat[];
@@ -57,12 +62,18 @@ const NHL_FINISHED_STATES = new Set(["OFF", "FINAL"]);
 async function fetchAndParseBoxScore(game: GameRow): Promise<ParsedBoxScore> {
   const seasonId = seasonIdForDate(game.date);
 
-  const [landing, rightRail, boxscore, awayRoster, homeRoster] = await Promise.all([
+  const [landing, rightRail, boxscore, awayRoster, homeRoster, playByPlay] = await Promise.all([
     fetchJson(`/gamecenter/${game.game_id}/landing`),
     fetchJson(`/gamecenter/${game.game_id}/right-rail`),
     fetchJson(`/gamecenter/${game.game_id}/boxscore`),
     fetchJson(`/roster/${game.away_abbrev}/current`),
     fetchJson(`/roster/${game.home_abbrev}/current`),
+    // Penalties + goal highlight clips only live here. Optional: a failure
+    // must not take down the rest of the box score.
+    fetchJson(`/gamecenter/${game.game_id}/play-by-play`).catch((error): null => {
+      console.error(`Play-by-play fetch failed for game ${game.game_id}:`, error);
+      return null;
+    }) as Promise<RawPlayByPlay | null>,
   ]);
 
   const finalType: string = landing?.gameOutcome?.lastPeriodType ?? "REG";
@@ -74,7 +85,9 @@ async function fetchAndParseBoxScore(game: GameRow): Promise<ParsedBoxScore> {
   for (const [id, country] of homeNationalities) if (country === "FIN") finnishIds.add(id);
   const nationalities = new Map([...awayNationalities, ...homeNationalities]);
 
-  const goals = buildGoalEvents(landing?.summary?.scoring ?? [], game.away_abbrev, game.home_abbrev, finnishIds);
+  const baseGoals = buildGoalEvents(landing?.summary?.scoring ?? [], game.away_abbrev, game.home_abbrev, finnishIds);
+  const goals = playByPlay ? attachGoalClips(baseGoals, playByPlay, game.away_abbrev, game.home_abbrev) : baseGoals;
+  const penalties = playByPlay ? buildPenaltyEvents(playByPlay, game.away_abbrev, game.home_abbrev, finnishIds) : [];
   const teamStats = buildTeamStats(rightRail?.teamGameStats ?? [], game.away_score, game.home_score);
 
   const playerStats = boxscore?.playerByGameStats ?? {};
@@ -103,13 +116,16 @@ async function fetchAndParseBoxScore(game: GameRow): Promise<ParsedBoxScore> {
 
   const nhlGameState: string = landing?.gameState ?? game.game_state;
 
-  return { finalType, goals, teamStats, awaySkaters, homeSkaters, awayGoalies, homeGoalies, live, nhlGameState };
+  return { finalType, goals, penalties, timelineComplete: playByPlay !== null, teamStats, awaySkaters, homeSkaters, awayGoalies, homeGoalies, live, nhlGameState };
 }
 
 function fromCacheRow(cached: GameBoxScoreRow): ParsedBoxScore {
+  const timeline = parseTimeline(cached.goals_json);
   return {
     finalType: cached.final_type,
-    goals: JSON.parse(cached.goals_json),
+    goals: timeline.goals,
+    penalties: timeline.penalties,
+    timelineComplete: timeline.complete,
     teamStats: JSON.parse(cached.team_stats_json),
     awaySkaters: JSON.parse(cached.away_skaters_json),
     homeSkaters: JSON.parse(cached.home_skaters_json),
@@ -165,6 +181,10 @@ function isStale(cached: GameBoxScoreRow, game: GameRow): boolean {
   // already-cached finished game picks up the new wording on next view
   // instead of being stuck with whatever text was cached before the rename.
   if (cached.team_stats_json.includes('"Torjutut laukaukset"') || cached.team_stats_json.includes('"Menetetyt kiekot"') || cached.team_stats_json.includes('"Riistetyt kiekot"')) return true;
+  // 2026-10-06: goals_json became {v:2, complete, goals, penalties} (match
+  // timeline). A legacy bare-array row, or one whose play-by-play fetch
+  // failed (complete:false), is refetched -- again no migration needed.
+  if (!cached.goals_json.startsWith('{"v":2,"complete":true')) return true;
   // A cache row is only a trustworthy "settled result" if it was itself
   // captured after the game looked over -- `live_json` is non-null exactly
   // when the fetch that produced this row still saw a clock/period (see
@@ -197,7 +217,7 @@ export async function getBoxScore(
     const box = await fetchAndParseBoxScore(game);
     const params = [
       box.finalType,
-      JSON.stringify(box.goals),
+      serializeTimeline({ goals: box.goals, penalties: box.penalties, complete: box.timelineComplete }),
       JSON.stringify(box.teamStats),
       JSON.stringify(box.awaySkaters),
       JSON.stringify(box.homeSkaters),

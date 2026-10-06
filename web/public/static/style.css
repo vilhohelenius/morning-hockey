@@ -2862,3 +2862,142 @@ main {
   text-decoration: none;
   text-align: center;
 }
+
+/* ===== Match timeline "Ottelun kulku" (mt-*) -- _shared/matchTimeline.ts + app.js renderTimeline ===== */
+.mt {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mt-band {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 14px 0 6px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.mt-band:first-child {
+  margin-top: 0;
+}
+
+.mt-band-score {
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.mt-event {
+  display: flex;
+  flex-direction: column;
+  padding: 5px 4px;
+}
+
+.mt-away {
+  align-items: flex-start;
+  text-align: left;
+}
+
+.mt-home {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.mt-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+}
+
+/* Home events mirror the away layout: time ends up at the right edge. */
+.mt-home .mt-main,
+.mt-home .mt-who,
+.mt-home .mt-pill {
+  flex-direction: row-reverse;
+}
+
+.mt-time {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.mt-who {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-width: 0;
+  font-size: 0.9rem;
+}
+
+.mt-reason,
+.mt-strength {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.mt-badge {
+  flex-shrink: 0;
+  min-width: 24px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: #f5c542;
+  color: #14171a;
+  font-weight: 800;
+  font-size: 0.8rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.mt-pill {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card-bg);
+  font-weight: 700;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.mt-icon {
+  display: inline-flex;
+  color: var(--text);
+}
+
+.mt-clip {
+  flex-shrink: 0;
+  display: inline-flex;
+  color: var(--accent);
+}
+
+.mt-assists {
+  margin: 1px 0 0;
+  padding: 0 4px;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.mt-final-label {
+  margin: 2px 0 0;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}

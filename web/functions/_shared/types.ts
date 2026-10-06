@@ -147,6 +147,24 @@ export interface GoalEvent {
   strength: string; // "" | "YV" | "AV"
   away_score: number;
   home_score: number;
+  // Added with the match timeline (2026-10): period number for ordering (OT =
+  // 4+, SO = 5+), "Last F." short names for the compact timeline, and the
+  // NHL.com highlight clip page when play-by-play has one. Optional because
+  // rows cached before this existed (and used as an error fallback) lack them.
+  period?: number;
+  scorer_short?: string;
+  assists_short?: string[];
+  clip_url?: string;
+}
+
+export interface PenaltyEvent {
+  period: number;
+  period_label: string;
+  time_in_period: string;
+  team_abbrev: string;
+  player: string; // "Last F." (+ flag), "" when it was a team penalty
+  minutes: number;
+  reason: string; // Finnish
 }
 
 export interface TeamStatRow {

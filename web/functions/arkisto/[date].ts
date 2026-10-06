@@ -10,6 +10,7 @@
 // fetching a potentially large backlog from the NHL API on every visit.
 
 import { getCachedBoxScores } from "../_shared/boxScoreCache";
+import { buildTimeline } from "../_shared/boxscore";
 import { finnishGoalieLines, finnishScorerLines, renderGameCard } from "../_shared/gameCard";
 import { resolveHighlightsUrl } from "../_shared/youtube";
 import { escapeHtml, humanDate } from "../_shared/format";
@@ -33,7 +34,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   }
 
   const boxScores = await getCachedBoxScores(db, games.map((g) => g.game_id));
-  const gameDetails: Record<number, { goals?: unknown; team_stats?: unknown; youtube_url?: string }> = {};
+  const gameDetails: Record<number, { timeline?: unknown; team_stats?: unknown; youtube_url?: string }> = {};
   let gameCardsHtml = "";
 
   for (const game of games) {
@@ -44,7 +45,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     gameDetails[game.game_id] = { youtube_url: await resolveHighlightsUrl(db, context.env, game) };
 
     if (box) {
-      gameDetails[game.game_id] = { ...gameDetails[game.game_id], goals: box.goals, team_stats: box.teamStats };
+      gameDetails[game.game_id] = { ...gameDetails[game.game_id], timeline: buildTimeline(box.goals, box.penalties, game.away_abbrev), team_stats: box.teamStats };
       scorers = [
         ...finnishScorerLines(box.awaySkaters, game.away_abbrev),
         ...finnishScorerLines(box.homeSkaters, game.home_abbrev),
