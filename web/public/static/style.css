@@ -3328,6 +3328,34 @@ main {
   font-weight: 600;
 }
 
+/* "[logo] 4–1 [logo]" result (also reused by other sections). */
+.yf-result {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.yf-game-logo {
+  width: 26px;
+  height: 18px;
+  object-fit: contain;
+  flex: none;
+}
+
+.yf-game-logo.yf-opp {
+  opacity: 0.75;
+}
+
+.yf-own-score {
+  font-weight: 800;
+}
+
+.yf-opp-score {
+  font-weight: 500;
+  color: var(--muted);
+}
+
 .yf-live {
   display: block;
   margin-top: 2px;
@@ -3346,17 +3374,49 @@ main {
   vertical-align: middle;
 }
 
-.section-tile.hero-tinted .yf-table .player-meta,
-.section-tile.hero-tinted .yf-table .player-name {
-  color: var(--muted);
+/* Same translucent look as the front-page teaser porssi-tables: the
+   hero-tinted tile shows through, no card box / sticky opaque cells. */
+.section-tile.hero-tinted .yf-section .yf-scroll,
+.section-tile.hero-tinted .yf-scroll {
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: #fff;
 }
 
-.section-tile.hero-tinted .yf-table .player-name {
-  color: var(--text);
+.yf-section .yf-table th,
+.yf-section .yf-table td {
+  background: transparent;
+  position: static;
+  border-right: 0;
 }
 
-.section-tile.hero-tinted .yf-table td.st-pts {
-  color: var(--text);
+.yf-section .yf-table thead th {
+  color: rgba(255, 255, 255, 0.85);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.yf-section .yf-table tbody tr:nth-child(odd) td {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.yf-section .yf-table .player-name,
+.yf-section .yf-table td.st-pts,
+.yf-section .yf-table .yf-own-score {
+  color: #fff;
+}
+
+.yf-section .yf-table .player-meta,
+.yf-section .yf-table .yf-opp-score {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.yf-section .yf-table .st-first {
+  min-width: 0;
+}
+
+.yf-section .yf-live {
+  color: #ffd0d0;
 }
 
 /* ===== Pörssit restyle (.porssi-table: NHL-app style, shares look with .stand-table) =====
@@ -3632,3 +3692,30 @@ main {
   min-width: 0;
   white-space: nowrap;
 }
+
+/* ==========================================================================
+   Logo dark fix
+   The logo URLs everywhere (teamLogoUrl(), the D1 logo columns, app.js) are
+   NHL's *_light.svg variants, drawn for light backgrounds. A few are mostly
+   dark navy and nearly vanish on the dark theme's #191c22 cards. NHL's CDN
+   serves a matching *_dark.svg (same artwork, white/brightened fills) for
+   every team, so for just those teams the dark theme swaps the image via
+   `content: url()`. The server can't know the viewer's theme and `src`
+   can't be media-queried, hence CSS keyed on the src suffix. Other teams'
+   light logos already carry their own outlines and stay untouched.
+   Two selector groups (OS dark unless forced light / forced dark) because
+   :root[data-theme] and prefers-color-scheme can't be combined in one rule.
+   ========================================================================== */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) img[src$="/TBL_light.svg"] { content: url("https://assets.nhle.com/logos/nhl/svg/TBL_dark.svg"); }
+  :root:not([data-theme="light"]) img[src$="/TOR_light.svg"] { content: url("https://assets.nhle.com/logos/nhl/svg/TOR_dark.svg"); }
+  :root:not([data-theme="light"]) img[src$="/NSH_light.svg"] { content: url("https://assets.nhle.com/logos/nhl/svg/NSH_dark.svg"); }
+}
+:root[data-theme="dark"] img[src$="/TBL_light.svg"] { content: url("https://assets.nhle.com/logos/nhl/svg/TBL_dark.svg"); }
+:root[data-theme="dark"] img[src$="/TOR_light.svg"] { content: url("https://assets.nhle.com/logos/nhl/svg/TOR_dark.svg"); }
+:root[data-theme="dark"] img[src$="/NSH_light.svg"] { content: url("https://assets.nhle.com/logos/nhl/svg/NSH_dark.svg"); }
+/* .hero-tinted tiles (team-colored, dark-shaded backgrounds) are dark in the
+   light theme too, so they always want the dark logo. */
+.hero-tinted img[src$="/TBL_light.svg"] { content: url("https://assets.nhle.com/logos/nhl/svg/TBL_dark.svg"); }
+.hero-tinted img[src$="/TOR_light.svg"] { content: url("https://assets.nhle.com/logos/nhl/svg/TOR_dark.svg"); }
+.hero-tinted img[src$="/NSH_light.svg"] { content: url("https://assets.nhle.com/logos/nhl/svg/NSH_dark.svg"); }

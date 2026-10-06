@@ -28,6 +28,12 @@ assert.equal(goalieDecisionFi("W"), "V");
 assert.equal(goalieDecisionFi("L"), "H");
 assert.equal(goalieDecisionFi("O"), "JH");
 assert.equal(goalieDecisionFi(null), "–");
-assert.match(renderFinnishNightSection(night, "x"), /TBL 4–1 PHI/);
+assert.equal(night.skaters[0].oppLogo, "a");
+const html = renderFinnishNightSection(night, "x");
+// Scorer Fin (home): own logo TBL, 4–1, opp logo PHI -- logos, not abbreviation text.
+assert.match(html, /<td class="yf-game"><span class="yf-result"><img src="h" alt="TBL"[^>]*class="yf-game-logo yf-own"[^>]*><span class="yf-score"><strong class="yf-own-score">4<\/strong>–<span class="yf-opp-score">1<\/span><\/span><img src="a" alt="PHI"[^>]*class="yf-game-logo yf-opp"/);
+assert.doesNotMatch(html, /TBL 4–1 PHI/);
+// Away skater sees the same game from the other side.
+assert.match(html, /<img src="a" alt="PHI"[^>]*class="yf-game-logo yf-own"[^>]*><span class="yf-score"><strong class="yf-own-score">1<\/strong>–<span class="yf-opp-score">4<\/span>/);
 assert.match(renderFinnishNightSection({ skaters: [], goalies: [] }, "x"), /Ei suomalaisia pelaajia yön otteluissa\./);
 console.log("finnish-night tests passed");
