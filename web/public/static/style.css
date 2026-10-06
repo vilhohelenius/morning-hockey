@@ -2862,3 +2862,158 @@ main {
   text-decoration: none;
   text-align: center;
 }
+
+/* ===== Sarjataulukko tabs + NHL-style tables (standings restyle) ===== */
+
+.standings-tab-picker {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  margin: 12px 0 14px;
+}
+
+.standings-tab {
+  flex: 1;
+  font: inherit;
+  font-size: 0.95rem;
+  color: var(--muted);
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  padding: 10px 4px;
+  cursor: pointer;
+  margin-bottom: -1px;
+  white-space: nowrap;
+}
+
+.standings-tab.active {
+  color: var(--text);
+  font-weight: 700;
+  border-bottom-color: var(--text);
+}
+
+.standings-tab-section.is-hidden {
+  display: none;
+}
+
+.stand-scroll {
+  overflow-x: auto;
+  margin-bottom: 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card-bg);
+  -webkit-overflow-scrolling: touch;
+}
+
+.stand-table {
+  --st-stripe: color-mix(in srgb, var(--card-bg) 94%, var(--text));
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.stand-table th,
+.stand-table td {
+  padding: 12px 10px;
+  text-align: center;
+  white-space: nowrap;
+  min-width: 36px;
+}
+
+.stand-table thead th {
+  font-weight: 700;
+  background: var(--card-bg);
+}
+
+.stand-table th.st-active {
+  color: var(--accent);
+}
+
+.st-arrow {
+  display: block;
+  margin: 3px auto 0;
+  border: 4px solid transparent;
+  border-top-color: var(--accent);
+  border-bottom-width: 0;
+}
+
+.stand-table .st-first {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  text-align: left;
+  min-width: 128px;
+  background: var(--card-bg);
+  border-right: 1px solid var(--border);
+}
+
+.stand-table tbody tr:nth-child(odd) td {
+  background: var(--st-stripe);
+}
+
+.stand-table td.st-pts {
+  font-weight: 700;
+}
+
+.stand-row.qualified td.st-first {
+  box-shadow: inset 3px 0 0 #0a7d32;
+}
+
+.stand-table .st-rank {
+  display: inline-block;
+  width: 36px;
+  color: var(--muted);
+  font-weight: 600;
+  text-align: center;
+}
+
+.stand-table .st-team {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+}
+
+.st-logo {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.stand-table tr.stand-cutoff td,
+.stand-table tr.stand-detail-row td {
+  padding: 0;
+  background: var(--card-bg);
+}
+
+.stand-detail-row .team-detail {
+  position: sticky;
+  left: 0;
+  width: calc(100vw - 70px);
+  max-width: 560px;
+  box-sizing: border-box;
+  margin: 8px 0;
+  text-align: left;
+  white-space: normal;
+}
+
+/* Let the tab views shrink to the column so only the table scrolls. */
+.sarjataulukko-view-section,
+.standings-tab-section {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.stand-table .st-first .st-rank {
+  vertical-align: middle;
+}
+
+.stand-table .st-first .st-team {
+  vertical-align: middle;
+}
+
+.stand-table .st-first .st-rank {
+  line-height: 26px;
+}
