@@ -3,7 +3,7 @@
 //  - #analytiikka-data: one series per team, grouped by division
 //    (_shared/divisionPoints.ts, reconstructed from the always-complete
 //    games table).
-//  - #pisteporssi-data: one series per top-20 skater
+//  - #pisteporssi-data: one series per top-10 skater
 //    (_shared/skaterGameLog.ts, fetched on demand from the NHL API since
 //    per-game skater history isn't in D1).
 // Both draw with the same drawPointsRaceChart core below -- only the
@@ -227,7 +227,7 @@
     });
   })();
 
-  // ---------- Pistepörssi: current top-20 skaters, one chart ----------
+  // ---------- Pistepörssi: current top-10 skaters, one chart ----------
   (function () {
     var dataEl = document.getElementById("pisteporssi-data");
     if (!dataEl) return;

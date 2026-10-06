@@ -4,7 +4,7 @@
 //  - Joukkueet: one chart per division, cumulative standings points per
 //    team, reconstructed straight from the games table -- see
 //    _shared/divisionPoints.ts for why no separate history table is needed.
-//  - Pistepörssi: one chart with the current top-20 skaters' cumulative
+//  - Pistepörssi: one chart with the current top-10 skaters' cumulative
 //    season points, from _shared/skaterGameLog.ts's on-demand NHL game-log
 //    fetch+cache (per-game skater history isn't reconstructable from D1 the
 //    way team points are -- see that module's header comment).
@@ -41,7 +41,7 @@ interface AnalyticsSkater {
   series: { date: string; points: number }[];
 }
 
-const TOP_SKATER_COUNT = 20;
+const TOP_SKATER_COUNT = 10;
 
 export const onRequestGet: PagesFunction<Env> = async (context) => {
   const db = context.env.DB;
