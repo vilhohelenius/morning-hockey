@@ -142,6 +142,7 @@ export async function renderLayout(options: LayoutOptions): Promise<string> {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${title}</title>
 <link rel="stylesheet" href="/static/style.css">
+${["TBL", "TOR", "NSH"].map((t) => `<link rel="preload" as="image" href="https://assets.nhle.com/logos/nhl/svg/${t}_dark.svg"${theme === "dark" ? "" : ' media="(prefers-color-scheme: dark)"'}>`).join("\n")}
 <link rel="icon" href="/static/icon.jpg">
 <link rel="apple-touch-icon" href="/static/icon.jpg">
 <link rel="manifest" href="/static/manifest.json">

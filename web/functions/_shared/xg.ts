@@ -194,10 +194,10 @@ export function teamXgStatRows(
   home: TeamXg,
   withTotals = false,
   ranks?: { away: { pct?: number; pct5v5?: number }; home: { pct?: number; pct5v5?: number } },
-): { label: string; away_value: string; home_value: string; away_pct?: number; home_pct?: number; away_badge?: string; home_badge?: string }[] {
+): { label: string; away_value: string; home_value: string; away_pct?: number; home_pct?: number; away_rank?: number; home_rank?: number }[] {
   const row = (label: string, a: number | null, h: number | null, key?: "pct" | "pct5v5") => ({
     label,
-    ...(key && ranks ? { away_badge: rankBadge(ranks.away[key]), home_badge: rankBadge(ranks.home[key]) } : {}),
+    ...(key && ranks ? { away_rank: ranks.away[key], home_rank: ranks.home[key] } : {}),
     away_value: formatPct(a),
     home_value: formatPct(h),
     ...(a !== null && h !== null && a + h > 0 ? { away_pct: (100 * a) / (a + h), home_pct: (100 * h) / (a + h) } : {}),

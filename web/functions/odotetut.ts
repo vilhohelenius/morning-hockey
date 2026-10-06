@@ -57,7 +57,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
          JOIN skater_season_stats s ON s.player_id = x.player_id AND s.season_id = x.season
          LEFT JOIN (SELECT player_id, SUM(xgf) AS xgf, SUM(xga) AS xga FROM skater_game_onice_xg
                     WHERE season = (SELECT MAX(season) FROM skater_game_xg) GROUP BY player_id) o ON o.player_id = x.player_id
-         WHERE x.season = (SELECT MAX(season) FROM skater_game_xg) AND s.games_played >= ?
+         WHERE x.season = (SELECT MAX(season) FROM skater_game_xg) AND s.games_played >= MIN(?, (SELECT MAX(games_played) FROM skater_season_stats))
          GROUP BY x.player_id ORDER BY xg DESC LIMIT ?`,
       )
       .bind(MIN_GAMES, TOP_N)
@@ -68,7 +68,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
                 SUM(x.xga) - SUM(x.goals_against) AS gsax, SUM(x.shots_against) AS sa
          FROM goalie_game_xg x
          JOIN goalie_season_stats s ON s.player_id = x.player_id AND s.season_id = x.season
-         WHERE x.season = (SELECT MAX(season) FROM goalie_game_xg) AND s.games_played >= ?
+         WHERE x.season = (SELECT MAX(season) FROM goalie_game_xg) AND s.games_played >= MIN(?, (SELECT MAX(games_played) FROM goalie_season_stats))
          GROUP BY x.player_id ORDER BY gsax DESC LIMIT ?`,
       )
       .bind(MIN_GAMES, TOP_N)

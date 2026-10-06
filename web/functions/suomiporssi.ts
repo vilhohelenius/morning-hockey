@@ -30,8 +30,11 @@ async function fetchPim(seasonId: number): Promise<Map<number, number>> {
   const pim = new Map<number, number>();
   try {
     const url = `https://api.nhle.com/stats/rest/en/skater/summary?limit=-1&cayenneExp=${encodeURIComponent(`seasonId=${seasonId} and gameTypeId=2`)}`;
-    const response = await fetch(url, { cf: { cacheTtl: 900, cacheEverything: true } } as RequestInit);
-    if (!response.ok) return pim;
+    const response = await fetch(url);
+    if (!response.ok) {
+      console.error(`Suomipörssi PIM fetch status ${response.status}`);
+      return pim;
+    }
     const body: any = await response.json();
     for (const r of body?.data ?? []) pim.set(r.playerId, r.penaltyMinutes ?? 0);
   } catch (error) {

@@ -214,9 +214,9 @@ function renderStatBarRows(rows: TeamStatRow[], awayAbbrev: string, homeAbbrev: 
       (stat) => `
       <div class="gd-stat-block">
         <div class="gd-stat-row">
-          <span class="gd-stat-value">${escapeHtml(stat.away_value)}${stat.away_badge ?? ""}</span>
+          <span class="gd-stat-value">${escapeHtml(stat.away_value)}</span>
           <span class="gd-stat-label">${escapeHtml(stat.label)}</span>
-          <span class="gd-stat-value">${escapeHtml(stat.home_value)}${stat.home_badge ?? ""}</span>
+          <span class="gd-stat-value">${escapeHtml(stat.home_value)}</span>
         </div>
         <div class="pts-bar">
           <span class="pts-bar-away" style="width: ${stat.away_pct ?? 50}%; background: ${awayColor}"></span>
