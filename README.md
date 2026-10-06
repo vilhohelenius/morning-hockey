@@ -44,7 +44,7 @@ klikkaus avaa pikakatsauksen.
 - `/suomiporssi` Suomipörssi: suomalaisten oma pistepörssi ja maalivahdit
 - `/analytiikka` Analytiikka: D3-viivakaaviot. Joukkueet-näkymässä divisioonittain
   sarjapisteiden kertymä kauden aikana (rakennetaan `games`-taulusta),
-  Pistepörssi-näkymässä nykyisen top-20-pelaajan kumulatiivinen pistekertymä
+  Pistepörssi-näkymässä nykyisen top-10-pelaajan kumulatiivinen pistekertymä
   (NHL:n game log, välimuistitettu D1:een)
 
 <!-- TODO: lisää screenshot -->

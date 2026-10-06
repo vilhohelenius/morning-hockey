@@ -3,7 +3,7 @@
 // games table), individual skater per-game history isn't in D1 -- fetched
 // on demand from the NHL /player/{id}/game-log/{season}/2 endpoint (the
 // same one the player card already uses, see pelaajat/[playerId].ts) for
-// the current top-20 skaters only, and cached in skater_game_log_cache.
+// the current top-10 skaters only, and cached in skater_game_log_cache.
 //
 // Unlike game_box_scores's write-once cache (a finished game never
 // changes), an in-season player's log gains a new entry every time they
@@ -73,7 +73,7 @@ async function getOne(db: D1Database, playerId: number, seasonId: number): Promi
 }
 
 // Fetched in parallel, one NHL call per player not yet fresh in cache --
-// fine at the top-20 scale this is called with, same reasoning as the
+// fine at the top-10 scale this is called with, same reasoning as the
 // per-game box score cache not scaling to "every game ever played".
 export async function getSkaterPointsRace(
   db: D1Database,
