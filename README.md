@@ -1,38 +1,171 @@
 # Morning Hockey
 
 NHL-tulokset, suomalaisten pelaajien pisteet/torjunnat ja kausitilastot kaikille
-32 joukkueelle, selattavissa osoitteessa https://morning-hockey.pages.dev —
-ei ilmoituksia, ei yhtä kovakoodattua joukkuetta, vaan oma käyttäjätili
-suosikkijoukkueineen ja -pelaajineen.
+32 joukkueelle, selattavissa osoitteessa https://morning-hockey.pages.dev.
+Ei ilmoituksia eikä yhtä kovakoodattua joukkuetta: kirjautuminen on kevyt
+(käyttäjätunnus, salasana valinnainen), ja oma tili tallentaa suosikkijoukkueet,
+suosikkipelaajat, teeman ja tulospiilo-asetuksen.
+
+<!-- TODO: lisää screenshot -->
+![Etusivu](docs/screenshots/etusivu.png)
+
+## Sivut
+
+Sivupalkin rakenne: Etusivu, Omat (suosikkijoukkueet + Suosikkipelaajat),
+Sarjataulukko, Tilastot (alivalikko), Playoff-bracket, Ottelut (alivalikko),
+Arkisto ja Asetukset. Yläpalkissa/sivupalkissa on pelaajahaku (vähintään 3
+merkkiä).
+
+### Etusivu (`/`)
+Edellisen illan (tai jo alkaneiden) ottelut suomalaisten pelaajien
+maali-/syöttö-/torjuntarivein, klikattava ottelukortti jossa maaliaikajana ja
+joukkuetilastot, YouTube-highlights-linkki, Suomipörssin ja pistepörssin top 5,
+kirjautuneen käyttäjän suosikkijoukkueiden minilaatikot sekä seuraavan kierroksen
+ottelut (manuaalinen päivitysnappi). Jos tulospiilo on päällä, `/` ohjaa
+sivulle `/tulospiilo`.
+
+<!-- TODO: lisää screenshot -->
+![Etusivu, ottelukortti](docs/screenshots/etusivu-ottelukortti.png)
+
+### Sarjataulukko (`/sarjataulukko`)
+Divisioonittainen sarjataulukko sekä **Kuntopuntari**: joukkueiden viimeisten
+ottelujen form-taulukko (W/L/OTL, järjestys pistekeskiarvon mukaan). Joukkueen
+klikkaus avaa pikakatsauksen.
+
+<!-- TODO: lisää screenshot -->
+![Sarjataulukko](docs/screenshots/sarjataulukko.png)
+
+<!-- TODO: lisää screenshot -->
+![Kuntopuntari](docs/screenshots/kuntopuntari.png)
+
+### Tilastot
+- `/tilastot` Pistepörssi (myös rookie-pörssi)
+- `/maalivahtiporssi` Maalivahtipörssi
+- `/suomiporssi` Suomipörssi: suomalaisten oma pistepörssi ja maalivahdit
+- `/analytiikka` Analytiikka: D3-viivakaaviot. Joukkueet-näkymässä divisioonittain
+  sarjapisteiden kertymä kauden aikana (rakennetaan `games`-taulusta),
+  Pistepörssi-näkymässä nykyisen top-20-pelaajan kumulatiivinen pistekertymä
+  (NHL:n game log, välimuistitettu D1:een)
+
+<!-- TODO: lisää screenshot -->
+![Pistepörssi](docs/screenshots/pisteporssi.png)
+
+<!-- TODO: lisää screenshot -->
+![Suomipörssi](docs/screenshots/suomiporssi.png)
+
+<!-- TODO: lisää screenshot -->
+![Analytiikka](docs/screenshots/analytiikka.png)
+
+### Playoff-bracket (`/playoffit`)
+Ensimmäisen kierroksen pelipari johdettuna sarjataulukosta (divisioonien
+kärkikaksikot ja wild cardit).
+
+<!-- TODO: lisää screenshot -->
+![Playoff-bracket](docs/screenshots/playoffit.png)
+
+### Ottelut
+- `/otteluohjelma` Otteluohjelma: seuraavat 8 päivää, kaikki ottelut
+- `/primetime` Prime time: tulevat ottelut jotka alkavat klo 18:00-00:30 Suomen aikaa
+- `/ottelut/<id>` Ottelusivu: pelatuista otteluista täysi **ottelun raportti**
+  (maalit, pelaajataulukot, joukkuetilastot; haetaan NHL:n API:sta
+  ensimmäisellä käynnillä ja välimuistitetaan D1:een), tulevista
+  otteluista **ottelun esikatselu** (joukkueiden kausitilastovertailu,
+  kuntopuntari, kokoonpanot)
+
+<!-- TODO: lisää screenshot -->
+![Otteluohjelma](docs/screenshots/otteluohjelma.png)
+
+<!-- TODO: lisää screenshot -->
+![Ottelun raportti](docs/screenshots/ottelun-raportti.png)
+
+<!-- TODO: lisää screenshot -->
+![Ottelun esikatselu](docs/screenshots/ottelun-esikatselu.png)
+
+### Joukkue- ja pelaajasivut
+- `/joukkueet/<lyhenne>` Joukkuesivu (kaikki 32): rosteri, kausitilastot, viimeisimmät/seuraavat ottelut;
+  `/joukkueet/<lyhenne>/ottelut` koko kauden otteluohjelma
+- `/pelaajat/<id>` Pelaajakortti: bio, kausi- ja uratilastot sekä kauden ottelukohtainen
+  loki, haetaan suoraan NHL:n API:sta (ei tallenneta D1:een)
+
+<!-- TODO: lisää screenshot -->
+![Joukkuesivu](docs/screenshots/joukkue.png)
+
+<!-- TODO: lisää screenshot -->
+![Pelaajakortti](docs/screenshots/pelaaja.png)
+
+### Arkisto (`/arkisto`)
+Kauden pelipäivät uusimmasta vanhimpaan; `/arkisto/<päivä>` näyttää päivän
+ottelut ottelukortteina. Perustuu `games`-tauluun, joka ei koskaan poista rivejä.
+
+<!-- TODO: lisää screenshot -->
+![Arkisto](docs/screenshots/arkisto.png)
+
+### Tili, suosikit ja asetukset
+- `/kirjaudu`: kirjautuminen/rekisteröityminen yhdellä lomakkeella (tuntematon
+  käyttäjätunnus luo tilin, salasana valinnainen, pitkäikäinen eväste; tarkoituksella
+  kevyt, ei tuotantotason tietoturvaa)
+- `/omat`: Asetukset, eli suosikkijoukkueiden ja -pelaajien hallinta, teema
+  (vaalea/tumma/järjestelmä, tallentuu tilille) ja tulospiilo päälle/pois
+- `/omat/pelaajat`: Suosikkipelaajat-pörssi
+- `/tulospiilo`: edellisen kierroksen ottelut ilman tuloksia, vain highlights-linkki;
+  tulos paljastuu vasta kun "olen katsonut highlightit" on ruksattu
+
+<!-- TODO: lisää screenshot -->
+![Asetukset](docs/screenshots/asetukset.png)
+
+<!-- TODO: lisää screenshot -->
+![Tulospiilo](docs/screenshots/tulospiilo.png)
 
 ## Miten se toimii
 
 ```
-GitHub Actions (kolme ajastettua synkkaa)
+Cloudflare Worker (cron-trigger/, Cron Triggers)
+        │  kutsuu GitHub Actionsin workflow_dispatch-rajapintaa
+        ▼
+GitHub Actions (kolme synkkaa)
         │
-        ├─ sync-fast-tier.yml   (30 min välein)  → games-taulu
+        ├─ sync-fast-tier.yml   (10 min välein)  → games-taulu
         │     ottelutilanteet/-tulokset, pysyvä arkisto samalla
         │
-        ├─ sync-slow-tier.yml   (tunneittain)     → kausitilastot
-        │     sarjataulukko, pistepörssit, rosterit, joukkueiden
-        │     kausitilastot (kaikki 32 joukkuetta)
+        ├─ sync-slow-tier.yml   (2 h välein)     → kausitilastot
+        │     sarjataulukko, pistepörssit, rookie-pörssi, rosterit,
+        │     joukkueiden kausitilastot (kaikki 32 joukkuetta)
         │
-        └─ sync-digest.yml      (kerran päivässä) → suomalaiset pelaajat
-              edellisen yön suomalaisten syöttö-/maalivahtirivit
+        └─ sync-digest.yml      (6 h välein)     → suomalaiset pelaajat
+              suomalaisten syöttö-/maalivahtirivit
 
 Cloudflare D1 (SQLite)
         │
         └─ Cloudflare Pages Functions (web/) lukee D1:stä per-pyyntö
            ja renderöi HTML:n -- ei staattista build-vaihetta sivuston
-           puolella, data on aina niin tuore kuin viimeisin synkka
+           puolella. Ottelun raportti, pelaajakortti ja analytiikan
+           pelaajakaavio haetaan lisäksi tarvittaessa suoraan NHL:n
+           API:sta ja välimuistitetaan.
 ```
+
+GitHub Actionsin oma `schedule`-ajastus osoittautui epäluotettavaksi
+(tuntien viiveitä), joten workfloweissa on vain `workflow_dispatch` ja ajastuksen
+hoitaa Cloudflare Workerin Cron Trigger.
 
 Data haetaan [NHL:n julkisesta API:sta](https://github.com/Zmalski/NHL-API-Reference).
 Python (`src/morning_hockey/`) hoitaa vain datan haun ja jalostuksen; jokainen
 `sync_*.py`-skripti kutsuu valmiita `build_*`-funktioita ja kirjoittaa
 tuloksen D1:een `d1_sync.py`:n kautta. Itse sivusto on TypeScript/Cloudflare
 Pages Functions (`web/functions/`), joka lukee D1:tä suoraan Workersin omalla
-bindingillä -- ei erillistä build-vaihetta, jokainen sivulataus on tuore.
+bindingillä. Valinnainen `YOUTUBE_API_KEY` (Pages-secret) etsii ottelun oikean
+NHL Highlights -videon; ilman sitä käytetään YouTube-hakulinkkiä.
+
+## D1-taulut
+
+`d1/schema.sql`:
+- Ottelut: `games`, `game_box_scores` (ottelun raportin välimuisti),
+  `youtube_highlights`
+- Tilastot: `skater_season_stats`, `goalie_season_stats`, `rookie_season_stats`,
+  `standings_rows`, `finnish_skater_stats`, `finnish_goalie_stats`
+- Joukkueet: `team_roster_skaters`, `team_roster_goalies`, `team_season_stats`
+- Digest: `digests`, `digest_games`, `digest_scorers`, `digest_goalies`
+- Käyttäjät: `users`, `favorite_teams`, `favorite_players`, `user_settings`
+- Välimuisti: `skater_game_log_cache` (analytiikan pistekaavio)
 
 ## Projektin rakenne
 
@@ -40,6 +173,7 @@ bindingillä -- ei erillistä build-vaihetta, jokainen sivulataus on tuore.
 src/morning_hockey/
   nhl_api.py          NHL API -asiakas (score/boxscore/roster-endpointit, cachettaa per-ajo)
   d1_sync.py           D1:n HTTP API -kirjoitusadapteri jokaiselle synkalle
+  models.py             Jaetut tietomallit
   digest.py            Edellisen yön tulokset + suomalaiset pelaajat
   finnish.py            Suomalaisten pelaajien tunnistus rosterdatasta
   boxscore.py           Yksittäisen ottelun maali-/tilastoerittely
@@ -49,28 +183,38 @@ src/morning_hockey/
   suomiporssi.py          Suomalaisten oma pistepörssi/maalivahtipörssi
   schedule.py             Otteluohjelma (rullaava 7+ päivää)
   team.py                 Joukkueiden rosterit + kausitilastot, kaikille 32
-  sync_fast_tier.py       CLI: ottelut → D1 (30 min välein)
-  sync_slow_tier.py       CLI: kausitilastot → D1 (tunneittain)
-  sync_digest.py          CLI: edellisen yön suomalaiset → D1 (päivittäin)
+  sync_fast_tier.py       CLI: ottelut → D1 (10 min välein)
+  sync_slow_tier.py       CLI: kausitilastot → D1 (2 h välein)
+  sync_digest.py          CLI: suomalaiset → D1 (6 h välein)
 
 web/
   functions/            Cloudflare Pages Functions (TypeScript), yksi
-                         reitti/tiedosto per sivu, lukee env.DB:tä (D1)
-  functions/_shared/     Layout, muotoilu, autentikaatio, jaetut komponentit
-  public/static/         CSS + vanilla JS (app.js), ei build-stepiä
+                         reitti/tiedosto per sivu, lukee env.DB:tä (D1):
+                         index, sarjataulukko, tilastot, maalivahtiporssi,
+                         suomiporssi, analytiikka, playoffit, otteluohjelma,
+                         primetime, tulospiilo, arkisto/, ottelut/, joukkueet/,
+                         pelaajat/, haku/, kirjaudu/, omat/
+  functions/_shared/     Layout, muotoilu, autentikaatio, ottelun raportti,
+                         box score -välimuisti, kuntopuntari (formGuide),
+                         divisioonapisteet, YouTube, jaetut komponentit
+  public/static/         CSS + vanilla JS (app.js, analytiikka.js/D3), ei build-stepiä
+  scripts/               Node-testit (boxscore, divisionPoints, formGuide)
   wrangler.toml           Pages-projektin D1-binding
   seed.local.sql          Paikallinen testidata (wrangler pages dev)
+
+cron-trigger/          Cloudflare Worker, joka ajastaa kolme synkkaa
+                        (Cron Triggers → GitHub workflow_dispatch)
 
 d1/schema.sql          D1:n taulurakenne (ei ajeta automaattisesti --
                         uudet taulut/indeksit liitetään käsin Cloudflaren
                         D1 Console -välilehdellä)
 tests/                 Pytest-yksikkötestit Python-puolelle
 .github/workflows/
-  sync-fast-tier.yml    Ottelut D1:een, 30 min välein
-  sync-slow-tier.yml    Kausitilastot D1:een, tunneittain
-  sync-digest.yml       Suomalaiset pelaajat D1:een, kerran päivässä
+  sync-fast-tier.yml    Ottelut D1:een (Workerin ajastamana, 10 min)
+  sync-slow-tier.yml    Kausitilastot D1:een (2 h)
+  sync-digest.yml       Suomalaiset pelaajat D1:een (6 h)
   deploy-pages.yml       web/ → Cloudflare Pages jokaisella pushilla mainiin
-  web-typecheck.yml      tsc + boxscore-parity-testit jokaisella web/-pushilla
+  web-typecheck.yml      tsc + web-testit jokaisella web/-pushilla
   tests.yml               pytest jokaisella pushilla/PR:llä
 ```
 
@@ -87,6 +231,12 @@ tests/                 Pytest-yksikkötestit Python-puolelle
    ennen ensimmäistä sivulatausta.
 4. **Pushaa `web/`-hakemistoon** — `deploy-pages.yml` luo Cloudflare
    Pages -projektin automaattisesti ensimmäisellä ajolla ja julkaisee sen.
+5. **Ota ajastus käyttöön**: deployaa `cron-trigger/` Workerina
+   (`npx wrangler deploy`) ja aseta sille secret `GITHUB_TOKEN`
+   (`npx wrangler secret put GITHUB_TOKEN`, fine-grained PAT, vain Actions:
+   read+write tälle repolle).
+6. (Valinnainen) Aseta Pages-secret `YOUTUBE_API_KEY` oikeiden
+   highlights-videoiden hakuun.
 
 ## Ajaminen paikallisesti
 
@@ -110,7 +260,9 @@ npx wrangler pages dev public
 
 ## Ajastuksen muuttaminen
 
-Cron-lausekkeet ovat UTC-aikaa, kolmessa erillisessä workflow-tiedostossa
-(`.github/workflows/sync-{fast,slow,digest}-tier.yml`). Jokaista voi myös
-laukaista käsin milloin vain: Actions-välilehti → valitse synkka → *Run
+Ajastus on `cron-trigger/wrangler.toml`:n `crons`-listassa (UTC):
+`*/10 * * * *` (fast), `0 */2 * * *` (slow), `0 */6 * * *` (digest).
+Samat lausekkeet pitää päivittää täsmälleen samassa muodossa
+`cron-trigger/src/index.ts`:n `WORKFLOW_BY_CRON`-karttaan. Jokaista synkkaa voi
+myös laukaista käsin milloin vain: Actions-välilehti → valitse synkka → *Run
 workflow*.
