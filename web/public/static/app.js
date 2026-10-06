@@ -818,9 +818,15 @@
 
   function applyRanks(table) {
     var rows = Array.prototype.slice.call(table.querySelectorAll("tbody tr"));
-    rows.sort(function (a, b) {
-      return parseInt(a.dataset.rank, 10) - parseInt(b.dataset.rank, 10);
-    });
+    // A column sort (not the default "rank" one) numbers rows in the
+    // current DOM order, ties = equal sort value; otherwise by data-rank.
+    var sortKey = table.dataset.sortKey;
+    var byColumn = sortKey && sortKey !== "rank";
+    if (!byColumn) {
+      rows.sort(function (a, b) {
+        return parseInt(a.dataset.rank, 10) - parseInt(b.dataset.rank, 10);
+      });
+    }
     var visible = rows.filter(function (row) {
       return rowMatchesFilters(row, table);
     });
@@ -828,9 +834,11 @@
     var rank = 0;
     var prevGoals = null;
     var prevAssists = null;
-    var hasPoints = visible.length && visible[0].dataset.goals !== undefined;
+    var hasPoints = !byColumn && visible.length && visible[0].dataset.goals !== undefined && visible[0].dataset.assists !== undefined;
     visible.forEach(function (row, i) {
-      if (hasPoints) {
+      if (byColumn) {
+        if (i === 0 || row.dataset[sortKey] !== visible[i - 1].dataset[sortKey]) rank = i + 1;
+      } else if (hasPoints) {
         var goals = row.dataset.goals;
         var assists = row.dataset.assists;
         if (i === 0 || goals !== prevGoals || assists !== prevAssists) {
@@ -967,8 +975,10 @@
 
         activeSort = key;
         activeDir = dir;
+        table.dataset.sortKey = key;
 
         applyRowVisibility(table);
+        applyRanks(table);
       });
     });
   });
