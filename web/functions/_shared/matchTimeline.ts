@@ -7,7 +7,7 @@ import { escapeHtml, teamLogoUrl } from "./format";
 import type { TimelineEvent, TimelinePeriod } from "./boxscore";
 import type { GoalEvent, PenaltyEvent, ShootoutAttempt } from "./types";
 
-const STRENGTH_FI: Record<string, string> = { YV: "Ylivoima", AV: "Alivoima" };
+const STRENGTH_FI: Record<string, string> = { YV: "YV", AV: "AV" };
 
 
 function logoHtml(abbrev: string): string {

@@ -501,7 +501,7 @@
       img.loading = "lazy";
       return img;
     }
-    var MT_STRENGTH = { YV: "Ylivoima", AV: "Alivoima" };
+    var MT_STRENGTH = { YV: "YV", AV: "AV" };
 
     function timelineEvent(event, awayAbbrev) {
       var isGoal = event.kind === "goal";
