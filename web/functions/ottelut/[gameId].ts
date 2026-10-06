@@ -25,12 +25,15 @@ import {
   fetchGameTeamXg,
   fetchGoaliesSeasonGsaxMap,
   fetchLeagueTeamXg,
-  fetchSkatersSeasonXgMap,
+  fetchPrevSeasonPoints,
+  fetchSkatersOnIcePctMap,
   fetchTeamSeasonXg,
   formatGsax,
-  formatXg,
+  formatPct,
   teamXgfRanks,
+  sortWatchSkaters,
   teamXgStatRows,
+  tiedWatchIds,
 } from "../_shared/xg";
 import { fetchGameWinProb, winProbInfoText, winProbStatRow, type GameWinProb } from "../_shared/winProb";
 import { renderMatchTimeline } from "../_shared/matchTimeline";
@@ -251,7 +254,7 @@ function pickWatchPlayers(skaters: TeamRosterSkaterRow[]): [TeamRosterSkaterRow 
   return [best, skaters.find((p) => p.position === "D" && p !== best) ?? null];
 }
 
-function renderWatchCard(p: TeamRosterSkaterRow | null, teamLogo: string, xg: Map<number, number>): string {
+function renderWatchCard(p: TeamRosterSkaterRow | null, teamLogo: string, xgfPcts: Map<number, number>): string {
   if (!p) return `<div class="stat-card pw-card pw-card-empty">–</div>`;
   const cell = (label: string, value: string, highlight = false) =>
     `<div class="stat-card-cell${highlight ? " stat-card-highlight" : ""}"><span class="stat-card-label">${label}</span><span class="stat-card-value">${value}</span></div>`;
@@ -261,7 +264,7 @@ function renderWatchCard(p: TeamRosterSkaterRow | null, teamLogo: string, xg: Ma
     cell("S", `${p.assists}`),
     cell("P", `${p.points}`, true),
     cell("+/-", `${p.plus_minus > 0 ? "+" : ""}${p.plus_minus}`),
-    ...(xg.size ? [cell("xG", formatXg(xg.get(p.player_id)))] : []),
+    ...(xgfPcts.has(p.player_id) ? [cell("xGF%", formatPct(xgfPcts.get(p.player_id) ?? null))] : []),
   ].join("");
   return `
   <a href="/pelaajat/${p.player_id}" class="stat-card goalie-card pw-card">
@@ -289,31 +292,25 @@ function renderPlayersToWatch(awaySkaters: TeamRosterSkaterRow[], homeSkaters: T
 // One compact stat card per team's presumed starter (reuses the .stat-card
 // component from the team page's Kausitilastot box) -- W-L-OTL/GAA/SV%/SO.
 function renderGoalieCard(g: TeamRosterGoalieRow, teamLogo: string, gsax: Map<number, number>): string {
+  const cell = (label: string, value: string, extra = "") =>
+    `<div class="stat-card-cell${extra}"><span class="stat-card-label">${label}</span><span class="stat-card-value">${value}</span></div>`;
+  const cells = [
+    cell("O", `${g.games_played}`),
+    cell("V-H-JH", `${g.wins}-${g.losses}-${g.ot_losses}`, " pw-cell-sm"),
+    cell("GAA", g.goals_against_average.toFixed(2)),
+    cell("SV%", g.save_pct.toFixed(3), " stat-card-highlight"),
+    cell("NP", `${g.shutouts}`),
+    ...(gsax.size ? [cell("GSAx", formatGsax(gsax.get(g.player_id)))] : []),
+  ].join("");
   return `
-  <div class="stat-card goalie-card">
+  <a href="/pelaajat/${g.player_id}" class="stat-card goalie-card pw-card">
     <div class="stat-card-header">
       <img src="${escapeHtml(g.headshot)}" alt="" class="stat-card-headshot" loading="lazy" onerror="this.style.visibility='hidden'">
       <span class="stat-card-name">${escapeHtml(g.name)}</span>
       <img src="${escapeHtml(teamLogo)}" alt="" class="stat-card-team-logo" loading="lazy">
     </div>
-    <div class="stat-card-table-wrap">
-      <table class="stat-card-table">
-        <thead>
-          <tr><th>O</th><th>V-H-JH</th><th>GAA</th><th>SV%</th><th>NP</th>${gsax.size ? "<th>GSAx</th>" : ""}</tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>${g.games_played}</td>
-            <td>${g.wins}-${g.losses}-${g.ot_losses}</td>
-            <td>${g.goals_against_average.toFixed(2)}</td>
-            <td class="stat-card-highlight">${g.save_pct.toFixed(3)}</td>
-            <td>${g.shutouts}</td>
-            ${gsax.size ? `<td>${formatGsax(gsax.get(g.player_id))}</td>` : ""}
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>`;
+    <div class="stat-card-grid-cells">${cells}</div>
+  </a>`;
 }
 
 // Presumed starter: most games played this season. Ties fall back to save
@@ -334,7 +331,7 @@ function renderGoaltending(awayGoalies: TeamRosterGoalieRow[], homeGoalies: Team
     [pickStarter(homeGoalies), homeLogo] as const,
   ].filter((pair): pair is [TeamRosterGoalieRow, string] => !!pair[0]);
   const cards = starters.map(([g, logo]) => renderGoalieCard(g, logo, gsax)).join("");
-  return `<div class="stat-card-grid">${cards}</div>`;
+  return `<div class="pw-grid">${cards}</div>`;
 }
 
 export const onRequestGet: PagesFunction<Env> = async (context) => {
@@ -368,7 +365,9 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   let homeForm: FormGuideEntry | undefined;
   let xgRows: TeamStatRow[] = [];
   let winProb: GameWinProb | null = null;
-  let watchXg = new Map<number, number>();
+  let watchPct = new Map<number, number>();
+  let awayRanked: TeamRosterSkaterRow[] = [];
+  let homeRanked: TeamRosterSkaterRow[] = [];
   let goalieGsax = new Map<number, number>();
   let playerXg: Awaited<ReturnType<typeof fetchGamePlayerXg>> = { ixg: new Map(), gsax: new Map() };
 
@@ -430,10 +429,18 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     if (awayXg && homeXg) {
       xgRows = teamXgStatRows(awayXg, homeXg, false, { away: teamXgfRanks(leagueXg, game.away_abbrev), home: teamXgfRanks(leagueXg, game.home_abbrev) });
     }
-    const watched = [...pickWatchPlayers(awaySkaters), ...pickWatchPlayers(homeSkaters)].filter((p): p is TeamRosterSkaterRow => !!p);
+    // Tie-break (points, goals, last season's points): last season's points
+    // are fetched from the NHL API only for the players actually tied.
+    const [sy, sm] = [Number(game.date.slice(0, 4)), Number(game.date.slice(5, 7))];
+    const prevStart = (sm >= 8 ? sy : sy - 1) - 1;
+    const tied = [...tiedWatchIds(awaySkaters), ...tiedWatchIds(homeSkaters)];
+    const prevPoints = tied.length ? await fetchPrevSeasonPoints(tied, prevStart * 10_000 + prevStart + 1) : new Map<number, number>();
+    awayRanked = sortWatchSkaters(awaySkaters, prevPoints);
+    homeRanked = sortWatchSkaters(homeSkaters, prevPoints);
+    const watched = [...pickWatchPlayers(awayRanked), ...pickWatchPlayers(homeRanked)].filter((p): p is TeamRosterSkaterRow => !!p);
     const starters = [pickStarter(awayGoalies), pickStarter(homeGoalies)].filter((g): g is TeamRosterGoalieRow => !!g);
-    [watchXg, goalieGsax] = await Promise.all([
-      fetchSkatersSeasonXgMap(db, watched.map((p) => p.player_id)),
+    [watchPct, goalieGsax] = await Promise.all([
+      fetchSkatersOnIcePctMap(db, watched.map((p) => p.player_id)),
       fetchGoaliesSeasonGsaxMap(db, starters.map((g) => g.player_id)),
     ]);
   }
@@ -497,7 +504,7 @@ ${
         <span class="gd-stat-team">${escapeHtml(game.away_abbrev)}</span>
         <span class="gd-stat-team">${escapeHtml(game.home_abbrev)}</span>
       </div>
-      ${renderPlayersToWatch(awaySkaters, homeSkaters, game.away_logo, game.home_logo, watchXg)}
+      ${renderPlayersToWatch(awayRanked, homeRanked, game.away_logo, game.home_logo, watchPct)}
     </div>
 
     ${

@@ -330,3 +330,78 @@ export function rankedTeamXg(league: Map<number, TeamXg & { games: number }>): R
     }))
     .sort((a, b) => b.pct - a.pct);
 }
+
+// ---- Game preview: players to watch (on-ice xGF% + points tie-break) ----
+
+// player_id -> latest-season on-ice xGF% (all situations, 0-100).
+export async function fetchSkatersOnIcePctMap(db: D1Database, ids: number[]): Promise<Map<number, number>> {
+  if (!ids.length) return new Map();
+  try {
+    const { results } = await db
+      .prepare(
+        `SELECT player_id, SUM(xgf) AS xgf, SUM(xga) AS xga FROM skater_game_onice_xg WHERE player_id IN (${ids.map(() => "?").join(",")}) AND season = (SELECT MAX(season) FROM skater_game_onice_xg) GROUP BY player_id`,
+      )
+      .bind(...ids)
+      .all<{ player_id: number; xgf: number; xga: number }>();
+    return new Map(
+      results.flatMap((r) => {
+        const p = xgfPct(r.xgf, r.xga);
+        return p === null ? [] : [[r.player_id, p] as [number, number]];
+      }),
+    );
+  } catch (error) {
+    console.error("Skater on-ice xGF% map lookup failed:", error);
+    return new Map();
+  }
+}
+
+interface WatchSkater {
+  player_id: number;
+  position: string;
+  points: number;
+  goals: number;
+}
+
+// Points desc, goals desc, last season's points desc; Array.sort is stable so
+// a remaining tie keeps the roster order.
+export function sortWatchSkaters<T extends WatchSkater>(skaters: T[], prevPoints: Map<number, number>): T[] {
+  return [...skaters].sort(
+    (a, b) => b.points - a.points || b.goals - a.goals || (prevPoints.get(b.player_id) ?? 0) - (prevPoints.get(a.player_id) ?? 0),
+  );
+}
+
+// Only players tied (points+goals) with the top scorer, the top D or the
+// second D (the D pick when the top scorer is a D) need last season's points.
+// `skaters` must already be ordered points desc, goals desc.
+export function tiedWatchIds(skaters: WatchSkater[]): number[] {
+  const same = (a: WatchSkater, b: WatchSkater) => a.points === b.points && a.goals === b.goals;
+  const defence = skaters.filter((p) => p.position === "D");
+  const ids = new Set<number>();
+  for (const [pool, anchor] of [[skaters, skaters[0]], [defence, defence[0]], [defence, defence[1]]] as [WatchSkater[], WatchSkater | undefined][]) {
+    const tied = anchor ? pool.filter((p) => same(p, anchor)) : [];
+    if (tied.length > 1) tied.forEach((p) => ids.add(p.player_id));
+  }
+  return [...ids];
+}
+
+// Regular-season NHL points in `season` (e.g. 20252026) per player, from the
+// NHL landing endpoint (no D1 table keeps previous seasons); cached 24 h at
+// the edge, failures count as 0.
+export async function fetchPrevSeasonPoints(ids: number[], season: number): Promise<Map<number, number>> {
+  const entries = await Promise.all(
+    ids.map(async (id): Promise<[number, number]> => {
+      try {
+        const res = await fetch(`https://api-web.nhle.com/v1/player/${id}/landing`, { cf: { cacheTtl: 86400, cacheEverything: true } });
+        if (!res.ok) return [id, 0];
+        const landing = (await res.json()) as { seasonTotals?: { season: number; leagueAbbrev: string; gameTypeId: number; points?: number }[] };
+        const pts = (landing.seasonTotals ?? [])
+          .filter((s) => s.season === season && s.leagueAbbrev === "NHL" && s.gameTypeId === 2)
+          .reduce((sum, s) => sum + (s.points ?? 0), 0);
+        return [id, pts];
+      } catch {
+        return [id, 0];
+      }
+    }),
+  );
+  return new Map(entries);
+}
