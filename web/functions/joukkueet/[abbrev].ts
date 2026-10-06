@@ -215,7 +215,7 @@ ${renderDivisionTable(division, abbrev)}
 
 <a class="filter-btn team-schedule-link" href="/joukkueet/${abbrev.toLowerCase()}/ottelut">📅 Kaikki ottelut</a>
 
-${skaters.length ? renderRosterSkaterTable(skaters, "🏒 Pistepörssi") : ""}
+${skaters.length ? renderRosterSkaterTable(skaters, "🏒 Rosteri") : ""}
 ${goalies.length ? renderRosterGoalieTable(goalies, "🥅 Maalivahdit") : ""}
 `;
 
