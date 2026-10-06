@@ -2095,9 +2095,11 @@ main {
 }
 
 /* Suosikkipelaajat: logo smaller than in the leaderboards */
-.porssi-table-fav .table-team-logo {
-  width: 20px;
-  height: 20px;
+.porssi-table-fav .table-team-logo,
+.porssi-table-fav .player-cell img.table-team-logo {
+  width: 18px;
+  height: 18px;
+  border-radius: 0;
   margin-right: 4px;
 }
 
