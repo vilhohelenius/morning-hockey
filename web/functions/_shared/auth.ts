@@ -27,6 +27,12 @@ export function currentUsername(request: Request): string | null {
   return readCookie(request, SESSION_COOKIE);
 }
 
+// Same-site redirect target from a form's optional redirect_to field.
+export function redirectTarget(form: FormData, fallback: string): string {
+  const value = String(form.get("redirect_to") ?? "");
+  return value.startsWith("/") && !value.startsWith("//") ? value : fallback;
+}
+
 export function sessionCookieHeader(username: string): string {
   return `${SESSION_COOKIE}=${encodeURIComponent(username)}; Path=/; Max-Age=${SESSION_MAX_AGE}; SameSite=Lax; HttpOnly`;
 }
