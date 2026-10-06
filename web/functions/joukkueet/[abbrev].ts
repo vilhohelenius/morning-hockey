@@ -16,7 +16,7 @@
 // someone visits it, unlike the original team.html, which only linked
 // games nightly-digest.yml happened to pre-build a report for.
 
-import { fetchTeamSeasonXg, formatPct, type TeamXg, xgfPct } from "../_shared/xg";
+import { fetchLeagueTeamXg, teamIdOf, type TeamXg, xgfPct } from "../_shared/xg";
 import { currentUsername } from "../_shared/auth";
 import { escapeHtml, renderFavStar, renderGameRow, teamHeroBackgroundStyle } from "../_shared/format";
 import { renderRosterGoalieTable, renderRosterSkaterTable } from "../_shared/leaderboard";
@@ -71,28 +71,48 @@ function renderDivisionTable(division: StandingsRow[], teamAbbrev: string): stri
 // A single .stat-card: header bar + a grid of label/value cells, the same
 // markup as the player card's season stats (the old one-row table ran off
 // the screen on phones once the xG columns were added).
-function renderSeasonStats(stats: TeamSeasonStatsRow | null, xg: TeamXg | null): string {
+function renderSeasonStats(
+  stats: TeamSeasonStatsRow | null,
+  xg: TeamXg | null,
+  allStats: TeamSeasonStatsRow[],
+  leagueXg: Map<number, TeamXg & { games: number }>,
+  teamId: number | undefined,
+): string {
   if (!stats) return "";
   const goalDifferential = stats.goals_for - stats.goals_against;
 
-  const cell = (label: string, value: string, highlight = false) =>
-    `<div class="stat-card-cell${highlight ? " stat-card-highlight" : ""}"><span class="stat-card-label">${label}</span><span class="stat-card-value">${value}</span></div>`;
+  // Rank = 1 + teams strictly ahead (ties share a rank); counting stats are
+  // ranked per game since teams have played different numbers of games.
+  const rankIn = (own: number, all: number[], higherIsBetter: boolean) =>
+    1 + all.filter((v) => (higherIsBetter ? v > own : v < own)).length;
+  const perGame = (value: number, games: number) => (games > 0 ? value / games : 0);
+  const badge = (rank: number | undefined) => (rank ? `<span class="rank-badge" title="Sija NHL:ssä">#${rank}</span>` : "");
+  const statRank = (value: (r: TeamSeasonStatsRow) => number, higherIsBetter: boolean) =>
+    badge(rankIn(value(stats), allStats.map(value), higherIsBetter));
+  const diffPerGame = (r: TeamSeasonStatsRow) => perGame(r.goals_for - r.goals_against, r.games_played);
+  const xgAll = [...leagueXg.values()];
+  const xgRank = (value: (r: TeamXg & { games: number }) => number, higherIsBetter: boolean) =>
+    xg && teamId !== undefined && leagueXg.has(teamId) ? badge(rankIn(value(leagueXg.get(teamId)!), xgAll.map(value), higherIsBetter)) : "";
+  const pct = (r: TeamXg, five = false) => xgfPct(five ? r.xgf5v5 : r.xgf, five ? r.xga5v5 : r.xga) ?? 0;
+
+  const cell = (label: string, value: string, highlight = false, rank = "") =>
+    `<div class="stat-card-cell${highlight ? " stat-card-highlight" : ""}"><span class="stat-card-label">${label}</span><span class="stat-card-value">${value}${rank}</span></div>`;
   const cells = [
     cell("O", `${stats.games_played}`),
-    cell("YV%", (stats.power_play_pct * 100).toFixed(1)),
-    cell("AV%", (stats.penalty_kill_pct * 100).toFixed(1)),
-    cell("AL%", (stats.faceoff_pct * 100).toFixed(1)),
-    cell("TM", `${stats.goals_for}`),
-    cell("PM", `${stats.goals_against}`),
-    cell("+/-", `${goalDifferential > 0 ? "+" : ""}${goalDifferential}`, true),
-    cell("LKT/O", stats.shots_for_per_game.toFixed(1)),
-    cell("NP", `${stats.shutouts}`),
+    cell("YV%", (stats.power_play_pct * 100).toFixed(1), false, statRank((r) => r.power_play_pct, true)),
+    cell("AV%", (stats.penalty_kill_pct * 100).toFixed(1), false, statRank((r) => r.penalty_kill_pct, true)),
+    cell("AL%", (stats.faceoff_pct * 100).toFixed(1), false, statRank((r) => r.faceoff_pct, true)),
+    cell("TM", `${stats.goals_for}`, false, statRank((r) => perGame(r.goals_for, r.games_played), true)),
+    cell("PM", `${stats.goals_against}`, false, statRank((r) => perGame(r.goals_against, r.games_played), false)),
+    cell("+/-", `${goalDifferential > 0 ? "+" : ""}${goalDifferential}`, true, statRank(diffPerGame, true)),
+    cell("LKT/O", stats.shots_for_per_game.toFixed(1), false, statRank((r) => r.shots_for_per_game, true)),
+    cell("NP", `${stats.shutouts}`, false, statRank((r) => r.shutouts, true)),
     ...(xg
       ? [
-          cell("xGF", xg.xgf.toFixed(1)),
-          cell("xGA", xg.xga.toFixed(1)),
-          cell("xGF%", formatPct(xgfPct(xg.xgf, xg.xga))),
-          cell("xGF% 5v5", formatPct(xgfPct(xg.xgf5v5, xg.xga5v5))),
+          cell("xGF", xg.xgf.toFixed(1), false, xgRank((r) => perGame(r.xgf, r.games), true)),
+          cell("xGA", xg.xga.toFixed(1), false, xgRank((r) => perGame(r.xga, r.games), false)),
+          cell("xGF%", (xgfPct(xg.xgf, xg.xga) ?? 0).toFixed(1), false, xgRank((r) => pct(r), true)),
+          cell("xGF% 5v5", (xgfPct(xg.xgf5v5, xg.xga5v5) ?? 0).toFixed(1), false, xgRank((r) => pct(r, true), true)),
         ]
       : []),
   ].join("");
@@ -159,7 +179,10 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     .bind(abbrev)
     .all<TeamRosterGoalieRow>();
 
-  const teamXg = await fetchTeamSeasonXg(db, abbrev);
+  const teamId = teamIdOf(abbrev);
+  const leagueXg = await fetchLeagueTeamXg(db);
+  const teamXg = teamId !== undefined ? (leagueXg.get(teamId) ?? null) : null;
+  const { results: allSeasonStats } = await db.prepare("SELECT * FROM team_season_stats").all<TeamSeasonStatsRow>();
 
   const username = currentUsername(context.request);
   const isFavoriteTeam = username
@@ -187,7 +210,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   </p>
 </header>
 
-${renderSeasonStats(seasonStats ?? null, teamXg)}
+${renderSeasonStats(seasonStats ?? null, teamXg, allSeasonStats, leagueXg, teamId)}
 
 ${renderDivisionTable(division, abbrev)}
 

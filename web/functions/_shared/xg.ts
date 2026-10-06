@@ -219,3 +219,23 @@ export async function fetchSkaterGameOnIcePct(db: D1Database, playerId: number, 
     return new Map();
   }
 }
+
+export function teamIdOf(abbrev: string): number | undefined {
+  return TEAM_IDS[abbrev];
+}
+
+// Every team's latest-season totals (+ games played), keyed by team_id, for
+// league ranks on the team page.
+export async function fetchLeagueTeamXg(db: D1Database): Promise<Map<number, TeamXg & { games: number }>> {
+  try {
+    const { results } = await db
+      .prepare(
+        `SELECT team_id, COUNT(*) AS games, ${TEAM_XG_SUMS} FROM team_game_xg WHERE season = (SELECT MAX(season) FROM team_game_xg) GROUP BY team_id`,
+      )
+      .all<TeamXg & { team_id: number; games: number }>();
+    return new Map(results.map((r) => [r.team_id, r]));
+  } catch (error) {
+    console.error("League team xG lookup failed:", error);
+    return new Map();
+  }
+}
