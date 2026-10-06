@@ -16,7 +16,7 @@
 // someone visits it, unlike the original team.html, which only linked
 // games nightly-digest.yml happened to pre-build a report for.
 
-import { fetchLeagueTeamXg, teamIdOf, type TeamXg, xgfPct } from "../_shared/xg";
+import { fetchLeagueTeamXg, rankBadge as badge, rankIn, teamIdOf, type TeamXg, xgfPct } from "../_shared/xg";
 import { currentUsername } from "../_shared/auth";
 import { escapeHtml, renderFavStar, renderGameRow, teamHeroBackgroundStyle } from "../_shared/format";
 import { renderRosterGoalieTable, renderRosterSkaterTable } from "../_shared/leaderboard";
@@ -81,12 +81,8 @@ function renderSeasonStats(
   if (!stats) return "";
   const goalDifferential = stats.goals_for - stats.goals_against;
 
-  // Rank = 1 + teams strictly ahead (ties share a rank); counting stats are
-  // ranked per game since teams have played different numbers of games.
-  const rankIn = (own: number, all: number[], higherIsBetter: boolean) =>
-    1 + all.filter((v) => (higherIsBetter ? v > own : v < own)).length;
+  // Counting stats are ranked per game since teams have played different numbers of games.
   const perGame = (value: number, games: number) => (games > 0 ? value / games : 0);
-  const badge = (rank: number | undefined) => (rank ? `<span class="rank-badge" title="Sija NHL:ssä">#${rank}</span>` : "");
   const statRank = (value: (r: TeamSeasonStatsRow) => number, higherIsBetter: boolean) =>
     badge(rankIn(value(stats), allStats.map(value), higherIsBetter));
   const diffPerGame = (r: TeamSeasonStatsRow) => perGame(r.goals_for - r.goals_against, r.games_played);

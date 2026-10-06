@@ -195,6 +195,9 @@ export interface TeamStatRow {
   // NHL.com's own Team Stats section shows one under each side's bar.
   away_rank?: number;
   home_rank?: number;
+  // Pre-rendered `#N` rank-badge HTML shown next to the value (xGF% rows).
+  away_badge?: string;
+  home_badge?: string;
 }
 
 export interface PlayerGameStat {
