@@ -62,7 +62,27 @@
   wirePillToggle(".division-picker", ".division-chart-section", "division");
   wirePillToggle(".analytiikka-view-picker", ".analytiikka-view-section", "view");
   wirePillToggle(".sarjataulukko-view-picker", ".sarjataulukko-view-section", "view");
+  wirePillToggle(".standings-tab-picker", ".standings-tab-section", "tab", ".standings-tab");
   wirePillToggle(".roster-team-picker", ".roster-team-section", "team", ".toggle-segment");
+
+  // Sarjataulukko tabs: remember the last selected tab (storage may be
+  // unavailable/blocked, so every access is guarded; default stays Divisioona).
+  document.querySelectorAll(".standings-tab-picker").forEach(function (picker) {
+    var tabs = picker.querySelectorAll(".standings-tab");
+    try {
+      var saved = localStorage.getItem("standingsTab");
+      tabs.forEach(function (tab) {
+        if (saved && tab.dataset.tab === saved && !tab.classList.contains("active")) tab.click();
+      });
+    } catch (e) {}
+    tabs.forEach(function (tab) {
+      tab.addEventListener("click", function () {
+        try {
+          localStorage.setItem("standingsTab", tab.dataset.tab);
+        } catch (e) {}
+      });
+    });
+  });
 
   // Player hero card: click (or Enter/Space, since it's a role="button")
   // flips it to reveal the bio back face. The fav-star form sits inside
@@ -375,8 +395,22 @@
       body.appendChild(renderNextGame(data.next_game));
       panel.appendChild(body);
 
-      var row = trigger.closest(".division-row");
-      row.insertAdjacentElement("afterend", panel);
+      var row = trigger.closest(".division-row, .stand-row");
+      if (row.tagName === "TR") {
+        // Table rows can't be followed by a bare div: wrap the panel in a
+        // full-width row. The cell keeps the panel pinned to the visible
+        // (non-scrolled) edge of the horizontally scrolling table.
+        var wrapRow = document.createElement("tr");
+        wrapRow.className = "stand-detail-row";
+        var wrapCell = document.createElement("td");
+        wrapCell.colSpan = row.children.length;
+        wrapCell.appendChild(panel);
+        wrapRow.appendChild(wrapCell);
+        row.insertAdjacentElement("afterend", wrapRow);
+        panel = wrapRow;
+      } else {
+        row.insertAdjacentElement("afterend", panel);
+      }
 
       trigger.setAttribute("aria-expanded", "true");
       detailEl = panel;

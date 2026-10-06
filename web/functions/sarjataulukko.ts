@@ -14,6 +14,7 @@
 import { computeFormGuide, type FormGuideEntry } from "./_shared/formGuide";
 import { escapeHtml, humanDate } from "./_shared/format";
 import { renderLayout } from "./_shared/layout";
+import { buildWildCardView, formatPointsPct, sortStandings } from "./_shared/standingsViews";
 import type { Env, GameRow, StandingsRow, TeamRosterGoalieRow, TeamRosterSkaterRow } from "./_shared/types";
 
 const WILDCARD_SPOTS_SHOWN = 6;
@@ -100,47 +101,57 @@ async function buildSnapshots(db: D1Database, abbrevs: string[]): Promise<Snapsh
   return { snapshots, recentGames };
 }
 
-function renderTeamRow(row: StandingsRow, rankLabel: string): string {
+// Table-based standings (NHL-app look): first cell (rank + logo + abbrev) is
+// sticky, the stat columns scroll horizontally. Rows carry .stand-row (the
+// snapshot popup in app.js finds its anchor via .division-row or .stand-row)
+// and keep the .team-trigger button.
+const STAND_HEADERS = ["O", "V", "H", "JH", "P", "P%", "+/-"];
+const STAND_TOTAL_COLS = 1 + STAND_HEADERS.length;
+
+function renderStandRow(row: StandingsRow, rankLabel: string): string {
+  const diff = `${row.goal_differential > 0 ? "+" : ""}${row.goal_differential}`;
   return `
-    <div class="division-row ${row.qualified ? "qualified" : ""}">
-      <span class="division-rank">${rankLabel}</span>
-      <button type="button" class="division-team team-trigger" data-team-abbrev="${escapeHtml(row.abbrev)}" data-team-name="${escapeHtml(row.name)}">
-        <img src="${escapeHtml(row.logo)}" alt="${escapeHtml(row.abbrev)}" class="division-logo" loading="lazy">
-        <span class="division-name">${escapeHtml(row.name)}</span>
-        ${row.qualified ? `<span class="playoff-dot"></span>` : ""}
-      </button>
-      <span class="division-stats cols-6">
-        <span>${row.games_played}</span>
-        <span>${row.wins}</span>
-        <span>${row.losses}</span>
-        <span>${row.ot_losses}</span>
-        <span>${row.goal_differential > 0 ? "+" : ""}${row.goal_differential}</span>
-        <span class="division-points">${row.points}</span>
-      </span>
-    </div>`;
+      <tr class="stand-row ${row.qualified ? "qualified" : ""}">
+        <td class="st-first"><span class="st-rank">${escapeHtml(rankLabel)}</span><button type="button" class="team-trigger st-team" data-team-abbrev="${escapeHtml(row.abbrev)}" data-team-name="${escapeHtml(row.name)}"><img src="${escapeHtml(row.logo)}" alt="" class="st-logo" loading="lazy"><span class="st-abbrev">${escapeHtml(row.abbrev)}</span>${row.qualified ? `<span class="playoff-dot"></span>` : ""}</button></td>
+        <td>${row.games_played}</td>
+        <td>${row.wins}</td>
+        <td>${row.losses}</td>
+        <td>${row.ot_losses}</td>
+        <td class="st-pts">${row.points}</td>
+        <td>${formatPointsPct(row.points, row.games_played)}</td>
+        <td>${diff}</td>
+      </tr>`;
 }
 
-function renderDivisionTable(rows: StandingsRow[]): string {
+// `rowsHtml` is pre-rendered so callers can splice a cutoff line in.
+function renderStandTable(title: string, rowsHtml: string): string {
+  const headCells = STAND_HEADERS.map((h) => `<th${h === "P" ? ` class="st-active"` : ""}>${h}${h === "P" ? `<span class="st-arrow"></span>` : ""}</th>`).join("");
   return `
-  <div class="division-table">
-    <div class="division-row division-header">
-      <span class="division-rank"></span>
-      <span class="division-team">Joukkue</span>
-      <span class="division-stats cols-6"><span>O</span><span>V</span><span>H</span><span>JH</span><span>+/-</span><span>P</span></span>
-    </div>
-    ${rows.map((row) => renderTeamRow(row, String(row.division_rank))).join("")}
+  <div class="stand-scroll">
+    <table class="stand-table">
+      <thead><tr><th class="st-first">${escapeHtml(title)}</th>${headCells}</tr></thead>
+      <tbody>${rowsHtml}
+      </tbody>
+    </table>
   </div>`;
 }
 
-function renderWildcardRace(rows: StandingsRow[]): string {
-  const shown = rows.slice(0, WILDCARD_SPOTS_SHOWN);
-  const rowsHtml = shown
-    .map((row, index) => renderTeamRow(row, `VK${row.wildcard_rank}`) + (index + 1 === WILDCARD_CUTOFF ? `<div class="wc-cutoff-line"></div>` : ""))
-    .join("");
+function renderRanked(title: string, rows: StandingsRow[]): string {
+  return renderStandTable(title, rows.map((row, i) => renderStandRow(row, String(i + 1))).join(""));
+}
 
-  return `
-  <h3 class="roster-group-title">Villi kortti -taisto</h3>
-  <div class="division-table">${rowsHtml}</div>`;
+function renderWildcardRace(rows: StandingsRow[]): string {
+  const rowsHtml = rows
+    .slice(0, WILDCARD_SPOTS_SHOWN)
+    .map(
+      (row, index) =>
+        renderStandRow(row, `VK${row.wildcard_rank}`) +
+        (index + 1 === WILDCARD_CUTOFF
+          ? `<tr class="stand-cutoff"><td colspan="${STAND_TOTAL_COLS}"><div class="wc-cutoff-line"></div></td></tr>`
+          : ""),
+    )
+    .join("");
+  return renderStandTable("Villi kortti -taisto", rowsHtml);
 }
 
 // Kuntopuntari ("form guide"): one league-wide table ranked by points
@@ -198,31 +209,43 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
   const conferenceNames = [...new Set(rows.map((r) => r.conference))].sort();
 
-  const sections = conferenceNames
+  const confHeading = (name: string) => `<h2 class="section-title">${escapeHtml(name)}-konferenssi</h2>`;
+
+  const divisionView = conferenceNames
     .map((conferenceName) => {
       const conferenceRows = rows.filter((r) => r.conference === conferenceName);
       const divisionNames = [...new Set(conferenceRows.map((r) => r.division))].sort();
-
-      const divisionTables = divisionNames
-        .map((divisionName) => {
-          const divisionRows = conferenceRows.filter((r) => r.division === divisionName);
-          return `
-  <h3 class="roster-group-title">${escapeHtml(divisionName)}</h3>
-  ${renderDivisionTable(divisionRows)}`;
-        })
+      const tables = divisionNames
+        .map((d) => renderRanked(d, conferenceRows.filter((r) => r.division === d).sort((a, b) => a.division_rank - b.division_rank)))
         .join("");
-
-      const wildcardRows = conferenceRows
-        .filter((r) => r.wildcard_rank > 0)
-        .sort((a, b) => a.wildcard_rank - b.wildcard_rank);
-
-      return `
-<section>
-  <h2 class="section-title">${escapeHtml(conferenceName)}-konferenssi</h2>
-  ${divisionTables}
-  ${renderWildcardRace(wildcardRows)}
-</section>`;
+      return `<section>${confHeading(conferenceName)}${tables}</section>`;
     })
+    .join("");
+
+  const conferenceView = conferenceNames
+    .map((c) => `<section>${confHeading(c)}${renderRanked("Konferenssi", sortStandings(rows.filter((r) => r.conference === c)))}</section>`)
+    .join("");
+
+  const leagueView = renderRanked("Liiga", sortStandings(rows));
+
+  const wildCardView = buildWildCardView(rows)
+    .map((conf) => {
+      const leaderTables = conf.leaders.map((l) => renderRanked(l.division, l.rows)).join("");
+      return `<section>${confHeading(conf.conference)}${leaderTables}${renderWildcardRace(conf.race)}</section>`;
+    })
+    .join("");
+
+  const tabs: { key: string; label: string; html: string }[] = [
+    { key: "wildcard", label: "Wild Card", html: wildCardView },
+    { key: "division", label: "Divisioona", html: divisionView },
+    { key: "conference", label: "Konferenssi", html: conferenceView },
+    { key: "league", label: "Liiga", html: leagueView },
+  ];
+  const tabButtons = tabs
+    .map((t) => `<button type="button" class="standings-tab${t.key === "division" ? " active" : ""}" data-tab="${t.key}">${t.label}</button>`)
+    .join("");
+  const sections = tabs
+    .map((t) => `<div class="standings-tab-section${t.key === "division" ? "" : " is-hidden"}" data-tab="${t.key}">${t.html}</div>`)
     .join("");
 
   const { snapshots, recentGames } = await buildSnapshots(db, rows.map((r) => r.abbrev));
@@ -249,6 +272,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   <p class="standings-legend"><span class="playoff-dot"></span> mahtuisi pudotuspeleihin tänään</p>
   <p class="standings-legend">Klikkaa joukkuetta nähdäksesi sen viimeisimmät ottelut, pistepörssin
     ja seuraavan ottelun.</p>
+  <div class="standings-tab-picker" role="tablist">${tabButtons}</div>
   ${sections}
 </section>
 
