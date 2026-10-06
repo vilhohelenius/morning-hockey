@@ -6,7 +6,7 @@
 // _shared/leaderboard.ts has a goalie-shaped table, this is the same port
 // pattern as tilastot.ts.
 
-import { favoriteTeamAbbrevs } from "./_shared/auth";
+import { favoriteTeamAbbrevs, readHighlightsCookie } from "./_shared/auth";
 import { escapeHtml, seasonLabel } from "./_shared/format";
 import { renderGoalieLeaderboard } from "./_shared/leaderboard";
 import { renderLayout } from "./_shared/layout";
@@ -30,7 +30,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 </header>
 
 <section>
-  ${renderGoalieLeaderboard({ tableId: "goalie-stats-table", rows: goalies, favoriteTeamAbbrevs: favTeams })}
+  ${renderGoalieLeaderboard({ tableId: "goalie-stats-table", rows: goalies, favoriteTeamAbbrevs: favTeams, highlights: readHighlightsCookie(context.request) })}
 </section>
 `;
 

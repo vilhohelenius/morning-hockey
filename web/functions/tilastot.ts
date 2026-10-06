@@ -14,7 +14,7 @@
 // season-type-picker/team-games-picker in app.js), so switching filters
 // doesn't need a second request.
 
-import { favoriteTeamAbbrevs } from "./_shared/auth";
+import { favoriteTeamAbbrevs, readHighlightsCookie } from "./_shared/auth";
 import { escapeHtml, seasonLabel } from "./_shared/format";
 import { renderSkaterLeaderboard } from "./_shared/leaderboard";
 import { renderLayout } from "./_shared/layout";
@@ -44,7 +44,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 </div>
 
 <section class="player-filter-section" data-filter="all">
-  ${renderSkaterLeaderboard({ tableId: "skater-stats-table", rows: skaters, favoriteTeamAbbrevs: favTeams })}
+  ${renderSkaterLeaderboard({ tableId: "skater-stats-table", rows: skaters, favoriteTeamAbbrevs: favTeams, highlights: readHighlightsCookie(context.request) })}
 </section>
 
 <section class="player-filter-section is-hidden" data-filter="rookie">
@@ -52,7 +52,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     tableId: "rookie-stats-table",
     rows: rookies,
     emptyMessage: "Ei vielä tilastoituja rookieita tällä kaudella.",
-    favoriteTeamAbbrevs: favTeams,
+    favoriteTeamAbbrevs: favTeams, highlights: readHighlightsCookie(context.request),
   })}
 </section>
 `;

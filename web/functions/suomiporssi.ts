@@ -4,15 +4,17 @@
 // needs every Finnish player, not the overall top-N cut those hold.
 //
 // Unlike Tilastot/Rookie-pörssi, there's no position filter here (every row
-// is already Finnish, no further split makes sense) and no row-fin
-// highlighting (it would highlight every row). Bespoke table markup rather
+// is already Finnish, no further split makes sense) and no Finnish
+// highlight dot (it would mark every row; only the favorite-team dot shows). Bespoke table markup rather
 // than reusing _shared/leaderboard.ts, which assumes both of those.
 
+import { favoriteTeamAbbrevs, readHighlightsCookie } from "./_shared/auth";
 import { escapeHtml, seasonLabel } from "./_shared/format";
+import { highlightDots, type HighlightOptions } from "./_shared/leaderboard";
 import { renderLayout } from "./_shared/layout";
 import type { Env, FinnishGoalieRow, FinnishSkaterRow } from "./_shared/types";
 
-function renderSkaterTable(rows: FinnishSkaterRow[]): string {
+function renderSkaterTable(rows: FinnishSkaterRow[], hl: HighlightOptions): string {
   const body = rows
     .map(
       (row, index) => `
@@ -23,7 +25,7 @@ function renderSkaterTable(rows: FinnishSkaterRow[]): string {
           <a href="/pelaajat/${row.player_id}" class="player-cell">
             <img src="${escapeHtml(row.headshot)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
             <span class="player-name">
-              ${escapeHtml(row.name)}
+              <span class="player-name-line">${escapeHtml(row.name)}${highlightDots("", row.team_abbrev, hl)}</span>
               <span class="player-meta">${escapeHtml(row.position)}</span>
             </span>
           </a>
@@ -39,7 +41,7 @@ function renderSkaterTable(rows: FinnishSkaterRow[]): string {
 
   return `
   <div class="stats-table-wrap">
-    <table class="stats-table">
+    <table class="stats-table porssi-table">
       <thead>
         <tr>
           <th class="col-rank">#</th>
@@ -56,7 +58,7 @@ function renderSkaterTable(rows: FinnishSkaterRow[]): string {
   </div>`;
 }
 
-function renderGoalieTable(rows: FinnishGoalieRow[]): string {
+function renderGoalieTable(rows: FinnishGoalieRow[], hl: HighlightOptions): string {
   const body = rows
     .map(
       (row, index) => `
@@ -67,7 +69,7 @@ function renderGoalieTable(rows: FinnishGoalieRow[]): string {
         <td>
           <a href="/pelaajat/${row.player_id}" class="player-cell">
             <img src="${escapeHtml(row.headshot)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
-            <span class="player-name">${escapeHtml(row.name)}</span>
+            <span class="player-name"><span class="player-name-line">${escapeHtml(row.name)}${highlightDots("", row.team_abbrev, hl)}</span></span>
           </a>
         </td>
         <td><img src="${escapeHtml(row.logo)}" alt="${escapeHtml(row.team_abbrev)}" class="table-team-logo" loading="lazy"></td>
@@ -84,7 +86,7 @@ function renderGoalieTable(rows: FinnishGoalieRow[]): string {
 
   return `
   <div class="stats-table-wrap">
-    <table class="stats-table">
+    <table class="stats-table porssi-table">
       <thead>
         <tr>
           <th class="col-rank">#</th>
@@ -118,6 +120,11 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   const seasonSource = skaters[0]?.season_id ?? goalies[0]?.season_id;
   const seasonText = seasonSource ? seasonLabel(seasonSource) : "";
 
+  const hl = {
+    highlights: readHighlightsCookie(context.request),
+    favoriteTeamAbbrevs: await favoriteTeamAbbrevs(context.request, context.env),
+  };
+
   const content = `
 <header class="page-header">
   <h1>🇫🇮 Suomipörssi</h1>
@@ -126,12 +133,12 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
 <section>
   <h2 class="section-title">🏒 Pistepörssi · ${skaters.length} pelaajaa</h2>
-  ${skaters.length ? renderSkaterTable(skaters) : `<p class="empty-note">Ei tilastoituja suomalaispelaajia tälle kaudelle vielä.</p>`}
+  ${skaters.length ? renderSkaterTable(skaters, hl) : `<p class="empty-note">Ei tilastoituja suomalaispelaajia tälle kaudelle vielä.</p>`}
 </section>
 
 <section>
   <h2 class="section-title">🥅 Maalivahtipörssi · ${goalies.length} pelaajaa</h2>
-  ${goalies.length ? renderGoalieTable(goalies) : `<p class="empty-note">Ei tilastoituja suomalaisia maalivahteja tälle kaudelle vielä.</p>`}
+  ${goalies.length ? renderGoalieTable(goalies, hl) : `<p class="empty-note">Ei tilastoituja suomalaisia maalivahteja tälle kaudelle vielä.</p>`}
 </section>
 `;
 

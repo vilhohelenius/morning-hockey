@@ -550,7 +550,7 @@ main {
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 0.76rem;
+  font-size: 0.82rem;
   color: var(--muted);
 }
 
@@ -2007,31 +2007,88 @@ main {
   font-weight: 600;
 }
 
-.row-fin td:first-child {
-  border-left: 3px solid var(--accent);
+/* Highlight dots after a pörssi player's name: blue = Finnish, team color =
+   favorite team (see leaderboard.ts's highlightDots). The thin gray ring
+   keeps dark team colors (navy on dark bg) and light ones (yellow on white)
+   visible in both themes. */
+.player-name-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
-/* Team-fav uses a pseudo-element stripe (not border-left) so it can sit on
-   the SAME left edge as row-fin without one overwriting the other: by
-   default it sits flush at left:0, but when a row is both Finnish AND on a
-   favorite team, it shifts to left:3px to sit right next to the existing
-   border-left stripe instead of covering it. */
-.row-team-fav td:first-child {
-  position: relative;
+.hl-dots {
+  display: inline-flex;
+  gap: 3px;
+  flex-shrink: 0;
 }
 
-.row-team-fav td:first-child::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  width: 3px;
-  background: var(--team-fav-color, var(--accent));
+.hl-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1.5px rgba(128, 128, 128, 0.55);
 }
 
-.row-fin.row-team-fav td:first-child::before {
-  left: 3px;
+.hl-dot-fin {
+  --dot-color: #1d6fe0;
+  background: var(--dot-color);
+}
+
+.hl-dot-team {
+  background: var(--dot-color, var(--accent));
+}
+
+:root[data-theme="dark"] .hl-dot-fin {
+  --dot-color: #6aa8ff;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .hl-dot-fin {
+    --dot-color: #6aa8ff;
+  }
+}
+
+/* Pörssi tables (Pistepörssi, Maalivahtipörssi, Suomipörssi, Suosikkipelaajat)
+   scale the headshot/name/stat text up to match the team logo's visual size
+   (logo size itself is unchanged). Scoped to .porssi-table so roster tables
+   on team/game pages stay compact. */
+.porssi-table {
+  font-size: 0.88rem;
+}
+
+.porssi-table th,
+.porssi-table td {
+  padding: 8px 4px;
+}
+
+.porssi-table thead th {
+  font-size: 0.72rem;
+}
+
+.porssi-table .player-cell {
+  gap: 8px;
+}
+
+.porssi-table .player-cell img {
+  width: 36px;
+  height: 36px;
+}
+
+.porssi-table td:nth-child(2) {
+  min-width: 0;
+}
+
+.porssi-table .player-name {
+  font-size: 0.92rem;
+}
+
+.porssi-table .player-meta {
+  font-size: 0.82rem;
+}
+
+.porssi-table .table-team-logo {
+  vertical-align: middle;
 }
 
 /* ---------- Standings team info panel ---------- */
