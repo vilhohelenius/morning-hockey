@@ -272,7 +272,7 @@ function renderPlayersToWatch(awaySkaters: TeamRosterSkaterRow[], homeSkaters: T
 // component from the team page's Kausitilastot box) -- W-L-OTL/GAA/SV%/SO.
 function renderGoalieCard(g: TeamRosterGoalieRow, teamLogo: string): string {
   return `
-  <div class="stat-card">
+  <div class="stat-card goalie-card">
     <div class="stat-card-header">
       <img src="${escapeHtml(g.headshot)}" alt="" class="stat-card-headshot" loading="lazy" onerror="this.style.visibility='hidden'">
       <span class="stat-card-name">${escapeHtml(g.name)}</span>

@@ -3904,3 +3904,32 @@ main {
 .xg-info p {
   margin: 6px 0 0;
 }
+
+/* Game preview goaltending: big headshot left, name beside it, team logo right
+   (overrides the centered column header the player cards use). */
+.goalie-card .stat-card-header {
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  text-align: left;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.goalie-card .stat-card-headshot {
+  width: 72px;
+  height: 72px;
+  border: 2px solid var(--border);
+}
+
+.goalie-card .stat-card-name {
+  white-space: normal;
+  line-height: 1.2;
+}
+
+.goalie-card .stat-card-team-logo {
+  width: 40px;
+  height: 40px;
+}
