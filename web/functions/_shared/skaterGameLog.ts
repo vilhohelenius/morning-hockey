@@ -19,7 +19,7 @@ async function fetchJson(path: string): Promise<any> {
   return response.json();
 }
 
-export interface SkaterGamePoint {
+interface SkaterGamePoint {
   date: string;
   points: number;
 }

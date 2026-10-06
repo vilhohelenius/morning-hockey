@@ -4,6 +4,7 @@
 
 import { escapeHtml, nationalityFlag, seasonLabel } from "./_shared/format";
 import { renderLayout } from "./_shared/layout";
+import { COLLAPSE_AT, expandToggle } from "./_shared/leaderboard";
 import type { Env, StandingsRow } from "./_shared/types";
 import { fetchLeagueTeamXg, formatGsax, formatXg, gsaxPer100, rankedTeamXg, XG_INFO_TEXT, xgfPct, xgPercent } from "./_shared/xg";
 
@@ -46,7 +47,6 @@ const playerCell = (id: number, name: string, headshot: string, meta: string) =>
 // Same markup as the Pistepörssi tables (porssi-table, click-to-sort headers,
 // "show 25 more" paging). head items: [label, sortKey?]; the last-sorted-by-
 // default column carries data-rank (the SQL order), like leaderboard.ts.
-const COLLAPSE_AT = 25;
 const table = (id: string, head: [string, string?][], rows: string, count: number) => `
   <div class="stats-table-wrap"><table class="stats-table porssi-table" id="${id}" data-collapse-at="${count ? COLLAPSE_AT : 0}"><thead><tr>${head
     .map(([h, key]) =>
@@ -55,7 +55,7 @@ const table = (id: string, head: [string, string?][], rows: string, count: numbe
       : key === "xga" ? `<th data-sort="xga" data-first-dir="asc">${h}</th>` // fewer chances against = better
       : key ? `<th data-sort="${key}">${h}</th>` : `<th${h === "#" ? ' class="col-rank"' : ""}>${h}</th>`)
     .join("")}</tr></thead><tbody>${rows}</tbody></table></div>
-  ${count > COLLAPSE_AT ? `<button type="button" class="expand-toggle" data-table-id="${id}" data-page-size="25"></button>` : ""}`;
+  ${expandToggle(id, count)}`;
 
 export const onRequestGet: PagesFunction<Env> = async (context) => {
   const db = context.env.DB;

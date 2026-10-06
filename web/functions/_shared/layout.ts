@@ -13,7 +13,7 @@ import { currentUsername, readThemeCookie } from "./auth";
 import { escapeHtml } from "./format";
 import type { Env, StandingsRow } from "./types";
 
-export interface LayoutOptions {
+interface LayoutOptions {
   title: string;
   headerTitle: string;
   activePage: string;

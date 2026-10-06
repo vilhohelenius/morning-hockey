@@ -11,7 +11,7 @@ import { TEAM_COLORS } from "./teamColors";
 import { formatGsax, gsaxPer100 } from "./xg";
 import type { GoalieStatsRow, SkaterStatsRow, TeamRosterGoalieRow, TeamRosterSkaterRow } from "./types";
 
-const COLLAPSE_AT = 25;
+export const COLLAPSE_AT = 25;
 const PAGE_SIZE = 25;
 
 // A checkbox-panel dropdown (not a <select>, which can't do multi-choice
@@ -61,7 +61,7 @@ function positionFilterSelect(): string {
   </select>`;
 }
 
-function expandToggle(tableId: string, totalRows: number): string {
+export function expandToggle(tableId: string, totalRows: number): string {
   return totalRows > COLLAPSE_AT
     ? `<button type="button" class="expand-toggle" data-table-id="${tableId}" data-page-size="${PAGE_SIZE}"></button>`
     : "";
@@ -114,7 +114,7 @@ function renderRow(row: SkaterStatsRow, rank: number, hl: HighlightOptions): str
       </tr>`;
 }
 
-export interface LeaderboardOptions {
+interface LeaderboardOptions {
   tableId: string;
   rows: SkaterStatsRow[];
   emptyMessage?: string;
@@ -190,7 +190,7 @@ function renderGoalieRow(row: GoalieStatsRow, rank: number, hl: HighlightOptions
       </tr>`;
 }
 
-export interface GoalieLeaderboardOptions {
+interface GoalieLeaderboardOptions {
   tableId: string;
   rows: GoalieStatsRow[];
   emptyMessage?: string;

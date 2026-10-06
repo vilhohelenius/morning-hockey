@@ -27,7 +27,7 @@ export function isGameLive(game: GameRow, now: number = Date.now()): boolean {
 // Safety net: a game that started this long ago is never carried over, even
 // if a stale/postponed row still says unfinished -- keeps it from sticking
 // to the homepage forever. Longest real NHL game (multi-OT) is far under this.
-export const MAX_LIVE_AGE_MS = 8 * 60 * 60 * 1000;
+const MAX_LIVE_AGE_MS = 8 * 60 * 60 * 1000;
 
 // Parses the ?pv= query value: anything not an integer becomes 0, otherwise
 // clamped to MIN_DAY_OFFSET..MAX_DAY_OFFSET (-1..+3).

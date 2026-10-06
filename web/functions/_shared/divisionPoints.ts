@@ -12,12 +12,12 @@
 
 import type { GameRow } from "./types";
 
-export interface DivisionPointsPoint {
+interface DivisionPointsPoint {
   date: string;
   points: number;
 }
 
-export interface DivisionPointsSeries {
+interface DivisionPointsSeries {
   abbrev: string;
   points: DivisionPointsPoint[];
 }

@@ -8,21 +8,21 @@ import type { Env } from "./types";
 
 // GSAx/100 below this many shots faced is mostly noise, so the maalivahti-
 // pörssi shows "–" instead of ranking it.
-export const MIN_SHOTS_FOR_PER_100 = 300;
+const MIN_SHOTS_FOR_PER_100 = 300;
 
-export interface SkaterSeasonXg {
+interface SkaterSeasonXg {
   xg: number;
   goals: number;
   shots: number;
 }
 
-export interface GoalieSeasonXg {
+interface GoalieSeasonXg {
   xga: number;
   goalsAgainst: number;
   shotsAgainst: number;
 }
 
-export interface GameXg {
+interface GameXg {
   skaterXg: Map<number, number>; // game_id -> xG
   goalieGsax: Map<number, number>; // game_id -> GSAx (xGA - goals against)
 }
@@ -100,7 +100,7 @@ export const XG_INFO_TEXT = `
 // Skater on-ice xG (skater_game_onice_xg, `sync_xg --backfill-onice`): the xG
 // the player's team generated/conceded while he was on the ice. xGF% =
 // xGF / (xGF + xGA).
-export interface SkaterOnIceXg {
+interface SkaterOnIceXg {
   xgf: number;
   xga: number;
   xgf5v5: number;
@@ -282,7 +282,6 @@ async function fetchSeasonSums(db: D1Database, table: string, expr: string, ids:
   }
 }
 
-export const fetchSkatersSeasonXgMap = (db: D1Database, ids: number[]) => fetchSeasonSums(db, "skater_game_xg", "xg", ids);
 export const fetchGoaliesSeasonGsaxMap = (db: D1Database, ids: number[]) => fetchSeasonSums(db, "goalie_game_xg", "xga - goals_against", ids);
 
 // --- Finished-game report: per-player xG / GSAx for one game ---------------
@@ -303,7 +302,7 @@ export async function fetchGamePlayerXg(db: D1Database, gameId: number): Promise
 
 // ---- League team table (/joukkueet, /odotetut) ----
 
-export interface RankedTeamXg {
+interface RankedTeamXg {
   abbrev: string;
   games: number;
   xgf: number;

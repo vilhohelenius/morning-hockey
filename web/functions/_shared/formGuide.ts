@@ -7,7 +7,7 @@
 
 import type { GameRow } from "./types";
 
-export type FormResult = "W" | "L" | "OTL";
+type FormResult = "W" | "L" | "OTL";
 
 export interface FormGuideEntry {
   abbrev: string;

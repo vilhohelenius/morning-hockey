@@ -104,12 +104,12 @@ export interface FinnishGoalieRow {
   shutouts: number;
 }
 
-export interface DigestRow {
+interface DigestRow {
   date: string;
   generated_at: string;
 }
 
-export interface DigestGameRow {
+interface DigestGameRow {
   game_id: number;
   digest_date: string;
   away_abbrev: string;
@@ -123,7 +123,7 @@ export interface DigestGameRow {
   final_type: string;
 }
 
-export interface DigestScorerRow {
+interface DigestScorerRow {
   game_id: number;
   name: string;
   team_abbrev: string;
@@ -131,7 +131,7 @@ export interface DigestScorerRow {
   assists: number;
 }
 
-export interface DigestGoalieRow {
+interface DigestGoalieRow {
   game_id: number;
   name: string;
   team_abbrev: string;

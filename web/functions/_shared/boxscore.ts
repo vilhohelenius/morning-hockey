@@ -29,14 +29,14 @@ interface RawPeriod {
 }
 
 // OT (incl. playoff OT2+) sorts after regulation, shootout after that.
-export function periodOrder(descriptor: { periodType?: string; number?: number }): number {
+function periodOrder(descriptor: { periodType?: string; number?: number }): number {
   if (descriptor.periodType === "SO") return 100;
   if (descriptor.periodType === "OT") return Math.max(descriptor.number ?? 4, 4);
   return descriptor.number ?? 0;
 }
 
 // Back-fills GoalEvent.period for a legacy cached row, from its Finnish label.
-export function periodFromLabel(label: string): number {
+function periodFromLabel(label: string): number {
   if (label === "Voittolaukaukset") return 100;
   if (label === "Jatkoaika") return 4;
   const match = label.match(/^(\d+)\./);
@@ -613,7 +613,7 @@ export function resolveFinalType(
 
 // ---- cache envelope: goals_json holds goals + penalties with no schema change ----
 
-export interface Timeline {
+interface Timeline {
   goals: GoalEvent[];
   penalties: PenaltyEvent[];
   shootout: ShootoutAttempt[];

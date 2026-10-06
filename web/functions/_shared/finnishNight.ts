@@ -28,11 +28,11 @@ interface GameContext {
   liveText: string;
 }
 
-export interface NightSkater extends GameContext {
+interface NightSkater extends GameContext {
   player: PlayerGameStat;
 }
 
-export interface NightGoalie extends GameContext {
+interface NightGoalie extends GameContext {
   player: GoalieGameStat;
 }
 
@@ -101,7 +101,7 @@ function playerCell(id: number, name: string, headshot: string, meta: string, lo
 
 // "[own logo] 4–1 [opp logo]": logos instead of abbreviations (the abbrev
 // stays as alt text); the player's own side is the emphasised one.
-export function gameResultInline(c: GameContext): string {
+function gameResultInline(c: GameContext): string {
   const logo = (src: string, abbrev: string, cls: string) =>
     `<img src="${esc(src)}" alt="${esc(abbrev)}" title="${esc(abbrev)}" class="yf-game-logo ${cls}" loading="lazy" onerror="this.style.visibility='hidden'">`;
   return `<span class="yf-result">${logo(c.teamLogo, c.teamAbbrev, "yf-own")}<span class="yf-score"><strong class="yf-own-score">${c.teamScore}</strong>–<span class="yf-opp-score">${c.oppScore}</span></span>${logo(c.oppLogo, c.oppAbbrev, "yf-opp")}</span>`;
@@ -116,7 +116,7 @@ function signed(n: number): string {
   return n > 0 ? `+${n}` : String(n);
 }
 
-export function renderFinnishNightSkaters(rows: NightSkater[]): string {
+function renderFinnishNightSkaters(rows: NightSkater[]): string {
   if (!rows.length) return "";
   const body = rows
     .map(
@@ -151,7 +151,7 @@ export function renderFinnishNightSkaters(rows: NightSkater[]): string {
   </div>`;
 }
 
-export function renderFinnishNightGoalies(rows: NightGoalie[]): string {
+function renderFinnishNightGoalies(rows: NightGoalie[]): string {
   if (!rows.length) return "";
   const body = rows
     .map(

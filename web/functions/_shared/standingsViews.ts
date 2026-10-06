@@ -24,7 +24,7 @@ export function sortStandings(rows: StandingsRow[]): StandingsRow[] {
   );
 }
 
-export interface WildCardConference {
+interface WildCardConference {
   conference: string;
   // Each division's top `leadersPerDivision` teams by division rank.
   leaders: { division: string; rows: StandingsRow[] }[];

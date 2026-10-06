@@ -140,7 +140,7 @@ export interface BingoGameData {
   boxLoaded: boolean;
 }
 
-export type BingoStatus = "played" | "dnp" | "waiting" | "nogame" | "unknown";
+type BingoStatus = "played" | "dnp" | "waiting" | "nogame" | "unknown";
 
 export interface BingoRow {
   pick: BingoPick;
@@ -185,7 +185,7 @@ function esc(value: string | number): string {
   return String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-export interface BingoRenderOptions {
+interface BingoRenderOptions {
   // Show the game's score / live badge (off in spoiler-free contexts).
   showScore: boolean;
   // Rows of started games get data-gate and stay hidden ("?") until the
@@ -244,7 +244,7 @@ function statCells(r: BingoRow, gated: boolean, nowMs: number): string {
   return wrap(`<span class="bingo-status">${statusText(r, nowMs)}</span>`, ' colspan="3"');
 }
 
-export function renderBingoTable(rows: BingoRow[], opts: BingoRenderOptions, nowMs: number): string {
+function renderBingoTable(rows: BingoRow[], opts: BingoRenderOptions, nowMs: number): string {
   const body = rows
     .map((r) => {
       const started = !!r.data && hasStarted(r.data.game, nowMs);
