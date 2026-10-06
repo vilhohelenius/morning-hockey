@@ -68,48 +68,41 @@ function renderDivisionTable(division: StandingsRow[], teamAbbrev: string): stri
 </section>`;
 }
 
-// A single .stat-card: boxed header bar + one dense, abbreviated-column
-// row -- see the "Stat cards" block in style.css for why this replaced
-// the plain .stats-table version (closer to nhl.com's own stat boxes).
+// A single .stat-card: header bar + a grid of label/value cells, the same
+// markup as the player card's season stats (the old one-row table ran off
+// the screen on phones once the xG columns were added).
 function renderSeasonStats(stats: TeamSeasonStatsRow | null, xg: TeamXg | null): string {
   if (!stats) return "";
   const goalDifferential = stats.goals_for - stats.goals_against;
+
+  const cell = (label: string, value: string, highlight = false) =>
+    `<div class="stat-card-cell${highlight ? " stat-card-highlight" : ""}"><span class="stat-card-label">${label}</span><span class="stat-card-value">${value}</span></div>`;
+  const cells = [
+    cell("O", `${stats.games_played}`),
+    cell("YV%", (stats.power_play_pct * 100).toFixed(1)),
+    cell("AV%", (stats.penalty_kill_pct * 100).toFixed(1)),
+    cell("AL%", (stats.faceoff_pct * 100).toFixed(1)),
+    cell("TM", `${stats.goals_for}`),
+    cell("PM", `${stats.goals_against}`),
+    cell("+/-", `${goalDifferential > 0 ? "+" : ""}${goalDifferential}`, true),
+    cell("LKT/O", stats.shots_for_per_game.toFixed(1)),
+    cell("NP", `${stats.shutouts}`),
+    ...(xg
+      ? [
+          cell("xGF", xg.xgf.toFixed(1)),
+          cell("xGA", xg.xga.toFixed(1)),
+          cell("xGF%", formatPct(xgfPct(xg.xgf, xg.xga))),
+          cell("xGF% 5v5", formatPct(xgfPct(xg.xgf5v5, xg.xga5v5))),
+        ]
+      : []),
+  ].join("");
 
   return `
 <section>
   <h2 class="section-title">Kausitilastot</h2>
   <div class="stat-card">
     <div class="stat-card-header">Runkosarja</div>
-    <div class="stat-card-table-wrap">
-      <table class="stat-card-table">
-        <thead>
-          <tr>
-            <th>O</th>
-            <th>YV%</th>
-            <th>AV%</th>
-            <th>AL%</th>
-            <th>TM</th>
-            <th>PM</th>
-            <th>+/-</th>
-            <th>LKT/O</th>
-            <th>NP</th>${xg ? "<th>xGF</th><th>xGA</th><th>xGF%</th><th>xGF% 5v5</th>" : ""}
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>${stats.games_played}</td>
-            <td>${(stats.power_play_pct * 100).toFixed(1)}</td>
-            <td>${(stats.penalty_kill_pct * 100).toFixed(1)}</td>
-            <td>${(stats.faceoff_pct * 100).toFixed(1)}</td>
-            <td>${stats.goals_for}</td>
-            <td>${stats.goals_against}</td>
-            <td class="stat-card-highlight">${goalDifferential > 0 ? "+" : ""}${goalDifferential}</td>
-            <td>${stats.shots_for_per_game.toFixed(1)}</td>
-            <td>${stats.shutouts}</td>${xg ? `<td>${xg.xgf.toFixed(1)}</td><td>${xg.xga.toFixed(1)}</td><td>${formatPct(xgfPct(xg.xgf, xg.xga))}</td><td>${formatPct(xgfPct(xg.xgf5v5, xg.xga5v5))}</td>` : ""}
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <div class="stat-card-grid-cells">${cells}</div>
   </div>
 </section>`;
 }
