@@ -831,13 +831,32 @@
       return rowMatchesFilters(row, table);
     });
 
+    // Column sorts rank by value in the column's "good" direction (best =
+    // 1), whatever order the rows are shown in -- so worst-to-best shows
+    // N..1, like the default column. Text columns just number by position.
+    var colRanks = new Map();
+    if (byColumn) {
+      var th = table.querySelector('th[data-sort="' + sortKey + '"]');
+      var isText = th && th.dataset.type === "text";
+      var asc = th && th.dataset.firstDir === "asc";
+      var ordered = isText ? visible : visible.slice().sort(function (a, b) {
+        var av = parseFloat(a.dataset[sortKey]);
+        var bv = parseFloat(b.dataset[sortKey]);
+        return asc ? av - bv : bv - av;
+      });
+      ordered.forEach(function (row, i) {
+        var same = i > 0 && !isText && ordered[i - 1].dataset[sortKey] === row.dataset[sortKey];
+        colRanks.set(row, same ? colRanks.get(ordered[i - 1]) : i + 1);
+      });
+    }
+
     var rank = 0;
     var prevGoals = null;
     var prevAssists = null;
     var hasPoints = !byColumn && visible.length && visible[0].dataset.goals !== undefined && visible[0].dataset.assists !== undefined;
     visible.forEach(function (row, i) {
       if (byColumn) {
-        if (i === 0 || row.dataset[sortKey] !== visible[i - 1].dataset[sortKey]) rank = i + 1;
+        rank = colRanks.get(row);
       } else if (hasPoints) {
         var goals = row.dataset.goals;
         var assists = row.dataset.assists;
