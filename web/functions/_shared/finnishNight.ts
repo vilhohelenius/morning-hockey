@@ -21,6 +21,7 @@ interface GameContext {
   teamAbbrev: string;
   teamLogo: string;
   oppAbbrev: string;
+  oppLogo: string;
   teamScore: number;
   oppScore: number;
   live: boolean;
@@ -41,6 +42,7 @@ function context(g: NightGame, away: boolean): GameContext {
     teamAbbrev: away ? game.away_abbrev : game.home_abbrev,
     teamLogo: away ? game.away_logo : game.home_logo,
     oppAbbrev: away ? game.home_abbrev : game.away_abbrev,
+    oppLogo: away ? game.home_logo : game.away_logo,
     teamScore: away ? game.away_score : game.home_score,
     oppScore: away ? game.home_score : game.away_score,
     live: g.live,
@@ -97,9 +99,17 @@ function playerCell(id: number, name: string, headshot: string, meta: string, lo
         </td>`;
 }
 
+// "[own logo] 4–1 [opp logo]": logos instead of abbreviations (the abbrev
+// stays as alt text); the player's own side is the emphasised one.
+export function gameResultInline(c: GameContext): string {
+  const logo = (src: string, abbrev: string, cls: string) =>
+    `<img src="${esc(src)}" alt="${esc(abbrev)}" title="${esc(abbrev)}" class="yf-game-logo ${cls}" loading="lazy" onerror="this.style.visibility='hidden'">`;
+  return `<span class="yf-result">${logo(c.teamLogo, c.teamAbbrev, "yf-own")}<span class="yf-score"><strong class="yf-own-score">${c.teamScore}</strong>–<span class="yf-opp-score">${c.oppScore}</span></span>${logo(c.oppLogo, c.oppAbbrev, "yf-opp")}</span>`;
+}
+
 function gameCell(c: GameContext): string {
   const live = c.live ? `<span class="yf-live"><span class="live-dot"></span>${esc(c.liveText || "LIVE")}</span>` : "";
-  return `<td class="yf-game">${esc(c.teamAbbrev)} ${c.teamScore}–${c.oppScore} ${esc(c.oppAbbrev)}${live}</td>`;
+  return `<td class="yf-game">${gameResultInline(c)}${live}</td>`;
 }
 
 function signed(n: number): string {
