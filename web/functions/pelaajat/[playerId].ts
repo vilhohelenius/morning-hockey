@@ -98,6 +98,42 @@ interface SeasonTotal {
   shotsAgainst?: number;
   goalsAgainst?: number;
   timeOnIce?: string; // cumulative, goalies -- avgToi above is skaters' per-game average
+  teamName?: { default?: string };
+}
+
+// seasonTotals rows carry only the team's full name (teamName.default), not
+// its abbreviation, so logos/abbreviations are resolved from this map
+// (current + relocated/renamed franchises). Unknown names fall back to plain
+// text without a logo.
+const TEAM_ABBREV_BY_NAME: Record<string, string> = {
+  "Anaheim Ducks": "ANA", "Mighty Ducks of Anaheim": "ANA", "Arizona Coyotes": "ARI", "Phoenix Coyotes": "PHX",
+  "Atlanta Thrashers": "ATL", "Boston Bruins": "BOS", "Buffalo Sabres": "BUF", "Calgary Flames": "CGY",
+  "Carolina Hurricanes": "CAR", "Chicago Blackhawks": "CHI", "Colorado Avalanche": "COL",
+  "Columbus Blue Jackets": "CBJ", "Dallas Stars": "DAL", "Detroit Red Wings": "DET", "Edmonton Oilers": "EDM",
+  "Florida Panthers": "FLA", "Los Angeles Kings": "LAK", "Minnesota Wild": "MIN", "Montréal Canadiens": "MTL",
+  "Montreal Canadiens": "MTL", "Nashville Predators": "NSH", "New Jersey Devils": "NJD", "New York Islanders": "NYI",
+  "New York Rangers": "NYR", "Ottawa Senators": "OTT", "Philadelphia Flyers": "PHI", "Pittsburgh Penguins": "PIT",
+  "San Jose Sharks": "SJS", "Seattle Kraken": "SEA", "St. Louis Blues": "STL", "Tampa Bay Lightning": "TBL",
+  "Toronto Maple Leafs": "TOR", "Utah Hockey Club": "UTA", "Utah Mammoth": "UTA", "Vancouver Canucks": "VAN",
+  "Vegas Golden Knights": "VGK", "Washington Capitals": "WSH", "Winnipeg Jets": "WPG",
+  "Hartford Whalers": "HFD", "Quebec Nordiques": "QUE", "Minnesota North Stars": "MNS",
+};
+
+// "2025–2026" -> "2025–26" so the season-history table fits 420px with its
+// extra team column.
+function shortSeasonLabel(label: string): string {
+  return label.replace(/^(\d{4}\D)\d{2}(\d{2})$/, "$1$2");
+}
+
+function teamChip(name: string | undefined): string {
+  if (!name) return "";
+  const abbrev = TEAM_ABBREV_BY_NAME[name];
+  if (!abbrev) return `<span class="season-team"><span class="season-team-abbr">${escapeHtml(name)}</span></span>`;
+  return `<span class="season-team"><img src="${escapeHtml(teamLogoUrl(abbrev))}" alt="" class="season-team-logo" loading="lazy" onerror="this.style.visibility='hidden'"><span class="season-team-abbr">${abbrev}</span></span>`;
+}
+
+function seasonTeamsHtml(t: SeasonTotal): string {
+  return teamChip(t.teamName?.default);
 }
 
 function renderSeasonSelect(playerId: number, seasons: number[], selected: number): string {
@@ -120,10 +156,11 @@ function renderSeasonSelect(playerId: number, seasons: number[], selected: numbe
 // the one-row "Ottelut" summary. rowClass defaults to "total-row" (the
 // one-row summary wants that emphasis); season-history passes "" for its
 // plain per-season rows and "total-row" again for its own total row.
-function renderSkaterTotalRow(label: string, t: SeasonTotal, rowClass = "total-row"): string {
+function renderSkaterTotalRow(label: string, t: SeasonTotal, rowClass = "total-row", withTeam = false): string {
   return `
       <tr${rowClass ? ` class="${rowClass}"` : ""}>
-        <td>${escapeHtml(label)}</td>
+        <td>${escapeHtml(withTeam ? shortSeasonLabel(label) : label)}</td>
+        ${withTeam ? `<td>${seasonTeamsHtml(t)}</td>` : ""}
         <td>${t.gamesPlayed}</td>
         <td>${t.goals ?? 0}</td>
         <td>${t.assists ?? 0}</td>
@@ -139,10 +176,11 @@ function renderSkaterTotalRow(label: string, t: SeasonTotal, rowClass = "total-r
 // instead of tiles. Used by the season-history table and the one-row
 // "Kauden tilastot" summary (goalies never had a per-game tfoot total, so
 // no third use here the way skaters have).
-function renderGoalieStatRow(label: string, t: SeasonTotal, rowClass = "total-row"): string {
+function renderGoalieStatRow(label: string, t: SeasonTotal, rowClass = "total-row", withTeam = false): string {
   return `
       <tr${rowClass ? ` class="${rowClass}"` : ""}>
-        <td>${escapeHtml(label)}</td>
+        <td>${escapeHtml(withTeam ? shortSeasonLabel(label) : label)}</td>
+        ${withTeam ? `<td>${seasonTeamsHtml(t)}</td>` : ""}
         <td>${t.gamesPlayed}</td>
         <td>${t.wins ?? 0}</td>
         <td class="stat-strong">${(t.savePctg ?? 0).toFixed(3)}</td>
@@ -156,28 +194,30 @@ function renderGoalieStatRow(label: string, t: SeasonTotal, rowClass = "total-ro
 // which shows "2026-27 Season" and "Career" as two separate boxed tables
 // rather than two rows of one table. See the "Stat cards" block in
 // style.css.
-function renderSkaterStatCardRow(t: SeasonTotal, ranks: LeagueRanks = {}): string {
-  return `
-        <tr>
-          <td>${t.gamesPlayed}</td>
-          <td>${t.goals ?? 0}${rankBadge(ranks.goals)}</td>
-          <td>${t.assists ?? 0}${rankBadge(ranks.assists)}</td>
-          <td class="stat-card-highlight">${t.points ?? 0}${rankBadge(ranks.points)}</td>
-          <td>${(t.plusMinus ?? 0) > 0 ? "+" : ""}${t.plusMinus ?? 0}</td>
-          <td>${t.pim ?? 0}</td>
-          <td>${t.avgToi ? escapeHtml(t.avgToi) : "–"}</td>
-        </tr>`;
+function statCell(label: string, value: string, highlight = false): string {
+  return `<div class="stat-card-cell${highlight ? " stat-card-highlight" : ""}"><span class="stat-card-label">${label}</span><span class="stat-card-value">${value}</span></div>`;
 }
 
-function renderGoalieStatCardRow(t: SeasonTotal, ranks: LeagueRanks = {}): string {
-  return `
-        <tr>
-          <td>${t.gamesPlayed}</td>
-          <td>${t.wins ?? 0}${rankBadge(ranks.wins)}</td>
-          <td class="stat-card-highlight">${(t.savePctg ?? 0).toFixed(3)}${rankBadge(ranks.savePct)}</td>
-          <td>${(t.goalsAgainstAvg ?? 0).toFixed(2)}${rankBadge(ranks.gaa)}</td>
-          <td>${t.shutouts ?? 0}${rankBadge(ranks.shutouts)}</td>
-        </tr>`;
+function renderSkaterStatCardCells(t: SeasonTotal, ranks: LeagueRanks = {}): string {
+  return [
+    statCell("O", `${t.gamesPlayed}`),
+    statCell("M", `${t.goals ?? 0}${rankBadge(ranks.goals)}`),
+    statCell("S", `${t.assists ?? 0}${rankBadge(ranks.assists)}`),
+    statCell("P", `${t.points ?? 0}${rankBadge(ranks.points)}`, true),
+    statCell("+/-", `${(t.plusMinus ?? 0) > 0 ? "+" : ""}${t.plusMinus ?? 0}`),
+    statCell("JH", `${t.pim ?? 0}`),
+    statCell("TOI/GP", t.avgToi ? escapeHtml(t.avgToi) : "–"),
+  ].join("");
+}
+
+function renderGoalieStatCardCells(t: SeasonTotal, ranks: LeagueRanks = {}): string {
+  return [
+    statCell("O", `${t.gamesPlayed}`),
+    statCell("V", `${t.wins ?? 0}${rankBadge(ranks.wins)}`),
+    statCell("SV%", `${(t.savePctg ?? 0).toFixed(3)}${rankBadge(ranks.savePct)}`, true),
+    statCell("GAA", `${(t.goalsAgainstAvg ?? 0).toFixed(2)}${rankBadge(ranks.gaa)}`),
+    statCell("NP", `${t.shutouts ?? 0}${rankBadge(ranks.shutouts)}`),
+  ].join("");
 }
 
 // League rank (1-based) per stat category, only filled in for categories
@@ -251,28 +291,30 @@ async function fetchLeagueRanks(
       };
 }
 
+interface StatPeriod {
+  label: string;
+  total: SeasonTotal;
+  ranks?: LeagueRanks;
+  teams?: string;
+}
+
 function renderPeriodStatsSection(
   isGoalie: boolean,
-  periods: { label: string; total: SeasonTotal; ranks?: LeagueRanks }[],
+  periods: StatPeriod[],
 ): string {
   if (!periods.length) return "";
 
-  const headerCells = isGoalie
-    ? `<th>O</th><th>V</th><th>SV%</th><th>GAA</th><th>NP</th>`
-    : `<th>O</th><th>M</th><th>S</th><th>P</th><th>+/-</th><th>JH</th><th>TOI/GP</th>`;
-  const rowFn = isGoalie ? renderGoalieStatCardRow : renderSkaterStatCardRow;
+  const cellsFn = isGoalie ? renderGoalieStatCardCells : renderSkaterStatCardCells;
 
   const cards = periods
     .map(
       (p) => `
     <div class="stat-card">
-      <div class="stat-card-header">${escapeHtml(p.label)}</div>
-      <div class="stat-card-table-wrap">
-        <table class="stat-card-table">
-          <thead><tr>${headerCells}</tr></thead>
-          <tbody>${rowFn(p.total, p.ranks)}</tbody>
-        </table>
+      <div class="stat-card-header">
+        <span class="stat-card-title">${escapeHtml(p.label)}</span>
+        ${p.teams ? `<span class="stat-card-teams">${p.teams}</span>` : ""}
       </div>
+      <div class="stat-card-grid-cells">${cellsFn(p.total, p.ranks)}</div>
     </div>`,
     )
     .join("");
@@ -458,15 +500,16 @@ function renderPlayerHeroBack(landing: any, age: number | null): string {
 function renderSkaterSeasonHistory(rows: SeasonTotal[], total: SeasonTotal | null): string {
   if (!rows.length) return `<p class="empty-note">Ei NHL-kausia.</p>`;
 
-  const trs = rows.map((t) => renderSkaterTotalRow(seasonLabel(t.season), t, "")).join("");
-  const totalRow = total ? renderSkaterTotalRow("Yhteensä", total) : "";
+  const trs = rows.map((t) => renderSkaterTotalRow(seasonLabel(t.season), t, "", true)).join("");
+  const totalRow = total ? renderSkaterTotalRow("Yhteensä", total, "total-row", true) : "";
 
   return `
   <div class="stats-table-wrap">
-    <table class="stats-table">
+    <table class="stats-table season-history-table">
       <thead>
         <tr>
           <th>Kausi</th>
+          <th>Joukkue</th>
           <th>Ottelut</th>
           <th>M</th>
           <th>S</th>
@@ -485,15 +528,16 @@ function renderSkaterSeasonHistory(rows: SeasonTotal[], total: SeasonTotal | nul
 function renderGoalieSeasonHistory(rows: SeasonTotal[], total: SeasonTotal | null): string {
   if (!rows.length) return `<p class="empty-note">Ei NHL-kausia.</p>`;
 
-  const trs = rows.map((t) => renderGoalieStatRow(seasonLabel(t.season), t, "")).join("");
-  const totalRow = total ? renderGoalieStatRow("Yhteensä", total) : "";
+  const trs = rows.map((t) => renderGoalieStatRow(seasonLabel(t.season), t, "", true)).join("");
+  const totalRow = total ? renderGoalieStatRow("Yhteensä", total, "total-row", true) : "";
 
   return `
   <div class="stats-table-wrap">
-    <table class="stats-table">
+    <table class="stats-table season-history-table">
       <thead>
         <tr>
           <th>Kausi</th>
+          <th>Joukkue</th>
           <th>Ottelut</th>
           <th>Voitot</th>
           <th>SV%</th>
@@ -640,6 +684,15 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
   const age = landing.birthDate ? ageFromBirthDate(landing.birthDate) : null;
 
+  const heroNationality: string = landing.nationalityCode || landing.birthCountry || "";
+  const heroFlag = heroNationality ? nationalityFlag(heroNationality) : "";
+  const latestSeasonTeams = seasons.length
+    ? seasonTotals
+        .filter((t) => t.season === seasons[0])
+        .map(seasonTeamsHtml)
+        .join("")
+    : "";
+
   const username = currentUsername(context.request);
   const isFavoritePlayer = username
     ? !!(await context.env.DB.prepare("SELECT 1 FROM favorite_players WHERE username = ? AND player_id = ?")
@@ -667,6 +720,10 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       <p class="player-hero-meta player-hero-meta-front">
         ${landing.sweaterNumber ? `<span>#${landing.sweaterNumber}</span>` : ""}
         ${landing.position ? `<span>${escapeHtml(POSITION_ABBR[landing.position] ?? landing.position)}</span>` : ""}
+        ${age !== null ? `<span>${age} v.</span>` : ""}
+        ${landing.heightInCentimeters ? `<span>${landing.heightInCentimeters} cm</span>` : ""}
+        ${landing.weightInKilograms ? `<span>${landing.weightInKilograms} kg</span>` : ""}
+        ${heroFlag ? `<span class="player-hero-flag" title="${escapeHtml(heroNationality)}">${heroFlag}</span>` : ""}
       </p>
       <div class="player-hero-footer">
         <img src="${escapeHtml(landing.headshot ?? "")}" alt="" class="player-hero-photo" onerror="this.style.visibility='hidden'">
@@ -682,12 +739,12 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
 ${renderPeriodStatsSection(
   isGoalie,
-  [
+  ([
     latestSeasonTotal
-      ? { label: `Kausi ${seasonLabel(seasons[0])}`, total: latestSeasonTotal, ranks: latestRanks }
+      ? { label: `Kausi ${seasonLabel(seasons[0])}`, total: latestSeasonTotal, ranks: latestRanks, teams: latestSeasonTeams }
       : null,
     careerTotal ? { label: "Uran tilastot", total: careerTotal } : null,
-  ].filter((p): p is { label: string; total: SeasonTotal; ranks?: LeagueRanks } => p !== null),
+  ] as (StatPeriod | null)[]).filter((p): p is StatPeriod => p !== null),
 )}
 
 ${renderSeasonHistorySection(isGoalie, regularSeasonHistory, playoffHistory, careerTotal, careerPlayoffsTotal)}

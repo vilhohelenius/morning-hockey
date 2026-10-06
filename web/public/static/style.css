@@ -3281,3 +3281,120 @@ main {
   border-radius: 5px;
   font-size: 0.72rem;
 }
+
+
+/* ---------- Player card restyle ----------
+   Hero front bio line + flag, Kausi/Uran stat cards as a centered title bar
+   over a label-above-value grid (NHL.com mobile style), and the team column
+   of the season-history table. Uses theme tokens only. */
+.player-hero-meta-front {
+  gap: 4px 8px;
+}
+
+.player-hero-meta-front span {
+  font-size: 0.88rem;
+}
+
+.player-hero-meta-front span:first-child,
+.player-hero-meta-front span:nth-child(2) {
+  font-size: 1.15rem;
+}
+
+.player-hero-meta-front span + span::before {
+  margin-right: 8px;
+}
+
+.player-hero-meta-front .player-hero-flag {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.stat-card-header {
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px 14px;
+  text-align: center;
+  background: var(--bg);
+  font-size: 0.95rem;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text);
+}
+
+.stat-card-teams {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 12px;
+}
+
+.stat-card-grid-cells {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px 4px;
+  padding: 14px 8px 16px;
+}
+
+.stat-card-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+
+.stat-card-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.stat-card-value {
+  font-size: 1.35rem;
+  font-weight: 800;
+  line-height: 1.15;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.stat-card-cell.stat-card-highlight .stat-card-value {
+  color: var(--accent);
+}
+
+.stat-card-value .rank-badge {
+  font-size: 0.6rem;
+  margin-left: 2px;
+}
+
+.season-team {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.season-team-logo {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+
+.stats-table.season-history-table {
+  font-size: 0.74rem;
+}
+
+.stats-table.season-history-table th,
+.stats-table.season-history-table td {
+  padding: 6px 3px;
+}
+
+.stats-table.season-history-table th:nth-child(2),
+.stats-table.season-history-table td:nth-child(2) {
+  min-width: 0;
+  white-space: nowrap;
+}
