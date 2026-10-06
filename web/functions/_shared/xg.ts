@@ -284,3 +284,33 @@ async function fetchSeasonSums(db: D1Database, table: string, expr: string, ids:
 
 export const fetchSkatersSeasonXgMap = (db: D1Database, ids: number[]) => fetchSeasonSums(db, "skater_game_xg", "xg", ids);
 export const fetchGoaliesSeasonGsaxMap = (db: D1Database, ids: number[]) => fetchSeasonSums(db, "goalie_game_xg", "xga - goals_against", ids);
+
+// ---- League team table (/joukkueet, /odotetut) ----
+
+export interface RankedTeamXg {
+  abbrev: string;
+  games: number;
+  xgf: number;
+  xga: number;
+  pct: number;
+  rankPct: number;
+  rankXgf: number; // per game
+  rankXga: number; // per game, fewer is better
+}
+
+// Every team with rows in `league`, best xGF% first, with league ranks.
+export function rankedTeamXg(league: Map<number, TeamXg & { games: number }>): RankedTeamXg[] {
+  const rows = Object.entries(TEAM_IDS).flatMap(([abbrev, id]) => {
+    const r = league.get(id);
+    return r ? [{ abbrev, games: r.games, xgf: r.xgf, xga: r.xga, pct: xgfPct(r.xgf, r.xga) ?? 0 }] : [];
+  });
+  const pg = (v: number, g: number) => (g > 0 ? v / g : 0);
+  return rows
+    .map((r) => ({
+      ...r,
+      rankPct: rankIn(r.pct, rows.map((x) => x.pct), true),
+      rankXgf: rankIn(pg(r.xgf, r.games), rows.map((x) => pg(x.xgf, x.games)), true),
+      rankXga: rankIn(pg(r.xga, r.games), rows.map((x) => pg(x.xga, x.games)), false),
+    }))
+    .sort((a, b) => b.pct - a.pct);
+}

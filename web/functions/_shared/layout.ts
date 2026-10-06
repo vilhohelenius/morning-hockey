@@ -30,19 +30,25 @@ const NAV_HOME = { key: "home", href: "/", label: "🏠 Etusivu" };
 const NAV_STANDINGS = { key: "standings", href: "/sarjataulukko", label: "📊 Sarjataulukko" };
 const NAV_PLAYOFFS = { key: "playoffs", href: "/playoffit", label: "🏆 Playoff-bracket" };
 const NAV_ARCHIVE = { key: "archive", href: "/arkisto", label: "🗂️ Arkisto" };
-const NAV_BINGO = { key: "bingo", href: "/bingo", label: "🎯 Pistemiesbingo" };
 const NAV_SETTINGS = { key: "settings", href: "/omat", label: "⚙️ Asetukset" };
 
 const STATS_PAGES = [
   { key: "league_stats", href: "/tilastot", label: "Pistepörssi" },
   { key: "goalie_stats", href: "/maalivahtiporssi", label: "Maalivahtipörssi" },
   { key: "suomiporssi", href: "/suomiporssi", label: "Suomipörssi" },
+];
+
+const ANALYTICS_PAGES = [
+  { key: "xstats", href: "/odotetut", label: "Odotetut tilastot" },
   { key: "analytics", href: "/analytiikka", label: "Analytiikka" },
 ];
+
+const NAV_TEAMS = { key: "teams", href: "/joukkueet", label: "🏒 Joukkueet" };
 
 const GAME_PAGES = [
   { key: "schedule", href: "/otteluohjelma", label: "Otteluohjelma" },
   { key: "primetime", href: "/primetime", label: "Prime time" },
+  { key: "bingo", href: "/bingo", label: "Pistemiesbingo" },
 ];
 
 const OMAT_PLAYERS_ITEM = { key: "omat_players", href: "/omat/pelaajat", label: "⭐ Suosikkipelaajat" };
@@ -159,10 +165,11 @@ export async function renderLayout(options: LayoutOptions): Promise<string> {
       ${navGroup("omat", "⭐ Omat", omatItems, activePage)}
       ${navLink(NAV_STANDINGS, activePage)}
       ${navGroup("stats", "📈 Tilastot", STATS_PAGES, activePage)}
+      ${navGroup("analytics", "🧮 Analytiikka", ANALYTICS_PAGES, activePage)}
+      ${navLink(NAV_TEAMS, activePage)}
+      ${navGroup("games", "📅 Pelit", GAME_PAGES, activePage)}
       ${navLink(NAV_PLAYOFFS, activePage)}
-      ${navGroup("games", "📅 Ottelut", GAME_PAGES, activePage)}
       ${navLink(NAV_ARCHIVE, activePage)}
-      ${navLink(NAV_BINGO, activePage)}
       ${navLink(NAV_SETTINGS, activePage)}
     </ul>
   </nav>
