@@ -450,8 +450,8 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     <div class="tp-section">
       <p class="tp-section-title">Voittotodennäköisyys</p>
       <div class="gd-stat-header">
-        <span class="gd-stat-team">${escapeHtml(game.away_abbrev)} (vieras)</span>
-        <span class="gd-stat-team">${escapeHtml(game.home_abbrev)} (koti)</span>
+        <span class="gd-stat-team wp-team"><img src="${escapeHtml(game.away_logo)}" alt="" loading="lazy">${escapeHtml(game.away_abbrev)}</span>
+        <span class="gd-stat-team wp-team wp-team-home">${escapeHtml(game.home_abbrev)}<img src="${escapeHtml(game.home_logo)}" alt="" loading="lazy"></span>
       </div>
       ${renderStatBarRows([winProbStatRow(winProb)], game.away_abbrev, game.home_abbrev)}
       ${winProbInfoText(winProb)}

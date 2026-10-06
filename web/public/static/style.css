@@ -4010,3 +4010,19 @@ main {
   border-radius: 0;
   background: none;
 }
+
+/* Win-probability header: team logo + abbrev (away: logo first, home: logo last) */
+.wp-team {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1rem;
+}
+.wp-team img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+.wp-team-home {
+  justify-content: flex-end;
+}
