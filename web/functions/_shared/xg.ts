@@ -94,3 +94,77 @@ export const XG_INFO_TEXT = `
   mallin raakatulosta eikä niitä ole skaalattu kauden maalimäärään, joten yksittäisen ottelun xG on kohinaista ja
   kausisummat ovat luotettavampia. Vain runkosarja.</p>
 </details>`;
+
+// ---- Team xGF% (team_game_xg) ----
+
+// games/standings_rows carry only abbrevs, team_game_xg only NHL team ids.
+const TEAM_IDS: Record<string, number> = {
+  ANA: 24, BOS: 6, BUF: 7, CAR: 12, CBJ: 29, CGY: 20, CHI: 16, COL: 21, DAL: 25, DET: 17, EDM: 22, FLA: 13, LAK: 26, MIN: 30, MTL: 8, NJD: 1,
+  NSH: 18, NYI: 2, NYR: 3, OTT: 9, PHI: 4, PIT: 5, SEA: 55, SJS: 28, STL: 19, TBL: 14, TOR: 10, UTA: 68, VAN: 23, VGK: 54, WPG: 52, WSH: 15,
+};
+
+export interface TeamXg {
+  xgf: number;
+  xga: number;
+  xgf5v5: number;
+  xga5v5: number;
+}
+
+export function xgfPct(xgf: number, xga: number): number | null {
+  return xgf + xga > 0 ? (100 * xgf) / (xgf + xga) : null;
+}
+
+export function formatPct(value: number | null): string {
+  return value === null ? "–" : `${value.toFixed(1)} %`;
+}
+
+const TEAM_XG_SUMS = "SUM(xgf) AS xgf, SUM(xga) AS xga, SUM(xgf_5v5) AS xgf5v5, SUM(xga_5v5) AS xga5v5";
+
+// Latest season's totals for a team (regular season only), or null before
+// the team has any rows.
+export async function fetchTeamSeasonXg(db: D1Database, abbrev: string): Promise<TeamXg | null> {
+  const teamId = TEAM_IDS[abbrev];
+  if (!teamId) return null;
+  try {
+    const row = await db
+      .prepare(
+        `SELECT ${TEAM_XG_SUMS} FROM team_game_xg WHERE team_id = ? AND season = (SELECT MAX(season) FROM team_game_xg WHERE team_id = ?)`,
+      )
+      .bind(teamId, teamId)
+      .first<{ xgf: number | null; xga: number; xgf5v5: number; xga5v5: number }>();
+    return row && row.xgf !== null ? (row as TeamXg) : null;
+  } catch (error) {
+    console.error(`Team xG lookup failed for ${abbrev}:`, error);
+    return null;
+  }
+}
+
+// One finished game's team xG, keyed by side.
+export async function fetchGameTeamXg(db: D1Database, gameId: number, awayAbbrev: string, homeAbbrev: string): Promise<{ away: TeamXg; home: TeamXg } | null> {
+  try {
+    const { results } = await db
+      .prepare("SELECT team_id, xgf, xga, xgf_5v5 AS xgf5v5, xga_5v5 AS xga5v5 FROM team_game_xg WHERE game_id = ?")
+      .bind(gameId)
+      .all<TeamXg & { team_id: number }>();
+    const away = results.find((r) => r.team_id === TEAM_IDS[awayAbbrev]);
+    const home = results.find((r) => r.team_id === TEAM_IDS[homeAbbrev]);
+    return away && home ? { away, home } : null;
+  } catch (error) {
+    console.error(`Game team xG lookup failed for ${gameId}:`, error);
+    return null;
+  }
+}
+
+// Two TeamStatRow-shaped rows (all situations, 5v5) for the stat-bar renderer.
+export function teamXgStatRows(away: TeamXg, home: TeamXg): { label: string; away_value: string; home_value: string; away_pct?: number; home_pct?: number }[] {
+  const row = (label: string, a: number | null, h: number | null) => ({
+    label,
+    away_value: formatPct(a),
+    home_value: formatPct(h),
+    ...(a !== null && h !== null && a + h > 0 ? { away_pct: (100 * a) / (a + h), home_pct: (100 * h) / (a + h) } : {}),
+  });
+  return [
+    row("xGF%", xgfPct(away.xgf, away.xga), xgfPct(home.xgf, home.xga)),
+    row("xGF% 5v5", xgfPct(away.xgf5v5, away.xga5v5), xgfPct(home.xgf5v5, home.xga5v5)),
+  ];
+}

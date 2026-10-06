@@ -443,6 +443,14 @@ def _insert_rows(client: D1Client, table: str, columns: list[str], rows: list[di
         client.execute(f"INSERT OR REPLACE INTO {table} ({','.join(columns)}) VALUES {values}")
 
 
+_XG_TEAM_COLUMNS = ["game_id", "team_id", "season", "game_date", "xgf", "xga", "xgf_5v5", "xga_5v5"]
+
+
+def sync_team_xg_games(client: D1Client, team_rows: list[dict]) -> None:
+    """Upserts team_game_xg rows (primary key (game_id, team_id))."""
+    _insert_rows(client, "team_game_xg", _XG_TEAM_COLUMNS, team_rows)
+
+
 def sync_xg_games(client: D1Client, skater_rows: list[dict], goalie_rows: list[dict]) -> None:
     """Upserts per-game xG rows (primary key (game_id, player_id), so safe to
     re-run for the same game). Season totals are summed in the web queries

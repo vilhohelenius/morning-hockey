@@ -513,3 +513,17 @@ CREATE TABLE IF NOT EXISTS goalie_game_xg (
 );
 
 CREATE INDEX IF NOT EXISTS idx_goalie_game_xg_player ON goalie_game_xg(player_id, season);
+
+-- Team xGF/xGA per game (all situations and 5v5), written by sync_xg.py.
+CREATE TABLE IF NOT EXISTS team_game_xg (
+    game_id INTEGER NOT NULL,
+    team_id INTEGER NOT NULL,
+    season INTEGER NOT NULL,
+    game_date TEXT NOT NULL,
+    xgf REAL NOT NULL,
+    xga REAL NOT NULL,
+    xgf_5v5 REAL NOT NULL,
+    xga_5v5 REAL NOT NULL,
+    PRIMARY KEY (game_id, team_id)
+);
+CREATE INDEX IF NOT EXISTS idx_team_game_xg_team ON team_game_xg(team_id, season);

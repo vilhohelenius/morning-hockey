@@ -20,6 +20,7 @@
 
 import { getBoxScore, type ParsedBoxScore } from "../_shared/boxScoreCache";
 import { buildPreviewTeamStats, buildTimeline } from "../_shared/boxscore";
+import { fetchGameTeamXg, fetchTeamSeasonXg, teamXgStatRows } from "../_shared/xg";
 import { renderMatchTimeline } from "../_shared/matchTimeline";
 import { computeFormGuide, type FormGuideEntry } from "../_shared/formGuide";
 import { escapeHtml, finalTypeFi, helsinkiParts, humanDate, nationalityFlag } from "../_shared/format";
@@ -346,10 +347,15 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   let allSeasonStats: TeamSeasonStatsRow[] = [];
   let awayForm: FormGuideEntry | undefined;
   let homeForm: FormGuideEntry | undefined;
+  let xgRows: TeamStatRow[] = [];
 
   if (game.is_finished || isLive(game)) {
     ({ box, fetchError } = await getBoxScore(db, game));
-    if (game.is_finished) youtubeUrl = await resolveHighlightsUrl(db, context.env, game);
+    if (game.is_finished) {
+      youtubeUrl = await resolveHighlightsUrl(db, context.env, game);
+      const gameXg = await fetchGameTeamXg(db, game.game_id, game.away_abbrev, game.home_abbrev);
+      if (gameXg) xgRows = teamXgStatRows(gameXg.away, gameXg.home);
+    }
   } else {
     const skaterQuery = (abbrev: string) =>
       db
@@ -391,6 +397,8 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     allSeasonStats = allSeasonRes.results;
     awayForm = computeFormGuide(awayRecentRes.results, [game.away_abbrev], FORM_GUIDE_WINDOW)[0];
     homeForm = computeFormGuide(homeRecentRes.results, [game.home_abbrev], FORM_GUIDE_WINDOW)[0];
+    const [awayXg, homeXg] = await Promise.all([fetchTeamSeasonXg(db, game.away_abbrev), fetchTeamSeasonXg(db, game.home_abbrev)]);
+    if (awayXg && homeXg) xgRows = teamXgStatRows(awayXg, homeXg);
   }
 
   const hasPreviewData = awaySkaters.length > 0 && homeSkaters.length > 0;
@@ -460,6 +468,7 @@ ${
         <span class="gd-stat-team">${escapeHtml(game.home_abbrev)}</span>
       </div>
       ${renderPreviewTeamStats(buildPreviewTeamStats(awaySeasonStats, homeSeasonStats, allSeasonStats), game.away_abbrev, game.home_abbrev, awayForm, homeForm)}
+      ${renderStatBarRows(xgRows, game.away_abbrev, game.home_abbrev)}
     </div>
   </div>
 </section>
@@ -494,7 +503,7 @@ ${
         <span class="gd-stat-team">${escapeHtml(game.away_abbrev)}</span>
         <span class="gd-stat-team">${escapeHtml(game.home_abbrev)}</span>
       </div>
-      ${renderStatBarRows(box.teamStats, game.away_abbrev, game.home_abbrev)}
+      ${renderStatBarRows([...box.teamStats, ...xgRows], game.away_abbrev, game.home_abbrev)}
     </div>
   </div>
 </section>

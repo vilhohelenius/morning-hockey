@@ -16,6 +16,7 @@
 // someone visits it, unlike the original team.html, which only linked
 // games nightly-digest.yml happened to pre-build a report for.
 
+import { fetchTeamSeasonXg, formatPct, type TeamXg, xgfPct } from "../_shared/xg";
 import { currentUsername } from "../_shared/auth";
 import { escapeHtml, renderFavStar, renderGameRow, teamHeroBackgroundStyle } from "../_shared/format";
 import { renderRosterGoalieTable, renderRosterSkaterTable } from "../_shared/leaderboard";
@@ -70,7 +71,7 @@ function renderDivisionTable(division: StandingsRow[], teamAbbrev: string): stri
 // A single .stat-card: boxed header bar + one dense, abbreviated-column
 // row -- see the "Stat cards" block in style.css for why this replaced
 // the plain .stats-table version (closer to nhl.com's own stat boxes).
-function renderSeasonStats(stats: TeamSeasonStatsRow | null): string {
+function renderSeasonStats(stats: TeamSeasonStatsRow | null, xg: TeamXg | null): string {
   if (!stats) return "";
   const goalDifferential = stats.goals_for - stats.goals_against;
 
@@ -91,7 +92,7 @@ function renderSeasonStats(stats: TeamSeasonStatsRow | null): string {
             <th>PM</th>
             <th>+/-</th>
             <th>LKT/O</th>
-            <th>NP</th>
+            <th>NP</th>${xg ? "<th>xGF%</th><th>xGF% 5v5</th>" : ""}
           </tr>
         </thead>
         <tbody>
@@ -104,7 +105,7 @@ function renderSeasonStats(stats: TeamSeasonStatsRow | null): string {
             <td>${stats.goals_against}</td>
             <td class="stat-card-highlight">${goalDifferential > 0 ? "+" : ""}${goalDifferential}</td>
             <td>${stats.shots_for_per_game.toFixed(1)}</td>
-            <td>${stats.shutouts}</td>
+            <td>${stats.shutouts}</td>${xg ? `<td>${formatPct(xgfPct(xg.xgf, xg.xga))}</td><td>${formatPct(xgfPct(xg.xgf5v5, xg.xga5v5))}</td>` : ""}
           </tr>
         </tbody>
       </table>
@@ -165,6 +166,8 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     .bind(abbrev)
     .all<TeamRosterGoalieRow>();
 
+  const teamXg = await fetchTeamSeasonXg(db, abbrev);
+
   const username = currentUsername(context.request);
   const isFavoriteTeam = username
     ? !!(await db.prepare("SELECT 1 FROM favorite_teams WHERE username = ? AND team_abbrev = ?").bind(username, abbrev).first())
@@ -191,7 +194,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   </p>
 </header>
 
-${renderSeasonStats(seasonStats ?? null)}
+${renderSeasonStats(seasonStats ?? null, teamXg)}
 
 ${renderDivisionTable(division, abbrev)}
 

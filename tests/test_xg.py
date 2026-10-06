@@ -3,7 +3,7 @@ import pathlib
 
 import pandas as pd
 
-from morning_hockey.xg.compute import compute_game, shot_probabilities
+from morning_hockey.xg.compute import compute_game, compute_team_game, shot_probabilities
 
 FIXTURES = pathlib.Path(__file__).parent / "fixtures"
 PBP = json.loads((FIXTURES / "pbp_2024020001.json").read_text())
@@ -41,3 +41,13 @@ def test_slot_shot_scores_far_higher_than_blue_line_shot():
     slot = shots[(shots["dist"] < 15) & (shots["emptyNet"] == 0)]["xg_skater"].mean()
     point = shots[(shots["dist"] > 45) & (shots["emptyNet"] == 0)]["xg_skater"].mean()
     assert slot > 3 * point
+
+
+def test_team_rows_mirror_each_other_and_match_skater_totals():
+    skaters, _ = compute_game(PBP)
+    home, away = compute_team_game(PBP)
+    assert home["game_id"] == away["game_id"] == 2024020001
+    assert home["xgf"] == away["xga"] and away["xgf"] == home["xga"]
+    assert home["xgf_5v5"] == away["xga_5v5"] and away["xgf_5v5"] == home["xga_5v5"]
+    assert abs(home["xgf"] + away["xgf"] - sum(r["xg"] for r in skaters)) < 1e-6
+    assert 0 < home["xgf_5v5"] <= home["xgf"] and 0 < away["xgf_5v5"] <= away["xgf"]

@@ -135,7 +135,7 @@ NHL Highlights -videon; ilman sitä käytetään YouTube-hakulinkkiä.
   `standings_rows`, `finnish_skater_stats`, `finnish_goalie_stats`
 - Joukkueet: `team_roster_skaters`, `team_roster_goalies`, `team_season_stats`
 - Digest: `digests`, `digest_games`, `digest_scorers`, `digest_goalies`
-- xG/GSAx: `skater_game_xg`, `goalie_game_xg` (ottelukohtaiset rivit, kausisummat lasketaan kyselyissä)
+- xG/GSAx: `skater_game_xg`, `goalie_game_xg`, `team_game_xg` (joukkueen xGF/xGA, myös 5v5; ottelukohtaiset rivit, kausisummat lasketaan kyselyissä)
 - Käyttäjät: `users`, `favorite_teams`, `favorite_players`, `user_settings`
 - Välimuisti: `skater_game_log_cache` (analytiikan pistekaavio)
 
@@ -158,7 +158,7 @@ src/morning_hockey/
   sync_fast_tier.py       CLI: ottelut → D1 (10 min välein)
   sync_slow_tier.py       CLI: kausitilastot → D1 (2 h välein)
   sync_digest.py          CLI: suomalaiset → D1 (6 h välein)
-  sync_xg.py              CLI: xG/GSAx → D1 (digest-workflow'ssa); `--backfill 20252026`
+  sync_xg.py              CLI: xG/GSAx → D1 (digest-workflow'ssa); `--backfill 20252026`, `--backfill-teams 20252026` (vain joukkuerivit)
   xg/                     xGoalBoost-mallit (models/), features.py (kopio sellaisenaan
                           xGoalBoostista) ja compute.py (play-by-play → xG-rivit)
 
@@ -257,4 +257,5 @@ Backfill (tarvitsee `CF_*`-ympäristömuuttujat, ks. Ajaminen paikallisesti):
 ```
 pip install -e ".[xg]"
 python -m morning_hockey.sync_xg --backfill 20232024   # sama 20242025, 20252026
+python -m morning_hockey.sync_xg --backfill-teams 20232024   # joukkue-xGF% jo xG-backfillatuille kausille (ei kirjoita pelaajarivejä uudelleen)
 ```

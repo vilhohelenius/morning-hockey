@@ -45,6 +45,27 @@ def shot_probabilities(play_by_play: dict) -> pd.DataFrame:
     return rows
 
 
+def compute_team_game(play_by_play: dict) -> list[dict]:
+    """Two rows (home, away) shaped like team_game_xg: xgf is the xG of the
+    team's own shot attempts, xga the opponent's. The 5v5 columns count only
+    shots with five skaters on each side and no empty net."""
+    shots = shot_probabilities(play_by_play)
+    if shots.empty:
+        return []
+    even = shots[(shots["shooterSkaters"] == 5) & (shots["defenderSkaters"] == 5) & (shots["emptyNet"] == 0)]
+    teams = [play_by_play["homeTeam"]["id"], play_by_play["awayTeam"]["id"]]
+    xgf = {t: float(shots.loc[shots["teamId"] == t, "xg_skater"].sum()) for t in teams}
+    xgf_5v5 = {t: float(even.loc[even["teamId"] == t, "xg_skater"].sum()) for t in teams}
+    return [
+        {
+            "game_id": int(play_by_play["id"]), "team_id": int(t), "season": int(play_by_play["season"]),
+            "game_date": play_by_play["gameDate"],
+            "xgf": xgf[t], "xga": xgf[other], "xgf_5v5": xgf_5v5[t], "xga_5v5": xgf_5v5[other],
+        }
+        for t, other in ((teams[0], teams[1]), (teams[1], teams[0]))
+    ]
+
+
 def compute_game(play_by_play: dict) -> tuple[list[dict], list[dict]]:
     """(skater_rows, goalie_rows) for one finished game, shaped like the
     skater_game_xg / goalie_game_xg D1 tables."""
