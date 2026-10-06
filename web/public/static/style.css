@@ -3998,3 +3998,10 @@ main {
 .pw-card .stat-card-value {
   font-size: 1rem;
 }
+
+/* /joukkueet index + /odotetut */
+.team-index-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+@media (min-width: 700px) { .team-index-grid { grid-template-columns: 1fr 1fr; } }
+.stat-card-header.team-index-header { flex-direction: row; justify-content: flex-start; gap: 10px; text-align: left; font-size: 1rem; font-weight: 700; text-decoration: none; }
+.team-index-header .stat-card-team-logo { margin-left: 0; order: -1; }
+.team-index-grid .stat-card-value { font-size: 1.1rem; }

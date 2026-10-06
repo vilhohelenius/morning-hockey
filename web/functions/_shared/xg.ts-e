@@ -285,6 +285,7 @@ async function fetchSeasonSums(db: D1Database, table: string, expr: string, ids:
 export const fetchSkatersSeasonXgMap = (db: D1Database, ids: number[]) => fetchSeasonSums(db, "skater_game_xg", "xg", ids);
 export const fetchGoaliesSeasonGsaxMap = (db: D1Database, ids: number[]) => fetchSeasonSums(db, "goalie_game_xg", "xga - goals_against", ids);
 
+<<<<<<< HEAD
 // --- Finished-game report: per-player xG / GSAx for one game ---------------
 // player_id -> ixG (skaters) and player_id -> GSAx (goalies); empty maps when
 // the sync hasn't processed the game, so the report hides the columns.
