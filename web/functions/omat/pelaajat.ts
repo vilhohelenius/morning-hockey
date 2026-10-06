@@ -9,6 +9,7 @@
 import { currentUsername, favoriteTeamAbbrevs, readHighlightsCookie } from "../_shared/auth";
 import { renderLayout } from "../_shared/layout";
 import { renderRosterGoalieTable, renderRosterSkaterTable } from "../_shared/leaderboard";
+import { fetchGoaliesSeasonGsaxMap } from "../_shared/xg";
 import type { Env, FavoritePlayerRow, TeamRosterGoalieRow, TeamRosterSkaterRow } from "../_shared/types";
 
 function renderNotSignedIn(request: Request): Promise<string> {
@@ -79,7 +80,7 @@ ${
 }
 
 ${favoriteSkaters.length ? renderRosterSkaterTable(favoriteSkaters, "🏒 Kenttäpelaajat", true, hl) : ""}
-${favoriteGoalies.length ? renderRosterGoalieTable(favoriteGoalies, "🥅 Maalivahdit", true, hl) : ""}
+${favoriteGoalies.length ? renderRosterGoalieTable(favoriteGoalies, "🥅 Maalivahdit", true, hl, await fetchGoaliesSeasonGsaxMap(db, favoriteGoalies.map((g) => g.player_id))) : ""}
 `;
 
   const html = await renderLayout({

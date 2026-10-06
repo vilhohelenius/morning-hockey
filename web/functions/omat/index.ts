@@ -13,6 +13,7 @@ import { currentUsername, readHighlightsCookie, readThemeCookie } from "../_shar
 import { escapeHtml, formatToi, teamLogoUrl } from "../_shared/format";
 import { loadPicks, loadWindowGames } from "../_shared/bingoData";
 import { renderLayout } from "../_shared/layout";
+import { fetchGoaliesSeasonGsaxMap, formatGsax } from "../_shared/xg";
 import type {
   Env,
   FavoritePlayerRow,
@@ -60,11 +61,12 @@ function renderFavoriteTeamRow(team: StandingsRow): string {
 function renderFavoritePlayerRow(
   fav: { isGoalie: boolean },
   player: TeamRosterSkaterRow | TeamRosterGoalieRow,
+  gsax?: number,
 ): string {
   const statLine = fav.isGoalie
     ? (() => {
         const g = player as TeamRosterGoalieRow;
-        return `${g.wins}-${g.losses}-${g.ot_losses} · ${g.save_pct.toFixed(3)} SV%`;
+        return `${g.wins}-${g.losses}-${g.ot_losses} · ${g.save_pct.toFixed(3)} SV%${gsax === undefined ? "" : ` · ${formatGsax(gsax, 2)} GSAx`}`;
       })()
     : (() => {
         const s = player as TeamRosterSkaterRow;
@@ -145,11 +147,12 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     .map(renderFavoriteTeamRow);
 
   const favoritePlayersHtml: string[] = [];
+  const goalieGsax = await fetchGoaliesSeasonGsaxMap(db, favoritePlayerRows.filter((f) => f.is_goalie).map((f) => f.player_id));
   for (const fav of favoritePlayerRows) {
     const player = fav.is_goalie
       ? await db.prepare("SELECT * FROM team_roster_goalies WHERE player_id = ?").bind(fav.player_id).first<TeamRosterGoalieRow>()
       : await db.prepare("SELECT * FROM team_roster_skaters WHERE player_id = ?").bind(fav.player_id).first<TeamRosterSkaterRow>();
-    if (player) favoritePlayersHtml.push(renderFavoritePlayerRow({ isGoalie: !!fav.is_goalie }, player));
+    if (player) favoritePlayersHtml.push(renderFavoritePlayerRow({ isGoalie: !!fav.is_goalie }, player, goalieGsax.get(fav.player_id)));
   }
 
   const favoritedAbbrevs = new Set(favoriteTeamRows.map((f) => f.team_abbrev));

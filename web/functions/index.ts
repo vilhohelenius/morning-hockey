@@ -42,6 +42,7 @@ import {
   type FinnGoalieLine,
   type FinnScorerLine,
 } from "./_shared/gameCard";
+import { fetchGamesGoalieGsax } from "./_shared/xg";
 import { resolveHighlightsUrl } from "./_shared/youtube";
 import { MAX_DAY_OFFSET, MIN_DAY_OFFSET, clampDayOffset, selectDayGames } from "./_shared/dayGames";
 import { addDays, escapeHtml, helsinkiParts, helsinkiToday, secondsToHelsinkiMidnight, humanDate, nationalityFlag, shortDate, teamHeroBackgroundStyle } from "./_shared/format";
@@ -259,6 +260,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       }
     }
     let gameCardsHtml = "";
+    const gsaxByGame = await fetchGamesGoalieGsax(db, roundGames.filter((g) => g.is_finished || isLive(g)).map((g) => g.game_id));
 
     for (const game of roundGames) {
       let scorers: FinnScorerLine[] = [];
@@ -299,8 +301,8 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
           ...finnishScorerLines(box.homeSkaters, game.home_abbrev),
         ].sort((a, b) => b.goals + b.assists - (a.goals + a.assists));
         goalies = [
-          ...finnishGoalieLines(box.awayGoalies, game.away_abbrev),
-          ...finnishGoalieLines(box.homeGoalies, game.home_abbrev),
+          ...finnishGoalieLines(box.awayGoalies, game.away_abbrev, gsaxByGame.get(game.game_id)),
+          ...finnishGoalieLines(box.homeGoalies, game.home_abbrev, gsaxByGame.get(game.game_id)),
         ];
         if (isLive(game) && box.goals.length) {
           const lastGoal = box.goals[box.goals.length - 1];

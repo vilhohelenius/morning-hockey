@@ -330,3 +330,23 @@ export function rankedTeamXg(league: Map<number, TeamXg & { games: number }>): R
     }))
     .sort((a, b) => b.pct - a.pct);
 }
+
+// ---- Game-level goalie GSAx for many games in one query (game cards) ----
+// game_id -> player_id -> GSAx; empty when the sync hasn't processed the games.
+export async function fetchGamesGoalieGsax(db: D1Database, gameIds: number[]): Promise<Map<number, Map<number, number>>> {
+  const out = new Map<number, Map<number, number>>();
+  if (!gameIds.length) return out;
+  try {
+    const { results } = await db
+      .prepare(`SELECT game_id, player_id, xga - goals_against AS v FROM goalie_game_xg WHERE game_id IN (${gameIds.map(() => "?").join(",")})`)
+      .bind(...gameIds)
+      .all<{ game_id: number; player_id: number; v: number }>();
+    for (const r of results) {
+      if (!out.has(r.game_id)) out.set(r.game_id, new Map());
+      out.get(r.game_id)!.set(r.player_id, r.v);
+    }
+  } catch (error) {
+    console.error("Games goalie GSAx lookup failed:", error);
+  }
+  return out;
+}
