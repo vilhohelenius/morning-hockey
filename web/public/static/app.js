@@ -1085,3 +1085,11 @@
 document.querySelectorAll('img[src$="/TBL_light.svg"],img[src$="/TOR_light.svg"],img[src$="/NSH_light.svg"]').forEach(function (img) {
   img.loading = "eager";
 });
+
+// Keep the tapped tab/pill centred in its horizontally scrolling row.
+document.addEventListener("click", function (e) {
+  var tab = e.target.closest && e.target.closest(".standings-tab, .day-pill");
+  if (tab && tab.parentElement.scrollWidth > tab.parentElement.clientWidth) {
+    tab.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
+  }
+});

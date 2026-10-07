@@ -5332,3 +5332,54 @@ main {
   color: var(--text);
   font-weight: 700;
 }
+
+/* Tab-rivit vierivät vaakaan, kun sisältö ei mahdu; tabit eivät kutistu alle sisältönsä. */
+.standings-tab-picker,
+.tab-bar,
+.day-picker {
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.standings-tab-picker::-webkit-scrollbar,
+.tab-bar::-webkit-scrollbar,
+.day-picker::-webkit-scrollbar,
+:is(.season-type-picker, .team-games-picker, .player-filter-picker, .analytiikka-view-picker, .division-picker, .sarjataulukko-view-picker)::-webkit-scrollbar {
+  display: none;
+}
+
+.standings-tab,
+:is(.season-type-picker, .team-games-picker, .player-filter-picker, .analytiikka-view-picker, .division-picker, .sarjataulukko-view-picker) .day-pill {
+  flex: 1 0 auto;
+  padding-left: 14px;
+  padding-right: 14px;
+}
+
+/* Päiväselain samaan tab-tyyliin. */
+.day-picker {
+  gap: 0;
+  margin: 12px 0 14px;
+  padding: 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.day-picker .day-pill {
+  padding: 10px 14px;
+  background: none;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  margin-bottom: -1px;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 400;
+}
+
+.day-picker .day-pill.active {
+  background: none;
+  border-bottom-color: var(--text);
+  color: var(--text);
+  font-weight: 700;
+}
