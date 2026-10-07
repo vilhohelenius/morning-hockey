@@ -568,10 +568,12 @@
         main.appendChild(pill);
         if (item.strength) who.appendChild(el("span", "mt-strength", "(" + (MT_STRENGTH[item.strength] || item.strength) + ")"));
         who.appendChild(elFlags("strong", null, item.scorer_short || item.scorer));
-        main.appendChild(who);
-        row.appendChild(main);
+        var col = el("div", "mt-col");
+        col.appendChild(who);
         var assists = item.assists_short || item.assists || [];
-        if (assists.length) row.appendChild(elFlags("p", "mt-assists", assists.join(" + ")));
+        col.appendChild(elFlags("p", "mt-assists", assists.length ? assists.join(" · ") : "Ei syöttäjiä"));
+        main.appendChild(col);
+        row.appendChild(main);
       } else {
         main.appendChild(el("span", "mt-badge", item.minutes > 0 ? String(item.minutes) : "RL"));
         who.appendChild(elFlags("strong", null, item.player || item.team_abbrev));
