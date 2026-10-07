@@ -4669,21 +4669,23 @@ main {
   transition: transform 0.45s ease;
 }
 
+/* Poistuva puoli häivytetään heti käännön alussa ja saapuva tuodaan esiin
+   vasta kun kortti on reunasta (0.225 s), jolloin kuva/logo eivät vuoda läpi. */
 .hero-banner.player-hero-face {
-  transition: visibility 0s 0.225s;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.12s ease 0.03s, visibility 0s 0.225s;
 }
 
 .hero-banner.player-hero-back {
   transform: rotateY(180deg);
-  visibility: hidden;
 }
 
-.player-hero-flip.is-flipped .player-hero-front {
-  visibility: hidden;
-}
-
+.player-hero-flip:not(.is-flipped) .hero-banner.player-hero-front,
 .player-hero-flip.is-flipped .hero-banner.player-hero-back {
+  opacity: 1;
   visibility: visible;
+  transition: opacity 0.15s ease 0.225s, visibility 0s 0.225s;
 }
 
 

@@ -56,11 +56,11 @@ function nameWithFlag(person: RawPerson, finnishIds: Set<number>): string {
   return finnishIds.has(person.playerId) ? `${name} ${FINNISH_FLAG}` : name;
 }
 
-// "Podkolzin V." -- the compact form the match timeline shows (Flashscore
+// "V. Podkolzin" -- the compact form the match timeline shows (Flashscore
 // style). Multi-word first names ("Jean-Gabriel") just use the initial.
 export function shortName(first: string, last: string): string {
   const initial = first.trim().charAt(0);
-  return initial ? `${last} ${initial}.` : last;
+  return initial ? `${initial}. ${last}` : last;
 }
 
 function shortNameWithFlag(person: RawPerson, finnishIds: Set<number>): string {

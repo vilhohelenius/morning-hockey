@@ -154,7 +154,7 @@ export interface GoalEvent {
   away_score: number;
   home_score: number;
   // Added with the match timeline (2026-10): period number for ordering (OT =
-  // 4+, SO = 5+), "Last F." short names for the compact timeline, and the
+  // 4+, SO = 5+), "F. Last" short names for the compact timeline, and the
   // NHL.com highlight clip page when play-by-play has one. Optional because
   // rows cached before this existed (and used as an error fallback) lack them.
   period?: number;
@@ -166,7 +166,7 @@ export interface GoalEvent {
 export interface ShootoutAttempt {
   sequence: number;
   team_abbrev: string;
-  player: string; // "Last F." (+ flag)
+  player: string; // "F. Last" (+ flag)
   result: "goal" | "save" | "miss";
   away_score: number; // running shootout score after this attempt
   home_score: number;
@@ -178,7 +178,7 @@ export interface PenaltyEvent {
   period_label: string;
   time_in_period: string;
   team_abbrev: string;
-  player: string; // "Last F." (+ flag), "" when it was a team penalty
+  player: string; // "F. Last" (+ flag), "" when it was a team penalty
   minutes: number;
   reason: string; // Finnish
 }
