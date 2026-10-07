@@ -444,7 +444,8 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   <img src="/static/banner_dark.png" alt="Morning Hockey" class="brand-banner brand-banner-dark">
 </header>
 
-<section>
+<div class="dashboard">
+<section class="dashboard-main">
   <div class="section-title-row" id="day-nav" data-offset="${dayOffset}" data-rendered="${Date.now()}" data-ttl="${cacheTtl}" data-ver="${escapeHtml(readVersionCookie(context.request))}">
     <a class="icon-btn day-nav-btn${dayOffset <= MIN_DAY_OFFSET ? " is-disabled" : ""}" ${dayOffset <= MIN_DAY_OFFSET ? 'aria-disabled="true"' : `href="${dayHref(dayOffset - 1)}"`} data-dir="-1" title="Edellinen päivä" aria-label="Edellinen päivä">${icon("chev-l")}</a>
     <h2 class="section-title" id="day-title">${dayTitle}</h2>
@@ -454,6 +455,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   <div class="day-panels">${dayPanelsHtml}</div>
 </section>
 
+<div class="dashboard-side">
 ${renderFinnishNightSection(buildFinnishNight(nightGames), teamHeroBackgroundStyle("NYR", false))}
 
 ${favoriteTeamsHtml}
@@ -463,6 +465,8 @@ ${statTeaserTable(`${flagImg("fi")} Suomipörssin kärki`, finSkaters.map((r, i)
 ${statTeaserTable(`${icon("trend")} NHL:n kärkipörssi`, leagueSkaters.map((r, i) => renderLeagueSkaterRow(r, i + 1)), "Ei tilastoituja pelaajia vielä.", "/tilastot", "Koko Tilastot →", teamHeroBackgroundStyle("NHL", false))}
 
 ${upcomingHtml}
+</div>
+</div>
 
 <script id="game-details" type="application/json">${gameDetailsJson}</script>
 ${missingBoxRetryScript(missingBoxes)}
