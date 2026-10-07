@@ -349,15 +349,15 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   <p class="standings-legend">Klikkaa joukkuetta nähdäksesi sen viimeisimmät ottelut, pistepörssin
     ja seuraavan ottelun.</p>
   <div class="standings-tab-picker" role="tablist">${tabButtons}</div>
-  <div class="filter-pills" id="venue-picker">${VENUES.map((x) => `<button type="button" class="day-pill${x.key === "all" ? " active" : ""}" data-venue="${x.key}">${x.label}</button>`).join("")}</div>
+  <div class="tab-bar" id="venue-picker">${VENUES.map((x) => `<button type="button" class="standings-tab${x.key === "all" ? " active" : ""}" data-venue="${x.key}">${x.label}</button>`).join("")}</div>
   ${sections}
 </section>
 
 <section class="sarjataulukko-view-section is-hidden" data-view="form">
   <p class="standings-legend">Joukkueet järjestetty pisteprosentin mukaan viimeisten ottelujen ajalta.
     Klikkaa joukkuetta nähdäksesi sen viimeisimmät ottelut, pistepörssin ja seuraavan ottelun.</p>
-  <div class="filter-pills" id="form-win-picker">${FORM_WINDOWS.map((w) => `<button type="button" class="day-pill${w === 10 ? " active" : ""}" data-win="${w}">${w} ottelua</button>`).join("")}</div>
-  <div class="filter-pills" id="form-scope-picker">${FORM_SCOPES.map((x) => `<button type="button" class="day-pill${x.key === "league" ? " active" : ""}" data-scope="${x.key}">${x.label}</button>`).join("")}</div>
+  <div class="tab-bar" id="form-win-picker">${FORM_WINDOWS.map((w) => `<button type="button" class="standings-tab${w === 10 ? " active" : ""}" data-win="${w}">${w} ottelua</button>`).join("")}</div>
+  <div class="tab-bar" id="form-scope-picker">${FORM_SCOPES.map((x) => `<button type="button" class="standings-tab${x.key === "league" ? " active" : ""}" data-scope="${x.key}">${x.label}</button>`).join("")}</div>
   ${renderFormGuide(recentGames, teamsByAbbrev)}
 </section>
 
@@ -368,14 +368,14 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     var picker = document.getElementById(pickerId);
     if (!picker) return;
     picker.addEventListener("click", function (e) {
-      var pill = e.target.closest(".day-pill");
+      var pill = e.target.closest(".standings-tab");
       if (!pill) return;
-      picker.querySelectorAll(".day-pill").forEach(function (p) { p.classList.toggle("active", p === pill); });
+      picker.querySelectorAll(".standings-tab").forEach(function (p) { p.classList.toggle("active", p === pill); });
       sync();
     });
   }
   function active(id, key) {
-    var el = document.querySelector("#" + id + " .day-pill.active");
+    var el = document.querySelector("#" + id + " .standings-tab.active");
     return el && el.dataset[key];
   }
   function sync() {

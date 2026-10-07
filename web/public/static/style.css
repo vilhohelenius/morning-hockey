@@ -5242,7 +5242,7 @@ main {
   margin-bottom: 12px;
 }
 
-.filter-pills[hidden],
+.tab-bar[hidden],
 .venue-sec.is-hidden,
 .form-sec.is-hidden {
   display: none;
@@ -5280,3 +5280,19 @@ main {
   :root:not([data-theme]) .spoiler-game .team-detail img[src$="/NSH_light.svg"] { content: normal; }
 }
 .standings-legend + .filter-pills { margin-top: 12px; }
+
+/* Alavalitsimet käyttävät samaa alleviivattua tab-tyyliä kuin sarjataulukon päävälilehdet. */
+.tab-bar {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  margin: 12px 0 14px;
+}
+
+.tab-bar[hidden] {
+  display: none;
+}
+
+/* Toissijaiset tab-rivit hieman kevyempinä kuin päävälilehdet. */
+.tab-bar { margin-top: 0; }
+.tab-bar .standings-tab { font-size: 0.85rem; padding: 8px 4px; }
+.standings-legend + .tab-bar { margin-top: 12px; }
