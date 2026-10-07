@@ -170,7 +170,7 @@ function renderFavoriteTeamCard(
     : "";
 
   return `
-<a class="fav-team-card hero-tinted" href="/joukkueet/${team.abbrev.toLowerCase()}" style="${escapeHtml(teamHeroBackgroundStyle(team.abbrev))}">
+<a class="fav-team-card hero-tinted" data-abbr="${escapeHtml(team.abbrev)}" href="/joukkueet/${team.abbrev.toLowerCase()}" style="${escapeHtml(teamHeroBackgroundStyle(team.abbrev))}">
   <div class="fav-team-card-top">
     <img src="${escapeHtml(team.logo)}" alt="" class="fav-team-card-logo" loading="lazy">
     <div>

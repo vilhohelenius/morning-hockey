@@ -201,10 +201,12 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       : ""
   }
   <img src="${escapeHtml(team.logo)}" alt="" class="team-hero-logo">
-  <h1>${escapeHtml(team.name)}</h1>
-  <p class="subtitle">
-    ${escapeHtml(team.division)}: ${team.division_rank}. sija · ${team.wins}-${team.losses}-${team.ot_losses} (${team.points} p)
-  </p>
+  <div class="team-hero-text">
+    <h1>${escapeHtml(team.name)}</h1>
+    <p class="subtitle">
+      ${escapeHtml(team.division)}: ${team.division_rank}. sija · ${team.wins}-${team.losses}-${team.ot_losses} (${team.points} p)
+    </p>
+  </div>
 </header>
 
 ${renderSeasonStats(seasonStats ?? null, teamXg, allSeasonStats, leagueXg, teamId)}

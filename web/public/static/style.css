@@ -4594,11 +4594,7 @@ main {
   pointer-events: none;
 }
 
-.team-page-header[data-abbr]::after {
-  right: auto;
-  left: 50%;
-  transform: translate(-50%, -50%);
-}
+
 
 .hero-banner > *:not(.player-hero-flip-hint) {
   position: relative;
@@ -4810,4 +4806,59 @@ main {
   font-weight: 600;
   text-transform: none;
   letter-spacing: 0.02em;
+}
+
+/* Suosikkitähti pysyy oikeassa yläkulmassa (.hero-banner > * asettaisi relativen) */
+.hero-banner > .hero-fav-form {
+  position: absolute;
+}
+
+/* Joukkuesivun hero: iso logo + tekstit vasemmalla, lyhenne oikealla kuten pelaajilla */
+.team-page-header {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  text-align: left;
+  padding: 22px 16px;
+  min-height: 150px;
+}
+
+.team-page-header .team-hero-logo {
+  width: 96px;
+  height: 96px;
+  margin: 0;
+  flex: none;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5));
+}
+
+.team-page-header .team-hero-text {
+  min-width: 0;
+  padding-right: 36px;
+}
+
+.team-page-header h1 {
+  font-size: 2.6rem;
+  margin: 0;
+}
+
+/* Vanhat tummat teaser-laatat saavat heron muodon, suosikkijoukkuekortti lyhenteen */
+.hero-tinted {
+  border-radius: 0 0 24px 0;
+}
+
+.fav-team-card[data-abbr] {
+  overflow: hidden;
+}
+
+.fav-team-card[data-abbr]::after {
+  content: attr(data-abbr);
+  position: absolute;
+  right: -6px;
+  top: 8px;
+  z-index: 0;
+  font: 700 84px/1 var(--font-display);
+  letter-spacing: -0.02em;
+  color: transparent;
+  -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.2);
+  pointer-events: none;
 }
