@@ -4567,8 +4567,8 @@ main {
   background: none;
 }
 
-.hero-fav-star .ic path {
-  fill: currentColor;
+.hero-fav-star .ic {
+  --ic-fill: currentColor;
 }
 
 .hero-fav-star {
@@ -4644,15 +4644,15 @@ main {
 
 .player-hero-front .player-hero-photo {
   border-radius: 0;
-  max-width: 150px;
-  max-height: 150px;
-  width: 40vw;
-  height: 40vw;
+  max-width: 175px;
+  max-height: 175px;
+  width: 45vw;
+  height: 45vw;
   object-position: center bottom;
 }
 
 .player-hero-front .player-hero-team-logo {
-  margin: 0 6px 30px 0;
+  margin: 0 22px 16px 0;
   width: 64px;
   height: 64px;
   filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5));
