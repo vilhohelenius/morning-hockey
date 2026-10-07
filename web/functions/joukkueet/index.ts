@@ -1,6 +1,7 @@
 // /joukkueet: all 32 teams as stat-cards (logo -> team page, record, season
 // xG with league-rank badges). Alphabetical; the xG sort lives on /odotetut.
 
+import { TEAM_COLORS } from "../_shared/teamColors";
 import { icon, escapeHtml } from "../_shared/format";
 import { renderLayout } from "../_shared/layout";
 import type { Env, StandingsRow } from "../_shared/types";
@@ -21,7 +22,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     .map((t) => {
       const x = xg.get(t.abbrev);
       return `
-<div class="stat-card">
+<div class="stat-card" style="--tc:${TEAM_COLORS[t.abbrev] ?? "var(--accent)"}">
   <a class="stat-card-header team-index-header" href="/joukkueet/${t.abbrev.toLowerCase()}">
     <img src="${escapeHtml(t.logo)}" alt="" class="stat-card-team-logo" loading="lazy">
     <span class="stat-card-name">${escapeHtml(t.name)}</span>

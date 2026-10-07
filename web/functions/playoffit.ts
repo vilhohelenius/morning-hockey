@@ -6,6 +6,7 @@
 // Only round 1 resolves to real teams; later rounds depend on unplayed
 // series, so the page only ever shows round 1, same as the original.
 
+import { TEAM_COLORS } from "./_shared/teamColors";
 import { icon, escapeHtml, humanDate } from "./_shared/format";
 import { renderLayout } from "./_shared/layout";
 import type { Env, StandingsRow } from "./_shared/types";
@@ -43,7 +44,7 @@ function buildRound1(divisionX: StandingsRow[], divisionY: StandingsRow[], wildc
 
 function renderMatchupCard(m: Matchup): string {
   const team = (seed: StandingsRow, label: string) => `
-  <div class="matchup-team">
+  <div class="matchup-team" style="--tc:${TEAM_COLORS[seed.abbrev] ?? "var(--accent)"}">
     <img src="${escapeHtml(seed.logo)}" alt="" class="matchup-logo" loading="lazy">
     <span class="matchup-abbrev">${escapeHtml(seed.abbrev)}</span>
     <span class="matchup-seed">${escapeHtml(label)}</span>
@@ -63,7 +64,7 @@ function renderWildcardStanding(rows: StandingsRow[]): string {
   const body = shown
     .map(
       (row, index) => `
-    <div class="division-row">
+    <div class="division-row" style="--tc:${TEAM_COLORS[row.abbrev] ?? "var(--accent)"}">
       <span class="division-rank">VK${row.wildcard_rank}</span>
       <span class="division-team">
         <img src="${escapeHtml(row.logo)}" alt="${escapeHtml(row.abbrev)}" class="division-logo" loading="lazy">

@@ -4658,54 +4658,79 @@ main {
   filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5));
 }
 
-/* Käännön aikana vain näkyvä puoli on visible; ei riipu backface-visibilitystä (Safari). */
+/* Kortin puolet vaihtuvat heti (nopea häivytys, ei 3D-kääntöä: ei peilausta, ei viivettä). */
 .hero-banner.player-hero-face {
-  transition: visibility 0s 0.3s;
+  transition: opacity 0.15s ease, visibility 0s;
 }
 
-.hero-banner.player-hero-back,
+.hero-banner.player-hero-back {
+  transform: none;
+  opacity: 0;
+  visibility: hidden;
+}
+
+.player-hero-flip.is-flipped .player-hero-flip-inner {
+  transform: none;
+}
+
 .player-hero-flip.is-flipped .player-hero-front {
+  opacity: 0;
   visibility: hidden;
 }
 
 .player-hero-flip.is-flipped .hero-banner.player-hero-back {
+  opacity: 1;
   visibility: visible;
 }
 
-/* Ottelukortin "Koko ottelun tilastot" ylös napiksi */
-.game-detail-full {
-  display: block;
-  margin: 10px 14px 0;
-  padding: 9px 14px;
-  text-align: center;
-  font: 600 1.05rem/1 var(--font-display);
+.player-hero-flip-inner {
+  min-height: 270px;
+}
+
+.mt-strength-tag {
+  align-self: center;
+  padding: 1px 6px;
+  border: 1px solid var(--accent);
+  border-radius: 0 0 6px 0;
+  color: var(--accent);
+  font: 600 0.8rem/1.2 var(--font-display);
+  letter-spacing: 0.04em;
+}
+
+/* ---------- Yhtenäistys: otsikot, joukkuenauhat joukkuekorteissa ja bracketissa ---------- */
+
+.page-header h1 {
+  font: 600 2.2rem/1.05 var(--font-display);
+  letter-spacing: 0.01em;
+}
+
+.page-header .brand-heading {
+  font-size: 2.2rem;
+}
+
+.stat-card.team-index-header,
+.stat-card .team-index-header {
+  border-left-color: var(--tc, var(--accent));
+}
+
+.matchup-team,
+.division-row {
+  box-shadow: inset 5px 0 0 var(--tc, transparent);
+}
+
+.matchup-abbrev {
+  font: 600 1.4rem/1 var(--font-display);
   letter-spacing: 0.03em;
-  color: #1a1400;
-  background: var(--accent);
-  border-radius: 0 0 12px 0;
-  text-decoration: none;
 }
 
-/* Ottelun kulku: syöttäjät suoraan maalintekijän alla */
-.mt-col {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  min-width: 0;
+.matchup-points,
+.division-points,
+.division-rank {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.2rem;
 }
 
-.mt-home .mt-col {
-  align-items: flex-end;
-}
-
-.mt-goal .mt-who strong {
-  font-size: 1rem;
-}
-
-.mt-col .mt-assists {
-  margin: 0;
-  padding: 0;
-  font-size: 0.85rem;
-  color: var(--text);
-  opacity: 0.75;
+.matchup-seed {
+  font-size: 0.78rem;
 }

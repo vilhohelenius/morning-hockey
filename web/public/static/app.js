@@ -566,12 +566,12 @@
         pill.appendChild(mtLogo(item.team_abbrev));
         pill.appendChild(el("span", "mt-pill-score", item.away_score + " - " + item.home_score));
         main.appendChild(pill);
-        if (item.strength) who.appendChild(el("span", "mt-strength", "(" + (MT_STRENGTH[item.strength] || item.strength) + ")"));
+        if (item.strength) main.appendChild(el("span", "mt-strength mt-strength-tag", MT_STRENGTH[item.strength] || item.strength));
         who.appendChild(elFlags("strong", null, item.scorer_short || item.scorer));
         var col = el("div", "mt-col");
         col.appendChild(who);
         var assists = item.assists_short || item.assists || [];
-        col.appendChild(elFlags("p", "mt-assists", assists.length ? assists.join(" · ") : "Ei syöttäjiä"));
+        if (assists.length) col.appendChild(elFlags("p", "mt-assists", assists.join(" · ")));
         main.appendChild(col);
         row.appendChild(main);
       } else {
@@ -655,7 +655,9 @@
       wrap.appendChild(header);
       var awayColor = TEAM_COLORS[awayAbbrev] || "var(--accent)";
       var homeColor = TEAM_COLORS[homeAbbrev] || "color-mix(in srgb, var(--accent) 45%, transparent)";
+      var HIDDEN_STATS = ["Torjuntaprosentti", "Aloitusprosentti", "Taklaukset", "Blokatut", "Kiekon menetykset", "Kiekon riistot", "xGF% 5v5"];
       stats.forEach(function (stat) {
+        if (HIDDEN_STATS.some(function (label) { return stat.label.indexOf(label) === 0; })) return;
         var block = el("div", "gd-stat-block");
         var row = el("div", "gd-stat-row");
         var awaySpan = el("span", "gd-stat-value", stat.away_value);
