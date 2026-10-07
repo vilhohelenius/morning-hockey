@@ -53,23 +53,14 @@ export function teamLogoUrl(abbrev: string): string {
 // var() reference is just inherited text that the browser resolves at paint
 // time against whichever :root block ends up active, so the same markup
 // stays theme-correct either way.
-export function teamHeroBackgroundStyle(abbrev: string | null | undefined, includeCrest = true): string {
+export function teamHeroBackgroundStyle(abbrev: string | null | undefined, _includeCrest = true): string {
   if (!abbrev) return "";
   const texture = `https://assets.nhle.com/textures/nhl/jersey/png/${abbrev}.png`;
-  if (!includeCrest) {
-    return [
-      `background-image: radial-gradient(50% 100% at 50% 0%, rgba(0,0,0,0) 0%, var(--hero-shade-strong) 100%), linear-gradient(rgba(0,0,0,0) 0%, var(--hero-shade-fade) 100%), url("${texture}")`,
-      `background-size: auto, auto, 42px 42px`,
-      `background-position: 0% 0%, 0% 0%, 0% 0%`,
-      `background-repeat: repeat, repeat, repeat`,
-    ].join("; ");
-  }
-  const wires = `https://assets.nhle.com/logos/nhl/wires/${abbrev}.svg`;
   return [
-    `background-image: radial-gradient(50% 100% at 50% 0%, rgba(0,0,0,0) 0%, var(--hero-shade-strong) 100%), url("${wires}"), linear-gradient(rgba(0,0,0,0) 0%, var(--hero-shade-fade) 100%), url("${texture}")`,
-    `background-size: auto, 400px auto, auto, 42px 42px`,
-    `background-position: 0% 0%, 50% 50%, 0% 0%, 0% 0%`,
-    `background-repeat: repeat, no-repeat, repeat, repeat`,
+    `background-image: radial-gradient(50% 100% at 50% 0%, rgba(0,0,0,0) 0%, var(--hero-shade-strong) 100%), linear-gradient(rgba(0,0,0,0) 0%, var(--hero-shade-fade) 100%), url("${texture}")`,
+    `background-size: auto, auto, 42px 42px`,
+    `background-position: 0% 0%, 0% 0%, 0% 0%`,
+    `background-repeat: repeat, repeat, repeat`,
   ].join("; ");
 }
 

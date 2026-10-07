@@ -4568,3 +4568,49 @@ main {
 .hero-fav-star.is-fav .ic path {
   fill: currentColor;
 }
+
+/* Heron oma "wires"-korvike: iso ääriviivatunnus, kuten pelikorteissa. */
+.hero-banner {
+  overflow: hidden;
+}
+
+.hero-banner[data-abbr]::after {
+  content: attr(data-abbr);
+  position: absolute;
+  right: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 0;
+  font: 700 150px/1 var(--font-display);
+  letter-spacing: -0.02em;
+  color: transparent;
+  -webkit-text-stroke: 2px rgba(255, 255, 255, 0.2);
+  pointer-events: none;
+}
+
+.team-page-header[data-abbr]::after {
+  right: auto;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.hero-banner > *:not(.player-hero-flip-hint) {
+  position: relative;
+  z-index: 1;
+}
+
+/* Pelaajaheron sisältö mahtuu myös kun nimi rivittyy kahdelle riville. */
+.player-hero-flip-inner {
+  min-height: 300px;
+}
+
+.player-hero-photo {
+  width: 34vw;
+  max-width: 120px;
+  height: 34vw;
+  max-height: 120px;
+}
+
+.player-card-header h1 {
+  font-size: clamp(1.9rem, 9vw, 2.6rem);
+}

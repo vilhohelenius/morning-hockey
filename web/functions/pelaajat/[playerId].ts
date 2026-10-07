@@ -763,7 +763,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       : ""
   }
   <div class="player-hero-flip-inner">
-    <div class="page-header player-card-header hero-banner player-hero-face player-hero-front" style="${escapeHtml(teamHeroBackgroundStyle(landing.currentTeamAbbrev))}">
+    <div class="page-header player-card-header hero-banner player-hero-face player-hero-front" data-abbr="${escapeHtml(landing.currentTeamAbbrev ?? "")}" style="${escapeHtml(teamHeroBackgroundStyle(landing.currentTeamAbbrev))}">
       <h1>${escapeHtml(name)}</h1>
       <p class="player-hero-meta player-hero-meta-front">
         ${landing.sweaterNumber ? `<span>#${landing.sweaterNumber}</span>` : ""}
@@ -779,7 +779,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       </div>
       <span class="player-hero-flip-hint" aria-hidden="true">⟲ Bio</span>
     </div>
-    <div class="page-header player-card-header hero-banner player-hero-face player-hero-back" style="${escapeHtml(teamHeroBackgroundStyle(landing.currentTeamAbbrev))}">
+    <div class="page-header player-card-header hero-banner player-hero-face player-hero-back" data-abbr="${escapeHtml(landing.currentTeamAbbrev ?? "")}" style="${escapeHtml(teamHeroBackgroundStyle(landing.currentTeamAbbrev))}">
       ${renderPlayerHeroBack(landing, age)}
     </div>
   </div>

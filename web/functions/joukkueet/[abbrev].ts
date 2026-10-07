@@ -189,7 +189,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   const content = `
 <a class="back-link js-back" href="/sarjataulukko">← Takaisin</a>
 
-<header class="page-header team-page-header hero-banner" style="${escapeHtml(teamHeroBackgroundStyle(abbrev))}">
+<header class="page-header team-page-header hero-banner" data-abbr="${escapeHtml(abbrev)}" style="${escapeHtml(teamHeroBackgroundStyle(abbrev))}">
   ${
     username
       ? renderFavStar({
