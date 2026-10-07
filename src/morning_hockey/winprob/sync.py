@@ -111,8 +111,9 @@ def predict_upcoming(history: list[dict], upcoming: list[dict], computed_at: str
     return rows
 
 
-def sync_win_probabilities(client: D1Client) -> int:
-    """Recomputes game_win_prob for unplayed regular-season games in the next _HORIZON_DAYS days. No-op without data."""
+def sync_win_probabilities(client: D1Client, new_results: bool = True) -> int:
+    """Recomputes game_win_prob for unplayed regular-season games in the next _HORIZON_DAYS days. No-op without data.
+    With new_results False the (expensive) history read is skipped when every game in the window already has a prediction."""
     latest = _rows(client, "SELECT MAX(game_id) AS g FROM games WHERE game_id % 1000000 BETWEEN 20001 AND 29999", [])
     if not latest or latest[0]["g"] is None:
         return 0
@@ -127,6 +128,10 @@ def sync_win_probabilities(client: D1Client) -> int:
     )
     if not upcoming:
         return 0
+    if not new_results:
+        have = {r["game_id"] for r in _rows(client, "SELECT game_id FROM game_win_prob", [])}
+        if all(g["game_id"] in have for g in upcoming):
+            return 0
     history = load_history(client, last_year)
     if not history:
         return 0

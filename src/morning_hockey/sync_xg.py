@@ -184,8 +184,8 @@ def run() -> None:
     if not (args.backfill or args.backfill_teams):
         print(f"Synced on-ice xG for {_process_onice(NHLClient(), d1, unprocessed_onice_games(d1))} game(s) to D1.")
         try:  # no-op-safe: a missing table or data must not fail the digest run
-            _process_wp_inputs(NHLClient(), d1, wp_input_games(d1))
-            print(f"Win probability: {sync_win_probabilities(d1)} upcoming game(s) predicted.")
+            wp_done = _process_wp_inputs(NHLClient(), d1, wp_input_games(d1))
+            print(f"Win probability: {sync_win_probabilities(d1, bool(done or wp_done))} upcoming game(s) predicted.")
         except Exception as error:
             print(f"Win probability step skipped: {error}")
 
