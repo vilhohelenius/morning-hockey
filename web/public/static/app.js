@@ -299,6 +299,22 @@
     return node;
   }
 
+  // Names carry an emoji FI flag from the server; show it as the SVG flag instead.
+  function elFlags(tag, className, text) {
+    var node = el(tag, className);
+    text.split("\uD83C\uDDEB\uD83C\uDDEE").forEach(function (part, i) {
+      if (i) {
+        var img = document.createElement("img");
+        img.src = "/static/flags/fi.svg";
+        img.alt = "";
+        img.className = "flag-img";
+        node.appendChild(img);
+      }
+      node.appendChild(document.createTextNode(part));
+    });
+    return node;
+  }
+
   function section(titleText) {
     var wrap = el("div", "tp-section");
     wrap.appendChild(el("p", "tp-section-title", titleText));
@@ -459,7 +475,7 @@
       closeBtn.type = "button";
       closeBtn.className = "icon-btn team-detail-close";
       closeBtn.setAttribute("aria-label", "Sulje");
-      closeBtn.textContent = "✕";
+      closeBtn.innerHTML = '<svg class="ic" aria-hidden="true"><use href="/static/icons.svg#i-close"></use></svg>';
       closeBtn.addEventListener("click", closeDetail);
       header.appendChild(closeBtn);
       panel.appendChild(header);
@@ -551,14 +567,14 @@
         pill.appendChild(el("span", "mt-pill-score", item.away_score + " - " + item.home_score));
         main.appendChild(pill);
         if (item.strength) who.appendChild(el("span", "mt-strength", "(" + (MT_STRENGTH[item.strength] || item.strength) + ")"));
-        who.appendChild(el("strong", null, item.scorer_short || item.scorer));
+        who.appendChild(elFlags("strong", null, item.scorer_short || item.scorer));
         main.appendChild(who);
         row.appendChild(main);
         var assists = item.assists_short || item.assists || [];
-        if (assists.length) row.appendChild(el("p", "mt-assists", assists.join(" + ")));
+        if (assists.length) row.appendChild(elFlags("p", "mt-assists", assists.join(" + ")));
       } else {
         main.appendChild(el("span", "mt-badge", item.minutes > 0 ? String(item.minutes) : "RL"));
-        who.appendChild(el("strong", null, item.player || item.team_abbrev));
+        who.appendChild(elFlags("strong", null, item.player || item.team_abbrev));
         if (item.reason) who.appendChild(el("span", "mt-reason", "(" + item.reason + ")"));
         main.appendChild(who);
         row.appendChild(main);
@@ -580,7 +596,7 @@
         main.appendChild(el("span", "mt-so-miss", attempt.result === "save" ? "Torjuttu" : "Ohi"));
       }
       var who = el("span", "mt-who");
-      who.appendChild(el("strong", null, attempt.player));
+      who.appendChild(elFlags("strong", null, attempt.player));
       main.appendChild(who);
       row.appendChild(main);
       return row;
@@ -712,7 +728,7 @@
       closeBtn.type = "button";
       closeBtn.className = "icon-btn team-detail-close";
       closeBtn.setAttribute("aria-label", "Sulje");
-      closeBtn.textContent = "✕";
+      closeBtn.innerHTML = '<svg class="ic" aria-hidden="true"><use href="/static/icons.svg#i-close"></use></svg>';
       closeBtn.addEventListener("click", closeGameDetail);
       header.appendChild(closeBtn);
       panel.appendChild(header);

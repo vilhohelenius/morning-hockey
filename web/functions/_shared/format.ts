@@ -131,7 +131,7 @@ export function renderFavStar(options: {
          input *element*, stringified, instead of the URL). -->
     <input type="hidden" name="fav_action" value="${isFavorite ? "remove" : "add"}">
     <input type="hidden" name="redirect_to" value="${escapeHtml(redirectTo)}">
-    <button type="submit" class="hero-fav-star${isFavorite ? " is-fav" : ""}" aria-pressed="${isFavorite}" aria-label="${isFavorite ? "Poista suosikeista" : "Lisää suosikkeihin"}">★</button>
+    <button type="submit" class="hero-fav-star${isFavorite ? " is-fav" : ""}" aria-pressed="${isFavorite}" aria-label="${isFavorite ? "Poista suosikeista" : "Lisää suosikkeihin"}">${icon("star")}</button>
   </form>`;
 }
 

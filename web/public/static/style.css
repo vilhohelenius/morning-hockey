@@ -4564,3 +4564,7 @@ main {
   border-radius: 2px;
   background: none;
 }
+
+.hero-fav-star.is-fav .ic path {
+  fill: currentColor;
+}
