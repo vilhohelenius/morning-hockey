@@ -95,11 +95,15 @@ def backfill_onice_games(d1: D1Client, season: int) -> list[int]:
 
 def unprocessed_onice_games(d1: D1Client) -> list[int]:
     """Incremental: latest season's xG-processed games without on-ice rows, newest first.
-    Older seasons are left to --backfill-onice."""
+    Older seasons are left to --backfill-onice. Driven from `games` with NOT EXISTS
+    lookups: D1 bills rows scanned, and scanning the xG/on-ice tables is ~250k rows."""
     return query_game_ids(
         d1,
-        "SELECT DISTINCT game_id FROM skater_game_xg WHERE season = (SELECT MAX(season) FROM skater_game_xg) "
-        "AND game_id NOT IN (SELECT game_id FROM skater_game_onice_xg) ORDER BY game_id DESC LIMIT ?",
+        "SELECT game_id FROM games WHERE game_id / 1000000 = (SELECT MAX(game_id) / 1000000 FROM games) "
+        "AND is_finished = 1 AND substr(game_id, 5, 2) = '02' "
+        "AND EXISTS (SELECT 1 FROM skater_game_xg x WHERE x.game_id = games.game_id) "
+        "AND NOT EXISTS (SELECT 1 FROM skater_game_onice_xg o WHERE o.game_id = games.game_id) "
+        "ORDER BY game_id DESC LIMIT ?",
         [_MAX_PER_RUN],
     )
 

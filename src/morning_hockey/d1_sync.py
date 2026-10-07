@@ -461,12 +461,15 @@ def sync_xg_games(client: D1Client, skater_rows: list[dict], goalie_rows: list[d
 
 
 def unprocessed_xg_game_ids(client: D1Client, limit: int, since: str = "") -> list[int]:
-    """Finished regular-season games (started after the ISO timestamp `since`) with no xG rows yet."""
+    """Finished regular-season games (started after the ISO timestamp `since`) with no xG rows yet.
+    NOT EXISTS (a primary-key lookup per candidate) rather than NOT IN: D1 bills rows
+    scanned, and NOT IN would read every skater_game_xg row (~120k) on each call."""
     return query_game_ids(
         client,
-        "SELECT game_id FROM games WHERE is_finished = 1 AND substr(game_id, 5, 2) = '02' "
-        "AND start_time_utc > ? AND game_id NOT IN (SELECT game_id FROM skater_game_xg) ORDER BY game_id LIMIT ?",
-        [since, limit],
+        "SELECT game_id FROM games WHERE date >= ? AND start_time_utc > ? AND is_finished = 1 "
+        "AND substr(game_id, 5, 2) = '02' "
+        "AND NOT EXISTS (SELECT 1 FROM skater_game_xg x WHERE x.game_id = games.game_id) ORDER BY game_id LIMIT ?",
+        [since[:10], since, limit],
     )
 
 
