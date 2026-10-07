@@ -574,12 +574,12 @@
         pill.appendChild(el("span", "mt-pill-score", item.away_score + " - " + item.home_score));
         main.appendChild(pill);
         who.appendChild(elFlags("strong", null, item.scorer_short || item.scorer));
+        if (item.strength) who.appendChild(el("span", "mt-strength mt-strength-tag", MT_STRENGTH[item.strength] || item.strength));
         var col = el("div", "mt-col");
         col.appendChild(who);
         var assists = item.assists_short || item.assists || [];
         if (assists.length) col.appendChild(elFlags("p", "mt-assists", assists.join(" · ")));
         main.appendChild(col);
-        if (item.strength) main.appendChild(el("span", "mt-strength mt-strength-tag", MT_STRENGTH[item.strength] || item.strength));
         row.appendChild(main);
       } else {
         main.appendChild(el("span", "mt-badge", item.minutes > 0 ? String(item.minutes) : "RL"));
