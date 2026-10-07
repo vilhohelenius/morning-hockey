@@ -9,7 +9,7 @@
 // than reusing _shared/leaderboard.ts, which assumes both of those.
 
 import { favoriteTeamAbbrevs, readHighlightsCookie } from "./_shared/auth";
-import { escapeHtml, formatToi, seasonLabel } from "./_shared/format";
+import { icon, escapeHtml, formatToi, seasonLabel } from "./_shared/format";
 import { highlightDots, type HighlightOptions } from "./_shared/leaderboard";
 import { renderLayout } from "./_shared/layout";
 import { fetchGoaliesSeasonGsaxMap, formatGsax, formatPct, xgfPct } from "./_shared/xg";
@@ -183,12 +183,12 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 </header>
 
 <section>
-  <h2 class="section-title">🏒 Pistepörssi · ${skaters.length} pelaajaa</h2>
+  <h2 class="section-title">${icon("puck")} Pistepörssi · ${skaters.length} pelaajaa</h2>
   ${skaters.length ? renderSkaterTable(skaters, hl, await fetchExtras(db, skaters)) : `<p class="empty-note">Ei tilastoituja suomalaispelaajia tälle kaudelle vielä.</p>`}
 </section>
 
 <section>
-  <h2 class="section-title">🥅 Maalivahtipörssi · ${goalies.length} pelaajaa</h2>
+  <h2 class="section-title">${icon("goal")} Maalivahtipörssi · ${goalies.length} pelaajaa</h2>
   ${goalies.length ? renderGoalieTable(goalies, hl, await fetchGoaliesSeasonGsaxMap(db, goalies.map((g) => g.player_id))) : `<p class="empty-note">Ei tilastoituja suomalaisia maalivahteja tälle kaudelle vielä.</p>`}
 </section>
 `;

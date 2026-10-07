@@ -10,7 +10,7 @@
 // POST routes under omat/* don't need their redirect targets changed.
 
 import { currentUsername, readHighlightsCookie, readThemeCookie } from "../_shared/auth";
-import { escapeHtml, formatToi, teamLogoUrl } from "../_shared/format";
+import { icon, escapeHtml, formatToi, teamLogoUrl } from "../_shared/format";
 import { loadPicks, loadWindowGames } from "../_shared/bingoData";
 import { renderLayout } from "../_shared/layout";
 import { fetchGoaliesSeasonGsaxMap, formatGsax } from "../_shared/xg";
@@ -35,7 +35,7 @@ function renderNotSignedIn(request: Request): Promise<string> {
     activePage: "settings",
     request,
     content: `
-<header class="page-header"><h1>⚙️ Asetukset</h1></header>
+<header class="page-header"><h1>${icon("settings")} Asetukset</h1></header>
 <p class="empty-note">
   <a href="/kirjaudu?next=${encodeURIComponent("/omat")}">Kirjaudu sisään</a> hallitaksesi suosikkejasi ja asetuksiasi.
 </p>`,
@@ -53,7 +53,7 @@ function renderFavoriteTeamRow(team: StandingsRow): string {
         <input type="hidden" name="abbrev" value="${escapeHtml(team.abbrev)}">
         <input type="hidden" name="fav_action" value="remove">
         <input type="hidden" name="redirect_to" value="/omat?osio=suosikit">
-        <button type="submit" class="icon-btn" aria-label="Poista suosikeista">✕</button>
+        <button type="submit" class="icon-btn" aria-label="Poista suosikeista">${icon("close")}</button>
       </form>
     </div>`;
 }
@@ -85,7 +85,7 @@ function renderFavoritePlayerRow(
         <input type="hidden" name="is_goalie" value="${fav.isGoalie ? "1" : "0"}">
         <input type="hidden" name="fav_action" value="remove">
         <input type="hidden" name="redirect_to" value="/omat?osio=suosikit">
-        <button type="submit" class="icon-btn" aria-label="Poista suosikeista">✕</button>
+        <button type="submit" class="icon-btn" aria-label="Poista suosikeista">${icon("close")}</button>
       </form>
     </div>`;
 }
@@ -193,7 +193,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 <section>
   <h2 class="section-title">Tili</h2>
   <div class="fav-row">
-    <span class="fav-row-info">👤 ${escapeHtml(username)}</span>
+    <span class="fav-row-info">${icon("user")} ${escapeHtml(username)}</span>
     <form method="post" action="/kirjaudu/ulos">
       <button type="submit" class="filter-btn">Kirjaudu ulos</button>
     </form>
@@ -209,7 +209,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
         (value) => `<form method="post" action="/omat/theme">
       <input type="hidden" name="theme" value="${value}">
       ${back}
-      <button type="submit" class="toggle-segment ${currentTheme === value ? "active" : ""}">${value === "light" ? "☀️ Vaalea" : value === "dark" ? "🌙 Tumma" : "💻 Järjestelmä"}</button>
+      <button type="submit" class="toggle-segment ${currentTheme === value ? "active" : ""}">${value === "light" ? `${icon("sun")} Vaalea` : value === "dark" ? `${icon("moon")} Tumma` : `${icon("settings")} Järjestelmä`}</button>
     </form>`,
       )
       .join("\n    ")}
@@ -218,7 +218,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
   const highlightsSection = `
 <section>
-  <h2 class="section-title">🔵 Pörssien korostukset</h2>
+  <h2 class="section-title">${icon("dot")} Pörssien korostukset</h2>
   <p class="standings-legend">
     Pörsseissä (Pistepörssi, Maalivahtipörssi, Suomipörssi, Suosikkipelaajat) pelaajan nimen perässä
     näkyy pieni pallura: sininen = suomalainen pelaaja, joukkueen värinen = suosikkijoukkueen pelaaja.
@@ -240,7 +240,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   const favoriteTeamsSection = `
 <section>
   <h2 class="section-title">Suosikkijoukkueet</h2>
-  <p class="standings-legend">Näkyvät sivupalkin ⭐ Omat -valikossa, linkkinä suoraan joukkueen tilastosivulle.</p>
+  <p class="standings-legend">Näkyvät sivupalkin ${icon("star")} Omat -valikossa, linkkinä suoraan joukkueen tilastosivulle.</p>
   ${
     favoriteTeamsHtml.length
       ? `<div class="fav-list">${favoriteTeamsHtml.join("")}</div>`
@@ -252,7 +252,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   const favoritePlayersSection = `
 <section>
   <h2 class="section-title">Suosikkipelaajat</h2>
-  <p class="standings-legend">Näkyvät koottuna listana sivupalkin ⭐ Omat → Suosikkipelaajat -kohdassa.</p>
+  <p class="standings-legend">Näkyvät koottuna listana sivupalkin ${icon("star")} Omat → Suosikkipelaajat -kohdassa.</p>
   ${
     favoritePlayersHtml.length
       ? `<div class="fav-list">${favoritePlayersHtml.join("")}</div>`
@@ -273,7 +273,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     const picks = (await loadPicks(db, username, windowGames, nowMs)).filter((p) => p.phase !== "stale");
     tulospiiloSections = `
 <section>
-  <h2 class="section-title">🙈 Tulospiilo</h2>
+  <h2 class="section-title">${icon("hide")} Tulospiilo</h2>
   <p class="standings-legend">
     Päällä ollessaan etusivu avautuu suoraan Tulospiilo-näkymään, jossa edellisen kierroksen
     ottelut ja YouTube-highlightit näkyvät ilman tuloksia -- tulos paljastuu ottelukohtaisesti
@@ -283,7 +283,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     <form method="post" action="/omat/tulospiilo">
       <input type="hidden" name="enabled" value="1">
       ${back}
-      <button type="submit" class="toggle-segment ${tulospiiloEnabled ? "active" : ""}">🙈 Päällä</button>
+      <button type="submit" class="toggle-segment ${tulospiiloEnabled ? "active" : ""}">${icon("hide")} Päällä</button>
     </form>
     <form method="post" action="/omat/tulospiilo">
       <input type="hidden" name="enabled" value="0">
@@ -294,7 +294,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 </section>
 
 <section>
-  <h2 class="section-title">🎯 Pistemiesbingo</h2>
+  <h2 class="section-title">${icon("target")} Pistemiesbingo</h2>
   <p class="standings-legend">
     Pistemiesbingo-lappusi pelaajat näkyvät Tulospiilon alaosassa: pelaajan tilasto paljastuu samalla
     kun ottelun tulos. Lappu nollautuu itsestään, kun seuraava pelikierros alkaa.
@@ -329,7 +329,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
   const content = `
 <header class="page-header">
-  <h1>⚙️ Asetukset</h1>
+  <h1>${icon("settings")} Asetukset</h1>
 </header>
 
 ${tabsHtml}

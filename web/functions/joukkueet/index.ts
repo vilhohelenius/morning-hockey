@@ -1,7 +1,7 @@
 // /joukkueet: all 32 teams as stat-cards (logo -> team page, record, season
 // xG with league-rank badges). Alphabetical; the xG sort lives on /odotetut.
 
-import { escapeHtml } from "../_shared/format";
+import { icon, escapeHtml } from "../_shared/format";
 import { renderLayout } from "../_shared/layout";
 import type { Env, StandingsRow } from "../_shared/types";
 import { fetchLeagueTeamXg, rankBadge, rankedTeamXg } from "../_shared/xg";
@@ -38,7 +38,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
   const content = `
 <header class="page-header">
-  <h1>🏒 Joukkueet</h1>
+  <h1>${icon("jersey")} Joukkueet</h1>
   <p class="subtitle">Ennätys ja kauden odotetut maalit. xGF- ja xGA-sijat ovat per ottelu.</p>
 </header>
 <div class="team-index-grid">${cards}</div>

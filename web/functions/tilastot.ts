@@ -15,7 +15,7 @@
 // doesn't need a second request.
 
 import { favoriteTeamAbbrevs, readHighlightsCookie } from "./_shared/auth";
-import { escapeHtml, seasonLabel } from "./_shared/format";
+import { icon, escapeHtml, seasonLabel } from "./_shared/format";
 import { renderSkaterLeaderboard } from "./_shared/leaderboard";
 import { renderLayout } from "./_shared/layout";
 import type { Env, SkaterStatsRow } from "./_shared/types";
@@ -33,14 +33,14 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
   const content = `
 <header class="page-header">
-  <h1>🏒 Pistepörssi</h1>
+  <h1>${icon("puck")} Pistepörssi</h1>
   <p class="subtitle">Kausi ${escapeHtml(seasonText)}</p>
   <p class="standings-legend">Napauta sarakeotsikkoa järjestääksesi taulukon sen mukaan.</p>
 </header>
 
 <div class="player-filter-picker">
   <button type="button" class="day-pill active" data-filter="all">Kaikki pelaajat</button>
-  <button type="button" class="day-pill" data-filter="rookie">🐣 Rookiet</button>
+  <button type="button" class="day-pill" data-filter="rookie">${icon("rookie")} Rookiet</button>
 </div>
 
 <section class="player-filter-section" data-filter="all">

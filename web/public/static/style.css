@@ -4502,3 +4502,43 @@ main {
 .player-hero-meta .player-hero-flag {
   font-size: 1rem;
 }
+
+/* ---------- Omat ikonit (/static/icons.svg) ---------- */
+
+.ic {
+  width: 1.1em;
+  height: 1.1em;
+  vertical-align: -0.17em;
+  flex-shrink: 0;
+}
+
+.nav-list a .ic,
+.nav-group-toggle .ic {
+  width: 22px;
+  height: 22px;
+  margin-right: 12px;
+  vertical-align: -5px;
+}
+
+.page-header h1 .ic,
+.section-title .ic {
+  width: 0.85em;
+  height: 0.85em;
+  vertical-align: -0.1em;
+  color: var(--accent);
+}
+
+.icon-btn .ic {
+  width: 20px;
+  height: 20px;
+  vertical-align: middle;
+}
+
+.nav-group-toggle {
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.nav-group-toggle .nav-group-chevron {
+  margin-left: auto;
+}

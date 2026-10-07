@@ -9,7 +9,7 @@
 // and an empty day shows "Ei otteluita tänä päivänä" rather than vanishing).
 
 import { jerseyColors } from "./_shared/teamColors";
-import { addDays, escapeHtml, helsinkiParts, helsinkiToday, humanDate, shortWeekdayDate } from "./_shared/format";
+import { icon, addDays, escapeHtml, helsinkiParts, helsinkiToday, humanDate, shortWeekdayDate } from "./_shared/format";
 import { renderLayout } from "./_shared/layout";
 import type { Env, GameRow } from "./_shared/types";
 
@@ -72,7 +72,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
   const content = `
 <header class="page-header">
-  <h1>📅 Otteluohjelma</h1>
+  <h1>${icon("calendar")} Otteluohjelma</h1>
   <p class="subtitle">Seuraavat 7 päivää, alkaen ${escapeHtml(humanDate(today))}</p>
 </header>
 

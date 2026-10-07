@@ -6,7 +6,7 @@
 // Only round 1 resolves to real teams; later rounds depend on unplayed
 // series, so the page only ever shows round 1, same as the original.
 
-import { escapeHtml, humanDate } from "./_shared/format";
+import { icon, escapeHtml, humanDate } from "./_shared/format";
 import { renderLayout } from "./_shared/layout";
 import type { Env, StandingsRow } from "./_shared/types";
 
@@ -134,7 +134,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
   const content = `
 <header class="page-header">
-  <h1>🏆 Playoff-bracket</h1>
+  <h1>${icon("trophy")} Playoff-bracket</h1>
   <p class="subtitle">Jos pudotuspelit alkaisivat tänään · tilanne ${asOfDate ? escapeHtml(humanDate(asOfDate)) : ""}</p>
   <p class="standings-legend">Näytetään vain 1. kierros — seuraavat kierrokset ratkeavat vasta kun nämä
     ottelut on pelattu. Viiva yhdistää ottelut, joiden voittajat kohtaisivat toisiaan 2. kierroksella.</p>

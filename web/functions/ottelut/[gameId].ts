@@ -38,7 +38,7 @@ import {
 import { fetchGameWinProb, winProbInfoText, winProbStatRow, type GameWinProb } from "../_shared/winProb";
 import { renderMatchTimeline } from "../_shared/matchTimeline";
 import { computeFormGuide, type FormGuideEntry } from "../_shared/formGuide";
-import { escapeHtml, finalTypeFi, helsinkiParts, humanDate, nationalityFlag } from "../_shared/format";
+import { icon, escapeHtml, finalTypeFi, helsinkiParts, humanDate, nationalityFlag } from "../_shared/format";
 import { isLive } from "../_shared/gameCard";
 import { renderRosterGoalieTable, renderRosterSkaterTable } from "../_shared/leaderboard";
 import { TEAM_COLORS, jerseyColors } from "../_shared/teamColors";
@@ -536,11 +536,11 @@ ${
 </div>
 <div class="roster-team-section" data-team="away">
   ${renderRosterSkaterTable(awaySkaters, `<img src="${escapeHtml(game.away_logo)}" alt="" class="nav-icon"> ${escapeHtml(game.away_name)} – kokoonpano`)}
-  ${awayGoalies.length ? renderRosterGoalieTable(awayGoalies, `🥅 ${escapeHtml(game.away_name)} – maalivahdit`, false, undefined, goalieGsax) : ""}
+  ${awayGoalies.length ? renderRosterGoalieTable(awayGoalies, `${icon("goal")} ${escapeHtml(game.away_name)} – maalivahdit`, false, undefined, goalieGsax) : ""}
 </div>
 <div class="roster-team-section is-hidden" data-team="home">
   ${renderRosterSkaterTable(homeSkaters, `<img src="${escapeHtml(game.home_logo)}" alt="" class="nav-icon"> ${escapeHtml(game.home_name)} – kokoonpano`)}
-  ${homeGoalies.length ? renderRosterGoalieTable(homeGoalies, `🥅 ${escapeHtml(game.home_name)} – maalivahdit`, false, undefined, goalieGsax) : ""}
+  ${homeGoalies.length ? renderRosterGoalieTable(homeGoalies, `${icon("goal")} ${escapeHtml(game.home_name)} – maalivahdit`, false, undefined, goalieGsax) : ""}
 </div>`
       : winProbSection
         ? `<section class="team-detail"><div class="team-detail-body">${winProbSection}</div></section>`

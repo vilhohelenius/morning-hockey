@@ -8,7 +8,7 @@
 // window -- whatever's actually in D1 past today is what the fast-tier
 // sync has kept current.
 
-import { escapeHtml, helsinkiParts, helsinkiToday, humanDate } from "./_shared/format";
+import { icon, escapeHtml, helsinkiParts, helsinkiToday, humanDate } from "./_shared/format";
 import { renderLayout } from "./_shared/layout";
 import type { Env, GameRow } from "./_shared/types";
 
@@ -78,7 +78,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
   const content = `
 <header class="page-header">
-  <h1>🌙 Prime time</h1>
+  <h1>${icon("moon")} Prime time</h1>
   <p class="subtitle">Tuleva viikko, alkaen ${escapeHtml(humanDate(today))}</p>
   <p class="standings-legend">Ottelut, jotka alkavat Suomen aikaa klo 18–00.30 — nämä ehtii katsomaan
     illalla ilman yövalvomista.</p>

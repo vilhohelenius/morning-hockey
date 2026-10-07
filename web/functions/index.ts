@@ -45,7 +45,7 @@ import {
 import { fetchGamesGoalieGsax } from "./_shared/xg";
 import { resolveHighlightsUrl } from "./_shared/youtube";
 import { MAX_DAY_OFFSET, MIN_DAY_OFFSET, clampDayOffset, selectDayGames } from "./_shared/dayGames";
-import { addDays, escapeHtml, helsinkiParts, helsinkiToday, secondsToHelsinkiMidnight, humanDate, nationalityFlag, shortDate, teamHeroBackgroundStyle } from "./_shared/format";
+import { icon, addDays, escapeHtml, helsinkiParts, helsinkiToday, secondsToHelsinkiMidnight, humanDate, nationalityFlag, shortDate, teamHeroBackgroundStyle } from "./_shared/format";
 import { buildFinnishNight, renderFinnishNightSection, type NightGame } from "./_shared/finnishNight";
 import { renderLayout } from "./_shared/layout";
 import type {
@@ -380,7 +380,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       }
       favoriteTeamsHtml = `
 <section>
-  <h2 class="section-title">⭐ Suosikkijoukkueet</h2>
+  <h2 class="section-title">${icon("star")} Suosikkijoukkueet</h2>
   <div class="fav-team-grid">${cards.join("")}</div>
 </section>`;
     }
@@ -404,7 +404,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
     upcomingHtml = `
 <section class="section-tile">
-  <h2 class="section-title">📅 Seuraava ottelukierros</h2>
+  <h2 class="section-title">${icon("calendar")} Seuraava ottelukierros</h2>
   <p class="subtitle">${escapeHtml(humanDate(nextRound.date))}</p>
   <div class="upcoming-grid">${upcomingGames.map(renderUpcomingCell).join("")}</div>
   <a class="archive-link" href="/otteluohjelma">Koko otteluohjelma →</a>
@@ -453,7 +453,7 @@ ${favoriteTeamsHtml}
 
 ${statTeaserTable("🇫🇮 Suomipörssin kärki", finSkaters.map((r, i) => renderFinnishSkaterRow(r, i + 1)), "Ei tilastoituja suomalaispelaajia vielä.", "/suomiporssi", "Koko Suomipörssi →", teamHeroBackgroundStyle("NYR", false))}
 
-${statTeaserTable("📈 NHL:n kärkipörssi", leagueSkaters.map((r, i) => renderLeagueSkaterRow(r, i + 1)), "Ei tilastoituja pelaajia vielä.", "/tilastot", "Koko Tilastot →", teamHeroBackgroundStyle("BOS", false))}
+${statTeaserTable(`${icon("trend")} NHL:n kärkipörssi`, leagueSkaters.map((r, i) => renderLeagueSkaterRow(r, i + 1)), "Ei tilastoituja pelaajia vielä.", "/tilastot", "Koko Tilastot →", teamHeroBackgroundStyle("BOS", false))}
 
 ${upcomingHtml}
 

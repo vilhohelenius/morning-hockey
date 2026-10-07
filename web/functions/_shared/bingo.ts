@@ -1,3 +1,4 @@
+import { icon } from "./format";
 // Pistemiesbingo: pure logic + rendering. The user's slip (bingo_picks) is a
 // list of skaters; this turns it into per-player night stats from the box
 // scores the pages already fetch (_shared/boxScoreCache) -- no extra NHL
@@ -285,7 +286,7 @@ function renderBingoTable(rows: BingoRow[], opts: BingoRenderOptions, nowMs: num
 export function renderBingoSection(rows: BingoRow[], heroStyle: string, opts: BingoRenderOptions, nowMs: number): string {
   return `
 <section class="section-tile hero-tinted bingo-section" style="${esc(heroStyle)}">
-  <h2 class="section-title">🎯 Pistemiesbingo</h2>
+  <h2 class="section-title">${icon("target")} Pistemiesbingo</h2>
   ${renderBingoTable(rows, opts, nowMs)}
 </section>`;
 }

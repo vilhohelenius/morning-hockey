@@ -6,7 +6,7 @@
 import { currentUsername, readTulospiiloCookie } from "./_shared/auth";
 import { nightLabel, renderBingoSection } from "./_shared/bingo";
 import { loadActiveRows, loadPicks, loadWindowGames, MAX_PICKS_PER_ROUND, type PickView } from "./_shared/bingoData";
-import { escapeHtml, nationalityFlag, teamHeroBackgroundStyle, teamLogoUrl } from "./_shared/format";
+import { icon, escapeHtml, nationalityFlag, teamHeroBackgroundStyle, teamLogoUrl } from "./_shared/format";
 import { renderLayout } from "./_shared/layout";
 import type { Env, TeamRosterSkaterRow } from "./_shared/types";
 
@@ -30,7 +30,7 @@ function pickRow(p: PickView): string {
         <input type="hidden" name="round_date" value="${escapeHtml(p.round_date)}">
         <input type="hidden" name="bingo_action" value="remove">
         <input type="hidden" name="redirect_to" value="/bingo">
-        <button type="submit" class="icon-btn" aria-label="Poista lapusta">✕</button>
+        <button type="submit" class="icon-btn" aria-label="Poista lapusta">${icon("close")}</button>
       </form>
     </div>`;
 }
@@ -62,7 +62,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
         activePage: "bingo",
         request: context.request,
         content: `
-<header class="page-header"><h1>🎯 Pistemiesbingo</h1></header>
+<header class="page-header"><h1>${icon("target")} Pistemiesbingo</h1></header>
 <p class="empty-note"><a href="/kirjaudu?next=${encodeURIComponent("/bingo")}">Kirjaudu sisään</a> asettaaksesi pistemiesbingo-lappusi.</p>`,
       }),
     );
@@ -116,7 +116,7 @@ document.getElementById("bingo-reveal").addEventListener("click", function () {
     : `<p class="empty-note">${picks.length ? "Lappusi pelaajien kierros ei ole vielä alkanut -- tulokset ilmestyvät tähän, kun pelit alkavat." : "Lisää pelaajia, niin tulokset näkyvät tässä."}</p>`;
 
   const content = `
-<header class="page-header"><h1>🎯 Pistemiesbingo</h1></header>
+<header class="page-header"><h1>${icon("target")} Pistemiesbingo</h1></header>
 
 <div class="settings-page">
 <section>

@@ -7,7 +7,7 @@
 // pattern as tilastot.ts.
 
 import { favoriteTeamAbbrevs, readHighlightsCookie } from "./_shared/auth";
-import { escapeHtml, seasonLabel } from "./_shared/format";
+import { icon, escapeHtml, seasonLabel } from "./_shared/format";
 import { renderGoalieLeaderboard } from "./_shared/leaderboard";
 import { renderLayout } from "./_shared/layout";
 import type { Env, GoalieStatsRow } from "./_shared/types";
@@ -36,7 +36,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
   const content = `
 <header class="page-header">
-  <h1>🥅 Maalivahtipörssi</h1>
+  <h1>${icon("goal")} Maalivahtipörssi</h1>
   <p class="subtitle">Kausi ${escapeHtml(seasonText)}</p>
   <p class="standings-legend">Napauta sarakeotsikkoa järjestääksesi taulukon sen mukaan.</p>
 </header>

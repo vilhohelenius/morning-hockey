@@ -18,7 +18,7 @@
 
 import { fetchGoaliesSeasonGsaxMap, fetchLeagueTeamXg,rankBadge as badge, rankIn, teamIdOf, type TeamXg, xgfPct } from "../_shared/xg";
 import { currentUsername } from "../_shared/auth";
-import { escapeHtml, renderFavStar, renderGameRow, teamHeroBackgroundStyle } from "../_shared/format";
+import { icon, escapeHtml, renderFavStar, renderGameRow, teamHeroBackgroundStyle } from "../_shared/format";
 import { renderRosterGoalieTable, renderRosterSkaterTable } from "../_shared/leaderboard";
 import { renderLayout } from "../_shared/layout";
 import type {
@@ -229,10 +229,10 @@ ${renderDivisionTable(division, abbrev)}
   }
 </section>
 
-<a class="filter-btn team-schedule-link" href="/joukkueet/${abbrev.toLowerCase()}/ottelut">📅 Kaikki ottelut</a>
+<a class="filter-btn team-schedule-link" href="/joukkueet/${abbrev.toLowerCase()}/ottelut">${icon("calendar")} Kaikki ottelut</a>
 
-${skaters.length ? renderRosterSkaterTable(skaters, "🏒 Rosteri") : ""}
-${goalies.length ? renderRosterGoalieTable(goalies, "🥅 Maalivahdit", false, undefined, goalieGsax) : ""}
+${skaters.length ? renderRosterSkaterTable(skaters, `${icon("puck")} Rosteri`) : ""}
+${goalies.length ? renderRosterGoalieTable(goalies, `${icon("goal")} Maalivahdit`, false, undefined, goalieGsax) : ""}
 `;
 
   const html = await renderLayout({

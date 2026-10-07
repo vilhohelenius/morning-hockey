@@ -6,7 +6,7 @@
 // page listing every game inline, which wouldn't have scaled to a full
 // season's worth of nights.
 
-import { escapeHtml, humanDate } from "../_shared/format";
+import { icon, escapeHtml, humanDate } from "../_shared/format";
 import { renderLayout } from "../_shared/layout";
 import type { Env } from "../_shared/types";
 
@@ -32,7 +32,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
   const content = `
 <header class="page-header">
-  <h1>🗂️ Arkisto</h1>
+  <h1>${icon("archive")} Arkisto</h1>
   <p class="subtitle">${days.length} pelipäivää</p>
 </header>
 ${listHtml}

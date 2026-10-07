@@ -10,7 +10,7 @@
 // *.pages.dev preview domain, side by side with the live site.
 
 import { currentUsername, readThemeCookie } from "./auth";
-import { escapeHtml } from "./format";
+import { icon, escapeHtml } from "./format";
 import type { Env, StandingsRow } from "./types";
 
 interface LayoutOptions {
@@ -26,11 +26,11 @@ interface LayoutOptions {
   env?: Env;
 }
 
-const NAV_HOME = { key: "home", href: "/", label: "🏠 Etusivu" };
-const NAV_STANDINGS = { key: "standings", href: "/sarjataulukko", label: "📊 Sarjataulukko" };
-const NAV_PLAYOFFS = { key: "playoffs", href: "/playoffit", label: "🏆 Playoff-bracket" };
-const NAV_ARCHIVE = { key: "archive", href: "/arkisto", label: "🗂️ Arkisto" };
-const NAV_SETTINGS = { key: "settings", href: "/omat", label: "⚙️ Asetukset" };
+const NAV_HOME = { key: "home", href: "/", label: `${icon("home")}Etusivu` };
+const NAV_STANDINGS = { key: "standings", href: "/sarjataulukko", label: `${icon("standings")}Sarjataulukko` };
+const NAV_PLAYOFFS = { key: "playoffs", href: "/playoffit", label: `${icon("trophy")}Playoff-bracket` };
+const NAV_ARCHIVE = { key: "archive", href: "/arkisto", label: `${icon("archive")}Arkisto` };
+const NAV_SETTINGS = { key: "settings", href: "/omat", label: `${icon("settings")}Asetukset` };
 
 const STATS_PAGES = [
   { key: "league_stats", href: "/tilastot", label: "Pistepörssi" },
@@ -43,7 +43,7 @@ const ANALYTICS_PAGES = [
   { key: "analytics", href: "/analytiikka", label: "Analytiikka" },
 ];
 
-const NAV_TEAMS = { key: "teams", href: "/joukkueet", label: "🏒 Joukkueet" };
+const NAV_TEAMS = { key: "teams", href: "/joukkueet", label: `${icon("jersey")}Joukkueet` };
 
 const GAME_PAGES = [
   { key: "schedule", href: "/otteluohjelma", label: "Otteluohjelma" },
@@ -51,7 +51,7 @@ const GAME_PAGES = [
   { key: "bingo", href: "/bingo", label: "Pistemiesbingo" },
 ];
 
-const OMAT_PLAYERS_ITEM = { key: "omat_players", href: "/omat/pelaajat", label: "⭐ Suosikkipelaajat" };
+const OMAT_PLAYERS_ITEM = { key: "omat_players", href: "/omat/pelaajat", label: `${icon("star")}Suosikkipelaajat` };
 
 function navLink(item: { key: string; href: string; label: string }, activePage: string): string {
   const active = item.key === activePage ? " active" : "";
@@ -162,16 +162,16 @@ ${["TBL", "TOR", "NSH"].map((t) => `<link rel="preload" as="image" href="https:/
       <img src="/static/banner_light.png" alt="Morning Hockey" class="brand-banner brand-banner-light sidebar-banner">
       <img src="/static/banner_dark.png" alt="Morning Hockey" class="brand-banner brand-banner-dark sidebar-banner">
       ${playerSearch}
-      <button id="sidebar-close" class="icon-btn" aria-label="Sulje valikko">✕</button>
+      <button id="sidebar-close" class="icon-btn" aria-label="Sulje valikko">${icon("close")}</button>
     </div>
     <ul class="nav-list">
       ${navLink(NAV_HOME, activePage)}
-      ${navGroup("omat", "⭐ Omat", omatItems, activePage)}
+      ${navGroup("omat", `${icon("star")}Omat`, omatItems, activePage)}
       ${navLink(NAV_STANDINGS, activePage)}
-      ${navGroup("stats", "📈 Tilastot", STATS_PAGES, activePage)}
-      ${navGroup("analytics", "🧮 Analytiikka", ANALYTICS_PAGES, activePage)}
+      ${navGroup("stats", `${icon("trend")}Tilastot`, STATS_PAGES, activePage)}
+      ${navGroup("analytics", `${icon("analytics")}Analytiikka`, ANALYTICS_PAGES, activePage)}
       ${navLink(NAV_TEAMS, activePage)}
-      ${navGroup("games", "📅 Pelit", GAME_PAGES, activePage)}
+      ${navGroup("games", `${icon("calendar")}Pelit`, GAME_PAGES, activePage)}
       ${navLink(NAV_PLAYOFFS, activePage)}
       ${navLink(NAV_ARCHIVE, activePage)}
       ${navLink(NAV_SETTINGS, activePage)}
@@ -180,7 +180,7 @@ ${["TBL", "TOR", "NSH"].map((t) => `<link rel="preload" as="image" href="https:/
 
   <div class="main-column">
     <header class="topbar">
-      <button id="sidebar-open" class="icon-btn" aria-label="Avaa valikko">☰</button>
+      <button id="sidebar-open" class="icon-btn" aria-label="Avaa valikko">${icon("menu")}</button>
       <span class="topbar-title">${headerTitle}</span>
       ${playerSearch}
     </header>

@@ -5,7 +5,7 @@
 // hashing details.
 
 import { hashPassword, sessionCookieHeader } from "../_shared/auth";
-import { escapeHtml } from "../_shared/format";
+import { icon, escapeHtml } from "../_shared/format";
 import { renderLayout } from "../_shared/layout";
 import type { Env, UserRow } from "../_shared/types";
 
@@ -20,7 +20,7 @@ function renderForm(next: string, error: string | null): string {
   return `
 <a class="back-link js-back" href="/">← Takaisin</a>
 
-<header class="page-header"><h1>🔑 Kirjaudu sisään</h1></header>
+<header class="page-header"><h1>${icon("key")} Kirjaudu sisään</h1></header>
 <p class="standings-legend">
   Valitse käyttäjänimi. Jos se on uusi, tunnus luodaan automaattisesti. Salasana on valinnainen --
   jos et aseta sitä, käyttäjänimi yksin riittää jatkossakin.

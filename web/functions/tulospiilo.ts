@@ -34,7 +34,7 @@ import { loadActiveRows, loadPicks, loadWindowGames } from "./_shared/bingoData"
 import { getBoxScore, missingBoxRetryScript } from "./_shared/boxScoreCache";
 import { buildTimeline } from "./_shared/boxscore";
 import { resolveHighlightsUrl } from "./_shared/youtube";
-import { escapeHtml, humanDate, teamHeroBackgroundStyle } from "./_shared/format";
+import { icon, escapeHtml, humanDate, teamHeroBackgroundStyle } from "./_shared/format";
 import { renderLayout } from "./_shared/layout";
 import type { Env, GameRow } from "./_shared/types";
 
@@ -144,7 +144,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
   const content = `
 <header class="page-header">
-  <h1>🙈 Tulospiilo</h1>
+  <h1>${icon("hide")} Tulospiilo</h1>
   ${roundDate ? `<p class="subtitle">${escapeHtml(humanDate(roundDate))}</p>` : ""}
 </header>
 

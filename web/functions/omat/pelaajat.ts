@@ -1,3 +1,4 @@
+import { icon } from "../_shared/format";
 // /omat/pelaajat: the "⭐ Suosikkipelaajat" entry in the sidebar's Omat
 // dropdown -- a pistepörssi-style leaderboard of just the signed-in user's
 // favorite players, split into skaters/goalies same as a team page's roster
@@ -19,7 +20,7 @@ function renderNotSignedIn(request: Request): Promise<string> {
     activePage: "omat_players",
     request,
     content: `
-<header class="page-header"><h1>⭐ Suosikkipelaajat</h1></header>
+<header class="page-header"><h1>${icon("star")} Suosikkipelaajat</h1></header>
 <p class="empty-note">
   <a href="/kirjaudu?next=${encodeURIComponent("/omat/pelaajat")}">Kirjaudu sisään</a> nähdäksesi suosikkipelaajasi.
 </p>`,
@@ -70,7 +71,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 <a class="back-link js-back" href="/">← Takaisin</a>
 
 <header class="page-header">
-  <h1>⭐ Suosikkipelaajat</h1>
+  <h1>${icon("star")} Suosikkipelaajat</h1>
 </header>
 
 ${
@@ -79,8 +80,8 @@ ${
     : `<p class="empty-note">Ei vielä suosikkipelaajia. Lisää niitä <a href="/omat">Asetukset</a>-sivulla.</p>`
 }
 
-${favoriteSkaters.length ? renderRosterSkaterTable(favoriteSkaters, "🏒 Kenttäpelaajat", true, hl) : ""}
-${favoriteGoalies.length ? renderRosterGoalieTable(favoriteGoalies, "🥅 Maalivahdit", true, hl, await fetchGoaliesSeasonGsaxMap(db, favoriteGoalies.map((g) => g.player_id))) : ""}
+${favoriteSkaters.length ? renderRosterSkaterTable(favoriteSkaters, `${icon("puck")} Kenttäpelaajat`, true, hl) : ""}
+${favoriteGoalies.length ? renderRosterGoalieTable(favoriteGoalies, `${icon("goal")} Maalivahdit`, true, hl, await fetchGoaliesSeasonGsaxMap(db, favoriteGoalies.map((g) => g.player_id))) : ""}
 `;
 
   const html = await renderLayout({

@@ -253,3 +253,8 @@ export function escapeHtml(value: string | number): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
 }
+
+// Inline icon from /static/icons.svg (our own drawn set, replaces the old emojis).
+export function icon(name: string): string {
+  return `<svg class="ic" aria-hidden="true"><use href="/static/icons.svg#i-${name}"/></svg>`;
+}

@@ -2,7 +2,7 @@
 // straight from the sync_xg tables. Three tabs toggled client-side (the
 // analytiikka-view-picker pill wiring in app.js).
 
-import { escapeHtml, nationalityFlag, seasonLabel } from "./_shared/format";
+import { icon, escapeHtml, nationalityFlag, seasonLabel } from "./_shared/format";
 import { renderLayout } from "./_shared/layout";
 import { COLLAPSE_AT, expandToggle } from "./_shared/leaderboard";
 import type { Env, StandingsRow } from "./_shared/types";
@@ -134,7 +134,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   const empty = `<p class="empty-note">Ei vielä dataa.</p>`;
   const content = `
 <header class="page-header">
-  <h1>🧮 Edistyneet tilastot</h1>
+  <h1>${icon("analytics")} Edistyneet tilastot</h1>
   <p class="subtitle">Kausi ${season?.s ? escapeHtml(seasonLabel(season.s)) : ""} · runkosarja</p>
 </header>
 

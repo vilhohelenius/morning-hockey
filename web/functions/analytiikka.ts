@@ -16,7 +16,7 @@
 
 import { favoriteTeamAbbrevs } from "./_shared/auth";
 import { computeDivisionPointsRace } from "./_shared/divisionPoints";
-import { abbreviatedName, escapeHtml } from "./_shared/format";
+import { icon, abbreviatedName, escapeHtml } from "./_shared/format";
 import { renderLayout } from "./_shared/layout";
 import { getSkaterPointsRace } from "./_shared/skaterGameLog";
 import type { Env, GameRow, SkaterStatsRow, StandingsRow } from "./_shared/types";
@@ -114,7 +114,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
   const content = `
 <header class="page-header">
-  <h1>📈 Analytiikka</h1>
+  <h1>${icon("trend")} Analytiikka</h1>
   <p class="subtitle">Pisterace kauden ajalta</p>
 </header>
 
