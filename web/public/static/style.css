@@ -4614,3 +4614,10 @@ main {
 .player-card-header h1 {
   font-size: clamp(1.9rem, 9vw, 2.6rem);
 }
+
+/* Käännetyn kortin etupuolen sisältö ei saa näkyä peilikuvana taustapuolen läpi. */
+.hero-banner.player-hero-face > *,
+.hero-banner.player-hero-face::after {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
