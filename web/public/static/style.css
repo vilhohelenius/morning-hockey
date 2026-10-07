@@ -5540,3 +5540,11 @@ main {
     display: none;
   }
 }
+
+/* Pörssit ja odotetut leveällä ruudulla: tilaa kaikille sarakkeille. */
+@media (min-width: 860px) {
+  main:has(.porssi-table),
+  main:has(.division-chart) {
+    max-width: 900px;
+  }
+}
