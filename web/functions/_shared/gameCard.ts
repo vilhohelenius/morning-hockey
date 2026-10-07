@@ -25,7 +25,7 @@
 import { periodLabel } from "./boxscore";
 import type { LiveStatus } from "./boxScoreCache";
 import { isGameLive } from "./dayGames";
-import { flagImg, decisionFi, escapeHtml, finalTypeFi, helsinkiParts } from "./format";
+import { flagImg, decisionFi, escapeHtml, finalTypeShort, helsinkiParts } from "./format";
 import { jerseyColors } from "./teamColors";
 import { formatGsax } from "./xg";
 import type { GameRow, GoalieGameStat, PlayerGameStat } from "./types";
@@ -149,9 +149,7 @@ export function renderGameCard(
       : "";
 
   const badge = game.is_finished
-    ? game.final_type !== "REG"
-      ? `<p class="ot-tag">${escapeHtml(finalTypeFi(game.final_type))}</p>`
-      : ""
+    ? ""
     : isLive(game)
       ? `<p class="live-tag"><span class="live-dot"></span>${escapeHtml(liveBadgeText(live))}</p>`
       : "";
@@ -191,7 +189,7 @@ export function renderGameCard(
 
   return `
 ${openTag}
-  <div class="score-row">
+  <div class="score-row${game.is_finished && game.final_type !== "REG" ? " has-note" : ""}">
     <span class="jc-half jc-away" data-abbr="${escapeHtml(game.away_abbrev)}" aria-hidden="true"></span>
     <span class="jc-half jc-home" data-abbr="${escapeHtml(game.home_abbrev)}" aria-hidden="true"></span>
     <div class="team away">
@@ -205,6 +203,7 @@ ${openTag}
       <span class="abbrev">${escapeHtml(game.home_abbrev)}</span>
       <img src="${escapeHtml(game.home_logo)}" alt="" class="logo" loading="lazy">
     </div>
+    ${game.is_finished && game.final_type !== "REG" ? `<span class="score-note">${finalTypeShort(game.final_type)}</span>` : ""}
   </div>
   ${badge}
   ${finnStats}

@@ -167,7 +167,7 @@ function renderFormGuideRow(entry: FormGuideEntry, rank: number, team: Standings
     .join("");
 
   return `
-    <div class="division-row">
+    <div class="division-row form-row" style="--tc:${TEAM_COLORS[team.abbrev] ?? "var(--accent)"}">
       <span class="division-rank">${rank}</span>
       <button type="button" class="division-team team-trigger" data-team-abbrev="${escapeHtml(team.abbrev)}" data-team-name="${escapeHtml(team.name)}">
         <img src="${escapeHtml(team.logo)}" alt="${escapeHtml(team.abbrev)}" class="division-logo" loading="lazy">
@@ -177,6 +177,7 @@ function renderFormGuideRow(entry: FormGuideEntry, rank: number, team: Standings
         <span class="form-chips">${chips || "–"}</span>
         <span class="form-record">${entry.wins}-${entry.losses}-${entry.otLosses}</span>
       </span>
+      <span class="form-bar" aria-hidden="true"><i style="width:${Math.round(entry.pointsPct * 100)}%"></i></span>
     </div>`;
 }
 

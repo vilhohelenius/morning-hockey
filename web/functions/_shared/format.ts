@@ -215,6 +215,11 @@ export function nationalityFlag(code: string): string {
 
 const FINAL_TYPES: Record<string, string> = { OT: "Jatkoaika", SO: "Voittolaukaukset" };
 
+// Short form for the score banner: "JA" (jatkoaika) / "VL" (voittolaukaukset).
+export function finalTypeShort(code: string): string {
+  return code === "OT" ? "JA" : code === "SO" ? "VL" : "";
+}
+
 export function finalTypeFi(code: string): string {
   return FINAL_TYPES[code] ?? code;
 }

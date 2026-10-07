@@ -38,7 +38,7 @@ import {
 import { fetchGameWinProb, winProbInfoText, winProbStatRow, type GameWinProb } from "../_shared/winProb";
 import { renderMatchTimeline } from "../_shared/matchTimeline";
 import { computeFormGuide, type FormGuideEntry } from "../_shared/formGuide";
-import { icon, escapeHtml, finalTypeFi, helsinkiParts, humanDate, nationalityFlag } from "../_shared/format";
+import { icon, escapeHtml, finalTypeShort, helsinkiParts, humanDate, nationalityFlag } from "../_shared/format";
 import { isLive } from "../_shared/gameCard";
 import { renderRosterGoalieTable, renderRosterSkaterTable } from "../_shared/leaderboard";
 import { TEAM_COLORS, jerseyColors } from "../_shared/teamColors";
@@ -466,7 +466,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 </header>
 
 <section class="game-card jersey-card" style="--ca:${jerseyColors(game.away_abbrev, game.home_abbrev)[0]};--ch:${jerseyColors(game.away_abbrev, game.home_abbrev)[1]}">
-  <div class="score-row">
+  <div class="score-row${game.is_finished && game.final_type !== "REG" ? " has-note" : ""}">
     <span class="jc-half jc-away" data-abbr="${escapeHtml(game.away_abbrev)}" aria-hidden="true"></span>
     <span class="jc-half jc-home" data-abbr="${escapeHtml(game.home_abbrev)}" aria-hidden="true"></span>
     <div class="team away">
@@ -487,9 +487,9 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       <span class="abbrev">${escapeHtml(game.home_abbrev)}</span>
       <img src="${escapeHtml(game.home_logo)}" alt="" class="logo" loading="lazy">
     </div>
+    ${game.is_finished && game.final_type !== "REG" ? `<span class="score-note">${finalTypeShort(game.final_type)}</span>` : ""}
   </div>
   ${game.is_finished ? `<p class="mt-final-label">Lopputulos</p>` : ""}
-  ${game.is_finished && game.final_type !== "REG" ? `<p class="ot-tag">${escapeHtml(finalTypeFi(game.final_type))}</p>` : ""}
   ${game.is_finished ? `<a class="game-card-youtube" href="${escapeHtml(youtubeUrl)}" target="_blank" rel="noopener">▶ Highlightit (YouTube)</a>` : ""}
 </section>
 
