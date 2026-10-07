@@ -4452,3 +4452,53 @@ main {
   font-family: var(--font-display);
   font-size: 1.1rem;
 }
+
+/* ---------- Redesign step 5: heron ja loppusivujen viimeistely ---------- */
+
+.hero-banner {
+  border-radius: 0 0 24px 0;
+}
+
+.hero-banner h1 {
+  font: 600 2.6rem/1 var(--font-display);
+  letter-spacing: 0.01em;
+}
+
+.team-page-header h1 {
+  font-size: 3rem;
+}
+
+.player-hero-meta {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 500;
+}
+
+.player-hero-photo {
+  border-radius: 0 0 16px 0;
+}
+
+.team-hero-logo {
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5));
+}
+
+/* Kausikohtaiset ja rosteri-taulukot: Teko-numerot ja -otsikot */
+.stats-table thead th {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.stats-table td.stat-strong {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+}
+
+.player-hero-meta span {
+  font-size: 1.2rem;
+}
+
+.player-hero-meta .player-hero-flag {
+  font-size: 1rem;
+}
