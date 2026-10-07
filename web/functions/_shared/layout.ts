@@ -141,12 +141,15 @@ export async function renderLayout(options: LayoutOptions): Promise<string> {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${title}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Teko:wght@500;600;700&family=Instrument+Sans:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="/static/style.css">
 ${["TBL", "TOR", "NSH"].map((t) => `<link rel="preload" as="image" href="https://assets.nhle.com/logos/nhl/svg/${t}_dark.svg"${theme === "dark" ? "" : ' media="(prefers-color-scheme: dark)"'}>`).join("\n")}
 <link rel="icon" href="/static/icon.jpg">
 <link rel="apple-touch-icon" href="/static/icon.jpg">
 <link rel="manifest" href="/static/manifest.json">
-<meta name="theme-color" content="#0f1115">
+<meta name="theme-color" content="#0D0D0F">
 <meta name="apple-mobile-web-app-title" content="Morning Hockey">
 <meta name="apple-mobile-web-app-capable" content="yes">
 </head>

@@ -1,10 +1,13 @@
 :root {
-  --bg: #f5f6f8;
+  --font-display: "Teko", "Barlow Condensed", Impact, sans-serif;
+  --font-body: "Instrument Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --bg: #F2F2F4;
   --card-bg: #ffffff;
-  --text: #14171a;
-  --muted: #6b7280;
-  --accent: #1d4ed8;
-  --border: #e5e7eb;
+  --text: #0D0D0F;
+  --muted: #5E5E68;
+  --accent: #A87400;
+  --on-accent: #ffffff;
+  --border: rgba(13,13,15,0.14);
   /* Team-tinted hero backgrounds (teamHeroBackgroundStyle() + .hero-tinted
      below) are built from a black vignette/scrim over the team's jersey
      texture. In light mode that full-strength black reads as a jarring dark
@@ -21,12 +24,13 @@
      the Cloudflare-migration theme toggle (phase 7) sets data-theme="light"
      on html to opt back out of dark mode even when the OS prefers it. */
   :root:not([data-theme="light"]) {
-    --bg: #0f1115;
-    --card-bg: #191c22;
-    --text: #f2f3f5;
-    --muted: #9aa1ac;
-    --accent: #5b9dff;
-    --border: #2a2e37;
+    --bg: #0D0D0F;
+    --card-bg: #19191D;
+    --text: #F5F5F7;
+    --muted: #A3A3AB;
+    --accent: #F5C84C;
+    --on-accent: #0D0D0F;
+  --border: rgba(255,255,255,0.14);
     --hero-shade-strong: rgba(0, 0, 0, 0.65);
     --hero-shade-fade: rgb(0, 0, 0);
     --hero-scrim: rgba(0, 0, 0, 0.45);
@@ -35,24 +39,26 @@
 
 /* Explicit choice wins over prefers-color-scheme either direction. */
 :root[data-theme="dark"] {
-  --bg: #0f1115;
-  --card-bg: #191c22;
-  --text: #f2f3f5;
-  --muted: #9aa1ac;
-  --accent: #5b9dff;
-  --border: #2a2e37;
+  --bg: #0D0D0F;
+  --card-bg: #19191D;
+  --text: #F5F5F7;
+  --muted: #A3A3AB;
+  --accent: #F5C84C;
+  --on-accent: #0D0D0F;
+  --border: rgba(255,255,255,0.14);
   --hero-shade-strong: rgba(0, 0, 0, 0.65);
   --hero-shade-fade: rgb(0, 0, 0);
   --hero-scrim: rgba(0, 0, 0, 0.45);
 }
 
 :root[data-theme="light"] {
-  --bg: #f5f6f8;
+  --bg: #F2F2F4;
   --card-bg: #ffffff;
-  --text: #14171a;
-  --muted: #6b7280;
-  --accent: #1d4ed8;
-  --border: #e5e7eb;
+  --text: #0D0D0F;
+  --muted: #5E5E68;
+  --accent: #A87400;
+  --on-accent: #ffffff;
+  --border: rgba(13,13,15,0.14);
   --hero-shade-strong: rgba(0, 0, 0, 0.35);
   --hero-shade-fade: rgba(0, 0, 0, 0.65);
   --hero-scrim: rgba(0, 0, 0, 0.25);
@@ -66,7 +72,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font-body);
 }
 
 a {
@@ -121,8 +127,9 @@ a {
 }
 
 .brand {
-  font-size: 1.1rem;
-  font-weight: 700;
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 600;
   color: var(--text);
   text-decoration: none;
 }
@@ -148,7 +155,7 @@ a {
 
 .nav-list a.active {
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 .nav-group-toggle {
@@ -169,7 +176,7 @@ a {
 
 .nav-group-toggle.active {
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 .nav-group-chevron {
@@ -208,7 +215,7 @@ a {
 
 .nav-sublist a.active {
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 .nav-team-logo {
@@ -246,7 +253,9 @@ a {
 }
 
 .topbar-title {
-  font-weight: 700;
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 600;
 }
 
 .topbar-title.is-hidden {
@@ -1088,10 +1097,11 @@ main {
 }
 
 .section-title {
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--muted);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.5rem;
+  line-height: 1.15;
+  color: var(--text);
   margin: 4px 0 8px;
 }
 
@@ -1238,7 +1248,7 @@ main {
   padding: 0 5px;
   border-radius: 8px;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   font-size: 0.65rem;
   font-weight: 700;
   line-height: 1.5;
@@ -1693,7 +1703,7 @@ main {
 .filter-btn.active {
   background: var(--accent);
   border-color: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 /* Segmented pill control (Asetukset: Teema, Tulospiilo) -- several forms,
@@ -1732,7 +1742,7 @@ main {
 
 .toggle-segment.active {
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 /* Custom-styled select/search/text inputs, used in the table-filters forms
@@ -2284,6 +2294,10 @@ main {
   z-index: 1;
 }
 
+.hero-tinted .section-title {
+  color: #fff;
+}
+
 .team-detail.hero-tinted .icon-btn {
   color: #fff;
 }
@@ -2690,7 +2704,7 @@ main {
 .day-pill.active {
   background: var(--accent);
   border-color: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 .schedule-day-section.is-hidden {
@@ -2922,7 +2936,7 @@ main {
   width: fit-content;
   padding: 10px 24px;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   border-radius: 20px;
   font-weight: 600;
   font-size: 0.9rem;
@@ -3875,7 +3889,7 @@ main {
   padding: 2px 8px;
   border-radius: 10px;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   font-size: 0.7rem;
   font-weight: 700;
   white-space: nowrap;
