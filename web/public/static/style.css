@@ -5105,3 +5105,131 @@ main {
   height: 100%;
   background: var(--tc, var(--accent));
 }
+
+/* Kuntopuntari: kaksi riviä, ylhäällä joukkue + saldo + pisteet, alla 10 tuloksen jono */
+.form-row {
+  grid-template-columns: 24px 1fr auto;
+  row-gap: 8px;
+  padding: 10px 12px 12px 14px;
+}
+
+.form-summary {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  white-space: nowrap;
+}
+
+.form-record {
+  min-width: 0;
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+.form-points {
+  font: 600 1.5rem/1 var(--font-display);
+  color: var(--text);
+}
+
+.form-points small {
+  margin-left: 1px;
+  font: 500 0.8rem var(--font-display);
+  color: var(--muted);
+}
+
+.form-row .form-chips {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 3px;
+}
+
+.form-row .form-chip {
+  min-width: 0;
+  height: 22px;
+  width: 100%;
+}
+
+.form-chip.is-empty {
+  background: var(--border);
+  opacity: 0.5;
+}
+
+.division-header .form-summary {
+  font-weight: 600;
+}
+
+/* ---------- Tulospiilo: samat pelipaitabannerit kuin etusivulla ---------- */
+
+.spoiler-game {
+  display: flex;
+  flex-direction: column;
+}
+
+.spoiler-game .spoiler-reveal-toggle {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.spoiler-game .spoiler-score-row {
+  order: 1;
+  padding: 0;
+  margin: 0;
+  border-radius: 0;
+  opacity: 1;
+}
+
+.spoiler-game .spoiler-reveal-toggle:checked ~ .spoiler-score-row:hover,
+.spoiler-game .spoiler-reveal-toggle:checked ~ .spoiler-score-row:focus-visible {
+  background: none;
+  filter: brightness(1.08);
+}
+
+.spoiler-game .spoiler-placeholder {
+  color: #fff;
+  letter-spacing: 0.06em;
+}
+
+.spoiler-game .spoiler-score-row .spoiler-reveal-hint {
+  margin: 0;
+  padding: 7px 18px;
+  color: var(--gold, #f5c84c);
+}
+
+.spoiler-game .spoiler-check-label {
+  order: 2;
+  margin: 0;
+  padding: 9px 18px;
+  background: #0a0a0c;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  color: #b8b8c0;
+}
+
+.spoiler-game .spoiler-check-text {
+  color: #b8b8c0;
+}
+
+.spoiler-check-box {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  border-radius: 6px;
+}
+
+.spoiler-reveal-toggle:checked + .spoiler-score-row ~ .spoiler-check-label .spoiler-check-box,
+.spoiler-reveal-toggle:checked ~ .spoiler-check-label .spoiler-check-box {
+  background: var(--accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12.5 4.5 4.5L19 7.5'/%3E%3C/svg%3E") center / 80% no-repeat;
+  border-color: var(--accent);
+}
+
+.spoiler-reveal-toggle:focus-visible ~ .spoiler-check-label .spoiler-check-box {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.spoiler-game .game-card-youtube {
+  order: 3;
+}

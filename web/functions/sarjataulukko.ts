@@ -165,6 +165,8 @@ function renderFormGuideRow(entry: FormGuideEntry, rank: number, team: Standings
   const chips = entry.results
     .map((r) => `<span class="form-chip result-${r.toLowerCase()}">${r === "OTL" ? "OT" : r}</span>`)
     .join("");
+  // Always FORM_GUIDE_WINDOW slots so rows line up, empty ones early in the season.
+  const empty = `<span class="form-chip is-empty"></span>`.repeat(Math.max(0, FORM_GUIDE_WINDOW - entry.results.length));
 
   return `
     <div class="division-row form-row" style="--tc:${TEAM_COLORS[team.abbrev] ?? "var(--accent)"}">
@@ -173,10 +175,11 @@ function renderFormGuideRow(entry: FormGuideEntry, rank: number, team: Standings
         <img src="${escapeHtml(team.logo)}" alt="${escapeHtml(team.abbrev)}" class="division-logo" loading="lazy">
         <span class="division-name">${escapeHtml(team.name)}</span>
       </button>
-      <span class="form-row-stats">
-        <span class="form-chips">${chips || "–"}</span>
+      <span class="form-summary">
         <span class="form-record">${entry.wins}-${entry.losses}-${entry.otLosses}</span>
+        <span class="form-points">${entry.points}<small>/${entry.maxPoints} p</small></span>
       </span>
+      <span class="form-chips">${empty}${chips}</span>
       <span class="form-bar" aria-hidden="true"><i style="width:${Math.round(entry.pointsPct * 100)}%"></i></span>
     </div>`;
 }
@@ -194,7 +197,7 @@ function renderFormGuide(entries: FormGuideEntry[], teamsByAbbrev: Map<string, S
     <div class="division-row division-header">
       <span class="division-rank"></span>
       <span class="division-team">Joukkue</span>
-      <span class="form-row-stats"><span>Viimeiset ${FORM_GUIDE_WINDOW} ottelua</span></span>
+      <span class="form-summary"><span>Viimeiset ${FORM_GUIDE_WINDOW} ottelua</span></span>
     </div>
     ${rowsHtml}
   </div>`;
