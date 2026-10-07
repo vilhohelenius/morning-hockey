@@ -26,6 +26,7 @@ import { periodLabel } from "./boxscore";
 import type { LiveStatus } from "./boxScoreCache";
 import { isGameLive } from "./dayGames";
 import { decisionFi, escapeHtml, finalTypeFi, helsinkiParts } from "./format";
+import { jerseyColors } from "./teamColors";
 import { formatGsax } from "./xg";
 import type { GameRow, GoalieGameStat, PlayerGameStat } from "./types";
 
@@ -181,14 +182,18 @@ export function renderGameCard(
 
   // Not started yet: nothing to expand inline, so the whole card links to
   // the game page, which renders the pre-game preview.
+  const [ca, ch] = jerseyColors(game.away_abbrev, game.home_abbrev);
+  const colors = `style="--ca:${ca};--ch:${ch}"`;
   const openTag = hasDetails
-    ? `<div class="game-card game-card-trigger" data-game-id="${game.game_id}" tabindex="0" role="button" aria-expanded="false">`
-    : `<a class="game-card game-card-link" href="/ottelut/${game.game_id}">`;
+    ? `<div class="game-card jersey-card game-card-trigger" ${colors} data-game-id="${game.game_id}" tabindex="0" role="button" aria-expanded="false">`
+    : `<a class="game-card jersey-card game-card-link" ${colors} href="/ottelut/${game.game_id}">`;
   const closeTag = hasDetails ? "</div>" : "</a>";
 
   return `
 ${openTag}
   <div class="score-row">
+    <span class="jc-half jc-away" data-abbr="${escapeHtml(game.away_abbrev)}" aria-hidden="true"></span>
+    <span class="jc-half jc-home" data-abbr="${escapeHtml(game.home_abbrev)}" aria-hidden="true"></span>
     <div class="team away">
       <img src="${escapeHtml(game.away_logo)}" alt="" class="logo" loading="lazy">
       <span class="abbrev">${escapeHtml(game.away_abbrev)}</span>

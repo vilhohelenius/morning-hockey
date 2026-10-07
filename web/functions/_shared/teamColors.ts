@@ -39,3 +39,20 @@ export const TEAM_COLORS: Record<string, string> = {
   WPG: "#041E42",
   WSH: "#C8102E",
 };
+
+function rgb(hex: string): [number, number, number] {
+  const n = parseInt(hex.slice(1), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+// Jersey colors for a game card's two halves. Both teams in one color family
+// (TOR vs TBL, WPG vs EDM) would blur into one slab, so the away half is
+// lightened when the two are too close.
+export function jerseyColors(away: string, home: string): [string, string] {
+  const a = TEAM_COLORS[away] ?? "#444444";
+  const h = TEAM_COLORS[home] ?? "#444444";
+  const [ar, ag, ab] = rgb(a);
+  const [hr, hg, hb] = rgb(h);
+  const dist = Math.hypot(ar - hr, ag - hg, ab - hb);
+  return [dist < 90 ? `color-mix(in srgb, ${a} 60%, white)` : a, h];
+}
