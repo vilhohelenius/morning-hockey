@@ -209,10 +209,15 @@ const NATIONALITY_TO_ISO2: Record<string, string> = {
   NLD: "NL", BEL: "BE", ESP: "ES", IRL: "IE", NZL: "NZ",
 };
 
+// SVG flags from the MIT-licensed flag-icons set (public/static/flags/).
+export function flagImg(iso2: string): string {
+  return `<img src="/static/flags/${iso2.toLowerCase()}.svg" alt="" class="flag-img" loading="lazy">`;
+}
+
 export function nationalityFlag(code: string): string {
   const iso2 = NATIONALITY_TO_ISO2[code] ?? "";
   if (iso2.length !== 2) return "";
-  return [...iso2].map((letter) => String.fromCodePoint(0x1f1e6 + letter.charCodeAt(0) - 65)).join("");
+  return flagImg(iso2);
 }
 
 const FINAL_TYPES: Record<string, string> = { OT: "Jatkoaika", SO: "Voittolaukaukset" };

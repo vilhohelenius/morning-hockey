@@ -45,7 +45,7 @@ import {
 import { fetchGamesGoalieGsax } from "./_shared/xg";
 import { resolveHighlightsUrl } from "./_shared/youtube";
 import { MAX_DAY_OFFSET, MIN_DAY_OFFSET, clampDayOffset, selectDayGames } from "./_shared/dayGames";
-import { icon, addDays, escapeHtml, helsinkiParts, helsinkiToday, secondsToHelsinkiMidnight, humanDate, nationalityFlag, shortDate, teamHeroBackgroundStyle } from "./_shared/format";
+import { flagImg, icon, addDays, escapeHtml, helsinkiParts, helsinkiToday, secondsToHelsinkiMidnight, humanDate, nationalityFlag, shortDate, teamHeroBackgroundStyle } from "./_shared/format";
 import { buildFinnishNight, renderFinnishNightSection, type NightGame } from "./_shared/finnishNight";
 import { renderLayout } from "./_shared/layout";
 import type {
@@ -451,7 +451,7 @@ ${renderFinnishNightSection(buildFinnishNight(nightGames), teamHeroBackgroundSty
 
 ${favoriteTeamsHtml}
 
-${statTeaserTable("🇫🇮 Suomipörssin kärki", finSkaters.map((r, i) => renderFinnishSkaterRow(r, i + 1)), "Ei tilastoituja suomalaispelaajia vielä.", "/suomiporssi", "Koko Suomipörssi →", teamHeroBackgroundStyle("NYR", false))}
+${statTeaserTable(`${flagImg("fi")} Suomipörssin kärki`, finSkaters.map((r, i) => renderFinnishSkaterRow(r, i + 1)), "Ei tilastoituja suomalaispelaajia vielä.", "/suomiporssi", "Koko Suomipörssi →", teamHeroBackgroundStyle("NYR", false))}
 
 ${statTeaserTable(`${icon("trend")} NHL:n kärkipörssi`, leagueSkaters.map((r, i) => renderLeagueSkaterRow(r, i + 1)), "Ei tilastoituja pelaajia vielä.", "/tilastot", "Koko Tilastot →", teamHeroBackgroundStyle("BOS", false))}
 

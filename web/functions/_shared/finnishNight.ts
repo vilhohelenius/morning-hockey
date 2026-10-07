@@ -1,3 +1,4 @@
+import { flagImg } from "./format";
 // "Yön suomalaiset": every Finnish player (skaters and goalies) who played
 // in a started game of the dashboard's today panel. Pure logic + rendering,
 // fed with the same box scores the day panels already fetched -- no extra
@@ -191,7 +192,7 @@ export function renderFinnishNightSection(
   const empty = !night.skaters.length && !night.goalies.length;
   return `
 <section class="section-tile hero-tinted yf-section" style="${esc(heroStyle)}">
-  <h2 class="section-title">🇫🇮 Yön suomalaiset</h2>
+  <h2 class="section-title">${flagImg("fi")} Yön suomalaiset</h2>
   ${empty ? `<p class="empty-note">Ei suomalaisia pelaajia yön otteluissa.</p>` : renderFinnishNightSkaters(night.skaters) + renderFinnishNightGoalies(night.goalies)}
 </section>`;
 }

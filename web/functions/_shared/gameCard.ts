@@ -25,7 +25,7 @@
 import { periodLabel } from "./boxscore";
 import type { LiveStatus } from "./boxScoreCache";
 import { isGameLive } from "./dayGames";
-import { decisionFi, escapeHtml, finalTypeFi, helsinkiParts } from "./format";
+import { flagImg, decisionFi, escapeHtml, finalTypeFi, helsinkiParts } from "./format";
 import { jerseyColors } from "./teamColors";
 import { formatGsax } from "./xg";
 import type { GameRow, GoalieGameStat, PlayerGameStat } from "./types";
@@ -131,7 +131,7 @@ export function renderGameCard(
       .map(
         (s) => `
     <p class="stat-line scorer">
-      <span class="flag">🇫🇮</span><strong>${escapeHtml(s.name)}</strong><span class="team-tag">${escapeHtml(s.team_abbrev)}</span>
+      <span class="flag">${flagImg("fi")}</span><strong>${escapeHtml(s.name)}</strong><span class="team-tag">${escapeHtml(s.team_abbrev)}</span>
       <span class="value">${s.goals}+${s.assists}</span>
     </p>`,
       )
@@ -140,7 +140,7 @@ export function renderGameCard(
       .map(
         (g) => `
     <p class="stat-line goalie">
-      <span class="flag">🇫🇮</span><strong>${escapeHtml(g.name)}</strong><span class="team-tag">${escapeHtml(g.team_abbrev)}</span>
+      <span class="flag">${flagImg("fi")}</span><strong>${escapeHtml(g.name)}</strong><span class="team-tag">${escapeHtml(g.team_abbrev)}</span>
       <span class="value">${g.saves}/${g.shots_against}${g.decision ? ` · ${escapeHtml(decisionFi(g.decision))}` : ""}${g.gsax === undefined ? "" : ` · ${formatGsax(g.gsax, 2)} GSAx`}</span>
     </p>`,
       )

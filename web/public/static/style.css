@@ -4542,3 +4542,25 @@ main {
 .nav-group-toggle .nav-group-chevron {
   margin-left: auto;
 }
+
+/* SVG-liput (flag-icons, MIT) */
+.flag-img {
+  height: 0.85em;
+  width: auto;
+  aspect-ratio: 4 / 3;
+  border-radius: 2px;
+  vertical-align: -0.08em;
+  box-shadow: 0 0 0 1px rgba(128, 128, 128, 0.35);
+  object-fit: cover;
+}
+
+.player-meta .flag-img,
+.player-cell .player-meta img.flag-img,
+.porssi-table .player-cell img.flag-img,
+.yf-table .player-cell img.flag-img,
+.bingo-table .player-cell img.flag-img {
+  width: auto;
+  height: 0.75rem;
+  border-radius: 2px;
+  background: none;
+}

@@ -9,7 +9,7 @@
 // than reusing _shared/leaderboard.ts, which assumes both of those.
 
 import { favoriteTeamAbbrevs, readHighlightsCookie } from "./_shared/auth";
-import { icon, escapeHtml, formatToi, seasonLabel } from "./_shared/format";
+import { flagImg, icon, escapeHtml, formatToi, seasonLabel } from "./_shared/format";
 import { highlightDots, type HighlightOptions } from "./_shared/leaderboard";
 import { renderLayout } from "./_shared/layout";
 import { fetchGoaliesSeasonGsaxMap, formatGsax, formatPct, xgfPct } from "./_shared/xg";
@@ -178,7 +178,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
   const content = `
 <header class="page-header">
-  <h1>🇫🇮 Suomipörssi</h1>
+  <h1>${flagImg("fi")} Suomipörssi</h1>
   <p class="subtitle">Kausi ${escapeHtml(seasonText)}</p>
 </header>
 
