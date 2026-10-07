@@ -5233,3 +5233,50 @@ main {
 .spoiler-game .game-card-youtube {
   order: 3;
 }
+
+/* Sarjataulukko / kuntopuntari: suodatinpillerit */
+.filter-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.filter-pills[hidden],
+.venue-sec.is-hidden,
+.form-sec.is-hidden {
+  display: none;
+}
+
+.form-row .form-chips {
+  grid-template-columns: repeat(var(--n, 10), 1fr);
+}
+
+/* Tulospiilo: avautuva ottelupaneeli istuu pelipaitakortin sisällä, joten
+   se ei saa periä kortin valkoista tekstiä / mustaa YouTube-palkkia. */
+.spoiler-game .team-detail {
+  order: 1;
+  margin: 8px;
+  color: var(--text);
+}
+
+.spoiler-game .team-detail .game-card-youtube {
+  margin-top: 10px;
+  padding: 0;
+  background: none;
+}
+
+.spoiler-game .team-detail .game-card-hint {
+  background: none;
+}
+
+/* Vaalealla teemalla paneeli on valkoinen: takaisin vaalean taustan logoihin. */
+:root[data-theme="light"] .spoiler-game .team-detail img[src$="/TBL_light.svg"],
+:root[data-theme="light"] .spoiler-game .team-detail img[src$="/TOR_light.svg"],
+:root[data-theme="light"] .spoiler-game .team-detail img[src$="/NSH_light.svg"] { content: normal; }
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) .spoiler-game .team-detail img[src$="/TBL_light.svg"],
+  :root:not([data-theme]) .spoiler-game .team-detail img[src$="/TOR_light.svg"],
+  :root:not([data-theme]) .spoiler-game .team-detail img[src$="/NSH_light.svg"] { content: normal; }
+}
+.standings-legend + .filter-pills { margin-top: 12px; }

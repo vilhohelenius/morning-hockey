@@ -23,7 +23,17 @@ const WILDCARD_CUTOFF = 2;
 const RECENT_RESULTS = 5;
 const TOP_SCORERS = 3;
 const GAMES_QUERY_LIMIT = 500; // generous window; see module comment
-const FORM_GUIDE_WINDOW = 10;
+const FORM_WINDOWS = [10, 5];
+const FORM_SCOPES = [
+  { key: "division", label: "Divisioona" },
+  { key: "conference", label: "Konferenssi" },
+  { key: "league", label: "Liiga" },
+];
+const VENUES = [
+  { key: "all", label: "Kaikki" },
+  { key: "home", label: "Koti" },
+  { key: "away", label: "Vieras" },
+];
 
 interface TeamSnapshot {
   recent_results: { result: "W" | "L" | "OTL"; opponent_abbrev: string }[];
@@ -161,12 +171,12 @@ function renderWildcardRace(rows: StandingsRow[]): string {
 // split by them. Rows reuse .division-row/.team-trigger so clicking a team
 // here opens the exact same snapshot popup as the standings tables, for
 // free (app.js's click handler just looks for the nearest .division-row).
-function renderFormGuideRow(entry: FormGuideEntry, rank: number, team: StandingsRow): string {
+function renderFormGuideRow(entry: FormGuideEntry, rank: number, team: StandingsRow, windowSize: number): string {
   const chips = entry.results
     .map((r) => `<span class="form-chip result-${r.toLowerCase()}">${r === "OTL" ? "OT" : r}</span>`)
     .join("");
   // Always FORM_GUIDE_WINDOW slots so rows line up, empty ones early in the season.
-  const empty = `<span class="form-chip is-empty"></span>`.repeat(Math.max(0, FORM_GUIDE_WINDOW - entry.results.length));
+  const empty = `<span class="form-chip is-empty"></span>`.repeat(Math.max(0, windowSize - entry.results.length));
 
   return `
     <div class="division-row form-row" style="--tc:${TEAM_COLORS[team.abbrev] ?? "var(--accent)"}">
@@ -179,28 +189,75 @@ function renderFormGuideRow(entry: FormGuideEntry, rank: number, team: Standings
         <span class="form-record">${entry.wins}-${entry.losses}-${entry.otLosses}</span>
         <span class="form-points">${entry.points}<small>/${entry.maxPoints} p</small></span>
       </span>
-      <span class="form-chips">${empty}${chips}</span>
+      <span class="form-chips" style="--n:${windowSize}">${empty}${chips}</span>
       <span class="form-bar" aria-hidden="true"><i style="width:${Math.round(entry.pointsPct * 100)}%"></i></span>
     </div>`;
 }
 
-function renderFormGuide(entries: FormGuideEntry[], teamsByAbbrev: Map<string, StandingsRow>): string {
+function renderFormTable(entries: FormGuideEntry[], teamsByAbbrev: Map<string, StandingsRow>, windowSize: number, title = ""): string {
   const rowsHtml = entries
     .map((entry, index) => {
       const team = teamsByAbbrev.get(entry.abbrev);
-      return team ? renderFormGuideRow(entry, index + 1, team) : "";
+      return team ? renderFormGuideRow(entry, index + 1, team, windowSize) : "";
     })
     .join("");
 
   return `
+  ${title ? `<h2 class="section-title">${escapeHtml(title)}</h2>` : ""}
   <div class="division-table">
     <div class="division-row division-header">
       <span class="division-rank"></span>
       <span class="division-team">Joukkue</span>
-      <span class="form-summary"><span>Viimeiset ${FORM_GUIDE_WINDOW} ottelua</span></span>
+      <span class="form-summary"><span>Viimeiset ${windowSize} ottelua</span></span>
     </div>
     ${rowsHtml}
   </div>`;
+}
+
+// One pre-rendered section per (window, scope); the inline script on the page
+// just shows the one matching the active pills.
+function renderFormGuide(recentGames: GameRow[], teamsByAbbrev: Map<string, StandingsRow>): string {
+  const teams = [...teamsByAbbrev.values()];
+  const groupBy = (key: (t: StandingsRow) => string) => [...new Set(teams.map(key))].sort();
+  return FORM_WINDOWS.flatMap((w) => {
+    const entries = computeFormGuide(recentGames, teams.map((t) => t.abbrev), w);
+    const tables = (scope: string): string => {
+      if (scope === "league") return renderFormTable(entries, teamsByAbbrev, w);
+      const key = scope === "conference" ? (t: StandingsRow) => t.conference : (t: StandingsRow) => `${t.conference}|${t.division}`;
+      return groupBy(key)
+        .map((g) =>
+          renderFormTable(
+            entries.filter((e) => teamsByAbbrev.get(e.abbrev) && key(teamsByAbbrev.get(e.abbrev)!) === g),
+            teamsByAbbrev,
+            w,
+            scope === "conference" ? `${g}-konferenssi` : g.split("|")[1],
+          ),
+        )
+        .join("");
+    };
+    return FORM_SCOPES.map(
+      (sc) => `<div class="form-sec${w === 10 && sc.key === "league" ? "" : " is-hidden"}" data-win="${w}" data-scope="${sc.key}">${tables(sc.key)}</div>`,
+    );
+  }).join("");
+}
+
+// Home/away standings derived from the finished games (standings_rows only
+// has overall numbers). Same row shape, so the normal renderers work.
+function venueRows(rows: StandingsRow[], games: GameRow[], venue: "home" | "away"): StandingsRow[] {
+  const by = new Map(rows.map((r) => [r.abbrev, { ...r, games_played: 0, wins: 0, losses: 0, ot_losses: 0, points: 0, goal_differential: 0, qualified: 0 }]));
+  for (const g of games) {
+    const abbrev = venue === "home" ? g.home_abbrev : g.away_abbrev;
+    const r = by.get(abbrev);
+    if (!r) continue;
+    const mine = venue === "home" ? g.home_score : g.away_score;
+    const theirs = venue === "home" ? g.away_score : g.home_score;
+    r.games_played++;
+    r.goal_differential += mine - theirs;
+    if (mine > theirs) { r.wins++; r.points += 2; }
+    else if (g.final_type !== "REG") { r.ot_losses++; r.points += 1; }
+    else r.losses++;
+  }
+  return [...by.values()];
 }
 
 export const onRequestGet: PagesFunction<Env> = async (context) => {
@@ -216,22 +273,35 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
   const confHeading = (name: string) => `<h2 class="section-title">${escapeHtml(name)}-konferenssi</h2>`;
 
-  const divisionView = conferenceNames
-    .map((conferenceName) => {
-      const conferenceRows = rows.filter((r) => r.conference === conferenceName);
-      const divisionNames = [...new Set(conferenceRows.map((r) => r.division))].sort();
-      const tables = divisionNames
-        .map((d) => renderRanked(d, conferenceRows.filter((r) => r.division === d).sort((a, b) => a.division_rank - b.division_rank)))
-        .join("");
-      return `<section>${confHeading(conferenceName)}${tables}</section>`;
-    })
-    .join("");
+  const { results: finishedGames } = await db
+    .prepare("SELECT away_abbrev, home_abbrev, away_score, home_score, final_type FROM games WHERE is_finished = 1")
+    .all<GameRow>();
 
-  const conferenceView = conferenceNames
-    .map((c) => `<section>${confHeading(c)}${renderRanked("Konferenssi", sortStandings(rows.filter((r) => r.conference === c)))}</section>`)
-    .join("");
+  const buildViews = (data: StandingsRow[], overall: boolean) => {
+    const divisionView = conferenceNames
+      .map((conferenceName) => {
+        const conferenceRows = data.filter((r) => r.conference === conferenceName);
+        const divisionNames = [...new Set(conferenceRows.map((r) => r.division))].sort();
+        const tables = divisionNames
+          .map((d) => {
+            const divRows = conferenceRows.filter((r) => r.division === d);
+            return renderRanked(d, overall ? divRows.sort((a, b) => a.division_rank - b.division_rank) : sortStandings(divRows));
+          })
+          .join("");
+        return `<section>${confHeading(conferenceName)}${tables}</section>`;
+      })
+      .join("");
+    const conferenceView = conferenceNames
+      .map((c) => `<section>${confHeading(c)}${renderRanked("Konferenssi", sortStandings(data.filter((r) => r.conference === c)))}</section>`)
+      .join("");
+    return { division: divisionView, conference: conferenceView, league: renderRanked("Liiga", sortStandings(data)) };
+  };
 
-  const leagueView = renderRanked("Liiga", sortStandings(rows));
+  const venueViews = {
+    all: buildViews(rows, true),
+    home: buildViews(venueRows(rows, finishedGames, "home"), false),
+    away: buildViews(venueRows(rows, finishedGames, "away"), false),
+  };
 
   const wildCardView = buildWildCardView(rows)
     .map((conf) => {
@@ -240,11 +310,13 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     })
     .join("");
 
+  const venueSections = (view: "division" | "conference" | "league") =>
+    VENUES.map((v) => `<div class="venue-sec${v.key === "all" ? "" : " is-hidden"}" data-venue="${v.key}">${venueViews[v.key as "all"][view]}</div>`).join("");
   const tabs: { key: string; label: string; html: string }[] = [
     { key: "wildcard", label: "Wild Card", html: wildCardView },
-    { key: "division", label: "Divisioona", html: divisionView },
-    { key: "conference", label: "Konferenssi", html: conferenceView },
-    { key: "league", label: "Liiga", html: leagueView },
+    { key: "division", label: "Divisioona", html: venueSections("division") },
+    { key: "conference", label: "Konferenssi", html: venueSections("conference") },
+    { key: "league", label: "Liiga", html: venueSections("league") },
   ];
   const tabButtons = tabs
     .map((t) => `<button type="button" class="standings-tab${t.key === "division" ? " active" : ""}" data-tab="${t.key}">${t.label}</button>`)
@@ -260,7 +332,6 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   const snapshotsJson = JSON.stringify(snapshots).replace(/<\//g, "<\\/");
 
   const teamsByAbbrev = new Map(rows.map((r) => [r.abbrev, r]));
-  const formGuideEntries = computeFormGuide(recentGames, rows.map((r) => r.abbrev), FORM_GUIDE_WINDOW);
 
   const content = `
 <header class="page-header">
@@ -278,14 +349,50 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   <p class="standings-legend">Klikkaa joukkuetta nähdäksesi sen viimeisimmät ottelut, pistepörssin
     ja seuraavan ottelun.</p>
   <div class="standings-tab-picker" role="tablist">${tabButtons}</div>
+  <div class="filter-pills" id="venue-picker">${VENUES.map((x) => `<button type="button" class="day-pill${x.key === "all" ? " active" : ""}" data-venue="${x.key}">${x.label}</button>`).join("")}</div>
   ${sections}
 </section>
 
 <section class="sarjataulukko-view-section is-hidden" data-view="form">
-  <p class="standings-legend">Joukkueet järjestetty pisteprosentin mukaan viimeisten ${FORM_GUIDE_WINDOW} ottelun
-    ajalta. Klikkaa joukkuetta nähdäksesi sen viimeisimmät ottelut, pistepörssin ja seuraavan ottelun.</p>
-  ${renderFormGuide(formGuideEntries, teamsByAbbrev)}
+  <p class="standings-legend">Joukkueet järjestetty pisteprosentin mukaan viimeisten ottelujen ajalta.
+    Klikkaa joukkuetta nähdäksesi sen viimeisimmät ottelut, pistepörssin ja seuraavan ottelun.</p>
+  <div class="filter-pills" id="form-win-picker">${FORM_WINDOWS.map((w) => `<button type="button" class="day-pill${w === 10 ? " active" : ""}" data-win="${w}">${w} ottelua</button>`).join("")}</div>
+  <div class="filter-pills" id="form-scope-picker">${FORM_SCOPES.map((x) => `<button type="button" class="day-pill${x.key === "league" ? " active" : ""}" data-scope="${x.key}">${x.label}</button>`).join("")}</div>
+  ${renderFormGuide(recentGames, teamsByAbbrev)}
 </section>
+
+<script>
+(function () {
+  // Pill groups -> show the matching pre-rendered section(s).
+  function wire(pickerId, sectionSel, key) {
+    var picker = document.getElementById(pickerId);
+    if (!picker) return;
+    picker.addEventListener("click", function (e) {
+      var pill = e.target.closest(".day-pill");
+      if (!pill) return;
+      picker.querySelectorAll(".day-pill").forEach(function (p) { p.classList.toggle("active", p === pill); });
+      sync();
+    });
+  }
+  function active(id, key) {
+    var el = document.querySelector("#" + id + " .day-pill.active");
+    return el && el.dataset[key];
+  }
+  function sync() {
+    var v = active("venue-picker", "venue");
+    document.querySelectorAll(".venue-sec").forEach(function (s) { s.classList.toggle("is-hidden", s.dataset.venue !== v); });
+    var w = active("form-win-picker", "win"), sc = active("form-scope-picker", "scope");
+    document.querySelectorAll(".form-sec").forEach(function (s) { s.classList.toggle("is-hidden", s.dataset.win !== w || s.dataset.scope !== sc); });
+  }
+  wire("venue-picker"); wire("form-win-picker"); wire("form-scope-picker");
+  // Wild Card is always the overall table, so the venue pills don't apply there.
+  var venue = document.getElementById("venue-picker");
+  document.querySelector(".standings-tab-picker").addEventListener("click", function (e) {
+    var tab = e.target.closest(".standings-tab");
+    if (tab) venue.hidden = tab.dataset.tab === "wildcard";
+  });
+})();
+</script>
 
 <script id="team-snapshots" type="application/json">${snapshotsJson}</script>
 `;
