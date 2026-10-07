@@ -1,5 +1,5 @@
 // /joukkueet: all 32 teams as stat-cards (logo -> team page, record, season
-// xG with league-rank badges). Alphabetical; the xG sort lives on /odotetut.
+// xG with league-rank badges). Grouped by division; the xG sort lives on /odotetut.
 
 import { TEAM_COLORS } from "../_shared/teamColors";
 import { icon, escapeHtml } from "../_shared/format";
@@ -10,7 +10,7 @@ import { fetchLeagueTeamXg, rankBadge, rankedTeamXg } from "../_shared/xg";
 export const onRequestGet: PagesFunction<Env> = async (context) => {
   const db = context.env.DB;
   const [{ results: teams }, league] = await Promise.all([
-    db.prepare("SELECT * FROM standings_rows ORDER BY name").all<StandingsRow>(),
+    db.prepare("SELECT * FROM standings_rows ORDER BY conference, division, name").all<StandingsRow>(),
     fetchLeagueTeamXg(db),
   ]);
   const xg = new Map(rankedTeamXg(league).map((r) => [r.abbrev, r]));
@@ -18,8 +18,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   const cell = (label: string, value: string, rank = "") =>
     `<div class="stat-card-cell"><span class="stat-card-label">${label}</span><span class="stat-card-value">${value}${rank}</span></div>`;
 
-  const cards = teams
-    .map((t) => {
+  const card = (t: StandingsRow) => {
       const x = xg.get(t.abbrev);
       return `
 <div class="stat-card" style="--tc:${TEAM_COLORS[t.abbrev] ?? "var(--accent)"}">
@@ -34,7 +33,13 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     ${cell("xGA", x ? x.xga.toFixed(1) : "–", x ? rankBadge(x.rankXga) : "")}
   </div>
 </div>`;
-    })
+  };
+  const divisions = [...new Set(teams.map((t) => t.division))];
+  const cards = divisions
+    .map(
+      (d) =>
+        `<section class="team-index-group"><h2 class="section-title">${escapeHtml(d)}</h2>${teams.filter((t) => t.division === d).map(card).join("")}</section>`,
+    )
     .join("");
 
   const content = `

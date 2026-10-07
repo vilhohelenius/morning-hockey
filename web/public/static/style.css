@@ -5577,14 +5577,31 @@ main {
   }
 }
 
-/* Joukkueet-listaus leveällä ruudulla: leveämpi sivu, kolme saraketta. */
+/* Joukkueet-listaus: divisioonaryhmät; leveällä ruudulla 2 tai 4 saraketta. */
+.team-index-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.team-index-grid {
+  grid-template-columns: 1fr;
+}
+
 @media (min-width: 860px) {
   main:has(.team-index-grid) {
     max-width: 1100px;
   }
 
   .team-index-grid {
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 12px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px 12px;
+    align-items: start;
+  }
+}
+
+@media (min-width: 1300px) {
+  .team-index-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
