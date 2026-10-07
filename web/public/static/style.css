@@ -4671,7 +4671,15 @@ main {
 
 /* Poistuva puoli häivytetään heti käännön alussa ja saapuva tuodaan esiin
    vasta kun kortti on reunasta (0.225 s), jolloin kuva/logo eivät vuoda läpi. */
+/* Taustat pysyvät aina näkyvissä (backface piilottaa väärän puolen), vain
+   sisältö häivytetään, ettei kortti katoa hetkeksi. */
 .hero-banner.player-hero-face {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.hero-banner.player-hero-face > *,
+.hero-banner.player-hero-face::after {
   opacity: 0;
   visibility: hidden;
   transition: opacity 0.12s ease 0.03s, visibility 0s 0.225s;
@@ -4681,8 +4689,10 @@ main {
   transform: rotateY(180deg);
 }
 
-.player-hero-flip:not(.is-flipped) .hero-banner.player-hero-front,
-.player-hero-flip.is-flipped .hero-banner.player-hero-back {
+.player-hero-flip:not(.is-flipped) .hero-banner.player-hero-front > *,
+.player-hero-flip:not(.is-flipped) .hero-banner.player-hero-front::after,
+.player-hero-flip.is-flipped .hero-banner.player-hero-back > *,
+.player-hero-flip.is-flipped .hero-banner.player-hero-back::after {
   opacity: 1;
   visibility: visible;
   transition: opacity 0.15s ease 0.225s, visibility 0s 0.225s;
