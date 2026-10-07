@@ -111,7 +111,9 @@ def _build_goalies(client: NHLClient, season_id: int, raw_roster: dict) -> list[
     sort = '[{"property":"savePct","direction":"DESC"}]'
     stats_by_id = {row["playerId"]: row for row in client.goalie_summary(cayenne_exp, sort, limit=-1)}
 
-    nationality_by_id = {row["playerId"]: row["nationalityCode"] for row in client.goalie_bios(cayenne_exp, sort, limit=-1)}
+    # goalie/bios 400s on non-bios sort columns (savePct), so sort by playerId.
+    bios_sort = '[{"property":"playerId","direction":"ASC"}]'
+    nationality_by_id = {row["playerId"]: row["nationalityCode"] for row in client.goalie_bios(cayenne_exp, bios_sort, limit=-1)}
 
     goalies = []
     for player in raw_roster.get("goalies", []):
