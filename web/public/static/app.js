@@ -566,13 +566,13 @@
         pill.appendChild(mtLogo(item.team_abbrev));
         pill.appendChild(el("span", "mt-pill-score", item.away_score + " - " + item.home_score));
         main.appendChild(pill);
-        if (item.strength) main.appendChild(el("span", "mt-strength mt-strength-tag", MT_STRENGTH[item.strength] || item.strength));
         who.appendChild(elFlags("strong", null, item.scorer_short || item.scorer));
         var col = el("div", "mt-col");
         col.appendChild(who);
         var assists = item.assists_short || item.assists || [];
         if (assists.length) col.appendChild(elFlags("p", "mt-assists", assists.join(" · ")));
         main.appendChild(col);
+        if (item.strength) main.appendChild(el("span", "mt-strength mt-strength-tag", MT_STRENGTH[item.strength] || item.strength));
         row.appendChild(main);
       } else {
         main.appendChild(el("span", "mt-badge", item.minutes > 0 ? String(item.minutes) : "RL"));
@@ -655,7 +655,7 @@
       wrap.appendChild(header);
       var awayColor = TEAM_COLORS[awayAbbrev] || "var(--accent)";
       var homeColor = TEAM_COLORS[homeAbbrev] || "color-mix(in srgb, var(--accent) 45%, transparent)";
-      var HIDDEN_STATS = ["Torjuntaprosentti", "Aloitusprosentti", "Taklaukset", "Blokatut", "Kiekon menetykset", "Kiekon riistot", "xGF% 5v5"];
+      var HIDDEN_STATS = ["Torjuntaprosentti", "Aloitusprosentti", "Taklaukset", "Blokatut", "Kiekon menetykset", "Kiekon riistot", "xGF%"];
       stats.forEach(function (stat) {
         if (HIDDEN_STATS.some(function (label) { return stat.label.indexOf(label) === 0; })) return;
         var block = el("div", "gd-stat-block");
@@ -745,7 +745,22 @@
 
       var body = el("div", "team-detail-body");
       body.appendChild(renderTimeline(data.timeline || [], awayAbbrev));
-      body.appendChild(renderTeamStats(data.team_stats || [], awayAbbrev, homeAbbrev));
+      var statRows = (data.team_stats || []).slice();
+      var goalsAway = 0;
+      var goalsHome = 0;
+      (data.timeline || []).forEach(function (period) {
+        goalsAway += period.away_goals || 0;
+        goalsHome += period.home_goals || 0;
+      });
+      if ((data.timeline || []).length) {
+        var goalRow = { label: "Maalit", away_value: String(goalsAway), home_value: String(goalsHome) };
+        if (goalsAway + goalsHome > 0) {
+          goalRow.away_pct = (100 * goalsAway) / (goalsAway + goalsHome);
+          goalRow.home_pct = (100 * goalsHome) / (goalsAway + goalsHome);
+        }
+        statRows.unshift(goalRow);
+      }
+      body.appendChild(renderTeamStats(statRows, awayAbbrev, homeAbbrev));
       panel.appendChild(body);
 
       if (data.youtube_url) {

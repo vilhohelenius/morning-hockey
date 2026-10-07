@@ -3238,7 +3238,7 @@ main {
 
 .mt-assists {
   margin: 1px 0 0;
-  padding: 0 4px;
+  padding: 0;
   color: var(--muted);
   font-size: 0.8rem;
 }
@@ -4644,10 +4644,10 @@ main {
 
 .player-hero-front .player-hero-photo {
   border-radius: 0;
-  max-width: 130px;
-  max-height: 130px;
-  width: 36vw;
-  height: 36vw;
+  max-width: 150px;
+  max-height: 150px;
+  width: 40vw;
+  height: 40vw;
   object-position: center bottom;
 }
 
@@ -4658,34 +4658,34 @@ main {
   filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5));
 }
 
-/* Kortin puolet vaihtuvat heti (nopea häivytys, ei 3D-kääntöä: ei peilausta, ei viivettä). */
+/* Käännön aikana näkyvä puoli vaihdetaan visibilityllä animaation puolivälissä
+   (0.225 s / 0.45 s), ettei backface-visibility (Safari) vuoda peilikuvaa. */
+.player-hero-flip {
+  perspective: 1200px;
+}
+
+.player-hero-flip-inner {
+  min-height: 245px;
+  transition: transform 0.45s ease;
+}
+
 .hero-banner.player-hero-face {
-  transition: opacity 0.15s ease, visibility 0s;
+  transition: visibility 0s 0.225s;
 }
 
 .hero-banner.player-hero-back {
-  transform: none;
-  opacity: 0;
+  transform: rotateY(180deg);
   visibility: hidden;
 }
 
-.player-hero-flip.is-flipped .player-hero-flip-inner {
-  transform: none;
-}
-
 .player-hero-flip.is-flipped .player-hero-front {
-  opacity: 0;
   visibility: hidden;
 }
 
 .player-hero-flip.is-flipped .hero-banner.player-hero-back {
-  opacity: 1;
   visibility: visible;
 }
 
-.player-hero-flip-inner {
-  min-height: 270px;
-}
 
 .mt-strength-tag {
   align-self: center;
@@ -4733,4 +4733,30 @@ main {
 
 .matchup-seed {
   font-size: 0.78rem;
+}
+
+.mt-col .mt-who {
+  display: block;
+}
+
+.player-hero-front h1 {
+  font-size: clamp(1.8rem, 8vw, 2.4rem);
+}
+
+/* Bracket: nauha lyhyempi ja irti reunasta, logolle tilaa */
+.matchup-team {
+  position: relative;
+  box-shadow: none;
+  padding-left: 18px;
+}
+
+.matchup-team::before {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 7px;
+  bottom: 7px;
+  width: 4px;
+  border-radius: 2px;
+  background: var(--tc, transparent);
 }
