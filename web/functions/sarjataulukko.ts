@@ -203,6 +203,7 @@ function renderFormTable(entries: FormGuideEntry[], teamsByAbbrev: Map<string, S
     .join("");
 
   return `
+  <div class="form-block">
   ${title ? `<h2 class="section-title">${escapeHtml(title)}</h2>` : ""}
   <div class="division-table">
     <div class="division-row division-header">
@@ -211,6 +212,7 @@ function renderFormTable(entries: FormGuideEntry[], teamsByAbbrev: Map<string, S
       <span class="form-summary"><span>Viimeiset ${windowSize} ottelua</span></span>
     </div>
     ${rowsHtml}
+  </div>
   </div>`;
 }
 

@@ -5499,3 +5499,44 @@ main {
   padding-left: 6px;
   padding-right: 6px;
 }
+
+/* Sarjataulukko leveällä ruudulla: konferenssit/divisioonat rinnakkain. */
+@media (min-width: 1300px) {
+  main:has(.sarjataulukko-view-picker) {
+    max-width: 1100px;
+  }
+
+  .standings-tab-section[data-tab="wildcard"],
+  .venue-sec:has(> section) {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+    align-items: start;
+  }
+
+  .form-sec {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 24px;
+    align-items: start;
+  }
+
+  .form-sec > .form-block:only-child {
+    grid-column: 1 / -1;
+  }
+
+  .form-sec > .form-block:only-child .division-table {
+    display: block;
+    column-count: 2;
+    column-gap: 24px;
+  }
+
+  .form-sec > .form-block:only-child .division-row {
+    break-inside: avoid;
+    margin-bottom: 4px;
+  }
+
+  .form-sec > .form-block:only-child .division-header {
+    display: none;
+  }
+}
