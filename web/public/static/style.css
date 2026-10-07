@@ -4772,3 +4772,42 @@ main {
   border-radius: 2px;
   background: var(--tc, transparent);
 }
+
+/* Labelit: Bio sentence case + Teko-arvot, osio-otsikot Tekolla ilman kapitaaleja */
+.player-hero-back-title {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.player-hero-bio-label {
+  font-size: 0.75rem;
+  text-transform: none;
+  letter-spacing: 0;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.player-hero-bio-value {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: 0.01em;
+}
+
+.player-hero-bio-value .flag-img {
+  vertical-align: -2px;
+}
+
+.tp-section-title,
+.division-header,
+.roster-group-title {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0.02em;
+}
