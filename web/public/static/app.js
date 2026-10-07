@@ -1,4 +1,17 @@
 (function () {
+    // Kept in sync by hand with functions/_shared/teamColors.ts -- this
+    // project has no build step, so app.js can't import the .ts module and
+    // duplicates the map instead.
+    var TEAM_COLORS = {
+      ANA: "#F47A38", BOS: "#FFB81C", BUF: "#002654", CAR: "#CC0000", CBJ: "#002654",
+      CGY: "#D2001C", CHI: "#CF0A2C", COL: "#6F263D", DAL: "#006847", DET: "#CE1126",
+      EDM: "#FF4C00", FLA: "#C8102E", LAK: "#A2AAAD", MIN: "#154734", MTL: "#AF1E2D",
+      NJD: "#CE1126", NSH: "#FFB81C", NYI: "#00539B", NYR: "#0038A8", OTT: "#C52032",
+      PHI: "#F74902", PIT: "#FCB514", SEA: "#99D9D9", SJS: "#006D75", STL: "#002F87",
+      TBL: "#002868", TOR: "#00205B", UTA: "#71AFE5", VAN: "#00205B", VGK: "#B4975A",
+      WPG: "#041E42", WSH: "#C8102E",
+    };
+
   var sidebar = document.getElementById("sidebar");
   var backdrop = document.getElementById("backdrop");
   var openBtn = document.getElementById("sidebar-open");
@@ -422,22 +435,16 @@
       return wrap;
     }
 
-    // Same 4-layer composite as teamHeroBackgroundStyle() in
-    // _shared/format.ts (team "wires" crest + jersey texture, both
-    // already team-colored) -- duplicated here in plain JS since this
-    // panel is built client-side and app.js has no build step to import
-    // the TS helper from. Keep the two in sync if the recipe ever changes.
+    // Same recipe as teamHeroBackgroundStyle() in _shared/format.ts (own
+    // dotted jersey texture on the team color) -- duplicated since app.js
+    // has no build step. Keep the two in sync.
     function applyTeamHeroBackground(node, abbrev) {
-      var wires = "https://assets.nhle.com/logos/nhl/wires/" + abbrev + ".svg";
-      var texture = "https://assets.nhle.com/textures/nhl/jersey/png/" + abbrev + ".png";
-      node.style.backgroundImage =
-        'radial-gradient(50% 100% at 50% 0%, rgba(0,0,0,0) 0%, rgba(0,0,0,0.65) 100%), ' +
-        'url("' + wires + '"), ' +
-        'linear-gradient(rgba(0,0,0,0) 0%, rgb(0,0,0) 100%), ' +
-        'url("' + texture + '")';
-      node.style.backgroundSize = "auto, 400px auto, auto, 42px 42px";
-      node.style.backgroundPosition = "0% 0%, 50% 50%, 0% 0%, 0% 0%";
-      node.style.backgroundRepeat = "repeat, no-repeat, repeat, repeat";
+      var dots = "radial-gradient(circle, rgba(0,0,0,0.28) 1.6px, transparent 2.2px)";
+      node.style.backgroundColor = TEAM_COLORS[abbrev] || "#444444";
+      node.style.backgroundImage = dots + ", " + dots + ", linear-gradient(rgba(0,0,0,0.38), rgba(0,0,0,0.38))";
+      node.style.backgroundSize = "10px 10px, 10px 10px, auto";
+      node.style.backgroundPosition = "0 0, 5px 5px, 0 0";
+      node.style.backgroundRepeat = "repeat, repeat, no-repeat";
     }
 
     function closeDetail() {
@@ -634,18 +641,6 @@
       return match ? parseFloat(match[0]) : null;
     }
 
-    // Kept in sync by hand with functions/_shared/teamColors.ts -- this
-    // project has no build step, so app.js can't import the .ts module and
-    // duplicates the map instead.
-    var TEAM_COLORS = {
-      ANA: "#F47A38", BOS: "#FFB81C", BUF: "#002654", CAR: "#CC0000", CBJ: "#002654",
-      CGY: "#D2001C", CHI: "#CF0A2C", COL: "#6F263D", DAL: "#006847", DET: "#CE1126",
-      EDM: "#FF4C00", FLA: "#C8102E", LAK: "#A2AAAD", MIN: "#154734", MTL: "#AF1E2D",
-      NJD: "#CE1126", NSH: "#FFB81C", NYI: "#00539B", NYR: "#0038A8", OTT: "#C52032",
-      PHI: "#F74902", PIT: "#FCB514", SEA: "#99D9D9", SJS: "#006D75", STL: "#002F87",
-      TBL: "#002868", TOR: "#00205B", UTA: "#71AFE5", VAN: "#00205B", VGK: "#B4975A",
-      WPG: "#041E42", WSH: "#C8102E",
-    };
 
     function renderTeamStats(stats, awayAbbrev, homeAbbrev) {
       var wrap = section("Ottelun tilastot");

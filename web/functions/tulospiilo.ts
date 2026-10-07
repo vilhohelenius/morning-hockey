@@ -131,7 +131,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       const listed = new Set(Object.keys(gameDetails).map(Number));
       bingoHtml = renderBingoSection(
         rows,
-        teamHeroBackgroundStyle("BOS", false),
+        teamHeroBackgroundStyle("NHL", false),
         { showScore: false, gated: true, gateFor: (id) => (listed.has(id) ? String(id) : "all") },
         now,
       );

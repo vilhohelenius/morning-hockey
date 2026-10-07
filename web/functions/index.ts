@@ -83,7 +83,7 @@ function renderLeagueSkaterRow(row: SkaterStatsRow, rank: number): string {
             <img src="${escapeHtml(row.headshot)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
             <span class="player-name">
               ${escapeHtml(row.name)}
-              <span class="player-meta">${nationalityFlag(row.nationality)} ${escapeHtml(row.nationality)} · ${escapeHtml(row.position)} · <img src="${escapeHtml(row.logo)}" alt="${escapeHtml(row.team_abbrev)}" class="table-team-logo" loading="lazy"></span>
+              <span class="player-meta">${nationalityFlag(row.nationality)} · ${escapeHtml(row.position)} · <img src="${escapeHtml(row.logo)}" alt="${escapeHtml(row.team_abbrev)}" class="table-team-logo" loading="lazy"></span>
             </span>
           </a>
         </td>
@@ -454,7 +454,7 @@ ${favoriteTeamsHtml}
 
 ${statTeaserTable(`${flagImg("fi")} Suomipörssin kärki`, finSkaters.map((r, i) => renderFinnishSkaterRow(r, i + 1)), "Ei tilastoituja suomalaispelaajia vielä.", "/suomiporssi", "Koko Suomipörssi →", teamHeroBackgroundStyle("NYR", false))}
 
-${statTeaserTable(`${icon("trend")} NHL:n kärkipörssi`, leagueSkaters.map((r, i) => renderLeagueSkaterRow(r, i + 1)), "Ei tilastoituja pelaajia vielä.", "/tilastot", "Koko Tilastot →", teamHeroBackgroundStyle("BOS", false))}
+${statTeaserTable(`${icon("trend")} NHL:n kärkipörssi`, leagueSkaters.map((r, i) => renderLeagueSkaterRow(r, i + 1)), "Ei tilastoituja pelaajia vielä.", "/tilastot", "Koko Tilastot →", teamHeroBackgroundStyle("NHL", false))}
 
 ${upcomingHtml}
 

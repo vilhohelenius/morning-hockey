@@ -103,7 +103,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     : `<p class="empty-note">Ei vielä pelaajia lapussa.</p>`;
 
   const resultsHtml = rows.length
-    ? renderBingoSection(rows, teamHeroBackgroundStyle("BOS", false), { showScore: !gated, gated }, now) +
+    ? renderBingoSection(rows, teamHeroBackgroundStyle("NHL", false), { showScore: !gated, gated }, now) +
       (gated
         ? `<button type="button" class="filter-btn bingo-reveal" id="bingo-reveal">Näytä tulokset</button>
 <script>

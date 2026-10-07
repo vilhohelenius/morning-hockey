@@ -103,7 +103,7 @@ function renderRow(row: SkaterStatsRow, rank: number, hl: HighlightOptions): str
             <img src="${escapeHtml(row.headshot)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
             <span class="player-name">
               <span class="player-name-line">${escapeHtml(row.name)}${highlightDots(row.nationality, row.team_abbrev, hl)}</span>
-              <span class="player-meta">${nationalityFlag(row.nationality)} ${escapeHtml(row.nationality)} · ${escapeHtml(row.position)} · <img src="${escapeHtml(row.logo)}" alt="${escapeHtml(row.team_abbrev)}" class="table-team-logo" loading="lazy"></span>
+              <span class="player-meta">${nationalityFlag(row.nationality)} · ${escapeHtml(row.position)} · <img src="${escapeHtml(row.logo)}" alt="${escapeHtml(row.team_abbrev)}" class="table-team-logo" loading="lazy"></span>
             </span>
           </a>
         </td>
@@ -177,7 +177,7 @@ function renderGoalieRow(row: GoalieStatsRow, rank: number, hl: HighlightOptions
             <img src="${escapeHtml(row.headshot)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
             <span class="player-name">
               <span class="player-name-line">${escapeHtml(row.name)}${highlightDots(row.nationality, row.team_abbrev, hl)}</span>
-              <span class="player-meta">${nationalityFlag(row.nationality)} ${escapeHtml(row.nationality)} · <img src="${escapeHtml(row.logo)}" alt="${escapeHtml(row.team_abbrev)}" class="table-team-logo" loading="lazy"></span>
+              <span class="player-meta">${nationalityFlag(row.nationality)} · <img src="${escapeHtml(row.logo)}" alt="${escapeHtml(row.team_abbrev)}" class="table-team-logo" loading="lazy"></span>
             </span>
           </a>
         </td>

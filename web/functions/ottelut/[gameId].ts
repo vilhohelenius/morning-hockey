@@ -86,7 +86,7 @@ function renderSkaterTable(skaters: PlayerGameStat[], ixg: Map<number, number>):
             <img src="${escapeHtml(p.headshot)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
             <span class="player-name">
               ${escapeHtml(p.name)}
-              <span class="player-meta">${nationalityFlag(p.nationality)} ${escapeHtml(p.nationality)} · ${escapeHtml(p.position)}</span>
+              <span class="player-meta">${nationalityFlag(p.nationality)} · ${escapeHtml(p.position)}</span>
             </span>
           </a>
         </td>
@@ -156,7 +156,7 @@ function renderGoalieTable(goalies: GoalieGameStat[], gsax: Map<number, number>)
             <img src="${escapeHtml(g.headshot)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
             <span class="player-name">
               ${escapeHtml(g.name)}
-              <span class="player-meta">${nationalityFlag(g.nationality)} ${escapeHtml(g.nationality)}</span>
+              <span class="player-meta">${nationalityFlag(g.nationality)}</span>
             </span>
           </a>
         </td>

@@ -2,6 +2,7 @@
 // short_date so page output reads the same as the existing Jinja2 site.
 
 import type { GameRow } from "./types";
+import { TEAM_COLORS } from "./teamColors";
 
 export function formatToi(seconds: number): string {
   const total = Math.round(seconds);
@@ -55,12 +56,13 @@ export function teamLogoUrl(abbrev: string): string {
 // stays theme-correct either way.
 export function teamHeroBackgroundStyle(abbrev: string | null | undefined, _includeCrest = true): string {
   if (!abbrev) return "";
-  const texture = `https://assets.nhle.com/textures/nhl/jersey/png/${abbrev}.png`;
+  const dots = "radial-gradient(circle, rgba(0,0,0,0.28) 1.6px, transparent 2.2px)";
   return [
-    `background-image: radial-gradient(50% 100% at 50% 0%, rgba(0,0,0,0) 0%, var(--hero-shade-strong) 100%), linear-gradient(rgba(0,0,0,0) 0%, var(--hero-shade-fade) 100%), url("${texture}")`,
-    `background-size: auto, auto, 42px 42px`,
-    `background-position: 0% 0%, 0% 0%, 0% 0%`,
-    `background-repeat: repeat, repeat, repeat`,
+    `background-color: ${TEAM_COLORS[abbrev] ?? "#444444"}`,
+    `background-image: ${dots}, ${dots}, linear-gradient(rgba(0,0,0,0.38), rgba(0,0,0,0.38))`,
+    `background-size: 10px 10px, 10px 10px, auto`,
+    `background-position: 0 0, 5px 5px, 0 0`,
+    `background-repeat: repeat, repeat, no-repeat`,
   ].join("; ");
 }
 
