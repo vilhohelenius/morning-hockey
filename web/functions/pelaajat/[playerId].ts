@@ -751,6 +751,8 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   const content = `
 <a class="back-link js-back" href="/">← Takaisin</a>
 
+<div class="split">
+<div class="split-side">
 <div class="player-hero-flip js-player-hero-flip" role="button" tabindex="0" aria-pressed="false" aria-label="Käännä kortti nähdäksesi pelaajan taustatiedot">
   ${
     username
@@ -781,6 +783,8 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     </div>
   </div>
 </div>
+</div>
+<div class="split-main">
 
 ${renderPeriodStatsSection(
   isGoalie,
@@ -808,6 +812,8 @@ ${renderSeasonHistorySection(isGoalie, regularSeasonHistory, playoffHistory, car
   }
   ${gameLogHtml}
 </section>
+</div>
+</div>
 `;
 
   const html = await renderLayout({

@@ -189,6 +189,8 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   const content = `
 <a class="back-link js-back" href="/sarjataulukko">← Takaisin</a>
 
+<div class="split">
+<div class="split-side">
 <header class="page-header team-page-header hero-banner" data-abbr="${escapeHtml(abbrev)}" style="${escapeHtml(teamHeroBackgroundStyle(abbrev))}">
   ${
     username
@@ -208,6 +210,8 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     </p>
   </div>
 </header>
+</div>
+<div class="split-main">
 
 ${renderSeasonStats(seasonStats ?? null, teamXg, allSeasonStats, leagueXg, teamId)}
 
@@ -235,6 +239,8 @@ ${renderDivisionTable(division, abbrev)}
 
 ${skaters.length ? renderRosterSkaterTable(skaters, `${icon("puck")} Rosteri`) : ""}
 ${goalies.length ? renderRosterGoalieTable(goalies, `${icon("goal")} Maalivahdit`, false, undefined, goalieGsax) : ""}
+</div>
+</div>
 `;
 
   const html = await renderLayout({
