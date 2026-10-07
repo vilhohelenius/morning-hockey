@@ -5391,3 +5391,6 @@ main {
   font: 500 0.95rem/1.2 var(--font-body, inherit);
   color: var(--muted);
 }
+
+#day-title { line-height: 1.05; }
+#day-title .day-title-sub { margin-top: 0; line-height: 1.1; }
