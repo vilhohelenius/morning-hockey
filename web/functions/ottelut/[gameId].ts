@@ -41,7 +41,7 @@ import { computeFormGuide, type FormGuideEntry } from "../_shared/formGuide";
 import { escapeHtml, finalTypeFi, helsinkiParts, humanDate, nationalityFlag } from "../_shared/format";
 import { isLive } from "../_shared/gameCard";
 import { renderRosterGoalieTable, renderRosterSkaterTable } from "../_shared/leaderboard";
-import { TEAM_COLORS } from "../_shared/teamColors";
+import { TEAM_COLORS, jerseyColors } from "../_shared/teamColors";
 import { resolveHighlightsUrl } from "../_shared/youtube";
 import { renderLayout } from "../_shared/layout";
 import type {
@@ -465,8 +465,10 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   <p class="subtitle">${escapeHtml(humanDate(game.date))}</p>
 </header>
 
-<section class="game-card">
+<section class="game-card jersey-card" style="--ca:${jerseyColors(game.away_abbrev, game.home_abbrev)[0]};--ch:${jerseyColors(game.away_abbrev, game.home_abbrev)[1]}">
   <div class="score-row">
+    <span class="jc-half jc-away" data-abbr="${escapeHtml(game.away_abbrev)}" aria-hidden="true"></span>
+    <span class="jc-half jc-home" data-abbr="${escapeHtml(game.home_abbrev)}" aria-hidden="true"></span>
     <div class="team away">
       <img src="${escapeHtml(game.away_logo)}" alt="" class="logo" loading="lazy">
       <span class="abbrev">${escapeHtml(game.away_abbrev)}</span>

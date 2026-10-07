@@ -8,6 +8,7 @@
 // (matching the original: the day-picker must have a pill for every day,
 // and an empty day shows "Ei otteluita tänä päivänä" rather than vanishing).
 
+import { jerseyColors } from "./_shared/teamColors";
 import { addDays, escapeHtml, helsinkiParts, helsinkiToday, humanDate, shortWeekdayDate } from "./_shared/format";
 import { renderLayout } from "./_shared/layout";
 import type { Env, GameRow } from "./_shared/types";
@@ -22,7 +23,7 @@ function renderGameRow(game: GameRow): string {
     : `<span class="primetime-score primetime-score-pending">–</span>`;
 
   return `
-    <a class="primetime-row ${game.is_finished ? "is-finished" : ""}" href="/ottelut/${game.game_id}">
+    <a class="primetime-row ${game.is_finished ? "is-finished" : ""}" style="--ca:${jerseyColors(game.away_abbrev, game.home_abbrev)[0]};--ch:${jerseyColors(game.away_abbrev, game.home_abbrev)[1]}" href="/ottelut/${game.game_id}">
       <span class="primetime-time">${time}</span>
       <span class="primetime-matchup">
         <img src="${escapeHtml(game.away_logo)}" alt="" class="schedule-logo" loading="lazy">
