@@ -31,9 +31,6 @@ ON CONFLICT(game_id) DO UPDATE SET
     is_finished = excluded.is_finished,
     final_type = excluded.final_type,
     updated_at = excluded.updated_at
-WHERE away_score IS NOT excluded.away_score OR home_score IS NOT excluded.home_score
-    OR game_state IS NOT excluded.game_state OR is_finished IS NOT excluded.is_finished
-    OR final_type IS NOT excluded.final_type
 """
 
 
