@@ -12,7 +12,7 @@ import argparse
 import datetime as dt
 import os
 
-from .d1_sync import D1Client, sync_schedule
+from .d1_sync import D1Client, sync_schedule, unprocessed_xg_game_ids
 from .nhl_api import NHLClient
 from .schedule import build_schedule
 
@@ -38,6 +38,16 @@ def run(date: str = "now", weeks: int = 1) -> None:
 
     if weeks > 1:
         print(f"Done: synced {total} games total across {weeks} week(s).")
+
+    # Tell the workflow whether finished games still lack xG, so it only then
+    # installs the heavy xG deps and scores them. The 2-day window stops a game
+    # whose play-by-play never turns up from triggering this forever.
+    since = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=2)).isoformat(timespec="seconds")
+    pending = bool(unprocessed_xg_game_ids(d1, 1, since))
+    print(f"pending_xg={str(pending).lower()}")
+    if "GITHUB_OUTPUT" in os.environ:
+        with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+            output.write(f"pending_xg={str(pending).lower()}\n")
 
 
 def main() -> None:

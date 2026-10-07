@@ -15,7 +15,7 @@ import os
 
 import requests
 
-from .d1_sync import D1Client, query_game_ids, sync_onice_games, sync_team_xg_games, sync_xg_games
+from .d1_sync import D1Client, query_game_ids, unprocessed_xg_game_ids, sync_onice_games, sync_team_xg_games, sync_xg_games
 from .nhl_api import NHLClient
 from .xg.compute import compute_game, compute_team_game
 from .winprob.inputs import compute_wp_inputs
@@ -67,12 +67,7 @@ def _flush(d1: D1Client, skaters: list[dict], goalies: list[dict], teams: list[d
 
 
 def unprocessed_games(d1: D1Client) -> list[int]:
-    return query_game_ids(
-        d1,
-        "SELECT game_id FROM games WHERE is_finished = 1 AND substr(game_id, 5, 2) = '02' "
-        "AND game_id NOT IN (SELECT game_id FROM skater_game_xg) ORDER BY game_id LIMIT ?",
-        [_MAX_PER_RUN],
-    )
+    return unprocessed_xg_game_ids(d1, _MAX_PER_RUN)
 
 
 def _season_game_ids(season: int) -> list[int]:

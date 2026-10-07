@@ -595,3 +595,10 @@ CREATE TABLE IF NOT EXISTS game_win_prob (
     goalie REAL NOT NULL,
     context REAL NOT NULL
 );
+
+-- Hash of the last successful write per slow-tier section (sync_if_changed in
+-- d1_sync.py), so an unchanged section isn't deleted and reinserted.
+CREATE TABLE IF NOT EXISTS sync_state (
+    key  TEXT PRIMARY KEY,
+    hash TEXT NOT NULL
+);

@@ -11,6 +11,7 @@ import os
 
 from .d1_sync import (
     D1Client,
+    sync_if_changed,
     sync_finnish_goalies,
     sync_finnish_skaters,
     sync_goalie_stats,
@@ -28,6 +29,11 @@ from .suomiporssi import build_goalie_leaderboard, build_leaderboard, current_se
 from .team import build_all_team_rosters, build_all_team_season_stats
 
 
+def _sync(d1: D1Client, key: str, data, write, label: str) -> None:
+    result = sync_if_changed(d1, key, data, write)
+    print(f"{label}: unchanged, skipped." if result is None else f"{label}: wrote {result}.")
+
+
 def run() -> None:
     account_id = os.environ["CF_ACCOUNT_ID"]
     database_id = os.environ["CF_D1_DATABASE_ID"]
@@ -35,42 +41,35 @@ def run() -> None:
 
     client = NHLClient()
     d1 = D1Client(account_id, database_id, api_token)
+    d1.execute("CREATE TABLE IF NOT EXISTS sync_state (key TEXT PRIMARY KEY, hash TEXT NOT NULL)")
 
     season_id = current_season_id(client)
 
     skaters = build_skater_top(client, season_id)
-    skater_count = sync_skater_stats(d1, skaters, season_id)
-    print(f"Synced {skater_count} skaters to D1.")
+    _sync(d1, "skaters", (season_id, skaters), lambda: sync_skater_stats(d1, skaters, season_id), "Skaters")
 
     goalies = build_goalie_top(client, season_id)
-    goalie_count = sync_goalie_stats(d1, goalies, season_id)
-    print(f"Synced {goalie_count} goalies to D1.")
+    _sync(d1, "goalies", (season_id, goalies), lambda: sync_goalie_stats(d1, goalies, season_id), "Goalies")
 
     rookies = build_rookie_top(client, season_id)
-    rookie_count = sync_rookie_stats(d1, rookies, season_id)
-    print(f"Synced {rookie_count} rookies to D1.")
+    _sync(d1, "rookies", (season_id, rookies), lambda: sync_rookie_stats(d1, rookies, season_id), "Rookies")
 
     standings = build_standings(client)
-    standings_count = sync_standings(d1, standings)
-    print(f"Synced {standings_count} standings rows to D1.")
+    _sync(d1, "standings", standings, lambda: sync_standings(d1, standings), "Standings")
 
     fin_skaters = build_leaderboard(client, season_id)
-    fin_skater_count = sync_finnish_skaters(d1, fin_skaters, season_id)
-    print(f"Synced {fin_skater_count} Finnish skaters to D1.")
+    _sync(d1, "fin_skaters", (season_id, fin_skaters), lambda: sync_finnish_skaters(d1, fin_skaters, season_id), "Finnish skaters")
 
     fin_goalies = build_goalie_leaderboard(client, season_id)
-    fin_goalie_count = sync_finnish_goalies(d1, fin_goalies, season_id)
-    print(f"Synced {fin_goalie_count} Finnish goalies to D1.")
+    _sync(d1, "fin_goalies", (season_id, fin_goalies), lambda: sync_finnish_goalies(d1, fin_goalies, season_id), "Finnish goalies")
 
     all_abbrevs = [row.abbrev for division in standings.divisions for row in division.rows]
 
     rosters = build_all_team_rosters(client, all_abbrevs, season_id)
-    roster_skater_count, roster_goalie_count = sync_team_rosters(d1, rosters)
-    print(f"Synced {roster_skater_count} roster skaters / {roster_goalie_count} roster goalies across {len(all_abbrevs)} teams to D1.")
+    _sync(d1, "rosters", rosters, lambda: sync_team_rosters(d1, rosters), "Rosters (skaters, goalies)")
 
     team_stats = build_all_team_season_stats(client, all_abbrevs, season_id)
-    team_stats_count = sync_team_season_stats(d1, team_stats)
-    print(f"Synced {team_stats_count} teams' season stats to D1.")
+    _sync(d1, "team_stats", team_stats, lambda: sync_team_season_stats(d1, team_stats), "Team season stats")
 
 
 if __name__ == "__main__":

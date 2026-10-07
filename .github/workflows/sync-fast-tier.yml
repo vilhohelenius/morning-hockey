@@ -16,6 +16,10 @@ on:
         required: false
         default: "1"
 
+concurrency:
+  group: sync-fast-tier
+  cancel-in-progress: false
+
 jobs:
   sync:
     runs-on: ubuntu-latest
@@ -30,8 +34,23 @@ jobs:
         run: pip install .
 
       - name: Sync schedule to D1
+        id: sync
         env:
           CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
           CF_D1_DATABASE_ID: ${{ secrets.CF_D1_DATABASE_ID }}
           CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
         run: python -m morning_hockey.sync_fast_tier ${{ inputs.date && format('--date {0}', inputs.date) || '' }} ${{ inputs.weeks && inputs.weeks != '1' && format('--weeks {0}', inputs.weeks) || '' }}
+
+      # Only when a finished game still lacks xG: score it right away instead
+      # of waiting for the 6-hourly digest run.
+      - name: Install xG dependencies
+        if: steps.sync.outputs.pending_xg == 'true'
+        run: pip install ".[xg]"
+
+      - name: Sync xG/GSAx to D1
+        if: steps.sync.outputs.pending_xg == 'true'
+        env:
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          CF_D1_DATABASE_ID: ${{ secrets.CF_D1_DATABASE_ID }}
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+        run: python -m morning_hockey.sync_xg

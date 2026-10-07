@@ -2,6 +2,7 @@ import datetime as dt
 
 from morning_hockey.d1_sync import (
     D1Client,
+    sync_if_changed,
     sync_digest,
     sync_finnish_goalies,
     sync_finnish_skaters,
@@ -485,3 +486,21 @@ def test_sync_xg_games_inlines_values_and_chunks_rows():
     assert first["sql"].startswith("INSERT OR REPLACE INTO skater_game_xg (game_id,player_id,")
     assert "(2024020001,8000000,1,20242025,'2024-10-04',3,2,1,0.25)" in first["sql"]
     assert session.calls[2]["json"]["sql"].endswith("(2024020001,8480045,2,20242025,'2024-10-04',30,2,2.5)")
+
+
+def test_sync_if_changed_skips_unchanged_data():
+    writes = []
+    stored = {}
+
+    class StateClient:
+        def execute(self, sql, params=None):
+            if sql.startswith("SELECT hash"):
+                return {"result": [{"results": [{"hash": stored[params[0]]}] if params[0] in stored else []}]}
+            stored[params[0]] = params[1]
+            return {"result": []}
+
+    client = StateClient()
+    assert sync_if_changed(client, "k", [1, 2], lambda: writes.append(1) or 2) == 2
+    assert sync_if_changed(client, "k", [1, 2], lambda: writes.append(1) or 2) is None
+    assert sync_if_changed(client, "k", [1, 3], lambda: writes.append(1) or 2) == 2
+    assert len(writes) == 2

@@ -10,6 +10,7 @@ this module only ever writes.
 from __future__ import annotations
 
 import datetime as dt
+import hashlib
 import re
 
 import requests
@@ -457,6 +458,29 @@ def sync_xg_games(client: D1Client, skater_rows: list[dict], goalie_rows: list[d
     rather than stored, so there is one source of truth."""
     _insert_rows(client, "skater_game_xg", _XG_SKATER_COLUMNS, skater_rows)
     _insert_rows(client, "goalie_game_xg", _XG_GOALIE_COLUMNS, goalie_rows)
+
+
+def unprocessed_xg_game_ids(client: D1Client, limit: int, since: str = "") -> list[int]:
+    """Finished regular-season games (started after the ISO timestamp `since`) with no xG rows yet."""
+    return query_game_ids(
+        client,
+        "SELECT game_id FROM games WHERE is_finished = 1 AND substr(game_id, 5, 2) = '02' "
+        "AND start_time_utc > ? AND game_id NOT IN (SELECT game_id FROM skater_game_xg) ORDER BY game_id LIMIT ?",
+        [since, limit],
+    )
+
+
+def sync_if_changed(client: D1Client, key: str, data, write):
+    """Runs write() only when repr(data) differs from what the last successful
+    write stored under `key` in sync_state; returns write()'s result, or None
+    when skipped. Saves the delete-and-reinsert of an unchanged table."""
+    digest = hashlib.sha256(repr(data).encode()).hexdigest()
+    rows = client.execute("SELECT hash FROM sync_state WHERE key = ?", [key])["result"][0]["results"]
+    if rows and rows[0]["hash"] == digest:
+        return None
+    result = write()
+    client.execute("INSERT OR REPLACE INTO sync_state (key, hash) VALUES (?, ?)", [key, digest])
+    return result
 
 
 def query_game_ids(client: D1Client, sql: str, params: list | None = None) -> list[int]:
