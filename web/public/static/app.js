@@ -95,7 +95,7 @@
       dayPanels.forEach(function (panel) {
         var active = parseInt(panel.getAttribute("data-offset"), 10) === offset;
         panel.hidden = !active;
-        if (active && dayTitleEl) dayTitleEl.textContent = panel.getAttribute("data-title");
+        if (active && dayTitleEl) dayTitleEl.innerHTML = panel.getAttribute("data-title");
       });
       dayButtons.forEach(function (btn) {
         var target = offset + parseInt(btn.getAttribute("data-dir"), 10);

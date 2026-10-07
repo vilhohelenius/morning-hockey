@@ -5383,3 +5383,11 @@ main {
   color: var(--text);
   font-weight: 700;
 }
+
+/* Etusivun päiväotsikko: otsikko + pienempi päivämäärä/ottelumäärä -rivi. */
+#day-title .day-title-sub {
+  display: block;
+  margin-top: 4px;
+  font: 500 0.95rem/1.2 var(--font-body, inherit);
+  color: var(--muted);
+}

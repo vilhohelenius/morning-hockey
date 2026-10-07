@@ -316,8 +316,14 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       gameCardsHtml += renderGameCard(displayGame, scorers, goalies, box?.live ?? null);
     }
 
-    const label = offset === 0 ? "Tämän päivän ottelut" : offset === -1 ? "Eilisen ottelut" : offset === 1 ? "Huomisen ottelut" : "Ottelut";
-    const title = `${label}, ${humanDate(date)} · ${roundGames.length} ${roundGames.length === 1 ? "ottelu" : "ottelua"}`;
+    // Two lines: a headline (relative day, or just the weekday further out) and a
+    // smaller line with the date + game count. Inserted as HTML (see app.js).
+    const count = `${roundGames.length} ${roundGames.length === 1 ? "ottelu" : "ottelua"}`;
+    const [weekday, ...dateParts] = humanDate(date).split(" ");
+    const relative = offset === 0 ? "Tämän päivän ottelut" : offset === -1 ? "Eilisen ottelut" : offset === 1 ? "Huomisen ottelut" : "";
+    const title = relative
+      ? `${relative}<span class="day-title-sub">${weekday} ${dateParts.join(" ")} · ${count}</span>`
+      : `${weekday}<span class="day-title-sub">${dateParts.join(" ")} · ${count}</span>`;
     return {
       title,
       count: roundGames.length,
@@ -441,7 +447,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 <section>
   <div class="section-title-row" id="day-nav" data-offset="${dayOffset}" data-rendered="${Date.now()}" data-ttl="${cacheTtl}" data-ver="${escapeHtml(readVersionCookie(context.request))}">
     <a class="icon-btn day-nav-btn${dayOffset <= MIN_DAY_OFFSET ? " is-disabled" : ""}" ${dayOffset <= MIN_DAY_OFFSET ? 'aria-disabled="true"' : `href="${dayHref(dayOffset - 1)}"`} data-dir="-1" title="Edellinen päivä" aria-label="Edellinen päivä">‹</a>
-    <h2 class="section-title" id="day-title">${escapeHtml(dayTitle)}</h2>
+    <h2 class="section-title" id="day-title">${dayTitle}</h2>
     <a class="icon-btn day-nav-btn${dayOffset >= MAX_DAY_OFFSET ? " is-disabled" : ""}" ${dayOffset >= MAX_DAY_OFFSET ? 'aria-disabled="true"' : `href="${dayHref(dayOffset + 1)}"`} data-dir="1" title="Seuraava päivä" aria-label="Seuraava päivä">›</a>
     <button type="button" class="icon-btn refresh-btn" title="Päivitä ottelutiedot" aria-label="Päivitä ottelutiedot" onclick="location.reload()">⟳</button>
   </div>
