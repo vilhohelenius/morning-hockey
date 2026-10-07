@@ -19,3 +19,4 @@ cron-trigger/.wrangler/
 # Installed agent skills
 .agents/
 .claude/skills/
+skills-lock.json
