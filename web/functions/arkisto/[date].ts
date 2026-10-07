@@ -12,7 +12,7 @@
 import { getCachedBoxScores } from "../_shared/boxScoreCache";
 import { buildTimeline } from "../_shared/boxscore";
 import { finnishGoalieLines, finnishScorerLines, renderGameCard } from "../_shared/gameCard";
-import { fetchGamesGoalieGsax } from "../_shared/xg";
+import { fetchGameTeamXg, fetchGamesGoalieGsax, teamXgStatRows } from "../_shared/xg";
 import { resolveHighlightsUrl } from "../_shared/youtube";
 import { escapeHtml, humanDate } from "../_shared/format";
 import { renderLayout } from "../_shared/layout";
@@ -47,7 +47,8 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     gameDetails[game.game_id] = { youtube_url: await resolveHighlightsUrl(db, context.env, game) };
 
     if (box) {
-      gameDetails[game.game_id] = { ...gameDetails[game.game_id], timeline: buildTimeline(box.goals, box.penalties, game.away_abbrev, box.shootout), team_stats: box.teamStats };
+      const gameXg = game.is_finished ? await fetchGameTeamXg(db, game.game_id, game.away_abbrev, game.home_abbrev) : null;
+      gameDetails[game.game_id] = { ...gameDetails[game.game_id], timeline: buildTimeline(box.goals, box.penalties, game.away_abbrev, box.shootout), team_stats: [...box.teamStats, ...(gameXg ? teamXgStatRows(gameXg.away, gameXg.home, true) : [])] };
       scorers = [
         ...finnishScorerLines(box.awaySkaters, game.away_abbrev),
         ...finnishScorerLines(box.homeSkaters, game.home_abbrev),

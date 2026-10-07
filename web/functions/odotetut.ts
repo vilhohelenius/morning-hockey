@@ -2,7 +2,7 @@
 // straight from the sync_xg tables. Three tabs toggled client-side (the
 // analytiikka-view-picker pill wiring in app.js).
 
-import { icon, escapeHtml, nationalityFlag, seasonLabel } from "./_shared/format";
+import { icon, escapeHtml, nationalityFlag, seasonLabel, teamLogoUrl } from "./_shared/format";
 import { renderLayout } from "./_shared/layout";
 import { COLLAPSE_AT, expandToggle } from "./_shared/leaderboard";
 import type { Env, StandingsRow } from "./_shared/types";
@@ -35,12 +35,16 @@ interface GoalieRow {
   sa: number;
 }
 
+const teamLogo = (abbrev: string) =>
+  `<img src="${escapeHtml(teamLogoUrl(abbrev))}" alt="${escapeHtml(abbrev)}" class="table-team-logo" loading="lazy">`;
+
+// meta is trusted HTML (flag/logo markup), callers escape any raw values.
 const playerCell = (id: number, name: string, headshot: string, meta: string) => `
   <a href="/pelaajat/${id}" class="player-cell">
     <img src="${escapeHtml(headshot)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
     <span class="player-name">
       <span class="player-name-line">${escapeHtml(name)}</span>
-      <span class="player-meta">${escapeHtml(meta)}</span>
+      <span class="player-meta">${meta}</span>
     </span>
   </a>`;
 
@@ -97,7 +101,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
         return `<tr data-name="${escapeHtml(p.name)}" data-gp="${p.gp}" data-goals="${p.goals}" data-xg="${p.xg}"
       data-xgpg="${p.xg / p.gp}" data-xgf="${pct ?? -1}" data-rank="${i + 1}">
     <td class="col-rank">${i + 1}</td>
-    <td>${playerCell(p.player_id, p.name, p.headshot, `${nationalityFlag(p.nationality)} · ${p.position} · ${p.team_abbrev}`)}</td>
+    <td>${playerCell(p.player_id, p.name, p.headshot, `${nationalityFlag(p.nationality)} ${escapeHtml(p.nationality)} · ${escapeHtml(p.position)} · ${teamLogo(p.team_abbrev)}`)}</td>
     <td>${p.gp}</td><td>${p.goals}</td><td class="stat-strong">${formatXg(p.xg)}</td>
     <td>${(p.xg / p.gp).toFixed(2)}</td>
     <td>${pct !== null && p.xgf !== null && p.xga !== null ? xgPercent(p.xgf, p.xga) : "–"}</td>
@@ -112,7 +116,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       return `<tr data-name="${escapeHtml(g.name)}" data-gp="${g.gp}" data-gsax="${g.gsax}" data-gsax100="${per100 ?? -1000}"
       data-sa="${g.sa}" data-rank="${i + 1}">
     <td class="col-rank">${i + 1}</td>
-    <td>${playerCell(g.player_id, g.name, g.headshot, `${nationalityFlag(g.nationality)} · ${g.team_abbrev}`)}</td>
+    <td>${playerCell(g.player_id, g.name, g.headshot, `${nationalityFlag(g.nationality)} ${escapeHtml(g.nationality)} · ${teamLogo(g.team_abbrev)}`)}</td>
     <td>${g.gp}</td><td class="stat-strong">${formatGsax(g.gsax)}</td><td>${per100 === null ? "–" : formatGsax(per100, 2)}</td><td>${g.sa}</td>
   </tr>`;
     })

@@ -42,7 +42,7 @@ import {
   type FinnGoalieLine,
   type FinnScorerLine,
 } from "./_shared/gameCard";
-import { fetchGamesGoalieGsax } from "./_shared/xg";
+import { fetchGameTeamXg, fetchGamesGoalieGsax, teamXgStatRows } from "./_shared/xg";
 import { resolveHighlightsUrl } from "./_shared/youtube";
 import { MAX_DAY_OFFSET, MIN_DAY_OFFSET, clampDayOffset, selectDayGames } from "./_shared/dayGames";
 import { flagImg, icon, addDays, escapeHtml, helsinkiParts, helsinkiToday, secondsToHelsinkiMidnight, humanDate, nationalityFlag, shortDate, teamHeroBackgroundStyle } from "./_shared/format";
@@ -297,7 +297,8 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       }
 
       if (box) {
-        gameDetails[game.game_id] = { ...gameDetails[game.game_id], timeline: buildTimeline(box.goals, box.penalties, game.away_abbrev, box.shootout), team_stats: box.teamStats };
+        const gameXg = game.is_finished ? await fetchGameTeamXg(db, game.game_id, game.away_abbrev, game.home_abbrev) : null;
+        gameDetails[game.game_id] = { ...gameDetails[game.game_id], timeline: buildTimeline(box.goals, box.penalties, game.away_abbrev, box.shootout), team_stats: [...box.teamStats, ...(gameXg ? teamXgStatRows(gameXg.away, gameXg.home, true) : [])] };
         scorers = [
           ...finnishScorerLines(box.awaySkaters, game.away_abbrev),
           ...finnishScorerLines(box.homeSkaters, game.home_abbrev),

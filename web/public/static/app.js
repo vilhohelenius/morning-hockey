@@ -733,6 +733,12 @@
       header.appendChild(closeBtn);
       panel.appendChild(header);
 
+      var fullLink = document.createElement("a");
+      fullLink.className = "archive-link game-detail-full";
+      fullLink.href = "/ottelut/" + trigger.dataset.gameId;
+      fullLink.textContent = "Koko ottelun tilastot →";
+      panel.appendChild(fullLink);
+
       var body = el("div", "team-detail-body");
       body.appendChild(renderTimeline(data.timeline || [], awayAbbrev));
       body.appendChild(renderTeamStats(data.team_stats || [], awayAbbrev, homeAbbrev));
@@ -747,12 +753,6 @@
         ytLink.textContent = "▶ Highlightit (YouTube)";
         panel.appendChild(ytLink);
       }
-
-      var fullLink = document.createElement("a");
-      fullLink.className = "archive-link";
-      fullLink.href = "/ottelut/" + trigger.dataset.gameId;
-      fullLink.textContent = "Koko ottelun tilastot →";
-      panel.appendChild(fullLink);
 
       trigger.insertAdjacentElement("afterend", panel);
 

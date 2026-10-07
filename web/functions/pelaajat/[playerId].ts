@@ -768,9 +768,6 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       <p class="player-hero-meta player-hero-meta-front">
         ${landing.sweaterNumber ? `<span>#${landing.sweaterNumber}</span>` : ""}
         ${landing.position ? `<span>${escapeHtml(POSITION_ABBR[landing.position] ?? landing.position)}</span>` : ""}
-        ${age !== null ? `<span>${age} v.</span>` : ""}
-        ${landing.heightInCentimeters ? `<span>${landing.heightInCentimeters} cm</span>` : ""}
-        ${landing.weightInKilograms ? `<span>${landing.weightInKilograms} kg</span>` : ""}
         ${heroFlag ? `<span class="player-hero-flag" title="${escapeHtml(heroNationality)}">${heroFlag}</span>` : ""}
       </p>
       <div class="player-hero-footer">

@@ -4041,9 +4041,11 @@ main {
 .pw-card .stat-card-cell.pw-cell-sm .stat-card-value { font-size: 0.78rem; line-height: 1.55; }
 
 /* /odotetut Joukkueet: plain logos, no round headshot background */
-.porssi-table .player-cell img.team-logo-plain {
+.porssi-table .player-cell img.team-logo-plain,
+.porssi-table .player-cell img:not(.table-team-logo).team-logo-plain {
   border-radius: 0;
   background: none;
+  box-shadow: none;
 }
 
 /* Win-probability header: team logo + abbrev (away: logo first, home: logo last) */
@@ -4565,8 +4567,12 @@ main {
   background: none;
 }
 
-.hero-fav-star.is-fav .ic path {
+.hero-fav-star .ic path {
   fill: currentColor;
+}
+
+.hero-fav-star {
+  color: rgba(255, 255, 255, 0.55);
 }
 
 /* Heron oma "wires"-korvike: iso ääriviivatunnus, kuten pelikorteissa. */
@@ -4620,4 +4626,62 @@ main {
 .hero-banner.player-hero-face::after {
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
+}
+
+/* Pelaaherokortti: etupuolella nimi, numero, pelipaikka, lippu ja logo; kuva kiinni alareunaan. */
+.hero-banner.player-hero-front {
+  padding-bottom: 0;
+  justify-content: space-between;
+}
+
+.player-hero-front .player-hero-meta {
+  margin-bottom: 0;
+}
+
+.player-hero-front .player-hero-footer {
+  margin-top: auto;
+}
+
+.player-hero-front .player-hero-photo {
+  border-radius: 0;
+  max-width: 130px;
+  max-height: 130px;
+  width: 36vw;
+  height: 36vw;
+  object-position: center bottom;
+}
+
+.player-hero-front .player-hero-team-logo {
+  margin: 0 6px 30px 0;
+  width: 64px;
+  height: 64px;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5));
+}
+
+/* Käännön aikana vain näkyvä puoli on visible; ei riipu backface-visibilitystä (Safari). */
+.hero-banner.player-hero-face {
+  transition: visibility 0s 0.3s;
+}
+
+.hero-banner.player-hero-back,
+.player-hero-flip.is-flipped .player-hero-front {
+  visibility: hidden;
+}
+
+.player-hero-flip.is-flipped .hero-banner.player-hero-back {
+  visibility: visible;
+}
+
+/* Ottelukortin "Koko ottelun tilastot" ylös napiksi */
+.game-detail-full {
+  display: block;
+  margin: 10px 14px 0;
+  padding: 9px 14px;
+  text-align: center;
+  font: 600 1.05rem/1 var(--font-display);
+  letter-spacing: 0.03em;
+  color: #1a1400;
+  background: var(--accent);
+  border-radius: 0 0 12px 0;
+  text-decoration: none;
 }
