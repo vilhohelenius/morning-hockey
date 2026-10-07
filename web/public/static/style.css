@@ -5576,3 +5576,15 @@ main {
     top: 16px;
   }
 }
+
+/* Joukkueet-listaus leveällä ruudulla: leveämpi sivu, kolme saraketta. */
+@media (min-width: 860px) {
+  main:has(.team-index-grid) {
+    max-width: 1100px;
+  }
+
+  .team-index-grid {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 12px;
+  }
+}
