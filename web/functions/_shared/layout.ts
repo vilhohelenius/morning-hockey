@@ -146,8 +146,9 @@ export async function renderLayout(options: LayoutOptions): Promise<string> {
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Teko:wght@500;600;700&family=Instrument+Sans:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="/static/style.css">
 ${["TBL", "TOR", "NSH"].map((t) => `<link rel="preload" as="image" href="https://assets.nhle.com/logos/nhl/svg/${t}_dark.svg"${theme === "dark" ? "" : ' media="(prefers-color-scheme: dark)"'}>`).join("\n")}
-<link rel="icon" href="/static/icon.jpg">
-<link rel="apple-touch-icon" href="/static/icon.jpg">
+<link rel="icon" type="image/svg+xml" href="/static/brand/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/static/brand/favicon_32.png">
+<link rel="apple-touch-icon" href="/static/brand/apple_touch_icon.png">
 <link rel="manifest" href="/static/manifest.json">
 <meta name="theme-color" content="#0D0D0F">
 <meta name="apple-mobile-web-app-title" content="Morning Hockey">
@@ -159,8 +160,8 @@ ${["TBL", "TOR", "NSH"].map((t) => `<link rel="preload" as="image" href="https:/
 
   <nav id="sidebar" class="sidebar" aria-label="Päävalikko">
     <div class="sidebar-header">
-      <img src="/static/banner_light.png" alt="Morning Hockey" class="brand-banner brand-banner-light sidebar-banner">
-      <img src="/static/banner_dark.png" alt="Morning Hockey" class="brand-banner brand-banner-dark sidebar-banner">
+      <img src="/static/brand/banner_light_fi.png" alt="Morning Hockey" class="brand-banner brand-banner-light sidebar-banner">
+      <img src="/static/brand/banner_dark_fi.png" alt="Morning Hockey" class="brand-banner brand-banner-dark sidebar-banner">
       ${playerSearch}
       <button id="sidebar-close" class="icon-btn" aria-label="Sulje valikko">${icon("close")}</button>
     </div>

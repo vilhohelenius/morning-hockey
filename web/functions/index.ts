@@ -440,8 +440,8 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
   const content = `
 <header class="page-header">
-  <img src="/static/banner_light.png" alt="Morning Hockey" class="brand-banner brand-banner-light">
-  <img src="/static/banner_dark.png" alt="Morning Hockey" class="brand-banner brand-banner-dark">
+  <img src="/static/brand/banner_light_fi.png" alt="Morning Hockey" class="brand-banner brand-banner-light">
+  <img src="/static/brand/banner_dark_fi.png" alt="Morning Hockey" class="brand-banner brand-banner-dark">
 </header>
 
 <div class="dashboard">
