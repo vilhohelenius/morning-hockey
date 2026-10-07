@@ -5296,3 +5296,39 @@ main {
 .tab-bar { margin-top: 0; }
 .tab-bar .standings-tab { font-size: 0.85rem; padding: 8px 4px; }
 .standings-legend + .tab-bar { margin-top: 12px; }
+
+/* Kaikki muut pillerivalitsimet (paitsi päiväselain) samaan alleviivattuun tab-tyyliin. */
+.season-type-picker,
+.team-games-picker,
+.player-filter-picker,
+.analytiikka-view-picker,
+.division-picker,
+.sarjataulukko-view-picker {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--border);
+  margin: 12px 0 14px;
+}
+
+:is(.season-type-picker, .team-games-picker, .player-filter-picker, .analytiikka-view-picker, .division-picker, .sarjataulukko-view-picker) .day-pill {
+  flex: 1;
+  padding: 10px 8px;
+  background: none;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  margin-bottom: -1px;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 400;
+}
+
+:is(.season-type-picker, .team-games-picker, .player-filter-picker, .analytiikka-view-picker, .division-picker, .sarjataulukko-view-picker) .day-pill.active {
+  background: none;
+  border-bottom-color: var(--text);
+  color: var(--text);
+  font-weight: 700;
+}
