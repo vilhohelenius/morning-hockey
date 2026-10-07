@@ -5394,3 +5394,25 @@ main {
 
 #day-title { line-height: 1.05; }
 #day-title .day-title-sub { margin-top: 0; line-height: 1.1; }
+
+/* Päiväselaimen nuolet + päivitys: ympyränappi, viivaikoni, sama paino kuin muissa ikoneissa. */
+.day-nav-btn,
+.refresh-btn {
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 50%;
+  color: var(--text);
+}
+
+.day-nav-btn .ic,
+.refresh-btn .ic {
+  width: 22px;
+  height: 22px;
+}
+
+.refresh-btn .ic {
+  width: 20px;
+  height: 20px;
+}
