@@ -241,7 +241,12 @@ function statCells(r: BingoRow, gated: boolean, nowMs: number): string {
   if (r.status === "played") {
     return `${wrap(String(r.goals))}${wrap(String(r.assists))}${wrap(String(r.points), ' class="bingo-pts"')}`;
   }
-  return wrap(`<span class="bingo-status">${statusText(r, nowMs)}</span>`, ' colspan="3"');
+  const status = `<span class="bingo-status">${statusText(r, nowMs)}</span>`;
+  if (!gated) return wrap(status, ' colspan="3"');
+  // Even "didn't play"/"no data" would spoil a result, so while hidden every
+  // stat column shows its own "?"; the status text replaces them on reveal.
+  const q = `<td class="bingo-hidden-only"><span class="bingo-q">?</span></td>`;
+  return `${q}${q}${q}<td colspan="3" class="bingo-revealed-only">${status}</td>`;
 }
 
 function renderBingoTable(rows: BingoRow[], opts: BingoRenderOptions, nowMs: number): string {

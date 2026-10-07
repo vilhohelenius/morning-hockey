@@ -31,7 +31,7 @@
 import { currentUsername } from "./_shared/auth";
 import { renderBingoSection } from "./_shared/bingo";
 import { loadActiveRows, loadPicks, loadWindowGames } from "./_shared/bingoData";
-import { getBoxScore } from "./_shared/boxScoreCache";
+import { getBoxScore, missingBoxRetryScript } from "./_shared/boxScoreCache";
 import { buildTimeline } from "./_shared/boxscore";
 import { resolveHighlightsUrl } from "./_shared/youtube";
 import { escapeHtml, humanDate, teamHeroBackgroundStyle } from "./_shared/format";
@@ -78,6 +78,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   let roundDate: string | null = null;
   let roundComplete = false;
   const gameDetails: Record<number, { timeline?: unknown; team_stats?: unknown; youtube_url?: string }> = {};
+  let missingBoxes = 0;
 
   if (currentRound) {
     const [{ results: games }, { results: allRoundGames }] = await Promise.all([
@@ -103,6 +104,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
           resolveHighlightsUrl(db, context.env, game),
         ]);
 
+        if (!box) missingBoxes++;
         gameDetails[game.game_id] = {
           youtube_url: youtubeUrl ?? undefined,
           ...(box ? { timeline: buildTimeline(box.goals, box.penalties, game.away_abbrev, box.shootout), team_stats: box.teamStats } : {}),
@@ -124,6 +126,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     const windowGames = await loadWindowGames(db);
     const picks = await loadPicks(db, username, windowGames, now);
     const rows = await loadActiveRows(db, windowGames, picks, now);
+    missingBoxes += rows.filter((r) => r.status === "unknown").length;
     if (rows.length) {
       const listed = new Set(Object.keys(gameDetails).map(Number));
       bingoHtml = renderBingoSection(
@@ -167,6 +170,7 @@ ${bingoHtml}
 </div>
 
 <script id="game-details" type="application/json">${gameDetailsJson}</script>
+${missingBoxRetryScript(missingBoxes)}
 <script>
 (function () {
   var ROUND_DATE = ${JSON.stringify(roundDate)};

@@ -279,3 +279,24 @@ export async function getBoxScore(
     return { box: null, fetchError: true };
   }
 }
+
+// A page that listed games whose box score fetch failed (e.g. a first view
+// right after many games finished: each uncached game costs 6 NHL fetches,
+// and one request has a limited fetch budget) reloads itself shortly so the
+// already-cached games are free and the rest get their turn. Max 3 tries,
+// and never once the visitor has started revealing results.
+export function missingBoxRetryScript(missing: number): string {
+  if (!missing) return "";
+  return `<script>
+(function () {
+  try {
+    if (document.querySelector(".spoiler-reveal-toggle:checked")) return;
+    var key = "box-retry:" + location.pathname + location.search;
+    var tries = Number(sessionStorage.getItem(key) || 0);
+    if (tries >= 3) return;
+    sessionStorage.setItem(key, String(tries + 1));
+    setTimeout(function () { location.reload(); }, 1000);
+  } catch (e) {}
+})();
+</script>`;
+}

@@ -31,7 +31,7 @@
 // ported -- superseded by /arkisto, a real route here.
 
 import { currentUsername, readVersionCookie, readTulospiiloBypassDate, readTulospiiloCookie } from "./_shared/auth";
-import { getBoxScore } from "./_shared/boxScoreCache";
+import { getBoxScore, missingBoxRetryScript } from "./_shared/boxScoreCache";
 import { buildTimeline } from "./_shared/boxscore";
 import {
   finnishGoalieLines,
@@ -237,6 +237,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   const nightGames: NightGame[] = [];
 
   const gameDetails: Record<number, { timeline?: unknown; team_stats?: unknown; youtube_url?: string }> = {};
+  let missingBoxes = 0;
 
   // All three days (yesterday/today/tomorrow) are rendered up front as
   // hidden panels, so the arrows switch client-side (app.js) with no reload.
@@ -270,6 +271,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       // live, permanent once finished -- see _shared/boxScoreCache).
       // Not started yet: no box score exists.
       const box = game.is_finished || isLive(game) ? (await getBoxScore(db, game)).box : null;
+      if (!box && (game.is_finished || isLive(game))) missingBoxes++;
 
       // The card's own score otherwise only updates every ~30 min (the
       // fast tier's own sync cadence) -- for a live game, the box score
@@ -456,6 +458,7 @@ ${statTeaserTable("📈 NHL:n kärkipörssi", leagueSkaters.map((r, i) => render
 ${upcomingHtml}
 
 <script id="game-details" type="application/json">${gameDetailsJson}</script>
+${missingBoxRetryScript(missingBoxes)}
 `;
 
   const html = await renderLayout({

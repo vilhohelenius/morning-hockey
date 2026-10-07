@@ -3862,6 +3862,11 @@ main {
   letter-spacing: 0.1em;
 }
 
+.bingo-row[data-gate]:not(.is-revealed) .bingo-revealed-only,
+.bingo-row[data-gate].is-revealed .bingo-hidden-only {
+  display: none;
+}
+
 .bingo-reveal {
   margin-top: 10px;
 }
