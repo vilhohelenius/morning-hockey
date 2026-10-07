@@ -5605,3 +5605,31 @@ main {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
+
+@media (min-width: 1300px) {
+  main:has(.team-index-grid) {
+    max-width: 1200px;
+  }
+
+  .team-index-grid {
+    column-gap: 10px;
+  }
+
+  .team-index-grid .stat-card-grid-cells {
+    padding-left: 4px;
+    padding-right: 4px;
+  }
+
+  .team-index-grid .stat-card-label {
+    font-size: 0.68rem;
+  }
+
+  .team-index-grid .stat-card-value {
+    font-size: 1rem;
+  }
+
+  .team-index-grid .stat-card-cell {
+    padding-left: 2px;
+    padding-right: 2px;
+  }
+}
