@@ -15,3 +15,7 @@ web/.wrangler/
 # Cloudflare Worker (cron-trigger/)
 cron-trigger/node_modules/
 cron-trigger/.wrangler/
+
+# Installed agent skills
+.agents/
+.claude/skills/
