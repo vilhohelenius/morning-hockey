@@ -4352,3 +4352,103 @@ main {
   color: var(--accent);
   padding-bottom: 12px;
 }
+
+
+/* ---------- Redesign step 4: taulukot (B-paneeli + paitakaistale) ---------- */
+
+/* Pörssirivin joukkueväri data-team-attribuutista (rivit eivät kanna inline-väriä). */
+.porssi-table tr[data-team="ANA"] > td:first-child { --tc: #F47A38; }
+.porssi-table tr[data-team="BOS"] > td:first-child { --tc: #FFB81C; }
+.porssi-table tr[data-team="BUF"] > td:first-child { --tc: #002654; }
+.porssi-table tr[data-team="CAR"] > td:first-child { --tc: #CC0000; }
+.porssi-table tr[data-team="CBJ"] > td:first-child { --tc: #002654; }
+.porssi-table tr[data-team="CGY"] > td:first-child { --tc: #D2001C; }
+.porssi-table tr[data-team="CHI"] > td:first-child { --tc: #CF0A2C; }
+.porssi-table tr[data-team="COL"] > td:first-child { --tc: #6F263D; }
+.porssi-table tr[data-team="DAL"] > td:first-child { --tc: #006847; }
+.porssi-table tr[data-team="DET"] > td:first-child { --tc: #CE1126; }
+.porssi-table tr[data-team="EDM"] > td:first-child { --tc: #FF4C00; }
+.porssi-table tr[data-team="FLA"] > td:first-child { --tc: #C8102E; }
+.porssi-table tr[data-team="LAK"] > td:first-child { --tc: #A2AAAD; }
+.porssi-table tr[data-team="MIN"] > td:first-child { --tc: #154734; }
+.porssi-table tr[data-team="MTL"] > td:first-child { --tc: #AF1E2D; }
+.porssi-table tr[data-team="NJD"] > td:first-child { --tc: #CE1126; }
+.porssi-table tr[data-team="NSH"] > td:first-child { --tc: #FFB81C; }
+.porssi-table tr[data-team="NYI"] > td:first-child { --tc: #00539B; }
+.porssi-table tr[data-team="NYR"] > td:first-child { --tc: #0038A8; }
+.porssi-table tr[data-team="OTT"] > td:first-child { --tc: #C52032; }
+.porssi-table tr[data-team="PHI"] > td:first-child { --tc: #F74902; }
+.porssi-table tr[data-team="PIT"] > td:first-child { --tc: #FCB514; }
+.porssi-table tr[data-team="SEA"] > td:first-child { --tc: #99D9D9; }
+.porssi-table tr[data-team="SJS"] > td:first-child { --tc: #006D75; }
+.porssi-table tr[data-team="STL"] > td:first-child { --tc: #002F87; }
+.porssi-table tr[data-team="TBL"] > td:first-child { --tc: #002868; }
+.porssi-table tr[data-team="TOR"] > td:first-child { --tc: #00205B; }
+.porssi-table tr[data-team="UTA"] > td:first-child { --tc: #71AFE5; }
+.porssi-table tr[data-team="VAN"] > td:first-child { --tc: #00205B; }
+.porssi-table tr[data-team="VGK"] > td:first-child { --tc: #B4975A; }
+.porssi-table tr[data-team="WPG"] > td:first-child { --tc: #041E42; }
+.porssi-table tr[data-team="WSH"] > td:first-child { --tc: #C8102E; }
+
+.stand-scroll,
+.stats-table-wrap:has(> .porssi-table),
+.stat-card {
+  border-radius: 0 0 24px 0;
+}
+
+.stand-table thead th,
+.porssi-table thead th {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.stand-table td.st-pts,
+.porssi-table td.stat-strong {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.stand-table .st-abbrev {
+  font: 600 1.2rem/1 var(--font-display);
+}
+
+/* Paitakaistale: 5 px joukkueen väriä rivin vasemmassa reunassa. */
+.stand-row td.st-first,
+.stand-row.qualified td.st-first,
+.porssi-table td.col-rank {
+  box-shadow: inset 5px 0 0 var(--tc, transparent);
+}
+
+/* Pörssin pelaajakuvat: isompi pyöreä kuva joukkueen värirenkaalla. */
+.porssi-table .player-cell img:not(.table-team-logo) {
+  width: 34px;
+  height: 34px;
+  box-shadow: 0 0 0 2px var(--tc, var(--border));
+}
+
+/* Playoff-raja kultaisena. */
+.wc-cutoff-line {
+  border-top: 2px solid var(--accent);
+  opacity: 1;
+}
+
+/* Kausi- ja uratilastokortit */
+.stat-card-header {
+  font: 600 1.05rem/1 var(--font-display);
+  letter-spacing: 0.03em;
+  border-left: 5px solid var(--accent);
+}
+
+.stat-card-table thead th {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.stat-card-table tbody td {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+}

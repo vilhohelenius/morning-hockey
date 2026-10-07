@@ -14,6 +14,7 @@
 import { computeFormGuide, type FormGuideEntry } from "./_shared/formGuide";
 import { escapeHtml, humanDate } from "./_shared/format";
 import { renderLayout } from "./_shared/layout";
+import { TEAM_COLORS } from "./_shared/teamColors";
 import { buildWildCardView, formatPointsPct, sortStandings } from "./_shared/standingsViews";
 import type { Env, GameRow, StandingsRow, TeamRosterGoalieRow, TeamRosterSkaterRow } from "./_shared/types";
 
@@ -111,7 +112,7 @@ const STAND_TOTAL_COLS = 1 + STAND_HEADERS.length;
 function renderStandRow(row: StandingsRow, rankLabel: string): string {
   const diff = `${row.goal_differential > 0 ? "+" : ""}${row.goal_differential}`;
   return `
-      <tr class="stand-row ${row.qualified ? "qualified" : ""}">
+      <tr class="stand-row ${row.qualified ? "qualified" : ""}" style="--tc:${TEAM_COLORS[row.abbrev] ?? "var(--accent)"}">
         <td class="st-first"><span class="st-rank">${escapeHtml(rankLabel)}</span><button type="button" class="team-trigger st-team" data-team-abbrev="${escapeHtml(row.abbrev)}" data-team-name="${escapeHtml(row.name)}"><img src="${escapeHtml(row.logo)}" alt="" class="st-logo" loading="lazy"><span class="st-abbrev">${escapeHtml(row.abbrev)}</span>${row.qualified ? `<span class="playoff-dot"></span>` : ""}</button></td>
         <td>${row.games_played}</td>
         <td>${row.wins}</td>
