@@ -43,19 +43,21 @@ function buildRound1(divisionX: StandingsRow[], divisionY: StandingsRow[], wildc
 }
 
 function renderMatchupCard(m: Matchup): string {
-  const team = (seed: StandingsRow, label: string) => `
-  <div class="matchup-team" style="--tc:${TEAM_COLORS[seed.abbrev] ?? "var(--accent)"}">
+  const team = (seed: StandingsRow, label: string, side: "left" | "right") => `
+  <div class="matchup-team is-${side}" style="--tc:${TEAM_COLORS[seed.abbrev] ?? "var(--accent)"}">
     <img src="${escapeHtml(seed.logo)}" alt="" class="matchup-logo" loading="lazy">
     <span class="matchup-abbrev">${escapeHtml(seed.abbrev)}</span>
     <span class="matchup-seed">${escapeHtml(label)}</span>
     <span class="matchup-points">${seed.points} p</span>
   </div>`;
 
+  // .matchup-mid is where a running series score ("2 - 1") goes once the
+  // playoffs start; later rounds reuse this card with .is-tbd for open slots.
   return `
 <div class="matchup-card">
-  ${team(m.higherSeed, m.higherLabel)}
-  <div class="matchup-vs">VS</div>
-  ${team(m.lowerSeed, m.lowerLabel)}
+  ${team(m.higherSeed, m.higherLabel, "left")}
+  <div class="matchup-mid">vs</div>
+  ${team(m.lowerSeed, m.lowerLabel, "right")}
 </div>`;
 }
 
@@ -115,16 +117,10 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 <section>
   <h2 class="section-title">${escapeHtml(conferenceName)}-konferenssi</h2>
 
-  <div class="bracket-grid">
-    <div class="bracket-pair">
-      ${renderMatchupCard(round1[0])}
-      ${renderMatchupCard(round1[1])}
-      <div class="bracket-connector"></div>
-    </div>
-    <div class="bracket-pair">
-      ${renderMatchupCard(round1[2])}
-      ${renderMatchupCard(round1[3])}
-      <div class="bracket-connector"></div>
+  <div class="bracket-round">
+    <h3 class="bracket-round-title">1. kierros</h3>
+    <div class="bracket-matches">
+      ${round1.map(renderMatchupCard).join("")}
     </div>
   </div>
 
@@ -137,8 +133,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 <header class="page-header">
   <h1>${icon("trophy")} Playoff-bracket</h1>
   <p class="subtitle">Jos pudotuspelit alkaisivat tänään · tilanne ${asOfDate ? escapeHtml(humanDate(asOfDate)) : ""}</p>
-  <p class="standings-legend">Näytetään vain 1. kierros — seuraavat kierrokset ratkeavat vasta kun nämä
-    ottelut on pelattu. Viiva yhdistää ottelut, joiden voittajat kohtaisivat toisiaan 2. kierroksella.</p>
+  <p class="standings-legend">Näytetään 1. kierros. Seuraavat kierrokset ratkeavat vasta kun nämä ottelut on pelattu.</p>
 </header>
 ${sections}
 `;

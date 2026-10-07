@@ -4697,6 +4697,7 @@ main {
 
 .mt-strength-tag {
   align-self: center;
+  margin: 0 5px;
   padding: 0 4px;
   border: 1px solid var(--accent);
   border-radius: 0 0 6px 0;
@@ -4721,7 +4722,6 @@ main {
   border-left-color: var(--tc, var(--accent));
 }
 
-.matchup-team,
 .division-row {
   box-shadow: inset 5px 0 0 var(--tc, transparent);
 }
@@ -4743,30 +4743,9 @@ main {
   font-size: 0.78rem;
 }
 
-.mt-col .mt-who {
-  display: block;
-}
 
 .player-hero-front h1 {
   font-size: clamp(1.8rem, 8vw, 2.4rem);
-}
-
-/* Bracket: nauha lyhyempi ja irti reunasta, logolle tilaa */
-.matchup-team {
-  position: relative;
-  box-shadow: none;
-  padding-left: 18px;
-}
-
-.matchup-team::before {
-  content: "";
-  position: absolute;
-  left: 6px;
-  top: 7px;
-  bottom: 7px;
-  width: 4px;
-  border-radius: 2px;
-  background: var(--tc, transparent);
 }
 
 /* Labelit: Bio sentence case + Teko-arvot, osio-otsikot Tekolla ilman kapitaaleja */
@@ -4861,4 +4840,181 @@ main {
   color: transparent;
   -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.2);
   pointer-events: none;
+}
+
+.mt-col {
+  min-width: 0;
+}
+
+.mt-away .mt-col {
+  text-align: left;
+}
+
+.mt-home .mt-col {
+  text-align: right;
+}
+
+/* ---------- Bracket redesign: yksi kortti per ottelupari, kierros kerrallaan ---------- */
+
+.bracket-round-title {
+  margin: 14px 0 8px;
+  font: 600 1.05rem/1 var(--font-display);
+  letter-spacing: 0.02em;
+  color: var(--muted);
+}
+
+.bracket-matches {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+@media (min-width: 700px) {
+  .bracket-matches {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.matchup-card {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: stretch;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.matchup-team {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 14px 12px 12px 22px;
+  min-width: 0;
+}
+
+.matchup-team.is-right {
+  align-items: flex-end;
+  text-align: right;
+  padding: 14px 22px 12px 12px;
+}
+
+.matchup-team::before {
+  content: "";
+  position: absolute;
+  top: 12px;
+  bottom: 12px;
+  left: 9px;
+  width: 4px;
+  border-radius: 2px;
+  background: var(--tc, transparent);
+}
+
+.matchup-team.is-right::before {
+  left: auto;
+  right: 9px;
+}
+
+.matchup-logo {
+  width: 44px;
+  height: 44px;
+  margin-bottom: 4px;
+}
+
+.matchup-abbrev {
+  font-size: 1.9rem;
+}
+
+.matchup-seed {
+  margin: 0;
+  line-height: 1.2;
+}
+
+.matchup-points {
+  margin: 4px 0 0;
+  font-size: 1.1rem;
+  color: var(--muted);
+}
+
+.matchup-mid {
+  align-self: center;
+  padding: 0 4px;
+  font: 600 1.1rem/1 var(--font-display);
+  color: var(--muted);
+}
+
+/* Tuleville kierroksille: tyhjä paikka ja sarjan tilanne keskellä (esim. "2 - 1") */
+.matchup-card.is-tbd .matchup-team {
+  opacity: 0.55;
+}
+
+.matchup-card.is-tbd .matchup-abbrev {
+  font-size: 1.3rem;
+}
+
+.matchup-card.is-tbd .matchup-team::before {
+  background: var(--border);
+}
+
+/* ---------- Suosikkijoukkuelaatta: pelipaitatyyli, sama koko ja tiedot ---------- */
+
+.fav-team-card {
+  gap: 8px;
+  padding: 12px;
+}
+
+.fav-team-card-logo {
+  width: 36px;
+  height: 36px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+}
+
+.fav-team-card-name {
+  font: 600 1.25rem/1.05 var(--font-display);
+  letter-spacing: 0.02em;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+.fav-team-card .fav-row-meta {
+  font-size: 0.72rem;
+}
+
+.fav-team-card-schedule {
+  gap: 2px;
+  margin: 0 -4px;
+  padding: 5px 6px;
+  border-radius: 0 0 10px 0;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.fav-team-card-game {
+  gap: 5px;
+  color: #fff;
+  font-size: 0.8rem;
+}
+
+.fav-team-card-game-logo {
+  width: 18px;
+  height: 18px;
+}
+
+.fav-team-card-game .fav-row-meta {
+  margin-left: auto;
+  font: 600 0.95rem/1 var(--font-display);
+  color: #fff;
+}
+
+.fav-team-card-scorer {
+  padding-top: 8px;
+}
+
+.fav-team-card-photo {
+  border: 1.5px solid rgba(255, 255, 255, 0.5);
+}
+
+.fav-team-card[data-abbr]::after {
+  font-size: 72px;
+  top: 4px;
+  opacity: 0.8;
 }

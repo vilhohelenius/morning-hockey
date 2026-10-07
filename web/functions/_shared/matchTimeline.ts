@@ -3,28 +3,35 @@
 // app.js (renderTimeline) builds the same markup client-side from the same
 // TimelinePeriod[] JSON -- keep the two in sync by hand (no build step).
 
-import { escapeHtml, teamLogoUrl } from "./format";
+import { escapeHtml, flagImg, teamLogoUrl } from "./format";
 import type { TimelineEvent, TimelinePeriod } from "./boxscore";
 import type { GoalEvent, PenaltyEvent, ShootoutAttempt } from "./types";
 
 const STRENGTH_FI: Record<string, string> = { YV: "YV", AV: "AV" };
 
+// Names carry a trailing FI flag emoji from boxscore.ts; show the SVG flag
+// instead (same as app.js elFlags).
+function nameHtml(name: string): string {
+  return escapeHtml(name).replace(/\u{1F1EB}\u{1F1EE}/gu, flagImg("fi"));
+}
 
 function logoHtml(abbrev: string): string {
   return `<img class="mt-logo" src="${escapeHtml(teamLogoUrl(abbrev))}" alt="${escapeHtml(abbrev)}" loading="lazy">`;
 }
 
 function goalHtml(goal: GoalEvent, side: "away" | "home"): string {
-  const strength = goal.strength ? `<span class="mt-strength">(${escapeHtml(STRENGTH_FI[goal.strength] ?? goal.strength)})</span>` : "";
+  const strength = goal.strength ? `<span class="mt-strength mt-strength-tag">${escapeHtml(STRENGTH_FI[goal.strength] ?? goal.strength)}</span>` : "";
   const assists = goal.assists_short ?? goal.assists;
   return `
     <div class="mt-event mt-${side} mt-goal">
       <div class="mt-main">
         ${(goal.period ?? 0) >= 100 ? "" : `<span class="mt-time">${escapeHtml(goal.time_in_period)}</span>`}
         <span class="mt-pill">${logoHtml(goal.team_abbrev)}<span class="mt-pill-score">${goal.away_score} - ${goal.home_score}</span></span>
-        <span class="mt-who">${strength}<strong>${escapeHtml(goal.scorer_short ?? goal.scorer)}</strong></span>
+        <div class="mt-col">
+          <span class="mt-who"><strong>${nameHtml(goal.scorer_short ?? goal.scorer)}</strong>${strength}</span>
+          ${assists.length ? `<p class="mt-assists">${nameHtml(assists.join(" · "))}</p>` : ""}
+        </div>
       </div>
-      ${assists.length ? `<p class="mt-assists">${escapeHtml(assists.join(" + "))}</p>` : ""}
     </div>`;
 }
 
@@ -35,7 +42,7 @@ function penaltyHtml(penalty: PenaltyEvent, side: "away" | "home"): string {
       <div class="mt-main">
         <span class="mt-time">${escapeHtml(penalty.time_in_period)}</span>
         <span class="mt-badge">${penalty.minutes > 0 ? penalty.minutes : "RL"}</span>
-        <span class="mt-who"><strong>${escapeHtml(who)}</strong>${penalty.reason ? `<span class="mt-reason">(${escapeHtml(penalty.reason)})</span>` : ""}</span>
+        <span class="mt-who"><strong>${nameHtml(who)}</strong>${penalty.reason ? `<span class="mt-reason">(${escapeHtml(penalty.reason)})</span>` : ""}</span>
       </div>
     </div>`;
 }
@@ -53,7 +60,7 @@ function shootoutHtml(attempt: ShootoutAttempt, awayAbbrev: string): string {
       <div class="mt-main">
         <span class="mt-time">${attempt.sequence}.</span>
         ${outcome}
-        <span class="mt-who"><strong>${escapeHtml(attempt.player)}</strong></span>
+        <span class="mt-who"><strong>${nameHtml(attempt.player)}</strong></span>
       </div>
     </div>`;
 }
