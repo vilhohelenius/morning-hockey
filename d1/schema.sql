@@ -539,6 +539,8 @@ CREATE TABLE IF NOT EXISTS skater_game_onice_xg (
 );
 
 CREATE INDEX IF NOT EXISTS idx_skater_game_onice_xg_player ON skater_game_onice_xg(player_id, season);
+-- season-wide aggregates (Suomipörssi, Odotetut) group by player within one season
+CREATE INDEX IF NOT EXISTS idx_skater_game_onice_xg_season ON skater_game_onice_xg(season, player_id);
 
 -- Team xGF/xGA per game (all situations and 5v5), written by sync_xg.py.
 CREATE TABLE IF NOT EXISTS team_game_xg (

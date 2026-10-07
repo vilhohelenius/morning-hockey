@@ -10,6 +10,7 @@ from ..d1_sync import D1Client, _insert_rows
 from .model import MODEL, WinProbState, predict
 
 _SEASONS = 3
+_HORIZON_DAYS = 7  # a win probability further out is not worth computing or storing yet
 _WP_INPUT_COLUMNS = [
     "game_id", "team_id", "opp_team_id", "season", "game_date", "start_time_utc", "is_home",
     "gf", "ga", "final_type", "sog_f", "sog_a", "dz_giveaways",
@@ -111,23 +112,25 @@ def predict_upcoming(history: list[dict], upcoming: list[dict], computed_at: str
 
 
 def sync_win_probabilities(client: D1Client) -> int:
-    """Recomputes game_win_prob for all unplayed regular-season games. No-op without data."""
+    """Recomputes game_win_prob for unplayed regular-season games in the next _HORIZON_DAYS days. No-op without data."""
     latest = _rows(client, "SELECT MAX(game_id) AS g FROM games WHERE game_id % 1000000 BETWEEN 20001 AND 29999", [])
     if not latest or latest[0]["g"] is None:
         return 0
     last_year = latest[0]["g"] // 1_000_000
+    now = dt.datetime.now(dt.timezone.utc)
     upcoming = _rows(
         client,
         "SELECT game_id, start_time_utc, home_abbrev, away_abbrev FROM games "
-        "WHERE is_finished = 0 AND game_id BETWEEN ? AND ?",
-        [last_year * 1_000_000 + 20_001, last_year * 1_000_000 + 29_999],
+        "WHERE is_finished = 0 AND game_id BETWEEN ? AND ? AND start_time_utc < ?",
+        [last_year * 1_000_000 + 20_001, last_year * 1_000_000 + 29_999,
+         (now + dt.timedelta(days=_HORIZON_DAYS)).strftime("%Y-%m-%dT%H:%M:%SZ")],
     )
     if not upcoming:
         return 0
     history = load_history(client, last_year)
     if not history:
         return 0
-    rows = predict_upcoming(history, upcoming, dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
+    rows = predict_upcoming(history, upcoming, now.strftime("%Y-%m-%dT%H:%M:%SZ"))
     client.execute("DELETE FROM game_win_prob WHERE game_id IN (SELECT game_id FROM games WHERE is_finished = 0)")
     _insert_rows(client, "game_win_prob", _WIN_PROB_COLUMNS, rows)
     return len(rows)

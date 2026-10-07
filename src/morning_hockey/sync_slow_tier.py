@@ -7,6 +7,7 @@ adapter on top. See d1/schema.sql and morning_hockey.d1_sync.
 """
 from __future__ import annotations
 
+import datetime as dt
 import os
 
 from .d1_sync import (
@@ -34,6 +35,16 @@ def _sync(d1: D1Client, key: str, data, write, label: str) -> None:
     print(f"{label}: unchanged, skipped." if result is None else f"{label}: wrote {result}.")
 
 
+# Slow-tier data only changes when games finish, so most runs are skipped; these
+# UTC hours always run anyway (~12 and ~14 Finnish time) as a safety net.
+_ALWAYS_RUN_HOURS_UTC = (10, 12)
+
+
+def finished_games_hash(d1: D1Client) -> str:
+    rows = d1.execute("SELECT group_concat(game_id) AS ids FROM (SELECT game_id FROM games WHERE is_finished = 1 ORDER BY game_id)")
+    return rows["result"][0]["results"][0]["ids"] or ""
+
+
 def run() -> None:
     account_id = os.environ["CF_ACCOUNT_ID"]
     database_id = os.environ["CF_D1_DATABASE_ID"]
@@ -42,6 +53,12 @@ def run() -> None:
     client = NHLClient()
     d1 = D1Client(account_id, database_id, api_token)
     d1.execute("CREATE TABLE IF NOT EXISTS sync_state (key TEXT PRIMARY KEY, hash TEXT NOT NULL)")
+
+    finished = finished_games_hash(d1)
+    previous = d1.execute("SELECT hash FROM sync_state WHERE key = 'slow_finished'")["result"][0]["results"]
+    if previous and previous[0]["hash"] == finished and dt.datetime.now(dt.timezone.utc).hour not in _ALWAYS_RUN_HOURS_UTC:
+        print("No newly finished games and not a scheduled refresh hour: skipped.")
+        return
 
     season_id = current_season_id(client)
 
@@ -70,6 +87,8 @@ def run() -> None:
 
     team_stats = build_all_team_season_stats(client, all_abbrevs, season_id)
     _sync(d1, "team_stats", team_stats, lambda: sync_team_season_stats(d1, team_stats), "Team season stats")
+
+    d1.execute("INSERT OR REPLACE INTO sync_state (key, hash) VALUES ('slow_finished', ?)", [finished])
 
 
 if __name__ == "__main__":
