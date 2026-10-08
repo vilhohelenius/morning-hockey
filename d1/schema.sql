@@ -562,6 +562,8 @@ CREATE TABLE IF NOT EXISTS team_game_xg (
     PRIMARY KEY (game_id, team_id)
 );
 CREATE INDEX IF NOT EXISTS idx_team_game_xg_team ON team_game_xg(team_id, season);
+-- Season-first index: league-wide scans (WHERE season = MAX(season)) read one season instead of the whole table.
+CREATE INDEX IF NOT EXISTS idx_team_game_xg_season ON team_game_xg(season, team_id);
 
 -- Win-probability model inputs (2026-10-06): per team and game the result and
 -- shots/giveaway numbers the xG tables lack, so the model's 3-season walk needs
