@@ -4,7 +4,7 @@
 // Pure functions, no D1/fetch involved, so they're plain-node testable
 // (see scripts/test-boxscore.mjs).
 
-import type { GoalEvent, PenaltyEvent, ShootoutAttempt, TeamSeasonStatsRow, TeamStatRow } from "./types";
+import type { GoalEvent, GoalieChange, PenaltyEvent, ShootoutAttempt, TeamSeasonStatsRow, TeamStatRow } from "./types";
 
 const PERIOD_NUMBER_LABELS: Record<number, string> = { 1: "1. erä", 2: "2. erä", 3: "3. erä" };
 const STRENGTH_LABELS: Record<string, string> = { pp: "YV", sh: "AV" };
@@ -413,6 +413,7 @@ interface RawPbpPlay {
     committedByPlayerId?: number;
     servedByPlayerId?: number;
     eventOwnerTeamId?: number;
+    goalieInNetId?: number;
     highlightClipSharingUrl?: string;
   };
 }
@@ -471,6 +472,34 @@ export function buildPenaltyEvents(pbp: RawPlayByPlay, awayAbbrev: string, homeA
   return events;
 }
 
+// The shooting team's event names the defending goalie (goalieInNetId, absent
+// on an empty net); a different id than before means a goalie change.
+export function buildGoalieChanges(pbp: RawPlayByPlay, awayAbbrev: string, homeAbbrev: string, finnishIds: Set<number>): GoalieChange[] {
+  const spots = new Map((pbp.rosterSpots ?? []).map((s) => [s.playerId, s]));
+  const current = new Map<string, number>();
+  const changes: GoalieChange[] = [];
+  for (const play of pbp.plays ?? []) {
+    const goalie = play.details?.goalieInNetId;
+    const owner = play.details?.eventOwnerTeamId;
+    if (!goalie || owner === undefined) continue;
+    const team = teamAbbrevForId(pbp, owner === pbp.awayTeam?.id ? pbp.homeTeam?.id : pbp.awayTeam?.id, awayAbbrev, homeAbbrev);
+    const previous = current.get(team);
+    current.set(team, goalie);
+    if (!team || previous === undefined || previous === goalie) continue;
+    const descriptor = play.periodDescriptor ?? {};
+    if (descriptor.periodType === "SO") continue;
+    changes.push({
+      period: periodOrder(descriptor),
+      period_label: periodLabel(descriptor),
+      time_in_period: play.timeInPeriod ?? "00:00",
+      team_abbrev: team,
+      goalie_out: pbpPlayerName(spots, previous, finnishIds),
+      goalie_in: pbpPlayerName(spots, goalie, finnishIds),
+    });
+  }
+  return changes;
+}
+
 // Highlight clip page per goal, matched on period + time + scoring team
 // (landing's goal list has no event id to join on, and no two goals by one
 // team share a second). Only nhl.com links are accepted.
@@ -491,7 +520,8 @@ export function attachGoalClips(goals: GoalEvent[], pbp: RawPlayByPlay, awayAbbr
 
 export type TimelineEvent =
   | { kind: "goal"; time: string; goal: GoalEvent }
-  | { kind: "penalty"; time: string; penalty: PenaltyEvent };
+  | { kind: "penalty"; time: string; penalty: PenaltyEvent }
+  | { kind: "goalie"; time: string; change: GoalieChange };
 
 export interface TimelinePeriod {
   label: string;
@@ -513,7 +543,7 @@ function timeToSeconds(time: string): number {
 // With `shootout` attempts, the shootout winner "goal" that landing's
 // scoring list also carries is dropped (the attempts already include it) and
 // the shootout band's score is the attempts' own tally.
-export function buildTimeline(goals: GoalEvent[], penalties: PenaltyEvent[], awayAbbrev: string, shootout: ShootoutAttempt[] = []): TimelinePeriod[] {
+export function buildTimeline(goals: GoalEvent[], penalties: PenaltyEvent[], awayAbbrev: string, shootout: ShootoutAttempt[] = [], goalieChanges: GoalieChange[] = []): TimelinePeriod[] {
   const entries: { period: number; label: string; seconds: number; rank: number; event: TimelineEvent }[] = [];
   for (const goal of goals) {
     const period = goal.period ?? periodFromLabel(goal.period_label);
@@ -533,6 +563,15 @@ export function buildTimeline(goals: GoalEvent[], penalties: PenaltyEvent[], awa
       seconds: timeToSeconds(penalty.time_in_period),
       rank: 0,
       event: { kind: "penalty", time: penalty.time_in_period, penalty },
+    });
+  }
+  for (const change of goalieChanges) {
+    entries.push({
+      period: change.period,
+      label: change.period_label,
+      seconds: timeToSeconds(change.time_in_period),
+      rank: 0,
+      event: { kind: "goalie", time: change.time_in_period, change },
     });
   }
   entries.sort((a, b) => a.period - b.period || a.seconds - b.seconds || a.rank - b.rank);
@@ -616,6 +655,7 @@ export function resolveFinalType(
 interface Timeline {
   goals: GoalEvent[];
   penalties: PenaltyEvent[];
+  goalieChanges: GoalieChange[];
   shootout: ShootoutAttempt[];
   // False when the play-by-play fetch failed (or the row predates the
   // timeline) -- penalties/clips are then missing, so the cache row is
@@ -624,7 +664,7 @@ interface Timeline {
 }
 
 export function serializeTimeline(timeline: Timeline): string {
-  return JSON.stringify({ v: 3, complete: timeline.complete, goals: timeline.goals, penalties: timeline.penalties, shootout: timeline.shootout });
+  return JSON.stringify({ v: 4, complete: timeline.complete, goals: timeline.goals, penalties: timeline.penalties, goalieChanges: timeline.goalieChanges, shootout: timeline.shootout });
 }
 
 // Reads both the current envelope and the legacy bare goals array.
@@ -634,9 +674,10 @@ export function parseTimeline(goalsJson: string): Timeline {
     return {
       goals: parsed.map((g: GoalEvent) => ({ ...g, period: g.period ?? periodFromLabel(g.period_label) })),
       penalties: [],
+      goalieChanges: [],
       shootout: [],
       complete: false,
     };
   }
-  return { goals: parsed.goals ?? [], penalties: parsed.penalties ?? [], shootout: parsed.shootout ?? [], complete: parsed.complete !== false };
+  return { goals: parsed.goals ?? [], penalties: parsed.penalties ?? [], goalieChanges: parsed.goalieChanges ?? [], shootout: parsed.shootout ?? [], complete: parsed.complete !== false };
 }

@@ -11,6 +11,7 @@ import assert from "node:assert/strict";
 import {
   attachGoalClips,
   buildGoalEvents,
+  buildGoalieChanges,
   buildShootoutAttempts,
   resolveFinalType,
   buildPenaltyEvents,
@@ -336,7 +337,7 @@ const PBP = {
   assert.deepEqual(round.goals, goals);
   assert.deepEqual(round.penalties, penalties);
   assert.equal(round.complete, true);
-  assert.ok(serializeTimeline({ goals, penalties, shootout: [], complete: true }).startsWith('{"v":3,"complete":true'));
+  assert.ok(serializeTimeline({ goals, penalties, goalieChanges: [], shootout: [], complete: true }).startsWith('{"v":4,"complete":true'));
   assert.equal(parseTimeline(serializeTimeline({ goals, penalties: [], shootout: [], complete: false })).complete, false);
 
   // legacy cache row: a bare goals array, no period field
@@ -400,4 +401,24 @@ const RAW_SO = [
   assert.deepEqual(round.shootout, attempts);
   assert.deepEqual(parseTimeline('{"v":2,"complete":true,"goals":[],"penalties":[]}').shootout, []);
   console.log("ok: envelope v3 carries the shootout");
+}
+
+// Goalie change: the defending goalie id on the shooting team's events flips.
+{
+  const pbp = {
+    awayTeam: { id: 1 },
+    homeTeam: { id: 2 },
+    rosterSpots: [
+      { playerId: 10, firstName: { default: "Jake" }, lastName: { default: "Oettinger" } },
+      { playerId: 11, firstName: { default: "Casey" }, lastName: { default: "DeSmith" } },
+    ],
+    plays: [
+      { typeDescKey: "shot-on-goal", periodDescriptor: { number: 1, periodType: "REG" }, timeInPeriod: "01:00", details: { eventOwnerTeamId: 2, goalieInNetId: 10 } },
+      { typeDescKey: "shot-on-goal", periodDescriptor: { number: 2, periodType: "REG" }, timeInPeriod: "05:30", details: { eventOwnerTeamId: 2, goalieInNetId: 11 } },
+      { typeDescKey: "shot-on-goal", periodDescriptor: { number: 2, periodType: "REG" }, timeInPeriod: "06:00", details: { eventOwnerTeamId: 1, goalieInNetId: 99 } },
+    ],
+  };
+  const changes = buildGoalieChanges(pbp, "DAL", "NYI", new Set());
+  assert.equal(changes.length, 1);
+  assert.deepEqual([changes[0].team_abbrev, changes[0].time_in_period, changes[0].goalie_out, changes[0].goalie_in], ["DAL", "05:30", "J. Oettinger", "C. DeSmith"]);
 }

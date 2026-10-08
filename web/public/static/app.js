@@ -560,9 +560,10 @@
 
     function timelineEvent(event, awayAbbrev) {
       var isGoal = event.kind === "goal";
-      var item = isGoal ? event.goal : event.penalty;
+      var isGoalie = event.kind === "goalie";
+      var item = isGoal ? event.goal : isGoalie ? event.change : event.penalty;
       var side = item.team_abbrev === awayAbbrev ? "away" : "home";
-      var row = el("div", "mt-event mt-" + side + (isGoal ? " mt-goal" : " mt-penalty"));
+      var row = el("div", "mt-event mt-" + side + (isGoal ? " mt-goal" : isGoalie ? " mt-goalie" : " mt-penalty"));
       var main = el("div", "mt-main");
       // Shootout attempts carry no meaningful clock time.
       if (!(item.period >= 100)) main.appendChild(el("span", "mt-time", item.time_in_period));
@@ -580,6 +581,12 @@
         var assists = item.assists_short || item.assists || [];
         if (assists.length) col.appendChild(elFlags("p", "mt-assists", assists.join(" · ")));
         main.appendChild(col);
+        row.appendChild(main);
+      } else if (isGoalie) {
+        main.appendChild(el("span", "mt-badge", "MV"));
+        who.appendChild(elFlags("strong", null, item.goalie_in));
+        who.appendChild(elFlags("span", "mt-reason", "(tilalle " + item.goalie_out + ")"));
+        main.appendChild(who);
         row.appendChild(main);
       } else {
         main.appendChild(el("span", "mt-badge", item.minutes > 0 ? String(item.minutes) : "RL"));

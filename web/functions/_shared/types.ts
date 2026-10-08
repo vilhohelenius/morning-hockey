@@ -183,6 +183,18 @@ export interface PenaltyEvent {
   reason: string; // Finnish
 }
 
+// A goalie replaced mid-game. time_in_period is the new goalie's first shot
+// faced (play-by-play has no substitution event), so it is a few minutes late
+// at worst.
+export interface GoalieChange {
+  period: number;
+  period_label: string;
+  time_in_period: string;
+  team_abbrev: string; // the goalie's team
+  goalie_out: string;
+  goalie_in: string;
+}
+
 export interface TeamStatRow {
   label: string;
   away_value: string;

@@ -84,7 +84,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
           youtube_url: youtubeUrl ?? undefined,
           ...(box
             ? {
-                timeline: buildTimeline(box.goals, box.penalties, game.away_abbrev, box.shootout),
+                timeline: buildTimeline(box.goals, box.penalties, game.away_abbrev, box.shootout, box.goalieChanges),
                 team_stats: [...box.teamStats, ...(gameXg ? teamXgStatRows(gameXg.away, gameXg.home, true) : [])],
               }
             : {}),
