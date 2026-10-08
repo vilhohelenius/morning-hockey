@@ -337,7 +337,7 @@ const PBP = {
   assert.deepEqual(round.goals, goals);
   assert.deepEqual(round.penalties, penalties);
   assert.equal(round.complete, true);
-  assert.ok(serializeTimeline({ goals, penalties, goalieChanges: [], shootout: [], complete: true }).startsWith('{"v":4,"complete":true'));
+  assert.ok(serializeTimeline({ goals, penalties, goalieChanges: [], shootout: [], complete: true }).startsWith('{"v":5,"complete":true'));
   assert.equal(parseTimeline(serializeTimeline({ goals, penalties: [], shootout: [], complete: false })).complete, false);
 
   // legacy cache row: a bare goals array, no period field
@@ -421,4 +421,23 @@ const RAW_SO = [
   const changes = buildGoalieChanges(pbp, "DAL", "NYI", new Set());
   assert.equal(changes.length, 1);
   assert.deepEqual([changes[0].team_abbrev, changes[0].time_in_period, changes[0].goalie_out, changes[0].goalie_in], ["DAL", "05:30", "J. Oettinger", "C. DeSmith"]);
+}
+
+// Shift-chart path: exact start of the other goalie's shift; a goalie coming
+// back after an extra-attacker pull is not a change.
+{
+  const pbp = {
+    awayTeam: { id: 1 },
+    homeTeam: { id: 2 },
+    rosterSpots: [
+      { playerId: 10, positionCode: "G", firstName: { default: "Jake" }, lastName: { default: "Oettinger" } },
+      { playerId: 11, positionCode: "G", firstName: { default: "Casey" }, lastName: { default: "DeSmith" } },
+      { playerId: 50, positionCode: "C", firstName: { default: "A" }, lastName: { default: "Skater" } },
+    ],
+    plays: [{ periodDescriptor: { number: 2, periodType: "REG" } }],
+  };
+  const shift = (playerId: number, period: number, startTime: string) => ({ playerId, teamId: 1, period, startTime, typeCode: 517 });
+  const changes = buildGoalieChanges(pbp, "DAL", "NYI", new Set(), [shift(10, 1, "00:00"), shift(10, 1, "19:00"), shift(50, 2, "00:00"), shift(11, 2, "04:12"), shift(11, 3, "00:00")]);
+  assert.equal(changes.length, 1);
+  assert.deepEqual([changes[0].time_in_period, changes[0].goalie_out, changes[0].goalie_in], ["04:12", "J. Oettinger", "C. DeSmith"]);
 }

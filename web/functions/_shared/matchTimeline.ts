@@ -65,13 +65,16 @@ function shootoutHtml(attempt: ShootoutAttempt, awayAbbrev: string): string {
     </div>`;
 }
 
+// Red "swap" arrows (Material swap_horiz); same path in app.js.
+const SWAP_ICON = `<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M6.99 11 3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg>`;
+
 function goalieChangeHtml(change: GoalieChange, side: "away" | "home"): string {
   return `
     <div class="mt-event mt-${side} mt-goalie">
       <div class="mt-main">
         <span class="mt-time">${escapeHtml(change.time_in_period)}</span>
-        <span class="mt-badge">MV</span>
-        <span class="mt-who"><strong>${nameHtml(change.goalie_in)}</strong><span class="mt-reason">(tilalle ${nameHtml(change.goalie_out)})</span></span>
+        <span class="mt-badge mt-swap" title="Maalivahdinvaihto" aria-label="Maalivahdinvaihto">${SWAP_ICON}</span>
+        <span class="mt-who"><strong>${nameHtml(change.goalie_in)}</strong><span class="mt-reason">sisään, ${nameHtml(change.goalie_out)} ulos</span></span>
       </div>
     </div>`;
 }

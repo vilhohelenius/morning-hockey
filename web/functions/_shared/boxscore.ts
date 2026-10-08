@@ -420,6 +420,7 @@ interface RawPbpPlay {
 
 interface RawPbpRosterSpot {
   playerId: number;
+  positionCode?: string;
   firstName?: { default: string };
   lastName?: { default: string };
 }
@@ -472,9 +473,57 @@ export function buildPenaltyEvents(pbp: RawPlayByPlay, awayAbbrev: string, homeA
   return events;
 }
 
+export interface RawShift {
+  playerId: number;
+  teamId: number;
+  period: number;
+  startTime: string; // "MM:SS" in the period
+  typeCode?: number;
+}
+
+// Exact change times from the shift chart: a goalie's shift that starts after
+// a different goalie's last one (same goalie returning from an extra-attacker
+// pull is not a change). Falls back to goalieChangesFromShots without shifts.
+export function buildGoalieChanges(
+  pbp: RawPlayByPlay,
+  awayAbbrev: string,
+  homeAbbrev: string,
+  finnishIds: Set<number>,
+  shifts: RawShift[] | null = null,
+): GoalieChange[] {
+  if (!shifts) return goalieChangesFromShots(pbp, awayAbbrev, homeAbbrev, finnishIds);
+  const spots = new Map((pbp.rosterSpots ?? []).map((s) => [s.playerId, s]));
+  const goalies = new Set((pbp.rosterSpots ?? []).filter((s) => s.positionCode === "G").map((s) => s.playerId));
+  const descriptors = new Map<number, { periodType?: string; number?: number }>();
+  for (const play of pbp.plays ?? []) if (play.periodDescriptor?.number) descriptors.set(play.periodDescriptor.number, play.periodDescriptor);
+  const ordered = shifts
+    .filter((s) => s.typeCode === 517 && goalies.has(s.playerId))
+    .sort((a, b) => a.period - b.period || timeToSeconds(a.startTime) - timeToSeconds(b.startTime));
+  const last = new Map<number, number>(); // teamId -> goalie id
+  const changes: GoalieChange[] = [];
+  for (const shift of ordered) {
+    const previous = last.get(shift.teamId);
+    last.set(shift.teamId, shift.playerId);
+    const team = teamAbbrevForId(pbp, shift.teamId, awayAbbrev, homeAbbrev);
+    if (!team || previous === undefined || previous === shift.playerId || shift.period > 4 && !descriptors.has(shift.period)) continue;
+    const descriptor = descriptors.get(shift.period) ?? { number: shift.period, periodType: shift.period > 3 ? "OT" : "REG" };
+    if (descriptor.periodType === "SO") continue;
+    changes.push({
+      period: periodOrder(descriptor),
+      period_label: periodLabel(descriptor),
+      time_in_period: shift.startTime,
+      team_abbrev: team,
+      goalie_out: pbpPlayerName(spots, previous, finnishIds),
+      goalie_in: pbpPlayerName(spots, shift.playerId, finnishIds),
+    });
+  }
+  return changes;
+}
+
 // The shooting team's event names the defending goalie (goalieInNetId, absent
-// on an empty net); a different id than before means a goalie change.
-export function buildGoalieChanges(pbp: RawPlayByPlay, awayAbbrev: string, homeAbbrev: string, finnishIds: Set<number>): GoalieChange[] {
+// on an empty net); a different id than before means a goalie change. Time is
+// the new goalie's first shot faced, so it can be late.
+function goalieChangesFromShots(pbp: RawPlayByPlay, awayAbbrev: string, homeAbbrev: string, finnishIds: Set<number>): GoalieChange[] {
   const spots = new Map((pbp.rosterSpots ?? []).map((s) => [s.playerId, s]));
   const current = new Map<string, number>();
   const changes: GoalieChange[] = [];
@@ -664,7 +713,7 @@ interface Timeline {
 }
 
 export function serializeTimeline(timeline: Timeline): string {
-  return JSON.stringify({ v: 4, complete: timeline.complete, goals: timeline.goals, penalties: timeline.penalties, goalieChanges: timeline.goalieChanges, shootout: timeline.shootout });
+  return JSON.stringify({ v: 5, complete: timeline.complete, goals: timeline.goals, penalties: timeline.penalties, goalieChanges: timeline.goalieChanges, shootout: timeline.shootout });
 }
 
 // Reads both the current envelope and the legacy bare goals array.

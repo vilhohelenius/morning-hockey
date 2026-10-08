@@ -5,7 +5,7 @@
 // route). Extracted here so both places share one cache-read/fetch/write
 // path instead of the dashboard re-implementing its own copy.
 
-import { attachGoalClips, buildGoalEvents, buildGoalieChanges, buildPenaltyEvents, buildShootoutAttempts, buildTeamStats, parseTimeline, resolveFinalType, serializeTimeline, type RawPlayByPlay } from "./boxscore";
+import { attachGoalClips, buildGoalEvents, buildGoalieChanges, buildPenaltyEvents, buildShootoutAttempts, buildTeamStats, parseTimeline, resolveFinalType, serializeTimeline, type RawPlayByPlay, type RawShift } from "./boxscore";
 import { rosterNationalities, teamPlayerStats } from "./gameReport";
 import type { GameBoxScoreRow, GameRow, GoalEvent, GoalieChange, GoalieGameStat, PenaltyEvent, PlayerGameStat, ShootoutAttempt, TeamStatRow } from "./types";
 
@@ -64,7 +64,7 @@ const NHL_FINISHED_STATES = new Set(["OFF", "FINAL"]);
 async function fetchAndParseBoxScore(game: GameRow): Promise<ParsedBoxScore> {
   const seasonId = seasonIdForDate(game.date);
 
-  const [landing, rightRail, boxscore, awayRoster, homeRoster, playByPlay] = await Promise.all([
+  const [landing, rightRail, boxscore, awayRoster, homeRoster, playByPlay, shifts] = await Promise.all([
     fetchJson(`/gamecenter/${game.game_id}/landing`),
     fetchJson(`/gamecenter/${game.game_id}/right-rail`),
     fetchJson(`/gamecenter/${game.game_id}/boxscore`),
@@ -76,6 +76,11 @@ async function fetchAndParseBoxScore(game: GameRow): Promise<ParsedBoxScore> {
       console.error(`Play-by-play fetch failed for game ${game.game_id}:`, error);
       return null;
     }) as Promise<RawPlayByPlay | null>,
+    // Exact goalie-change times; optional (falls back to play-by-play shots).
+    fetch(`https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId=${game.game_id}`)
+      .then((r) => (r.ok ? r.json<{ data?: RawShift[] }>() : null))
+      .then((j) => j?.data ?? null)
+      .catch((): null => null),
   ]);
 
 
@@ -89,7 +94,7 @@ async function fetchAndParseBoxScore(game: GameRow): Promise<ParsedBoxScore> {
   const baseGoals = buildGoalEvents(landing?.summary?.scoring ?? [], game.away_abbrev, game.home_abbrev, finnishIds);
   const goals = playByPlay ? attachGoalClips(baseGoals, playByPlay, game.away_abbrev, game.home_abbrev) : baseGoals;
   const penalties = playByPlay ? buildPenaltyEvents(playByPlay, game.away_abbrev, game.home_abbrev, finnishIds) : [];
-  const goalieChanges = playByPlay ? buildGoalieChanges(playByPlay, game.away_abbrev, game.home_abbrev, finnishIds) : [];
+  const goalieChanges = playByPlay ? buildGoalieChanges(playByPlay, game.away_abbrev, game.home_abbrev, finnishIds, shifts?.length ? shifts : null) : [];
   const teamStats = buildTeamStats(rightRail?.teamGameStats ?? [], game.away_score, game.home_score);
 
   const playerStats = boxscore?.playerByGameStats ?? {};
@@ -187,10 +192,10 @@ function isStale(cached: GameBoxScoreRow, game: GameRow): boolean {
   // already-cached finished game picks up the new wording on next view
   // instead of being stuck with whatever text was cached before the rename.
   if (cached.team_stats_json.includes('"Torjutut laukaukset"') || cached.team_stats_json.includes('"Menetetyt kiekot"') || cached.team_stats_json.includes('"Riistetyt kiekot"')) return true;
-  // 2026-10-06: goals_json became {v:3 -> v:4 2026-10-08 adds goalieChanges; complete, goals, penalties, shootout} (match
+  // 2026-10-06: goals_json became {v:3 -> v:5 2026-10-08 adds goalieChanges (v5: exact times from shift charts); complete, goals, penalties, shootout} (match
   // timeline). A legacy bare-array row, or one whose play-by-play fetch
   // failed (complete:false), is refetched -- again no migration needed.
-  if (!cached.goals_json.startsWith('{"v":4,"complete":true')) return true;
+  if (!cached.goals_json.startsWith('{"v":5,"complete":true')) return true;
   // A cache row is only a trustworthy "settled result" if it was itself
   // captured after the game looked over -- `live_json` is non-null exactly
   // when the fetch that produced this row still saw a clock/period (see

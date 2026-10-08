@@ -3321,6 +3321,15 @@ main {
   font-size: 0.72rem;
 }
 
+/* Goalie change: plain red swap icon instead of the yellow penalty badge */
+.mt-goalie .mt-badge.mt-swap {
+  display: inline-flex;
+  align-items: center;
+  padding: 0;
+  background: none;
+  color: #d62828;
+}
+
 /* ===== Yön suomalaiset (finnishNight.ts) ===== */
 .yf-section .yf-scroll {
   margin-bottom: 12px;
