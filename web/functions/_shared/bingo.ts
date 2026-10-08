@@ -70,7 +70,7 @@ export function gameNight(startUtcIso: string): string {
 }
 
 export function hasStarted(game: BingoGame, nowMs: number): boolean {
-  return !!game.is_finished || game.game_state !== "FUT" || new Date(game.start_time_utc).getTime() <= nowMs;
+  return !!game.is_finished || (game.game_state !== "FUT" && game.game_state !== "PRE") || new Date(game.start_time_utc).getTime() <= nowMs;
 }
 
 /** Latest night with a started game, or null. */

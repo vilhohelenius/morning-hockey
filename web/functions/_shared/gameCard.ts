@@ -24,7 +24,7 @@
 
 import { periodLabel } from "./boxscore";
 import type { LiveStatus } from "./boxScoreCache";
-import { isGameLive } from "./dayGames";
+import { isGameLive, isStartingSoon } from "./dayGames";
 import { flagImg, decisionFi, escapeHtml, finalTypeShort, helsinkiParts } from "./format";
 import { jerseyColors } from "./teamColors";
 import { formatGsax } from "./xg";
@@ -156,7 +156,9 @@ export function renderGameCard(
     ? ""
     : isLive(game)
       ? `<p class="live-tag"><span class="live-dot"></span>${escapeHtml(liveBadgeText(live))}</p>`
-      : "";
+      : isStartingSoon(game)
+        ? `<p class="live-tag soon-tag">Alkaa pian</p>`
+        : "";
 
   // Not started yet: the score (always 0-0) says nothing useful, so show
   // its Helsinki-local start time there instead.

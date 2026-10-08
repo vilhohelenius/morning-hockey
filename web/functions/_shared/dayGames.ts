@@ -20,7 +20,8 @@ export const MAX_DAY_OFFSET = 3;
 // preview for up to half an hour).
 export function isGameLive(game: GameRow, now: number = Date.now()): boolean {
   if (game.is_finished) return false;
-  if (game.game_state !== "FUT") return true;
+  // PRE = NHL's pre-game phase, opens ~30 min before puck drop: not live yet.
+  if (game.game_state !== "FUT" && game.game_state !== "PRE") return true;
   return new Date(game.start_time_utc).getTime() <= now;
 }
 
@@ -48,4 +49,11 @@ export function selectDayGames(rows: GameRow[], day: string, isToday: boolean, n
       return isGameLive(g, now) && now - new Date(g.start_time_utc).getTime() <= MAX_LIVE_AGE_MS;
     })
     .sort((a, b) => a.start_time_utc.localeCompare(b.start_time_utc) || a.game_id - b.game_id);
+}
+
+// Not live yet but about to drop: NHL says PRE, or puck drop is under 30 min
+// away (game_state lags by up to ~30 min).
+export function isStartingSoon(game: GameRow, now: number = Date.now()): boolean {
+  if (game.is_finished || isGameLive(game, now)) return false;
+  return game.game_state === "PRE" || new Date(game.start_time_utc).getTime() - now <= 30 * 60 * 1000;
 }

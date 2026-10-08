@@ -763,7 +763,11 @@
 
     function openGameDetail(trigger) {
       var data = gameDetails[trigger.dataset.gameId];
-      if (!data) return;
+      if (!data) {
+        // No box score cached yet: nothing to expand, open the game page instead.
+        location.href = "/ottelut/" + trigger.dataset.gameId;
+        return;
+      }
 
       closeGameDetail();
 
