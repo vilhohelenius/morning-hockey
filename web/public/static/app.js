@@ -224,7 +224,7 @@
         if (f !== next && f !== prev) f.style.transform = "rotateY(" + (180 - angle) + "deg)";
       });
       next.classList.add("is-active");
-      inner.style.transform = "rotateY(" + (step % 2) * 180 + "deg)";
+      inner.style.transform = "rotateY(" + (faces.length > 2 ? step : step % 2) * 180 + "deg)";
       card.setAttribute("aria-pressed", String(step % faces.length !== 0));
       fit();
     }

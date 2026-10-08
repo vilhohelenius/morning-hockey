@@ -64,7 +64,7 @@ export function renderTeamCups(abbrev: string): string {
   if (!years?.length) return "";
   return `
   <div class="team-cups">
-    <div class="team-cups-head"><img src="/static/trophies/stanley-cup.jpg" alt="Stanley Cup" width="31" height="46" class="trophy-img"><b>${years.length}</b></div>
+    <div class="team-cups-head"><img src="/static/trophies/stanley-cup.png" alt="Stanley Cup" width="31" height="46" class="trophy-img"><b>${years.length}</b></div>
     ${renderCupYears(years)}
   </div>`;
 }
@@ -86,12 +86,12 @@ export function renderTrophyRoom(awards: Award[] | undefined): string {
 
   const cupYears = cup ? seasonYears(cup) : [];
   const cupHtml = cupYears.length
-    ? `<div class="trophy-room-cup"><img src="/static/trophies/stanley-cup.jpg" alt="" width="64" height="96" class="trophy-img"><div><div class="trophy-count">${cupYears.length} <i>× Stanley Cup</i></div>${renderCupYears(cupYears)}</div></div>`
+    ? `<div class="trophy-room-cup"><img src="/static/trophies/stanley-cup.png" alt="" width="64" height="96" class="trophy-img"><div><div class="trophy-count">${cupYears.length} <i>× Stanley Cup</i></div>${renderCupYears(cupYears)}</div></div>`
     : "";
   const itemsHtml = items
     .map(({ t, years }) => {
       const when = years.length > 3 ? `${years[years.length - 1]} – ${years[0]}` : [...years].reverse().join(" · ");
-      return `<div class="trophy-item"><div class="trophy-pic"><img src="/static/trophies/${t.file}.jpg" alt="" width="40" height="60" class="trophy-img" loading="lazy"></div><span class="trophy-count">${years.length}<i>×</i></span><b>${t.label}</b><small>${when}</small></div>`;
+      return `<div class="trophy-item"><div class="trophy-pic"><img src="/static/trophies/${t.file}.png" alt="" width="40" height="60" class="trophy-img" loading="lazy"></div><span class="trophy-count">${years.length}<i>×</i></span><b>${t.label}</b><small>${when}</small></div>`;
     })
     .join("");
 

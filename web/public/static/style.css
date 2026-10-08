@@ -4918,9 +4918,9 @@ main {
 .team-page-header {
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: 12px;
   text-align: left;
-  padding: 22px 16px;
+  padding: 22px 12px;
   min-height: 150px;
 }
 
@@ -4929,12 +4929,13 @@ main {
   height: 96px;
   margin: 0;
   flex: none;
+  margin-bottom: 14px;
   filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5));
 }
 
 .team-page-header .team-hero-text {
   min-width: 0;
-  padding-right: 36px;
+  padding-right: 0;
 }
 
 .team-page-header h1 {
@@ -6054,11 +6055,10 @@ main {
 
 /* ---------- Joukkueen Stanley Cup -puoli ja pelaajan palkintohuone ---------- */
 
-/* NHL:n pokaalikuvat ovat JPG:itä mustalla taustalla; screen häivyttää mustan. */
+/* Pokaalikuvien musta tausta on muutettu läpinäkyväksi PNG:ksi (alpha = kirkkaus). */
 .trophy-img {
   display: block;
   width: auto;
-  mix-blend-mode: screen;
 }
 
 .cup-years {
@@ -6212,10 +6212,3 @@ main {
   color: rgba(255, 255, 255, 0.7);
 }
 
-/* mix-blend-mode: screen toimii vain jos kuvan esivanhemmat eivät muodosta omaa
-   pinoamiskontekstia (heron lapsille asetettu z-index tekisi sen). */
-.hero-banner > .team-cups,
-.hero-banner.team-hero-back > *,
-.hero-banner.player-hero-room > * {
-  z-index: auto;
-}
