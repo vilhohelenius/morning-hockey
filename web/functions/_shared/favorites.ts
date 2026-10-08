@@ -9,6 +9,11 @@ import type { GameRow } from "./types.ts";
 const NHL_BASE = "https://api-web.nhle.com/v1";
 const NHL_HEADERS = { "User-Agent": "Mozilla/5.0 (compatible; MorningHockey/1.0)", Accept: "application/json" };
 
+// Each favorite player costs one NHL game-log fetch on /suosikit, and a Worker
+// request may make at most 50 subrequests on the free plan.
+export const MAX_FAVORITE_PLAYERS = 30;
+export const FAVORITE_LIMIT_MESSAGE = "Suosikkipelaajien maksimimäärä saavutettu. Poista jokin, jotta voit lisätä uuden";
+
 export interface GameLogEntry {
   gameId: number;
   goals: number;

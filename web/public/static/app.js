@@ -1087,8 +1087,20 @@
       button.disabled = true;
 
       var wasFav = actionInput.value === "remove";
-      fetch(form.action, { method: "POST", body: new FormData(form), redirect: "manual" })
+      fetch(form.action, { method: "POST", body: new FormData(form), redirect: "manual", headers: { "X-Fav-Toggle": "1" } })
         .then(function (response) {
+          if (response.status === 409) {
+            // Favorite-player limit reached: toast the server's message, no state change.
+            var limit = document.createElement("div");
+            limit.className = "refresh-toast refresh-toast-wrap";
+            limit.setAttribute("role", "status");
+            limit.textContent = "Suosikkipelaajien maksimimäärä saavutettu. Poista jokin, jotta voit lisätä uuden";
+            document.body.appendChild(limit);
+            setTimeout(function () {
+              limit.remove();
+            }, 4000);
+            return;
+          }
           if (response.type !== "opaqueredirect" && !response.ok) throw new Error("fav toggle failed");
           var nowFav = !wasFav;
           actionInput.value = nowFav ? "remove" : "add";

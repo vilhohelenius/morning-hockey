@@ -12,6 +12,7 @@
 import { currentUsername, readHighlightsCookie, readThemeCookie } from "../_shared/auth";
 import { icon, escapeHtml, formatToi, teamLogoUrl } from "../_shared/format";
 import { loadPicks, loadWindowGames } from "../_shared/bingoData";
+import { FAVORITE_LIMIT_MESSAGE, MAX_FAVORITE_PLAYERS } from "../_shared/favorites";
 import { renderLayout } from "../_shared/layout";
 import { fetchGoaliesSeasonGsaxMap, formatGsax } from "../_shared/xg";
 import type {
@@ -241,7 +242,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   const favoriteTeamsSection = `
 <section>
   <h2 class="section-title">Suosikkijoukkueet</h2>
-  <p class="standings-legend">Näkyvät sivupalkin ${icon("star")} Omat -valikossa, linkkinä suoraan joukkueen tilastosivulle.</p>
+  <p class="standings-legend">Näkyvät Suosikit-sivulla.</p>
   ${
     favoriteTeamsHtml.length
       ? `<div class="fav-list">${favoriteTeamsHtml.join("")}</div>`
@@ -250,21 +251,28 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   ${renderTeamPicker(availableTeams)}
 </section>`;
 
+  const playersFull = favoritePlayerRows.length >= MAX_FAVORITE_PLAYERS;
+  const limitNote = playersFull || url.searchParams.get("raja") === "1" ? `<p class="empty-note">${FAVORITE_LIMIT_MESSAGE}.</p>` : "";
   const favoritePlayersSection = `
 <section>
   <h2 class="section-title">Suosikkipelaajat</h2>
-  <p class="standings-legend">Näkyvät koottuna listana sivupalkin ${icon("star")} Omat → Suosikkipelaajat -kohdassa.</p>
+  <p class="standings-legend">Voit valita enintään ${MAX_FAVORITE_PLAYERS} suosikkipelaajaa.</p>
   ${
     favoritePlayersHtml.length
       ? `<div class="fav-list">${favoritePlayersHtml.join("")}</div>`
       : `<p class="empty-note">Ei vielä suosikkipelaajia.</p>`
   }
-  <form method="get" action="/omat" class="table-filters">
+  ${limitNote}
+  ${
+    playersFull
+      ? ""
+      : `<form method="get" action="/omat" class="table-filters">
     <input type="hidden" name="osio" value="suosikit">
     <input type="search" name="q" placeholder="Hae pelaajaa nimellä..." value="${escapeHtml(query)}">
     <button type="submit" class="filter-btn">Hae</button>
   </form>
-  ${searchResultsHtml}
+  ${searchResultsHtml}`
+  }
 </section>`;
 
   let tulospiiloSections = "";

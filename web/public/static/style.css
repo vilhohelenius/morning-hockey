@@ -5964,3 +5964,11 @@ main {
     animation: none;
   }
 }
+
+/* Longer message variant (favorite-player limit): wraps instead of overflowing a phone. */
+.refresh-toast.refresh-toast-wrap {
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  white-space: normal;
+  border-radius: 16px;
+}
