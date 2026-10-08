@@ -534,7 +534,7 @@ function renderPlayerHeroBack(landing: any, age: number | null): string {
         ? `<img src="${escapeHtml(teamLogoUrl(draft.teamAbbrev))}" alt="" class="player-hero-draft-logo" onerror="this.style.visibility='hidden'">`
         : ""
     }
-    <span>Draft ${draft.year}${draft.round ? ` · kierros ${draft.round}` : ""}${draft.overallPick ? ` · ${draft.overallPick}. kok.` : ""}</span>
+    <span>Draftattu ${draft.year}${draft.round ? ` · kierros ${draft.round}` : ""}${draft.overallPick ? `${draft.round ? ", " : " · "}valinta ${draft.overallPick} (yht.)` : ""}</span>
   </div>`
     : "";
 
