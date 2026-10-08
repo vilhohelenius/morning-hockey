@@ -75,11 +75,23 @@ function emptySeasonStats(abbrev: string): TeamSeasonStatsRow {
   };
 }
 
-function renderSkaterTable(skaters: PlayerGameStat[], ixg: Map<number, number>): string {
+// "MM:SS" -> seconds, for the TOI sort key.
+const toiSeconds = (toi: string): number => {
+  const [m, s] = toi.split(":").map(Number);
+  return (m || 0) * 60 + (s || 0);
+};
+
+function renderSkaterTable(skaters: PlayerGameStat[], xg: { ixg: Map<number, number>; xgfPct: Map<number, number>; xgfPct5v5: Map<number, number> }): string {
+  const { ixg, xgfPct, xgfPct5v5 } = xg;
+  const pctCell = (m: Map<number, number>, id: number) => (m.has(id) ? `${m.get(id)!.toFixed(0)} %` : "–");
   const rows = skaters
     .map(
       (p, i) => `
-      <tr>
+      <tr data-rank="${i + 1}" data-name="${escapeHtml(p.name)}" data-goals="${p.goals}" data-assists="${p.assists}" data-points="${p.points}"
+          data-pm="${p.plus_minus}" data-shots="${p.shots}" data-ixg="${ixg.get(p.player_id) ?? 0}"
+          data-xgf="${xgfPct.get(p.player_id) ?? -1}" data-xgf5="${xgfPct5v5.get(p.player_id) ?? -1}"
+          data-blocks="${p.blocked_shots}" data-hits="${p.hits}" data-give="${p.giveaways}" data-take="${p.takeaways}"
+          data-fo="${p.faceoff_pct ?? -1}" data-pim="${p.pim}" data-toi="${toiSeconds(p.toi)}">
         <td class="col-rank">${i + 1}</td>
         <td>
           <a href="/pelaajat/${p.player_id}" class="player-cell">
@@ -96,6 +108,7 @@ function renderSkaterTable(skaters: PlayerGameStat[], ixg: Map<number, number>):
         <td>${p.plus_minus > 0 ? "+" : ""}${p.plus_minus}</td>
         <td>${p.shots}</td>
         ${ixg.size ? `<td>${(ixg.get(p.player_id) ?? 0).toFixed(2)}</td>` : ""}
+        ${xgfPct.size ? `<td>${pctCell(xgfPct, p.player_id)}</td><td>${pctCell(xgfPct5v5, p.player_id)}</td>` : ""}
         <td>${p.blocked_shots}</td>
         <td>${p.hits}</td>
         <td>${p.giveaways}</td>
@@ -113,20 +126,20 @@ function renderSkaterTable(skaters: PlayerGameStat[], ixg: Map<number, number>):
     <thead>
       <tr>
         <th class="col-rank">#</th>
-        <th>Pelaaja</th>
-        <th title="Maalit">M</th>
-        <th title="Syötöt">S</th>
-        <th title="Pisteet">P</th>
-        <th title="Plus/miinus">+/-</th>
-        <th title="Laukaukset">L</th>
-        ${ixg.size ? '<th title="Yksilöllinen odotettu maalimäärä (ixG)">ixG</th>' : ""}
-        <th title="Blokatut laukaukset">Blokit</th>
-        <th title="Taklaukset">Taklat</th>
-        <th title="Kiekon menetykset">Menet.</th>
-        <th title="Kiekon riistot">Riistot</th>
-        <th title="Aloitusprosentti">Al.%</th>
-        <th title="Jäähyt (min)">JH</th>
-        <th>Peliaika</th>
+        <th data-sort="name" data-type="text">Pelaaja</th>
+        <th data-sort="goals" title="Maalit">M</th>
+        <th data-sort="assists" title="Syötöt">S</th>
+        <th data-sort="points" title="Pisteet">P</th>
+        <th data-sort="pm" title="Plus/miinus">+/-</th>
+        <th data-sort="shots" title="Laukaukset">L</th>
+        ${ixg.size ? '<th data-sort="ixg" title="Yksilöllinen odotettu maalimäärä (ixG)">ixG</th>' : ""}
+        <th data-sort="blocks" title="Blokatut laukaukset">Blokit</th>
+        <th data-sort="hits" title="Taklaukset">Taklat</th>
+        <th data-sort="give" title="Kiekon menetykset">Menet.</th>
+        <th data-sort="take" title="Kiekon riistot">Riistot</th>
+        <th data-sort="fo" title="Aloitusprosentti">Al.%</th>
+        <th data-sort="pim" title="Jäähyt (min)">JH</th>
+        <th data-sort="toi">Peliaika</th>
       </tr>
     </thead>
     <tbody>${rows}</tbody>
@@ -149,7 +162,8 @@ function renderGoalieTable(goalies: GoalieGameStat[], gsax: Map<number, number>)
   const rows = goalies
     .map(
       (g, i) => `
-      <tr>
+      <tr data-rank="${i + 1}" data-name="${escapeHtml(g.name)}" data-sa="${g.shots_against}" data-saves="${g.saves}"
+          data-ga="${g.shots_against - g.saves}" data-svp="${g.save_pct}" data-gsax="${gsax.get(g.player_id) ?? 0}" data-toi="${toiSeconds(g.toi)}">
         <td class="col-rank">${i + 1}</td>
         <td>
           <a href="/pelaajat/${g.player_id}" class="player-cell">
@@ -176,13 +190,13 @@ function renderGoalieTable(goalies: GoalieGameStat[], gsax: Map<number, number>)
     <thead>
       <tr>
         <th class="col-rank">#</th>
-        <th>Pelaaja</th>
-        <th title="Laukauksia vastaan">Lauk.</th>
-        <th title="Torjunnat">Torj.</th>
-        <th title="Päästetyt maalit">Päästi</th>
-        <th title="Torjuntaprosentti">SV%</th>
-        ${gsax.size ? '<th title="Torjutut maalit yli odotuksen (GSAx)">GSAx</th>' : ""}
-        <th>Peliaika</th>
+        <th data-sort="name" data-type="text">Pelaaja</th>
+        <th data-sort="sa" title="Laukauksia vastaan">Lauk.</th>
+        <th data-sort="saves" title="Torjunnat">Torj.</th>
+        <th data-sort="ga" data-first-dir="asc" title="Päästetyt maalit">Päästi</th>
+        <th data-sort="svp" title="Torjuntaprosentti">SV%</th>
+        ${gsax.size ? '<th data-sort="gsax" title="Torjutut maalit yli odotuksen (GSAx)">GSAx</th>' : ""}
+        <th data-sort="toi">Peliaika</th>
       </tr>
     </thead>
     <tbody>${rows}</tbody>
@@ -369,7 +383,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   let awayRanked: TeamRosterSkaterRow[] = [];
   let homeRanked: TeamRosterSkaterRow[] = [];
   let goalieGsax = new Map<number, number>();
-  let playerXg: Awaited<ReturnType<typeof fetchGamePlayerXg>> = { ixg: new Map(), gsax: new Map() };
+  let playerXg: Awaited<ReturnType<typeof fetchGamePlayerXg>> = { ixg: new Map(), gsax: new Map(), xgfPct: new Map(), xgfPct5v5: new Map() };
 
   if (game.is_finished || isLive(game)) {
     ({ box, fetchError } = await getBoxScore(db, game));
@@ -574,14 +588,14 @@ ${
 <div class="roster-team-section" data-team="away">
   <section>
     <h2 class="section-title"><img src="${escapeHtml(game.away_logo)}" alt="" class="nav-icon">${escapeHtml(game.away_name)}</h2>
-    ${renderSkaterTable(box.awaySkaters, playerXg.ixg)}
+    ${renderSkaterTable(box.awaySkaters, playerXg)}
     ${box.awayGoalies.length ? renderGoalieTable(box.awayGoalies, playerXg.gsax) : ""}
   </section>
 </div>
 <div class="roster-team-section is-hidden" data-team="home">
   <section>
     <h2 class="section-title"><img src="${escapeHtml(game.home_logo)}" alt="" class="nav-icon">${escapeHtml(game.home_name)}</h2>
-    ${renderSkaterTable(box.homeSkaters, playerXg.ixg)}
+    ${renderSkaterTable(box.homeSkaters, playerXg)}
     ${box.homeGoalies.length ? renderGoalieTable(box.homeGoalies, playerXg.gsax) : ""}
   </section>
 </div>`
