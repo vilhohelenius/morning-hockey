@@ -105,7 +105,7 @@ interface BracketExtras {
 
 function renderDiagram(round1ByConf: Map<string, Row[][]>, odds: Map<string, number>, extras?: BracketExtras): string {
   const slot = (r: Row) =>
-    `<div class="pf-s" style="--tc:${color(r.abbrev)}"><img src="${escapeHtml(r.logo)}" alt="">${escapeHtml(r.abbrev)}${
+    `<div class="pf-s" style="--tc:${color(r.abbrev)}"><img src="${escapeHtml(r.logo)}" alt="">${extras ? "" : escapeHtml(r.abbrev)}${
       odds.has(r.abbrev) ? `<small>${formatOdds(odds.get(r.abbrev)!)} %</small>` : ""
     }</div>`;
   const side = (conf: string, cols: [number, number, number], cls: string) => {
@@ -331,8 +331,8 @@ function renderForecastBracket(round1ByConf: Map<string, Row[][]>, rows: Row[], 
   const champion = champ
     ? `<div class="pf-champ" style="--tc:${color(champ.r.abbrev)}"><img src="${escapeHtml(champ.r.logo)}" alt="${escapeHtml(champ.r.abbrev)}"><small>${pctText(champ.p)}</small></div>`
     : "";
-  return `${renderDiagram(round1ByConf, new Map(), { nodes, champion })}
-<p class="pf-note">Simulaation todennäköisimmät jatkoon pääsijät nykyisessä kaaviossa. Pallon prosentti on joukkueen todennäköisyys päästä kyseiseen vaiheeseen: toiselle kierrokselle, konferenssifinaaliin, finaaliin ja mestaruuteen (kultainen rinkula).</p>`;
+  return `${renderDiagram(round1ByConf, new Map(rows.filter((r) => sim.has(r.abbrev)).map((r) => [r.abbrev, sim.get(r.abbrev)!.p_playoffs])), { nodes, champion })}
+<details class="xg-info"><summary>Miten kaavio luetaan?</summary><p>Ensimmäisen kierroksen laatikoissa on joukkueen todennäköisyys päästä playoffeihin. Palloissa on kunkin paikan todennäköisin joukkue ja sen todennäköisyys päästä kyseiseen vaiheeseen: toiselle kierrokselle, konferenssifinaaliin, finaaliin ja mestaruuteen (kultainen rinkula).</p></details>`;
 }
 
 function renderSeasonForecast(round1ByConf: Map<string, Row[][]>, rows: Row[], simRows: SimRow[]): string {
