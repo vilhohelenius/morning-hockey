@@ -18,14 +18,14 @@ import { icon, positionTag } from "./format.ts";
 //    mid-evening before the player's game belong to tonight.
 //  * currentNight = the latest night that has any started game
 //    (currentNight). A pick is
+//      - "stale"    when its night was reset: at 14:00 Helsinki time on
+//        the day after the night (expiredThrough), same moment for all
+//        users, or when a newer night has started (round_date < currentNight)
 //      - "active"   when round_date == currentNight   (shown as results)
 //      - "upcoming" when round_date  > currentNight   (waiting its night)
-//      - "stale"    when round_date  < currentNight   (a newer night has
-//        started -> the slip has automatically reset; the list is empty
-//        and the rows are deleted the next time the user adds a pick).
-//  So last night's results stay visible all the next day (also in the
-//  morning's Tulospiilo) and vanish the moment the next night's first game
-//  starts.
+//    Stale rows are hidden and deleted the next time the user adds a pick.
+//  So last night's results stay visible until 14:00 Finnish time the next
+//  day (also in the morning's Tulospiilo), then the slip is empty.
 
 import type { PlayerGameStat } from "./types";
 
@@ -102,7 +102,20 @@ export function newPickRoundDate(games: BingoGame[], nowMs: number): string {
 
 export type PickPhase = "active" | "upcoming" | "stale";
 
-export function pickPhase(roundDate: string, current: string | null): PickPhase {
+const RESET_HOUR_HELSINKI = 14;
+
+/** Newest night key whose slip has been reset: night N is cleared for
+ *  everyone at 14:00 Helsinki time on the day after (N+1). */
+export function expiredThrough(nowMs: number): string {
+  const today = helsinkiDate(new Date(nowMs));
+  const hour = Number(
+    new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Helsinki", hour: "2-digit", hourCycle: "h23" }).format(new Date(nowMs)),
+  );
+  return addDaysKey(today, hour >= RESET_HOUR_HELSINKI ? -1 : -2);
+}
+
+export function pickPhase(roundDate: string, current: string | null, nowMs: number): PickPhase {
+  if (roundDate <= expiredThrough(nowMs)) return "stale";
   if (current === null) return "upcoming";
   if (roundDate === current) return "active";
   return roundDate > current ? "upcoming" : "stale";

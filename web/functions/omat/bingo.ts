@@ -4,7 +4,7 @@
 // are pruned here on every add.
 
 import { currentUsername, redirectTarget } from "../_shared/auth";
-import { currentNight, newPickRoundDate } from "../_shared/bingo";
+import { expiredThrough, newPickRoundDate } from "../_shared/bingo";
 import { MAX_PICKS_PER_ROUND, loadWindowGames } from "../_shared/bingoData";
 import type { Env } from "../_shared/types";
 
@@ -15,9 +15,13 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   const form = await context.request.formData();
   const playerId = Number(form.get("player_id"));
   const action = String(form.get("bingo_action") ?? "");
+  const db = context.env.DB;
+  if (action === "clear") {
+    await db.prepare("DELETE FROM bingo_picks WHERE username = ?").bind(username).run();
+    return new Response(null, { status: 303, headers: { Location: redirectTarget(form, "/bingo") } });
+  }
   if (!Number.isInteger(playerId)) return new Response("Virheellinen pelaaja.", { status: 400 });
 
-  const db = context.env.DB;
   if (action === "remove") {
     const roundDate = String(form.get("round_date") ?? "");
     await db
@@ -34,11 +38,8 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     const now = Date.now();
     const games = await loadWindowGames(db);
     const roundDate = newPickRoundDate(games, now);
-    const current = currentNight(games, now);
 
-    if (current) {
-      await db.prepare("DELETE FROM bingo_picks WHERE username = ? AND round_date < ?").bind(username, current).run();
-    }
+    await db.prepare("DELETE FROM bingo_picks WHERE username = ? AND round_date <= ?").bind(username, expiredThrough(now)).run();
     const count = await db
       .prepare("SELECT COUNT(*) AS n FROM bingo_picks WHERE username = ? AND round_date = ?")
       .bind(username, roundDate)

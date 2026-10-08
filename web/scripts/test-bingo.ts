@@ -36,13 +36,17 @@ assert.match(newPickRoundDate([], t("2026-10-03T10:00:00Z")), /^\d{4}-\d{2}-\d{2
 // Reset: slip of night 1 is active until night 2's first game starts, then stale.
 const morning = t("2026-10-04T06:00:00Z");
 assert.equal(currentNight(games, morning), "2026-10-03");
-assert.equal(pickPhase("2026-10-03", currentNight(games, morning)), "active");
-assert.equal(pickPhase("2026-10-04", currentNight(games, morning)), "upcoming");
+assert.equal(pickPhase("2026-10-03", currentNight(games, morning), morning), "active");
+assert.equal(pickPhase("2026-10-04", currentNight(games, morning), morning), "upcoming");
 const evening = t("2026-10-04T23:30:00Z");
 assert.equal(currentNight(games, evening), "2026-10-04");
-assert.equal(pickPhase("2026-10-03", currentNight(games, evening)), "stale");
-assert.equal(pickPhase("2026-10-04", currentNight(games, evening)), "active");
-assert.equal(pickPhase("2026-10-04", null), "upcoming");
+assert.equal(pickPhase("2026-10-03", currentNight(games, evening), evening), "stale");
+assert.equal(pickPhase("2026-10-04", currentNight(games, evening), evening), "active");
+assert.equal(pickPhase("2026-10-04", null, morning), "upcoming");
+// 14:00 Helsinki reset: night 10-03 lives until 14:00 on 10-04 (11:00Z in DST... EEST = UTC+3).
+assert.equal(pickPhase("2026-10-03", "2026-10-03", t("2026-10-04T10:59:00Z")), "active");
+assert.equal(pickPhase("2026-10-03", "2026-10-03", t("2026-10-04T11:00:00Z")), "stale");
+assert.equal(pickPhase("2026-10-04", "2026-10-03", t("2026-10-04T11:00:00Z")), "upcoming");
 
 // Rows
 const sk = (id: number, goals: number, assists: number, toi = "18:00") => ({ player_id: id, goals, assists, points: goals + assists, toi }) as any;

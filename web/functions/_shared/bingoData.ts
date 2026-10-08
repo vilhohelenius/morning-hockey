@@ -62,7 +62,7 @@ export async function loadPicks(db: D1Database, username: string, games: BingoGa
     team_abbrev: r.team_abbrev ?? "",
     team_logo: r.team_abbrev ? teamLogoUrl(r.team_abbrev) : "",
     round_date: r.round_date,
-    phase: pickPhase(r.round_date, current),
+    phase: pickPhase(r.round_date, current, nowMs),
   }));
 }
 

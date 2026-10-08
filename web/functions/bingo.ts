@@ -123,10 +123,15 @@ document.getElementById("bingo-reveal").addEventListener("click", function () {
   <h2 class="section-title">Lappu</h2>
   <p class="standings-legend">
     Valitse pelaajat, joiden uskot tekevän pisteen. Lappu koskee seuraavaa alkamatonta pelikierrosta
-    ja nollautuu itsestään, kun seuraava kierros alkaa. Lista näkyy myös Tulospiilon alaosassa.
+    ja nollautuu itsestään joka päivä klo 14 Suomen aikaa. Lista näkyy myös Tulospiilon alaosassa.
     (Enintään ${MAX_PICKS_PER_ROUND} pelaajaa kierrosta kohti.)
   </p>
   ${slipHtml}
+  ${picks.length ? `<form method="post" action="/omat/bingo" class="bingo-clear">
+    <input type="hidden" name="bingo_action" value="clear">
+    <input type="hidden" name="redirect_to" value="/bingo">
+    <button type="submit" class="filter-btn">Tyhjennä lappu</button>
+  </form>` : ""}
   <form method="get" action="/bingo" class="table-filters">
     <input type="search" name="q" id="bingo-search" placeholder="Hae pelaajaa nimellä (vähintään 3 merkkiä)..." value="${escapeHtml(query)}" autocomplete="off">
     <button type="submit" class="filter-btn">Hae</button>
