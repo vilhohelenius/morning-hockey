@@ -200,6 +200,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       <button type="submit" class="filter-btn">Kirjaudu ulos</button>
     </form>
   </div>
+  <p class="standings-legend"><a href="/tietosuoja">Tietosuojaseloste</a></p>
 </section>`;
 
   const themeSection = `

@@ -161,7 +161,6 @@ ${["TBL", "TOR", "NSH"].map((t) => `<link rel="preload" as="image" href="https:/
 
     <main>
       ${content}
-      <a class="privacy-link" href="/tietosuoja">Tietosuoja</a>
     </main>
   </div>
 </div>
