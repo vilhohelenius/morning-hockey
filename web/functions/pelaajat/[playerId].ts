@@ -105,6 +105,7 @@ const GOALIE_DECISION_FI: Record<string, string> = { W: "V", L: "H", O: "JH" };
 
 interface SeasonTotal {
   season: number;
+  sequence?: number;
   gameTypeId: number;
   leagueAbbrev: string;
   gamesPlayed: number;
@@ -673,6 +674,10 @@ function renderGoalieGameLog(games: any[], gsaxByGame: Map<number, number>): str
   <button type="button" class="expand-toggle" data-table-id="player-game-log" data-page-size="1000"></button>`;
 }
 
+// Newest season first; within a season (a mid-season trade) the NHL lists
+// clubs oldest-first via `sequence`, so flip it to put the latest club on top.
+const newestFirst = (a: SeasonTotal, b: SeasonTotal) => b.season - a.season || (b.sequence ?? 0) - (a.sequence ?? 0);
+
 export const onRequestGet: PagesFunction<Env> = async (context) => {
   const playerId = Number(context.params.playerId);
   if (!Number.isInteger(playerId)) {
@@ -713,10 +718,10 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   // next to Ottelut) is meant to change.
   const latestSeasonTotal = seasons.length ? (seasonTotals.find((s) => s.season === seasons[0]) ?? null) : null;
 
-  const regularSeasonHistory = [...seasonTotals].sort((a, b) => b.season - a.season);
+  const regularSeasonHistory = [...seasonTotals].sort(newestFirst);
   const playoffHistory: SeasonTotal[] = (landing.seasonTotals ?? [])
     .filter((s: SeasonTotal) => s.leagueAbbrev === "NHL" && s.gameTypeId === 3)
-    .sort((a: SeasonTotal, b: SeasonTotal) => b.season - a.season);
+    .sort(newestFirst);
 
   let gameLogHtml = "";
   try {
@@ -748,8 +753,9 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   const heroNationality: string = landing.nationalityCode || landing.birthCountry || "";
   const heroFlag = heroNationality ? nationalityFlag(heroNationality) : "";
   const latestSeasonTeams = seasons.length
-    ? seasonTotals
+    ? [...seasonTotals]
         .filter((t) => t.season === seasons[0])
+        .sort(newestFirst)
         .map(seasonTeamsHtml)
         .join("")
     : "";
