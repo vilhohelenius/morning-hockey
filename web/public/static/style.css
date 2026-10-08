@@ -4017,6 +4017,14 @@ main {
 .pf-fin span { position: relative; background: var(--bg); padding: 2px 0; text-align: center; }
 .pf-fin svg { width: 30px; height: 30px; color: var(--accent); }
 
+.pf-sub { font: 600 1rem var(--font-display); letter-spacing: 0.04em; color: var(--muted); margin: 14px 0 6px; }
+.pf-bar-row { display: grid; grid-template-columns: 70px 1fr 46px; gap: 10px; align-items: center; padding: 4px 0; font-variant-numeric: tabular-nums; }
+.pf-bar-row .tm { display: flex; align-items: center; gap: 7px; font-weight: 600; }
+.pf-bar-row img { width: 22px; height: 22px; }
+.pf-bar-row .bar { height: 8px; border-radius: 4px; background: var(--border); overflow: hidden; }
+.pf-bar-row .bar span { display: block; height: 100%; border-radius: 4px; background: var(--tc); }
+.pf-bar-row b { text-align: right; }
+
 .pf-head, .pf-row {
   display: grid;
   grid-template-columns: 38px 1fr 22px 22px 22px 22px 28px 40px 46px;

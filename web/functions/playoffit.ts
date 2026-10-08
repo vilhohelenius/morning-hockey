@@ -41,13 +41,15 @@ interface SimRow {
   games_played: number;
   exp_points: number;
   p_playoffs: number;
+  p_division: number;
+  p_presidents: number;
 }
 
 // Missing table or no snapshot yet -> empty, and the odds are hidden.
 async function fetchSeasonSim(db: D1Database): Promise<SimRow[]> {
   try {
     const { results } = await db
-      .prepare("SELECT abbrev, as_of, games_played, exp_points, p_playoffs FROM season_sim WHERE as_of = (SELECT MAX(as_of) FROM season_sim)")
+      .prepare("SELECT abbrev, as_of, games_played, exp_points, p_playoffs, p_division, p_presidents FROM season_sim WHERE as_of = (SELECT MAX(as_of) FROM season_sim)")
       .all<SimRow>();
     return results;
   } catch (error) {
@@ -277,6 +279,31 @@ ${tabs("pie", [["pl", "Liiga"], ["pc", "Konferenssit"], ["pd", "Divisioonat"]])}
 ${pane("pie", "pl", leagueHtml, true)}${pane("pie", "pc", conferenceHtml, false)}${pane("pie", "pd", divisionHtml, false)}`;
 }
 
+// ---- Season forecast: division winner and Presidents' Trophy odds as bar lists.
+function renderSeasonForecast(rows: Row[], simRows: SimRow[]): string {
+  const byAbbrev = new Map(rows.map((r) => [r.abbrev, r]));
+  const list = (teams: SimRow[], pick: (s: SimRow) => number) =>
+    teams
+      .map((s) => {
+        const r = byAbbrev.get(s.abbrev);
+        if (!r) return "";
+        return `<div class="pf-bar-row" style="--tc:${color(s.abbrev)}"><span class="tm"><img src="${escapeHtml(r.logo)}" alt="" loading="lazy">${escapeHtml(s.abbrev)}</span><span class="bar"><span style="width:${(pick(s) * 100).toFixed(1)}%"></span></span><b>${formatOdds(pick(s))} %</b></div>`;
+      })
+      .join("");
+  const divisions = [...new Set(rows.map((r) => r.division))].sort();
+  const divisionHtml = divisions
+    .map((d) => {
+      const teams = simRows.filter((s) => byAbbrev.get(s.abbrev)?.division === d).sort((a, b) => b.p_division - a.p_division);
+      return `<h4 class="pf-sub">${escapeHtml(d)}</h4>${list(teams, (s) => s.p_division)}`;
+    })
+    .join("");
+  const presidents = [...simRows].sort((a, b) => b.p_presidents - a.p_presidents).slice(0, 10);
+  return `
+<h3 class="roster-group-title">Divisioonan voitto</h3>${divisionHtml}
+<h3 class="roster-group-title">Presidents' Trophy</h3>${list(presidents, (s) => s.p_presidents)}
+<p class="pf-note">Todennäköisyys voittaa divisioona tai runkosarjan paras pistemäärä. Presidents' Trophy -listassa kymmenen todennäköisintä.</p>`;
+}
+
 function renderForecastInfo(sim: SimRow[]): string {
   const gp = Math.max(...sim.map((s) => s.games_played));
   const early =
@@ -296,7 +323,7 @@ ${early}
   takautuvalla testillä, jossa ennuste tehtiin vain sen hetken tiedoilla.</p>
   <ul>
     <li>Kauden alussa loppupisteet poikkesivat ennusteesta keskimäärin 12–14 pistettä, neljänneksen kohdalla noin 10, puolivälissä noin 7 ja kolmen neljänneksen jälkeen noin 4.</li>
-    <li>Playoff-prosentit ovat alkukaudesta suuntaa-antavia ja tarkentuvat selvästi puoleenväliin mennessä.</li>
+    <li>Playoff-prosentit ovat alkukaudesta suuntaa-antavia ja tarkentuvat selvästi kauden edetessä.</li>
     <li>Kalibrointi on hyvä: kun malli antoi joukkueelle 85–95 %, joukkue pääsi playoffeihin noin 89 %:ssa tapauksista, ja kun se antoi 5–15 %, toteuma oli noin 15 %.</li>
   </ul>
   <p><strong>Mitä malli ei tiedä.</strong> Loukkaantumiset, kaupat ja tulevat maalivahtivalinnat eivät näy
@@ -358,9 +385,10 @@ ${tabs("wcc", confTabs)}${standings}`;
 </header>
 ${
   hasOdds
-    ? tabs("top", [["bk", "Playoff-bracket"], ["pie", "Playoff-ennuste"]]) +
+    ? tabs("top", [["bk", "Playoff-bracket"], ["pie", "Playoff-ennuste"], ["fc", "Kausiennuste"]]) +
       pane("top", "bk", bracketHtml, true) +
-      pane("top", "pie", renderPies(rows, odds), false)
+      pane("top", "pie", renderPies(rows, odds), false) +
+      pane("top", "fc", renderSeasonForecast(rows, simRows), false)
     : bracketHtml
 }
 ${hasOdds ? renderForecastInfo(simRows) : ""}
