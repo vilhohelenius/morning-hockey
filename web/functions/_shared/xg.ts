@@ -248,6 +248,7 @@ export function teamXgStatRows(
   home: TeamXg,
   withTotals = false,
   ranks?: { away: { pct?: number; pct5v5?: number }; home: { pct?: number; pct5v5?: number } },
+  withHd = true,
 ): { label: string; away_value: string; home_value: string; away_pct?: number; home_pct?: number; away_rank?: number; home_rank?: number }[] {
   const row = (label: string, a: number | null, h: number | null, key?: "pct" | "pct5v5") => ({
     label,
@@ -260,8 +261,8 @@ export function teamXgStatRows(
     ? [{ label: "xG", away_value: away.xgf.toFixed(2), home_value: home.xgf.toFixed(2), ...(away.xgf + home.xgf > 0 ? { away_pct: (100 * away.xgf) / (away.xgf + home.xgf), home_pct: (100 * home.xgf) / (away.xgf + home.xgf) } : {}) }]
     : [];
   const hd =
-    away.hdFor != null && home.hdFor != null
-      ? [{ label: "Korkean vaaran paikat", away_value: String(away.hdFor), home_value: String(home.hdFor), ...(away.hdFor + home.hdFor > 0 ? { away_pct: (100 * away.hdFor) / (away.hdFor + home.hdFor), home_pct: (100 * home.hdFor) / (away.hdFor + home.hdFor) } : {}) }]
+    withHd && away.hdFor != null && home.hdFor != null
+      ? [{ label: "Vaaralliset maalipaikat", away_value: String(away.hdFor), home_value: String(home.hdFor), ...(away.hdFor + home.hdFor > 0 ? { away_pct: (100 * away.hdFor) / (away.hdFor + home.hdFor), home_pct: (100 * home.hdFor) / (away.hdFor + home.hdFor) } : {}) }]
       : [];
   return [
     ...total,

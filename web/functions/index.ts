@@ -298,7 +298,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
       if (box) {
         const gameXg = game.is_finished ? await fetchGameTeamXg(db, game.game_id, game.away_abbrev, game.home_abbrev) : null;
-        gameDetails[game.game_id] = { ...gameDetails[game.game_id], timeline: buildTimeline(box.goals, box.penalties, game.away_abbrev, box.shootout, box.goalieChanges), team_stats: [...box.teamStats, ...(gameXg ? teamXgStatRows(gameXg.away, gameXg.home, true) : [])] };
+        gameDetails[game.game_id] = { ...gameDetails[game.game_id], timeline: buildTimeline(box.goals, box.penalties, game.away_abbrev, box.shootout, box.goalieChanges), team_stats: [...box.teamStats, ...(gameXg ? teamXgStatRows(gameXg.away, gameXg.home, true, undefined, false) : [])] };
         scorers = [
           ...finnishScorerLines(box.awaySkaters, game.away_abbrev),
           ...finnishScorerLines(box.homeSkaters, game.home_abbrev),
