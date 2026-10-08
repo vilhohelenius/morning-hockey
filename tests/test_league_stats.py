@@ -18,6 +18,9 @@ class FakeClient:
         self.last_skater_call = (cayenne_exp, limit)
         return self._skaters
 
+    def skater_summary(self, cayenne_exp, sort, limit=-1):
+        return self._skaters
+
     def goalie_summary(self, cayenne_exp, sort, limit=-1):
         self.last_goalie_call = (cayenne_exp, limit)
         return self._goalies
@@ -39,6 +42,7 @@ def test_build_skater_top_maps_bios_fields_and_builds_asset_urls():
                 "goals": 1,
                 "assists": 2,
                 "points": 3,
+                "shots": 7,
             }
         ]
     )
@@ -53,6 +57,7 @@ def test_build_skater_top_maps_bios_fields_and_builds_asset_urls():
     assert row.nationality == "CAN"
     assert row.position == "C"
     assert row.points == 3
+    assert row.shots == 7
     assert row.logo == "https://assets.nhle.com/logos/nhl/svg/EDM_light.svg"
     assert row.headshot == "https://assets.nhle.com/mugs/nhl/20262027/EDM/8478402.png"
     assert client.last_skater_call == ("seasonId=20262027 and gameTypeId=2", -1)
