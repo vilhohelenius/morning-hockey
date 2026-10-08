@@ -289,3 +289,13 @@ python -m morning_hockey.sync_xg --backfill-wp-inputs 20242025   # sama 20232024
 ```
 
 Vaihe on virhesietoinen: puuttuva taulu tai data ohittaa sen, xG-synkka ei kaadu.
+
+### Playoff-ennuste
+
+`python -m morning_hockey.sync_season_sim` (digest-workflowin oma step `sync_xg`:n jälkeen) simuloi
+jäljellä olevan runkosarjan 100 000 kertaa (`winprob/season.py`, ydin `winprob/simcore.py` on portti
+xGoalBoostin `simcore.py`:stä, pidä synkassa). Joukkuetilat tulevat samasta D1-historiasta kuin otteluennakossa,
+aikataulu ja tulokset 32 `club-schedule-season`-kutsulla (~1 min). Tulos: yksi rivi / joukkue / päivä
+(`season_sim`, historia säilytetään): playoff-, divisioona- ja Presidents' Trophy -todennäköisyys sekä odotetut
+loppupisteet (10–90 %). Playoffit-sivu näyttää viimeisimmän tilanteen ja selitysosion. Uusi taulu pitää ajaa
+D1:een käsin (`d1/schema.sql`, `CREATE TABLE season_sim`). Playoff-sarjoja ja Cupia ei simuloida.

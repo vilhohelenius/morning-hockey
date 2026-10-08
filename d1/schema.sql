@@ -607,6 +607,23 @@ CREATE TABLE IF NOT EXISTS game_win_prob (
     context REAL NOT NULL
 );
 
+-- Playoff odds (src/morning_hockey/winprob/season.py): one simulation snapshot per
+-- ET day and team, written by sync_season_sim. History is kept for a trend later.
+CREATE TABLE IF NOT EXISTS season_sim (
+    season INTEGER NOT NULL,
+    as_of TEXT NOT NULL,
+    abbrev TEXT NOT NULL,
+    games_played INTEGER NOT NULL,
+    points INTEGER NOT NULL,
+    exp_points REAL NOT NULL,
+    points_p10 REAL NOT NULL,
+    points_p90 REAL NOT NULL,
+    p_playoffs REAL NOT NULL,
+    p_division REAL NOT NULL,
+    p_presidents REAL NOT NULL,
+    PRIMARY KEY (season, as_of, abbrev)
+);
+
 -- Hash of the last successful write per slow-tier section (sync_if_changed in
 -- d1_sync.py), so an unchanged section isn't deleted and reinserted.
 CREATE TABLE IF NOT EXISTS sync_state (
