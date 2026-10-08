@@ -76,6 +76,18 @@
   wirePillToggle(".analytiikka-view-picker", ".analytiikka-view-section", "view");
   wirePillToggle(".sarjataulukko-view-picker", ".sarjataulukko-view-section", "view");
   wirePillToggle(".standings-tab-picker", ".standings-tab-section", "tab", ".standings-tab");
+  // Joukkueet: division filter; the empty "Kaikki" pill shows every group.
+  document.querySelectorAll(".team-division-picker").forEach(function (picker) {
+    var pills = picker.querySelectorAll(".day-pill");
+    pills.forEach(function (pill) {
+      pill.addEventListener("click", function () {
+        pills.forEach(function (p) { p.classList.toggle("active", p === pill); });
+        document.querySelectorAll(".team-index-group").forEach(function (g) {
+          g.classList.toggle("is-hidden", !!pill.dataset.division && g.dataset.division !== pill.dataset.division);
+        });
+      });
+    });
+  });
   wirePillToggle(".roster-team-picker", ".roster-team-section", "team", ".toggle-segment");
 
   // Dashboard day browser: yesterday..+3 days panels are all rendered
