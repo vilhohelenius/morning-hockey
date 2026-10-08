@@ -28,7 +28,7 @@ interface LayoutOptions {
 
 const NAV_HOME = { key: "home", href: "/", label: `${icon("home")}Etusivu` };
 const NAV_STANDINGS = { key: "standings", href: "/sarjataulukko", label: `${icon("standings")}Sarjataulukko` };
-const NAV_PLAYOFFS = { key: "playoffs", href: "/playoffit", label: `${icon("trophy")}Playoff-bracket` };
+const NAV_PLAYOFFS = { key: "playoffs", href: "/playoffit", label: `${icon("trophy")}Playoffit` };
 const NAV_ARCHIVE = { key: "archive", href: "/arkisto", label: `${icon("archive")}Arkisto` };
 const NAV_SETTINGS = { key: "settings", href: "/omat", label: `${icon("settings")}Asetukset` };
 
