@@ -2027,6 +2027,12 @@ main {
   color: var(--text);
 }
 
+/* On the dark team-tinted tiles (front page pörssit, Yön suomalaiset, bingo)
+   the position must follow the light text colour, not the page's dark one. */
+.section-tile.hero-tinted .pos-tag {
+  color: #fff;
+}
+
 .table-team-logo {
   width: 18px;
   height: 18px;
