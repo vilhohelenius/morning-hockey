@@ -325,7 +325,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
   const venueSections = (view: "division" | "conference" | "league") =>
     VENUES.map((v) => `<div class="venue-sec${v.key === "all" ? "" : " is-hidden"}" data-venue="${v.key}">${venueViews[v.key as "all"][view]}</div>`).join("");
-  const divisionNames = [...new Set(rows.map((r) => r.division))].sort();
+  const divisionNames = [...new Set(rows.map((r) => r.division))]; // rows are ordered conference, division
   const tabs: { key: string; label: string; html: string }[] = [
     { key: "wildcard", label: "Wild Card", html: subBar(conferenceNames) + wildCardView },
     { key: "division", label: "Divisioona", html: subBar(divisionNames) + venueSections("division") },
