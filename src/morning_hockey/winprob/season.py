@@ -12,7 +12,7 @@ import numpy as np
 from ..d1_sync import D1Client, _insert_rows
 from ..nhl_api import NHLClient
 from .model import MODEL, WinProbState
-from .simcore import outcome_cum, shrink, simulate
+from .simcore import outcome_cum, series_win, shrink, simulate
 from .sync import _TEAM_IDS, _rows, load_history
 
 HORIZON_DAYS = 80  # winprob/backtest_horizon.py: shrink factor 1 / (1 + days ahead / horizon)
@@ -20,7 +20,7 @@ SIMS = 100_000
 _FINISHED = {"FINAL", "OFF"}
 _COLUMNS = [
     "season", "as_of", "abbrev", "games_played", "points", "exp_points", "points_p10", "points_p90",
-    "p_playoffs", "p_division", "p_presidents",
+    "p_playoffs", "p_division", "p_presidents", "p_cup",
 ]
 
 
@@ -38,6 +38,20 @@ def fetch_schedule(client: NHLClient, abbrevs: list[str]) -> list[dict]:
                     "final_type": (g.get("gameOutcome") or {}).get("lastPeriodType", "REG"),
                 }
     return sorted(games.values(), key=lambda g: (g["date"], g["id"]))
+
+
+def series_matrix(state: WinProbState, abbrevs: list[str], season: int, day: dt.date, days_ahead: int,
+                  horizon: float) -> np.ndarray:
+    """sw[i, j]: team i (home ice) wins a best-of-7 against j, from today's team states shrunk to the playoff date."""
+    n = len(abbrevs)
+    lin = np.zeros((n, n))
+    for i, h in enumerate(abbrevs):
+        for j, a in enumerate(abbrevs):
+            if i != j:
+                f = state.features(_TEAM_IDS[h], _TEAM_IDS[a], season, day, {})
+                lin[i, j] = sum(MODEL["coef"][c] * f[c] for cols in MODEL["groups"].values() for c in cols)
+    p = shrink(lin, days_ahead, MODEL["intercept"], horizon)  # p[i, j]: home i beats away j
+    return series_win(p, 1 - p.T)
 
 
 def simulate_season(history: list[dict], schedule: list[dict], divisions: dict[str, tuple[str, str]], today: dt.date,
@@ -83,14 +97,17 @@ def simulate_season(history: list[dict], schedule: list[dict], divisions: dict[s
     for a, (conf, div) in divisions.items():
         divs.setdefault(div, []).append(idx[a])
         confs.setdefault(conf, []).append(idx[a])
+    playoffs_start = dt.date.fromisoformat(schedule[-1]["date"]) + dt.timedelta(days=14)  # ponytail: rough playoff date
+    sw = series_matrix(state, abbrevs, season, today, max((playoffs_start - today).days, 0), horizon)
     sim = simulate(base, np.array([idx[g["home"]] for g in rem]), np.array([idx[g["away"]] for g in rem]),
-                   outcome_cum(p, ot_rate, so_share), divs, confs, sims, np.random.default_rng(seed))
+                   outcome_cum(p, ot_rate, so_share), divs, confs, sims, np.random.default_rng(seed), sw=sw)
     pts = sim["pts"]
     return [
         {"season": season, "as_of": today.isoformat(), "abbrev": a, "games_played": int(gp[i]), "points": int(base[0, i]),
          "exp_points": round(float(pts[:, i].mean()), 1), "points_p10": float(np.percentile(pts[:, i], 10)),
          "points_p90": float(np.percentile(pts[:, i], 90)), "p_playoffs": round(float(sim["playoffs"][i]), 4),
-         "p_division": round(float(sim["division"][i]), 4), "p_presidents": round(float(sim["presidents"][i]), 4)}
+         "p_division": round(float(sim["division"][i]), 4), "p_presidents": round(float(sim["presidents"][i]), 4),
+         "p_cup": round(float(sim["cup"][i]), 4)}
         for a, i in idx.items()
     ]
 

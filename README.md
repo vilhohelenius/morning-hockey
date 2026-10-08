@@ -299,5 +299,5 @@ jäljellä olevan runkosarjan 100 000 kertaa (`winprob/season.py`, ydin `winprob
 xGoalBoostin `simcore.py`:stä, pidä synkassa). Joukkuetilat tulevat samasta D1-historiasta kuin otteluennakossa,
 aikataulu ja tulokset 32 `club-schedule-season`-kutsulla (~1 min). Tulos: yksi rivi / joukkue / päivä
 (`season_sim`, historia säilytetään): playoff-, divisioona- ja Presidents' Trophy -todennäköisyys sekä odotetut
-loppupisteet (10–90 %). Playoffit-sivu näyttää viimeisimmän tilanteen (playoff-% kaaviossa, taulukoissa ja piirakoissa, xP taulukoissa) ja selitysosion. Divisioona- ja Presidents' Trophy -todennäköisyydet ja pisteväli tallennetaan, mutta sivu ei näytä niitä. Uusi taulu pitää ajaa
-D1:een käsin (`d1/schema.sql`, `CREATE TABLE season_sim`). Playoff-sarjoja ja Cupia ei simuloida.
+loppupisteet (10–90 %). Playoffit-sivu näyttää viimeisimmän tilanteen (playoff-% kaaviossa, taulukoissa ja piirakoissa, xP taulukoissa) ja selitysosion. Kausiennuste-välilehti näyttää divisioonan voiton, Presidents' Trophyn ja Stanley Cupin todennäköisyydet. Pisteväli tallennetaan, mutta sivu ei näytä sitä. Uusi taulu pitää ajaa
+D1:een käsin (`d1/schema.sql`, `CREATE TABLE season_sim`). Cup: simulaation lopuksi pelataan pudotuspelisarjat (best-of-7, kotietu parhaalla runkosarjalla, `series_win` ja `_series` `simcore.py`:ssä), ottelutodennäköisyydet nykytilasta kutistettuna playoff-päivään. Uusi sarake pitää lisätä D1:een käsin: `ALTER TABLE season_sim ADD COLUMN p_cup REAL;`.

@@ -43,18 +43,25 @@ interface SimRow {
   p_playoffs: number;
   p_division: number;
   p_presidents: number;
+  p_cup: number | null;
 }
 
 // Missing table or no snapshot yet -> empty, and the odds are hidden.
 async function fetchSeasonSim(db: D1Database): Promise<SimRow[]> {
-  try {
-    const { results } = await db
-      .prepare("SELECT abbrev, as_of, games_played, exp_points, p_playoffs, p_division, p_presidents FROM season_sim WHERE as_of = (SELECT MAX(as_of) FROM season_sim)")
+  const query = (cup: string) =>
+    db
+      .prepare(`SELECT abbrev, as_of, games_played, exp_points, p_playoffs, p_division, p_presidents, ${cup} AS p_cup FROM season_sim WHERE as_of = (SELECT MAX(as_of) FROM season_sim)`)
       .all<SimRow>();
-    return results;
-  } catch (error) {
-    console.error("Season simulation lookup failed:", error);
-    return [];
+  try {
+    return (await query("p_cup")).results;
+  } catch {
+    // p_cup column not added yet
+    try {
+      return (await query("NULL")).results;
+    } catch (error) {
+      console.error("Season simulation lookup failed:", error);
+      return [];
+    }
   }
 }
 
@@ -298,10 +305,15 @@ function renderSeasonForecast(rows: Row[], simRows: SimRow[]): string {
     })
     .join("");
   const presidents = [...simRows].sort((a, b) => b.p_presidents - a.p_presidents).slice(0, 10);
+  const cup = [...simRows].sort((a, b) => (b.p_cup ?? 0) - (a.p_cup ?? 0)).slice(0, 10);
   return `
 <h3 class="roster-group-title">Divisioonan voitto</h3>${divisionHtml}
-<h3 class="roster-group-title">Presidents' Trophy</h3>${list(presidents, (s) => s.p_presidents)}
-<p class="pf-note">Todennäköisyys voittaa divisioona tai runkosarjan paras pistemäärä. Presidents' Trophy -listassa kymmenen todennäköisintä.</p>`;
+<h3 class="roster-group-title">Presidents' Trophy</h3>${list(presidents, (s) => s.p_presidents)}${
+    cup.length && cup[0].p_cup ? `<h3 class="roster-group-title">Stanley Cup</h3>${list(cup, (s) => s.p_cup ?? 0)}` : ""
+  }
+<p class="pf-note">Listoissa Presidents' Trophy ja Stanley Cup on kymmenen todennäköisintä joukkuetta.${
+    cup.length && cup[0].p_cup ? " Cup-luku on karkeampi arvio kuin playoff-paikka: pudotuspelisarjat simuloidaan samalla ottelumallilla, jonka joukkuekohtaiset erot kutistetaan kauden loppua kohti." : ""
+  }</p>`;
 }
 
 function renderForecastInfo(sim: SimRow[]): string {

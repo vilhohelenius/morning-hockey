@@ -26,6 +26,8 @@ def test_simulation_totals_and_ordering():
     assert sum(r["p_playoffs"] for r in rows.values()) == pytest.approx(16, abs=0.01)  # 3 x 4 divisions + 2 x 2 wild cards
     assert sum(r["p_division"] for r in rows.values()) == pytest.approx(4, abs=0.01)
     assert sum(r["p_presidents"] for r in rows.values()) == pytest.approx(1, abs=0.01)
+    assert sum(r["p_cup"] for r in rows.values()) == pytest.approx(1, abs=0.01)
+    assert all(r["p_cup"] <= r["p_playoffs"] for r in rows.values())
     assert all(r["points_p10"] <= r["exp_points"] <= r["points_p90"] for r in rows.values())
     assert rows["BOS"]["points"] > rows["TOR"]["points"] or rows["BOS"]["games_played"] == 0
     assert rows["BOS"]["p_playoffs"] >= rows["TOR"]["p_playoffs"]

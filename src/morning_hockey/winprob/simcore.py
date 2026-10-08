@@ -27,14 +27,42 @@ def outcome_cum(p, ot_rate, so_share):
     return np.cumsum(pr, -1)[..., :5]
 
 
-def simulate(base, home_idx, away_idx, cum, divs, confs, sims, rng, chunk=5000):
+def series_win(ph, pa):
+    """Best-of-7 win probability for the team with home ice (games 1, 2, 5, 7 at home).
+    ph/pa: its single-game win probability at home / away (arrays)."""
+    ph, pa = np.asarray(ph, float), np.asarray(pa, float)
+    cur, win = {(0, 0): np.ones_like(ph)}, np.zeros_like(ph)
+    for g in range(7):
+        p = ph if g in (0, 1, 4, 6) else pa
+        nxt = {}
+        for (a, b), q in cur.items():
+            for na, nb, pr in ((a + 1, b, p), (a, b + 1, 1 - p)):
+                if na == 4:
+                    win = win + q * pr
+                elif nb < 4:
+                    nxt[(na, nb)] = nxt.get((na, nb), 0) + q * pr
+        cur = nxt
+    return win
+
+
+def _series(key, a, b, sw, rng):
+    """Winners of series a v b (team index arrays, one per sim); the better regular season has home ice.
+    ponytail: later rounds use the same rule instead of the exact NHL bracket seeding."""
+    r = np.arange(len(a))
+    hi = np.where(key[r, a] >= key[r, b], a, b)
+    lo = a + b - hi
+    return np.where(rng.random(len(a)) < sw[hi, lo], hi, lo)
+
+
+def simulate(base, home_idx, away_idx, cum, divs, confs, sims, rng, chunk=5000, sw=None):
     """base: (4, N) current points, RW, ROW, wins. divs/confs: name -> team indexes.
-    Returns playoffs/division/presidents shares and pts (sims, N)."""
+    sw: optional (N, N) series win matrix (sw[i, j] = i wins a series against j with home ice) -> also plays the playoffs.
+    Returns playoffs/division/presidents/cup shares and pts (sims, N)."""
     N, G = base.shape[1], len(home_idx)
     Hm, Am = np.zeros((G, N), np.float32), np.zeros((G, N), np.float32)
     Hm[np.arange(G), home_idx] = 1; Am[np.arange(G), away_idx] = 1
     cum32 = cum[None].astype(np.float32)
-    playoffs, divwin, presidents = np.zeros(N), np.zeros(N), np.zeros(N)
+    playoffs, divwin, presidents, cup = np.zeros(N), np.zeros(N), np.zeros(N), np.zeros(N)
     pts_all = np.zeros((sims, N), np.float32)
     done = 0
     while done < sims:
@@ -44,15 +72,30 @@ def simulate(base, home_idx, away_idx, cum, divs, confs, sims, rng, chunk=5000):
                for b, (h, a) in zip(base, ((HP, AP), (HRW, ARW), (HROW, AROW), (HW, AW)))]
         key = tot[0] * 1e6 + tot[1] * 1e4 + tot[2] * 1e2 + tot[3] + rng.random((S, N))  # points, RW, ROW, wins, coin flip
         q_ = np.zeros((S, N), bool)
-        for m in divs.values():
+        top, wild = {}, {}
+        for name, m in divs.items():
             m = np.array(m); rk = np.argsort(-key[:, m], 1)
+            top[name] = m[rk[:, :3]]
             np.put_along_axis(q_, m[rk[:, :3]], True, 1)
             divwin[m] += np.bincount(m[rk[:, 0]].ravel(), minlength=N)[m]
-        for m in confs.values():
+        for name, m in confs.items():
             m = np.array(m); sub = np.where(q_[:, m], -np.inf, key[:, m]); rk = np.argsort(-sub, 1)
             np.put_along_axis(q_, m[rk[:, :2]], True, 1)
+            wild[name] = m[rk[:, :2]]
         playoffs += q_.sum(0)
+        if sw is not None:
+            champs = []
+            for cname, cm in confs.items():
+                x, y = [top[d] for d, dm in divs.items() if set(dm) <= set(cm)]
+                r = np.arange(S)
+                x_strong = key[r, x[:, 0]] >= key[r, y[:, 0]]
+                s, w = np.where(x_strong[:, None], x, y), np.where(x_strong[:, None], y, x)
+                wc = wild[cname]
+                a, b = _series(key, s[:, 0], wc[:, 1], sw, rng), _series(key, s[:, 1], s[:, 2], sw, rng)
+                c, d = _series(key, w[:, 0], wc[:, 0], sw, rng), _series(key, w[:, 1], w[:, 2], sw, rng)
+                champs.append(_series(key, _series(key, a, b, sw, rng), _series(key, c, d, sw, rng), sw, rng))
+            cup += np.bincount(_series(key, champs[0], champs[1], sw, rng), minlength=N)
         presidents += np.bincount(key.argmax(1), minlength=N)
         pts_all[done:done + S] = tot[0]
         done += S
-    return {"playoffs": playoffs / sims, "division": divwin / sims, "presidents": presidents / sims, "pts": pts_all}
+    return {"playoffs": playoffs / sims, "division": divwin / sims, "presidents": presidents / sims, "cup": cup / sims, "pts": pts_all}
