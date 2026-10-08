@@ -6173,6 +6173,9 @@ main {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 12px 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.28);
 }
 
 .trophy-item {
