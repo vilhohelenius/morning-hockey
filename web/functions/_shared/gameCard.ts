@@ -122,6 +122,10 @@ export function renderGameCard(
   scorers: FinnScorerLine[],
   goalies: FinnGoalieLine[],
   live: LiveStatus | null = null,
+  // Tulospiilo: the same card, but the score, OT badge and Finnish stat lines
+  // stay hidden until the game is checked off and its row opened (see
+  // tulospiilo.ts + the .spoiler-* CSS).
+  spoiler?: { youtubeUrl: string | null },
 ): string {
   const finnStats =
     scorers.length || goalies.length
@@ -187,8 +191,7 @@ export function renderGameCard(
     : `<a class="game-card jersey-card game-card-link" ${colors} href="/ottelut/${game.game_id}">`;
   const closeTag = hasDetails ? "</div>" : "</a>";
 
-  return `
-${openTag}
+  const scoreRow = `
   <div class="score-row${game.is_finished && game.final_type !== "REG" ? " has-note" : ""}">
     <span class="jc-half jc-away" data-abbr="${escapeHtml(game.away_abbrev)}" aria-hidden="true"></span>
     <span class="jc-half jc-home" data-abbr="${escapeHtml(game.home_abbrev)}" aria-hidden="true"></span>
@@ -196,15 +199,39 @@ ${openTag}
       <img src="${escapeHtml(game.away_logo)}" alt="" class="logo" loading="lazy">
       <span class="abbrev">${escapeHtml(game.away_abbrev)}</span>
     </div>
-    <div class="score">
-      ${scoreHtml}
+    <div class="score${spoiler ? " spoiler-placeholder" : ""}">
+      ${spoiler ? "?–?" : scoreHtml}
     </div>
     <div class="team home">
       <span class="abbrev">${escapeHtml(game.home_abbrev)}</span>
       <img src="${escapeHtml(game.home_logo)}" alt="" class="logo" loading="lazy">
     </div>
     ${game.is_finished && game.final_type !== "REG" ? `<span class="score-note">${finalTypeShort(game.final_type)}</span>` : ""}
+  </div>`;
+
+  if (spoiler) {
+    const checkboxId = `spoiler-check-${game.game_id}`;
+    return `
+<div class="game-card jersey-card spoiler-game" ${colors}>
+  <input type="checkbox" id="${checkboxId}" class="spoiler-reveal-toggle">
+
+  <div class="spoiler-score-row game-card-trigger" data-game-id="${game.game_id}" data-away-score="${game.away_score}" data-home-score="${game.home_score}" tabindex="-1" role="button" aria-expanded="false">
+    ${scoreRow}
+    ${finnStats}
+    <p class="game-card-hint spoiler-reveal-hint">Näytä tulos ▾</p>
   </div>
+
+  <label class="spoiler-check-label" for="${checkboxId}">
+    <span class="spoiler-check-box" aria-hidden="true"></span>
+    <span class="spoiler-check-text">Merkitse nähdyksi, kun olet katsonut highlightit</span>
+  </label>
+
+  ${spoiler.youtubeUrl ? `<a class="game-card-youtube" href="${escapeHtml(spoiler.youtubeUrl)}" target="_blank" rel="noopener">▶ Highlightit (YouTube)</a>` : ""}
+</div>`;
+  }
+
+  return `
+${openTag}${scoreRow}
   ${badge}
   ${finnStats}
   ${hint}

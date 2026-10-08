@@ -36,45 +36,9 @@ import { buildTimeline } from "./_shared/boxscore";
 import { resolveHighlightsUrl } from "./_shared/youtube";
 import { icon, escapeHtml, humanDate, teamHeroBackgroundStyle } from "./_shared/format";
 import { renderLayout } from "./_shared/layout";
-import { jerseyColors } from "./_shared/teamColors";
+import { finnishGoalieLines, finnishScorerLines, renderGameCard } from "./_shared/gameCard";
+import { fetchGameTeamXg, fetchGamesGoalieGsax, teamXgStatRows } from "./_shared/xg";
 import type { Env, GameRow } from "./_shared/types";
-
-function renderSpoilerGame(game: GameRow, youtubeUrl: string | null): string {
-  const checkboxId = `spoiler-check-${game.game_id}`;
-  const [ca, ch] = jerseyColors(game.away_abbrev, game.home_abbrev);
-
-  // Same jersey banner as the dashboard's cards; the checkbox is visually
-  // hidden (still focusable) and drawn by its <label>, which sits in the dark
-  // strip under the banner (flex `order`), so `:checked ~` still reaches the row.
-  return `
-<div class="game-card jersey-card spoiler-game" style="--ca:${ca};--ch:${ch}">
-  <input type="checkbox" id="${checkboxId}" class="spoiler-reveal-toggle">
-
-  <div class="spoiler-score-row game-card-trigger" data-game-id="${game.game_id}" data-away-score="${game.away_score}" data-home-score="${game.home_score}" tabindex="-1" role="button" aria-expanded="false">
-    <div class="score-row">
-      <span class="jc-half jc-away" data-abbr="${escapeHtml(game.away_abbrev)}" aria-hidden="true"></span>
-      <span class="jc-half jc-home" data-abbr="${escapeHtml(game.home_abbrev)}" aria-hidden="true"></span>
-      <div class="team away">
-        <img src="${escapeHtml(game.away_logo)}" alt="" class="logo" loading="lazy">
-        <span class="abbrev">${escapeHtml(game.away_abbrev)}</span>
-      </div>
-      <div class="score spoiler-placeholder">?–?</div>
-      <div class="team home">
-        <span class="abbrev">${escapeHtml(game.home_abbrev)}</span>
-        <img src="${escapeHtml(game.home_logo)}" alt="" class="logo" loading="lazy">
-      </div>
-    </div>
-    <p class="game-card-hint spoiler-reveal-hint">Näytä tulos ▾</p>
-  </div>
-
-  <label class="spoiler-check-label" for="${checkboxId}">
-    <span class="spoiler-check-box" aria-hidden="true"></span>
-    <span class="spoiler-check-text">Merkitse nähdyksi, kun olet katsonut highlightit</span>
-  </label>
-
-  ${youtubeUrl ? `<a class="game-card-youtube" href="${escapeHtml(youtubeUrl)}" target="_blank" rel="noopener">▶ Highlightit (YouTube)</a>` : ""}
-</div>`;
-}
 
 export const onRequestGet: PagesFunction<Env> = async (context) => {
   const db = context.env.DB;
@@ -107,19 +71,39 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
     if (games.length) {
       roundDate = currentRound.date;
+      const gsaxByGame = await fetchGamesGoalieGsax(db, games.map((g) => g.game_id));
       for (const game of games) {
-        const [{ box }, youtubeUrl] = await Promise.all([
+        const [{ box }, youtubeUrl, gameXg] = await Promise.all([
           getBoxScore(db, game),
           resolveHighlightsUrl(db, context.env, game),
+          fetchGameTeamXg(db, game.game_id, game.away_abbrev, game.home_abbrev),
         ]);
 
         if (!box) missingBoxes++;
         gameDetails[game.game_id] = {
           youtube_url: youtubeUrl ?? undefined,
-          ...(box ? { timeline: buildTimeline(box.goals, box.penalties, game.away_abbrev, box.shootout), team_stats: box.teamStats } : {}),
+          ...(box
+            ? {
+                timeline: buildTimeline(box.goals, box.penalties, game.away_abbrev, box.shootout),
+                team_stats: [...box.teamStats, ...(gameXg ? teamXgStatRows(gameXg.away, gameXg.home, true) : [])],
+              }
+            : {}),
         };
 
-        gamesHtml += renderSpoilerGame(game, youtubeUrl);
+        // Same card as the dashboard's (Finnish lines, GSAx, OT note), kept
+        // hidden by the .spoiler-* CSS until the game is checked and opened.
+        const scorers = box
+          ? [...finnishScorerLines(box.awaySkaters, game.away_abbrev), ...finnishScorerLines(box.homeSkaters, game.home_abbrev)].sort(
+              (a, b) => b.goals + b.assists - (a.goals + a.assists),
+            )
+          : [];
+        const goalies = box
+          ? [
+              ...finnishGoalieLines(box.awayGoalies, game.away_abbrev, gsaxByGame.get(game.game_id)),
+              ...finnishGoalieLines(box.homeGoalies, game.home_abbrev, gsaxByGame.get(game.game_id)),
+            ]
+          : [];
+        gamesHtml += renderGameCard(game, scorers, goalies, null, { youtubeUrl });
       }
     }
   }
@@ -256,6 +240,7 @@ ${missingBoxRetryScript(missingBoxes)}
     var placeholder = row.querySelector(".spoiler-placeholder");
     if (!placeholder) return;
     placeholder.textContent = row.dataset.awayScore + "–" + row.dataset.homeScore;
+    row.classList.add("is-shown");
   }
 
   Array.prototype.slice.call(document.querySelectorAll(".spoiler-score-row")).forEach(function (row) {
