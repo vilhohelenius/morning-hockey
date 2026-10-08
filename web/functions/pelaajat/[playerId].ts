@@ -49,10 +49,14 @@ const NHL_BASE = "https://api-web.nhle.com/v1";
 // the API at all (only successful responses are cached).
 async function fetchJson(path: string): Promise<any> {
   let status = 0;
-  for (let attempt = 0; attempt < 2; attempt++) {
-    if (attempt) await new Promise((resolve) => setTimeout(resolve, 400));
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (attempt) await new Promise((resolve) => setTimeout(resolve, attempt * 500));
     try {
-      const response = await fetch(`${NHL_BASE}${path}`, { cf: { cacheTtl: 300, cacheEverything: true } });
+      // Timeout so a hung connection (common on a cold start) becomes a retry.
+      const response = await fetch(`${NHL_BASE}${path}`, {
+        cf: { cacheTtl: 300, cacheEverything: true },
+        signal: AbortSignal.timeout(5000),
+      });
       if (response.ok) return await response.json();
       status = response.status;
     } catch (error) {
@@ -712,12 +716,38 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   let landing: any;
   try {
     landing = await fetchJson(`/player/${playerId}/landing`);
+    // Keep the last good copy so a later NHL API failure can still show the card.
+    context.waitUntil(
+      context.env.DB
+        .prepare(
+          `INSERT INTO player_landing_cache (player_id, json, fetched_at) VALUES (?, ?, ?)
+           ON CONFLICT(player_id) DO UPDATE SET json = excluded.json, fetched_at = excluded.fetched_at`,
+        )
+        .bind(playerId, JSON.stringify(landing), new Date().toISOString())
+        .run()
+        .catch((error) => console.error(`Landing cache write failed for ${playerId}:`, error)),
+    );
   } catch (error) {
     console.error(`Player landing fetch failed for ${playerId}:`, error);
-    return new Response("Pelaajan tietoja ei juuri nyt saatu. Yritä myöhemmin uudelleen.", {
-      status: 502,
-      headers: { "content-type": "text/plain; charset=utf-8" },
-    });
+    const stale = await context.env.DB
+      .prepare("SELECT json FROM player_landing_cache WHERE player_id = ?")
+      .bind(playerId)
+      .first<{ json: string }>()
+      .catch(() => null);
+    if (stale) {
+      landing = JSON.parse(stale.json);
+    } else {
+      const html = await renderLayout({
+        title: "Pelaaja · Morning Hockey",
+        headerTitle: "Pelaaja",
+        activePage: "",
+        request: context.request,
+        env: context.env,
+        content: `<p class="empty-note">Pelaajan tietoja ei juuri nyt saatu NHL:n rajapinnasta.</p>
+<p><a class="filter-btn" href="${escapeHtml(new URL(context.request.url).pathname)}">Yritä uudelleen</a></p>`,
+      });
+      return new Response(html, { status: 502, headers: { "content-type": "text/html; charset=utf-8", "Cache-Control": "no-store" } });
+    }
   }
 
   const isGoalie = landing.position === "G";

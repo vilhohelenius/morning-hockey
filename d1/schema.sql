@@ -621,3 +621,11 @@ CREATE TABLE IF NOT EXISTS bug_reports (
     user_agent TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL
 );
+
+-- Last good NHL player landing payload (2026-10-08), served when the NHL API
+-- fails on /pelaajat/[id]. Overwritten on every successful fetch.
+CREATE TABLE IF NOT EXISTS player_landing_cache (
+    player_id INTEGER PRIMARY KEY,
+    json TEXT NOT NULL,
+    fetched_at TEXT NOT NULL
+);
