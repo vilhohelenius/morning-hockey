@@ -89,7 +89,10 @@ export const XG_INFO_TEXT = `
   todennäköisyyksien summa. Jos maaleja on enemmän kuin xG, pelaaja on viimeistellyt odotettua paremmin.</p>
   <p><strong>GSAx (torjutut maalit odottamaa vastaan)</strong>: maalivahdin kohtaamien laukausten xG:n summa miinus
   päästetyt maalit. Positiivinen luku tarkoittaa, että maalivahti on torjunut odotettua paremmin. GSAx/100 on sama
-  sataa kohdattua laukausta kohden, ja se näytetään vasta ${MIN_SHOTS_FOR_PER_100} laukauksen jälkeen.</p>
+  sataa kohdattua laukausta kohden, ja se näytetään vasta ${MIN_SHOTS_FOR_PER_100} laukauksen jälkeen. GSAx lasketaan
+  erillisellä maalivahtimallilla vain maalia kohti tulleista laukauksista (ei tyhjiin maaleihin), kun taas joukkueen xG
+  lasketaan laukaisijamallilla kaikista torjumattomista laukausyrityksistä. Siksi esimerkiksi joukkueen xG ja
+  vastustajan maalivahdin GSAx voivat poiketa toisistaan muutamalla sadasosalla.</p>
   <p>Malli on koulutettu NHL:n play-by-play-datalla kausilta 2023–24 – 2025–26 (tarkkuus AUC noin 0,79). Luvut ovat
   mallin raakatulosta eikä niitä ole skaalattu kauden maalimäärään, joten yksittäisen ottelun xG on kohinaista ja
   kausisummat ovat luotettavampia. Vain runkosarja.</p>

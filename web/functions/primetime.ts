@@ -79,7 +79,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   const content = `
 <header class="page-header">
   <h1>${icon("moon")} Prime time</h1>
-  <p class="subtitle">Tuleva viikko, alkaen ${escapeHtml(humanDate(today))}</p>
+  <p class="subtitle">Seuraavat ${DEFAULT_DAYS_SHOWN} päivää, joina pelataan prime time -pelejä (klo 18–00.30), alkaen ${escapeHtml(humanDate(today))}</p>
   <p class="standings-legend">Ottelut, jotka alkavat Suomen aikaa klo 18–00.30 — nämä ehtii katsomaan
     illalla ilman yövalvomista.</p>
 </header>
