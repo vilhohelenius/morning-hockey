@@ -103,6 +103,8 @@ const TEAM_GAME_STATS = [
   const rows = buildTeamStats(TEAM_GAME_STATS, 1, 2);
   const byLabel = Object.fromEntries(rows.map((r) => [r.label, r]));
 
+  assert.equal(rows[0].label, "Maalit");
+  assert.equal(`${byLabel["Maalit"].away_value}-${byLabel["Maalit"].home_value}`, "1-2");
   assert.equal(byLabel["Laukaukset"].away_value, "20");
   assert.equal(byLabel["Laukaukset"].home_value, "15");
   assert.equal(byLabel["Torjuntaprosentti"].away_value, "86.7 %");

@@ -154,7 +154,16 @@ export function buildTeamStats(teamGameStats: RawTeamStat[], awayScore: number, 
   const [giveawaysAwayPct, giveawaysHomePct] = shareSplit(awayGiveaways ?? 0, homeGiveaways ?? 0);
   const [takeawaysAwayPct, takeawaysHomePct] = shareSplit(awayTakeaways ?? 0, homeTakeaways ?? 0);
 
+  const [goalsAwayPct, goalsHomePct] = shareSplit(awayScore, homeScore);
+
   return [
+    {
+      label: "Maalit",
+      away_value: String(awayScore),
+      home_value: String(homeScore),
+      away_pct: goalsAwayPct,
+      home_pct: goalsHomePct,
+    },
     {
       label: "Laukaukset",
       away_value: awaySog !== undefined ? String(awaySog) : "–",
