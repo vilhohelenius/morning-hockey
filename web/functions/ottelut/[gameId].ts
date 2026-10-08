@@ -107,6 +107,8 @@ function renderSkaterTable(skaters: PlayerGameStat[], xg: { ixg: Map<number, num
         <td class="stat-strong">${p.points}</td>
         <td>${p.plus_minus > 0 ? "+" : ""}${p.plus_minus}</td>
         <td>${p.shots}</td>
+        <td>${p.pim}</td>
+        <td>${escapeHtml(p.toi)}</td>
         ${ixg.size ? `<td>${(ixg.get(p.player_id) ?? 0).toFixed(2)}</td>` : ""}
         ${xgfPct.size ? `<td>${pctCell(xgfPct, p.player_id)}</td><td>${pctCell(xgfPct5v5, p.player_id)}</td>` : ""}
         <td>${p.blocked_shots}</td>
@@ -114,8 +116,6 @@ function renderSkaterTable(skaters: PlayerGameStat[], xg: { ixg: Map<number, num
         <td>${p.giveaways}</td>
         <td>${p.takeaways}</td>
         <td>${p.faceoff_pct !== null ? `${(p.faceoff_pct * 100).toFixed(0)} %` : "–"}</td>
-        <td>${p.pim}</td>
-        <td>${escapeHtml(p.toi)}</td>
       </tr>`,
     )
     .join("");
@@ -132,14 +132,15 @@ function renderSkaterTable(skaters: PlayerGameStat[], xg: { ixg: Map<number, num
         <th data-sort="points" title="Pisteet">PTS</th>
         <th data-sort="pm" title="Plus/miinus">+/-</th>
         <th data-sort="shots" title="Laukaukset">SOG</th>
+        <th data-sort="pim" title="Jäähyt (min)">PIM</th>
+        <th data-sort="toi">TOI</th>
         ${ixg.size ? '<th data-sort="ixg" title="Yksilöllinen odotettu maalimäärä (ixG)">ixG</th>' : ""}
+        ${xgfPct.size ? '<th data-sort="xgf" title="Odotettujen maalien osuus, kaikki tilanteet (xGF%)">xGF%</th><th data-sort="xgf5" title="Odotettujen maalien osuus, 5v5 (xGF% 5v5)">xGF% 5v5</th>' : ""}
         <th data-sort="blocks" title="Blokatut laukaukset">BLK</th>
         <th data-sort="hits" title="Taklaukset">HIT</th>
         <th data-sort="give" title="Kiekon menetykset">GV</th>
         <th data-sort="take" title="Kiekon riistot">TK</th>
         <th data-sort="fo" title="Aloitusprosentti">FO%</th>
-        <th data-sort="pim" title="Jäähyt (min)">PIM</th>
-        <th data-sort="toi">TOI</th>
       </tr>
     </thead>
     <tbody>${rows}</tbody>
