@@ -982,10 +982,6 @@ main {
   transition: transform 0.6s ease;
 }
 
-.player-hero-flip.is-flipped .player-hero-flip-inner {
-  transform: rotateY(180deg);
-}
-
 /* .hero-banner.player-hero-face (not just .player-hero-face): .hero-banner
    itself sets position: relative further down, and since both are single-
    class selectors of equal specificity, source order alone would decide
@@ -4789,7 +4785,7 @@ main {
 
 .player-hero-flip-inner {
   min-height: 245px;
-  transition: transform 0.45s ease;
+  transition: transform 0.45s ease, min-height 0.3s ease;
 }
 
 /* Poistuva puoli häivytetään heti käännön alussa ja saapuva tuodaan esiin
@@ -4812,10 +4808,8 @@ main {
   transform: rotateY(180deg);
 }
 
-.player-hero-flip:not(.is-flipped) .hero-banner.player-hero-front > *,
-.player-hero-flip:not(.is-flipped) .hero-banner.player-hero-front::after,
-.player-hero-flip.is-flipped .hero-banner.player-hero-back > *,
-.player-hero-flip.is-flipped .hero-banner.player-hero-back::after {
+.player-hero-flip .hero-banner.player-hero-face.is-active > *,
+.player-hero-flip .hero-banner.player-hero-face.is-active::after {
   opacity: 1;
   visibility: visible;
   transition: opacity 0.15s ease 0.225s, visibility 0s 0.225s;
@@ -6054,4 +6048,162 @@ main {
   max-width: calc(100vw - 32px);
   white-space: normal;
   border-radius: 16px;
+}
+
+
+/* ---------- Joukkueen Stanley Cup -puoli ja pelaajan palkintohuone ---------- */
+
+/* NHL:n pokaalikuvat ovat JPG:itä mustalla taustalla; screen häivyttää mustan. */
+.trophy-img {
+  display: block;
+  width: auto;
+  mix-blend-mode: screen;
+}
+
+.cup-years {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 5px;
+}
+
+.cup-years span {
+  padding: 3px 6px 2px;
+  border-radius: 5px;
+  background: rgba(245, 200, 76, 0.18);
+  color: #f5c84c;
+  font: 600 1rem/1 var(--font-display);
+  letter-spacing: 0.04em;
+}
+
+.team-page-header {
+  flex-wrap: wrap;
+}
+
+.team-cups {
+  flex: 0 0 100%;
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.22);
+  text-align: left;
+}
+
+.team-cups-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  color: #fff;
+}
+
+.team-cups-head .trophy-img {
+  height: 46px;
+}
+
+.team-cups-head b {
+  font: 700 2rem/1 var(--font-display);
+}
+
+.hero-banner.player-hero-room {
+  display: block;
+  padding: 16px 16px 30px;
+  text-align: left;
+  color: #fff;
+}
+
+.trophy-room-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin: 0 0 10px;
+}
+
+.trophy-room-title h2 {
+  margin: 0;
+  font: 600 1.5rem/1 var(--font-display);
+  letter-spacing: 0.03em;
+}
+
+.trophy-room-title span {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.trophy-room-cup {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.28);
+}
+
+.trophy-room-cup .trophy-img {
+  height: 96px;
+  flex: none;
+}
+
+.trophy-count {
+  font: 700 1.15rem/1 var(--font-display);
+}
+
+.trophy-room-cup .trophy-count {
+  margin-bottom: 6px;
+  font-size: 1.6rem;
+}
+
+.trophy-count i {
+  font: 500 0.75rem var(--font-body);
+  font-style: normal;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.trophy-shelf {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px 8px;
+}
+
+.trophy-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  text-align: center;
+}
+
+.trophy-pic {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: 100%;
+  height: 62px;
+  padding-bottom: 2px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.28);
+}
+
+.trophy-pic .trophy-img {
+  height: 60px;
+}
+
+.trophy-item .trophy-count {
+  margin-top: 4px;
+}
+
+.trophy-item b {
+  font-size: 0.74rem;
+  line-height: 1.15;
+}
+
+.trophy-item small {
+  font-size: 0.66rem;
+  line-height: 1.2;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* mix-blend-mode: screen toimii vain jos kuvan esivanhemmat eivät muodosta omaa
+   pinoamiskontekstia (heron lapsille asetettu z-index tekisi sen). */
+.hero-banner > .team-cups,
+.hero-banner.player-hero-room > * {
+  z-index: auto;
 }

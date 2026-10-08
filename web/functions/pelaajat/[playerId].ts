@@ -24,6 +24,7 @@ import {
   teamLogoUrl,
 } from "../_shared/format";
 import { renderLayout } from "../_shared/layout";
+import { renderTrophyRoom } from "../_shared/trophies";
 import type { Env } from "../_shared/types";
 import {
   XG_INFO_TEXT,
@@ -834,12 +835,14 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
         .first())
     : false;
 
+  const trophyRoom = renderTrophyRoom(landing.awards, escapeHtml(name));
+
   const content = `
 <a class="back-link js-back" href="/">← Takaisin</a>
 
 <div class="split">
 <div class="split-side">
-<div class="player-hero-flip js-player-hero-flip" role="button" tabindex="0" aria-pressed="false" aria-label="Käännä kortti nähdäksesi pelaajan taustatiedot">
+<div class="player-hero-flip js-player-hero-flip" role="button" tabindex="0" aria-pressed="false" aria-label="Käännä kortti nähdäksesi pelaajan taustatiedot ja palkinnot">
   ${
     username
       ? renderFavStar({
@@ -851,7 +854,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       : ""
   }
   <div class="player-hero-flip-inner">
-    <div class="page-header player-card-header hero-banner player-hero-face player-hero-front" data-abbr="${escapeHtml(landing.currentTeamAbbrev ?? "")}" style="${escapeHtml(teamHeroBackgroundStyle(landing.currentTeamAbbrev))}">
+    <div class="page-header player-card-header hero-banner player-hero-face player-hero-front is-active" data-abbr="${escapeHtml(landing.currentTeamAbbrev ?? "")}" style="${escapeHtml(teamHeroBackgroundStyle(landing.currentTeamAbbrev))}">
       <h1>${escapeHtml(name)}</h1>
       <p class="player-hero-meta player-hero-meta-front">
         ${landing.sweaterNumber ? `<span>#${landing.sweaterNumber}</span>` : ""}
@@ -866,7 +869,16 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     </div>
     <div class="page-header player-card-header hero-banner player-hero-face player-hero-back" data-abbr="${escapeHtml(landing.currentTeamAbbrev ?? "")}" style="${escapeHtml(teamHeroBackgroundStyle(landing.currentTeamAbbrev))}">
       ${renderPlayerHeroBack(landing, age)}
+      ${trophyRoom ? `<span class="player-hero-flip-hint" aria-hidden="true">⟲ Palkinnot</span>` : ""}
     </div>
+    ${
+      trophyRoom
+        ? `<div class="page-header player-card-header hero-banner player-hero-face player-hero-room" data-abbr="${escapeHtml(landing.currentTeamAbbrev ?? "")}" style="${escapeHtml(teamHeroBackgroundStyle(landing.currentTeamAbbrev))}">
+      ${trophyRoom}
+      <span class="player-hero-flip-hint" aria-hidden="true">⟲ Etu</span>
+    </div>`
+        : ""
+    }
   </div>
 </div>
 </div>

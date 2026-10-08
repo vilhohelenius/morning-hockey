@@ -21,6 +21,7 @@ import { currentUsername } from "../_shared/auth";
 import { icon, escapeHtml, renderFavStar, renderGameRow, teamHeroBackgroundStyle } from "../_shared/format";
 import { renderRosterGoalieTable, renderRosterSkaterTable } from "../_shared/leaderboard";
 import { renderLayout } from "../_shared/layout";
+import { renderTeamCups } from "../_shared/trophies";
 import type {
   Env,
   GameRow,
@@ -209,6 +210,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       ${escapeHtml(team.division)}: ${team.division_rank}. sija · ${team.wins}-${team.losses}-${team.ot_losses} (${team.points} p)
     </p>
   </div>
+  ${renderTeamCups(abbrev)}
 </header>
 </div>
 <div class="split-main">

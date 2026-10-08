@@ -186,13 +186,40 @@
   });
 
   // Player hero card: click (or Enter/Space, since it's a role="button")
-  // flips it to reveal the bio back face. The fav-star form sits inside
-  // this same element (see [playerId].ts) so its own clicks are excluded
-  // here -- otherwise starring a player would also flip the card.
+  // cycles front -> bio -> (trophy room, if the player has one) -> front.
+  // The inner wrapper keeps rotating 180deg per step, so each incoming face
+  // gets the matching own rotation (0 or 180) while it is still hidden. The
+  // fav-star form sits inside this same element (see [playerId].ts) so its
+  // own clicks are excluded here -- otherwise starring a player would also
+  // flip the card. The inner min-height follows the active face, since the
+  // trophy room is taller than the bio.
   document.querySelectorAll(".js-player-hero-flip").forEach(function (card) {
+    var inner = card.querySelector(".player-hero-flip-inner");
+    var faces = card.querySelectorAll(".player-hero-face");
+    var floor = parseFloat(getComputedStyle(inner).minHeight) || 0;
+    var step = 0;
+
+    function naturalHeight(face) {
+      var bottom = face.style.bottom;
+      face.style.bottom = "auto";
+      var h = face.offsetHeight;
+      face.style.bottom = bottom;
+      return h;
+    }
+
+    function fit() {
+      inner.style.minHeight = Math.max(floor, naturalHeight(faces[step % faces.length])) + "px";
+    }
+
     function toggleFlip() {
-      var flipped = card.classList.toggle("is-flipped");
-      card.setAttribute("aria-pressed", String(flipped));
+      faces[step % faces.length].classList.remove("is-active");
+      step++;
+      var next = faces[step % faces.length];
+      next.style.transform = "rotateY(" + (step % 2) * 180 + "deg)";
+      next.classList.add("is-active");
+      inner.style.transform = "rotateY(" + step * 180 + "deg)";
+      card.setAttribute("aria-pressed", String(step % faces.length !== 0));
+      fit();
     }
 
     card.addEventListener("click", function (event) {
@@ -207,6 +234,8 @@
         toggleFlip();
       }
     });
+
+    window.addEventListener("resize", fit);
   });
 
   // Player card's per-game table rows -- each played game links to its
