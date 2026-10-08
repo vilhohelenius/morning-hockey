@@ -763,11 +763,6 @@
 
     function openGameDetail(trigger) {
       var data = gameDetails[trigger.dataset.gameId];
-      if (!data) {
-        // No box score cached yet: nothing to expand, open the game page instead.
-        location.href = "/ottelut/" + trigger.dataset.gameId;
-        return;
-      }
 
       closeGameDetail();
 
@@ -808,6 +803,16 @@
       panel.appendChild(fullLink);
 
       var body = el("div", "team-detail-body");
+      if (!data) {
+        // No box score cached yet (e.g. game just started).
+        body.appendChild(el("p", "muted", "Ei vielä tapahtumia."));
+        panel.appendChild(body);
+        trigger.insertAdjacentElement("afterend", panel);
+        trigger.setAttribute("aria-expanded", "true");
+        gameDetailEl = panel;
+        openGameTrigger = trigger;
+        return;
+      }
       body.appendChild(renderTimeline(data.timeline || [], awayAbbrev));
       var statRows = (data.team_stats || []).slice();
       var goalsAway = 0;
