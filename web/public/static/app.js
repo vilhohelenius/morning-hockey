@@ -198,6 +198,7 @@
     var faces = card.querySelectorAll(".player-hero-face");
     var floor = parseFloat(getComputedStyle(inner).minHeight) || 0;
     var step = 0;
+    var busy = false;
 
     function naturalHeight(face) {
       var bottom = face.style.bottom;
@@ -212,6 +213,11 @@
     }
 
     function toggleFlip() {
+      // Rewriting face transforms mid-rotation scrambles the faces, so ignore
+      // clicks until the 0.45 s flip has finished.
+      if (busy) return;
+      busy = true;
+      setTimeout(function () { busy = false; }, 460);
       var prev = faces[step % faces.length];
       prev.classList.remove("is-active");
       step++;
