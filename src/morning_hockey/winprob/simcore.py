@@ -45,11 +45,11 @@ def series_win(ph, pa):
     return win
 
 
-def _series(key, a, b, sw, rng):
-    """Winners of series a v b (team index arrays, one per sim); the better regular season has home ice.
-    ponytail: later rounds use the same rule instead of the exact NHL bracket seeding."""
+def _series(key, a, b, sw, rng, seeded=False):
+    """Winners of series a v b (team index arrays, one per sim). Round 1 (seeded): a has home ice, as a division
+    winner does against a wild card even with fewer points. Later rounds: the better regular season."""
     r = np.arange(len(a))
-    hi = np.where(key[r, a] >= key[r, b], a, b)
+    hi = a if seeded else np.where(key[r, a] >= key[r, b], a, b)
     lo = a + b - hi
     return np.where(rng.random(len(a)) < sw[hi, lo], hi, lo)
 
@@ -91,8 +91,8 @@ def simulate(base, home_idx, away_idx, cum, divs, confs, sims, rng, chunk=5000, 
                 x_strong = key[r, x[:, 0]] >= key[r, y[:, 0]]
                 s, w = np.where(x_strong[:, None], x, y), np.where(x_strong[:, None], y, x)
                 wc = wild[cname]
-                a, b = _series(key, s[:, 0], wc[:, 1], sw, rng), _series(key, s[:, 1], s[:, 2], sw, rng)
-                c, d = _series(key, w[:, 0], wc[:, 0], sw, rng), _series(key, w[:, 1], w[:, 2], sw, rng)
+                a, b = _series(key, s[:, 0], wc[:, 1], sw, rng, True), _series(key, s[:, 1], s[:, 2], sw, rng, True)
+                c, d = _series(key, w[:, 0], wc[:, 0], sw, rng, True), _series(key, w[:, 1], w[:, 2], sw, rng, True)
                 champs.append(_series(key, _series(key, a, b, sw, rng), _series(key, c, d, sw, rng), sw, rng))
             cup += np.bincount(_series(key, champs[0], champs[1], sw, rng), minlength=N)
         presidents += np.bincount(key.argmax(1), minlength=N)
