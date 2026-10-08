@@ -57,12 +57,13 @@ def _series(key, a, b, sw, rng, seeded=False):
 def simulate(base, home_idx, away_idx, cum, divs, confs, sims, rng, chunk=5000, sw=None):
     """base: (4, N) current points, RW, ROW, wins. divs/confs: name -> team indexes.
     sw: optional (N, N) series win matrix (sw[i, j] = i wins a series against j with home ice) -> also plays the playoffs.
-    Returns playoffs/division/presidents/cup shares and pts (sims, N)."""
+    Returns playoffs/division/presidents/cup shares, advance (3, N: won round 1 / round 2 / conference final) and pts (sims, N)."""
     N, G = base.shape[1], len(home_idx)
     Hm, Am = np.zeros((G, N), np.float32), np.zeros((G, N), np.float32)
     Hm[np.arange(G), home_idx] = 1; Am[np.arange(G), away_idx] = 1
     cum32 = cum[None].astype(np.float32)
     playoffs, divwin, presidents, cup = np.zeros(N), np.zeros(N), np.zeros(N), np.zeros(N)
+    adv = np.zeros((3, N))  # teams that won round 1 / round 2 / the conference final
     pts_all = np.zeros((sims, N), np.float32)
     done = 0
     while done < sims:
@@ -93,9 +94,12 @@ def simulate(base, home_idx, away_idx, cum, divs, confs, sims, rng, chunk=5000, 
                 wc = wild[cname]
                 a, b = _series(key, s[:, 0], wc[:, 1], sw, rng, True), _series(key, s[:, 1], s[:, 2], sw, rng, True)
                 c, d = _series(key, w[:, 0], wc[:, 0], sw, rng, True), _series(key, w[:, 1], w[:, 2], sw, rng, True)
-                champs.append(_series(key, _series(key, a, b, sw, rng), _series(key, c, d, sw, rng), sw, rng))
+                e, f = _series(key, a, b, sw, rng), _series(key, c, d, sw, rng)
+                champs.append(_series(key, e, f, sw, rng))
+                for k, won in enumerate((np.concatenate([a, b, c, d]), np.concatenate([e, f]), champs[-1])):
+                    adv[k] += np.bincount(won, minlength=N)
             cup += np.bincount(_series(key, champs[0], champs[1], sw, rng), minlength=N)
         presidents += np.bincount(key.argmax(1), minlength=N)
         pts_all[done:done + S] = tot[0]
         done += S
-    return {"playoffs": playoffs / sims, "division": divwin / sims, "presidents": presidents / sims, "cup": cup / sims, "pts": pts_all}
+    return {"playoffs": playoffs / sims, "division": divwin / sims, "presidents": presidents / sims, "cup": cup / sims, "advance": adv / sims, "pts": pts_all}

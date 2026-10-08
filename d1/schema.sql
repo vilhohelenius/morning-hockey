@@ -621,7 +621,10 @@ CREATE TABLE IF NOT EXISTS season_sim (
     p_playoffs REAL NOT NULL,
     p_division REAL NOT NULL,
     p_presidents REAL NOT NULL,
-    p_cup REAL,  -- added later: ALTER TABLE season_sim ADD COLUMN p_cup REAL;
+    p_cup REAL,  -- added later: ALTER TABLE season_sim ADD COLUMN p_cup REAL; (same for p_round2, p_conf_final, p_final)
+    p_round2 REAL,
+    p_conf_final REAL,
+    p_final REAL,
     PRIMARY KEY (season, as_of, abbrev)
 );
 

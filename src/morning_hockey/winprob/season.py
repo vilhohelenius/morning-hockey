@@ -21,6 +21,7 @@ _FINISHED = {"FINAL", "OFF"}
 _COLUMNS = [
     "season", "as_of", "abbrev", "games_played", "points", "exp_points", "points_p10", "points_p90",
     "p_playoffs", "p_division", "p_presidents", "p_cup",
+    "p_round2", "p_conf_final", "p_final",
 ]
 
 
@@ -107,7 +108,8 @@ def simulate_season(history: list[dict], schedule: list[dict], divisions: dict[s
          "exp_points": round(float(pts[:, i].mean()), 1), "points_p10": float(np.percentile(pts[:, i], 10)),
          "points_p90": float(np.percentile(pts[:, i], 90)), "p_playoffs": round(float(sim["playoffs"][i]), 4),
          "p_division": round(float(sim["division"][i]), 4), "p_presidents": round(float(sim["presidents"][i]), 4),
-         "p_cup": round(float(sim["cup"][i]), 4)}
+         "p_cup": round(float(sim["cup"][i]), 4), "p_round2": round(float(sim["advance"][0, i]), 4),
+         "p_conf_final": round(float(sim["advance"][1, i]), 4), "p_final": round(float(sim["advance"][2, i]), 4)}
         for a, i in idx.items()
     ]
 

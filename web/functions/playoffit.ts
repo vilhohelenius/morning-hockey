@@ -44,25 +44,30 @@ interface SimRow {
   p_division: number;
   p_presidents: number;
   p_cup: number | null;
+  p_round2: number | null;
+  p_conf_final: number | null;
+  p_final: number | null;
 }
 
 // Missing table or no snapshot yet -> empty, and the odds are hidden.
 async function fetchSeasonSim(db: D1Database): Promise<SimRow[]> {
-  const query = (cup: string) =>
-    db
-      .prepare(`SELECT abbrev, as_of, games_played, exp_points, p_playoffs, p_division, p_presidents, ${cup} AS p_cup FROM season_sim WHERE as_of = (SELECT MAX(as_of) FROM season_sim)`)
-      .all<SimRow>();
-  try {
-    return (await query("p_cup")).results;
-  } catch {
-    // p_cup column not added yet
+  // Newer columns may not exist yet (ALTER TABLE run by hand) -> fall back to what does.
+  const tiers = [
+    "p_cup, p_round2, p_conf_final, p_final",
+    "p_cup, NULL AS p_round2, NULL AS p_conf_final, NULL AS p_final",
+    "NULL AS p_cup, NULL AS p_round2, NULL AS p_conf_final, NULL AS p_final",
+  ];
+  for (const cols of tiers) {
     try {
-      return (await query("NULL")).results;
+      const { results } = await db
+        .prepare(`SELECT abbrev, as_of, games_played, exp_points, p_playoffs, p_division, p_presidents, ${cols} FROM season_sim WHERE as_of = (SELECT MAX(as_of) FROM season_sim)`)
+        .all<SimRow>();
+      return results;
     } catch (error) {
-      console.error("Season simulation lookup failed:", error);
-      return [];
+      if (cols === tiers[tiers.length - 1]) console.error("Season simulation lookup failed:", error);
     }
   }
+  return [];
 }
 
 // Never show a certainty the model can't claim.
@@ -91,27 +96,36 @@ const pane = (group: string, id: string, html: string, visible: boolean) =>
   `<div id="${id}" data-pane="${group}"${visible ? "" : " hidden"}>${html}</div>`;
 
 // ---- Bracket diagram (West left, East right, final in the middle).
-function renderDiagram(round1ByConf: Map<string, Row[][]>, odds: Map<string, number>): string {
+// Forecast variant: smaller round-1 boxes without %, and circles on the connector corners
+// for the teams the simulation advances (see renderForecastBracket).
+interface BracketExtras {
+  nodes: (conf: string, el: 0 | 1 | 2) => string; // html inside connector element el (0/1: round 2 entry, 2: conference final entry)
+  champion: string;
+}
+
+function renderDiagram(round1ByConf: Map<string, Row[][]>, odds: Map<string, number>, extras?: BracketExtras): string {
   const slot = (r: Row) =>
     `<div class="pf-s" style="--tc:${color(r.abbrev)}"><img src="${escapeHtml(r.logo)}" alt="">${escapeHtml(r.abbrev)}${
       odds.has(r.abbrev) ? `<small>${formatOdds(odds.get(r.abbrev)!)} %</small>` : ""
     }</div>`;
-  const side = (pairs: Row[][], cols: [number, number, number], cls: string) =>
-    pairs
-      .map((m, k) => `<div class="pf-m" style="grid-column:${cols[0]};grid-row:${2 + 2 * k}/span 2">${m.map(slot).join("")}</div>`)
-      .join("") +
-    [0, 1].map((k) => `<div class="pf-j ${cls}" style="grid-column:${cols[1]};grid-row:${2 + 4 * k}/span 4"></div>`).join("") +
-    `<div class="pf-j ${cls}" style="grid-column:${cols[2]};grid-row:2/span 8"></div>`;
+  const side = (conf: string, cols: [number, number, number], cls: string) => {
+    const pairs = round1ByConf.get(conf) ?? [];
+    const node = (el: 0 | 1 | 2) => extras?.nodes(conf, el) ?? "";
+    return (
+      pairs
+        .map((m, k) => `<div class="pf-m" style="grid-column:${cols[0]};grid-row:${2 + 2 * k}/span 2">${m.map(slot).join("")}</div>`)
+        .join("") +
+      ([0, 1] as const).map((k) => `<div class="pf-j ${cls}" style="grid-column:${cols[1]};grid-row:${2 + 4 * k}/span 4">${node(k)}</div>`).join("") +
+      `<div class="pf-j ${cls}" style="grid-column:${cols[2]};grid-row:2/span 8">${node(2)}</div>`
+    );
+  };
 
   return `
-<div class="pf-bk">
+<div class="pf-bk${extras ? " fc" : ""}">
   <h4 style="grid-column:1/4">Western</h4><h4 style="grid-column:5/8;text-align:right">Eastern</h4>
-  ${side(round1ByConf.get("Western") ?? [], [1, 2, 3], "w")}${side(round1ByConf.get("Eastern") ?? [], [7, 6, 5], "e")}
-  <div class="pf-fin" style="grid-column:4;grid-row:2/span 8"><span>${icon("trophy")}<br>Finaali</span></div>
-</div>
-<p class="pf-note">Playoff-kaavio jos playoffit alkaisivat tänään.${
-    odds.size ? " Prosentti on joukkueen todennäköisyys päästä playoffeihin kauden päätteeksi." : ""
-  }</p>`;
+  ${side("Western", [1, 2, 3], "w")}${side("Eastern", [7, 6, 5], "e")}
+  <div class="pf-fin" style="grid-column:4;grid-row:2/span 8"><span>${extras?.champion ?? ""}${icon("trophy")}<br>Finaali</span></div>
+</div>`;
 }
 
 // ---- Standings tables with playoff % and expected points.
@@ -286,33 +300,74 @@ ${tabs("pie", [["pl", "Liiga"], ["pc", "Konferenssit"], ["pd", "Divisioonat"]])}
 ${pane("pie", "pl", leagueHtml, true)}${pane("pie", "pc", conferenceHtml, false)}${pane("pie", "pd", divisionHtml, false)}`;
 }
 
-// ---- Season forecast: division winner and Presidents' Trophy odds as bar lists.
-function renderSeasonForecast(rows: Row[], simRows: SimRow[]): string {
+// ---- Season forecast: simulated bracket, division winners, Presidents' Trophy and Cup odds.
+const pctText = (p: number) => `${formatOdds(p)} %`;
+
+function renderForecastBracket(round1ByConf: Map<string, Row[][]>, rows: Row[], sim: Map<string, SimRow>): string {
+  const best = (teams: Row[], pick: (s: SimRow) => number | null | undefined): { r: Row; p: number } | null => {
+    let top: { r: Row; p: number } | null = null;
+    for (const r of teams) {
+      const p = pick(sim.get(r.abbrev) as SimRow) ?? -1;
+      if (p >= 0 && (!top || p > top.p)) top = { r, p };
+    }
+    return top;
+  };
+  const node = (hit: { r: Row; p: number } | null, top: number, cls = "") =>
+    hit
+      ? `<div class="pf-n ${cls}" style="top:${top}%;--tc:${color(hit.r.abbrev)}"><img src="${escapeHtml(hit.r.logo)}" alt="${escapeHtml(hit.r.abbrev)}"><small>${pctText(hit.p)}</small></div>`
+      : "";
+  const nodes = (conf: string, el: 0 | 1 | 2): string => {
+    const pairs = round1ByConf.get(conf) ?? [];
+    if (el < 2) {
+      return [0, 1].map((t) => node(best(pairs[2 * el + t] ?? [], (s) => s.p_round2), t ? 75 : 25)).join("");
+    }
+    const quarter = (t: number) => [...(pairs[2 * t] ?? []), ...(pairs[2 * t + 1] ?? [])];
+    return (
+      [0, 1].map((t) => node(best(quarter(t), (s) => s.p_conf_final), t ? 75 : 25)).join("") +
+      node(best(rows.filter((r) => r.conference === conf), (s) => s.p_final), 50, "fin")
+    );
+  };
+  const champ = best(rows, (s) => s.p_cup);
+  const champion = champ
+    ? `<div class="pf-champ" style="--tc:${color(champ.r.abbrev)}"><img src="${escapeHtml(champ.r.logo)}" alt="${escapeHtml(champ.r.abbrev)}"><small>${pctText(champ.p)}</small></div>`
+    : "";
+  return `${renderDiagram(round1ByConf, new Map(), { nodes, champion })}
+<p class="pf-note">Simulaation todennäköisimmät jatkoon pääsijät nykyisessä kaaviossa. Pallon prosentti on joukkueen todennäköisyys päästä kyseiseen vaiheeseen: toiselle kierrokselle, konferenssifinaaliin, finaaliin ja mestaruuteen (kultainen rinkula).</p>`;
+}
+
+function renderSeasonForecast(round1ByConf: Map<string, Row[][]>, rows: Row[], simRows: SimRow[]): string {
   const byAbbrev = new Map(rows.map((r) => [r.abbrev, r]));
-  const list = (teams: SimRow[], pick: (s: SimRow) => number) =>
+  const sim = new Map(simRows.map((s) => [s.abbrev, s]));
+  const list = (teams: SimRow[], pick: (s: SimRow) => number, small = false) =>
     teams
       .map((s) => {
         const r = byAbbrev.get(s.abbrev);
         if (!r) return "";
-        return `<div class="pf-bar-row" style="--tc:${color(s.abbrev)}"><span class="tm"><img src="${escapeHtml(r.logo)}" alt="" loading="lazy">${escapeHtml(s.abbrev)}</span><span class="bar"><span style="width:${(pick(s) * 100).toFixed(1)}%"></span></span><b>${formatOdds(pick(s))} %</b></div>`;
+        return `<div class="pf-bar-row${small ? " sm" : ""}" style="--tc:${color(s.abbrev)}"><span class="tm"><img src="${escapeHtml(r.logo)}" alt="" loading="lazy">${escapeHtml(s.abbrev)}</span><span class="bar"><span style="width:${(pick(s) * 100).toFixed(1)}%"></span></span><b>${pctText(pick(s))}</b></div>`;
       })
       .join("");
-  const divisions = [...new Set(rows.map((r) => r.division))].sort();
-  const divisionHtml = divisions
-    .map((d) => {
-      const teams = simRows.filter((s) => byAbbrev.get(s.abbrev)?.division === d).sort((a, b) => b.p_division - a.p_division);
-      return `<h4 class="pf-sub">${escapeHtml(d)}</h4>${list(teams, (s) => s.p_division)}`;
-    })
-    .join("");
-  const presidents = [...simRows].sort((a, b) => b.p_presidents - a.p_presidents).slice(0, 10);
-  const cup = [...simRows].sort((a, b) => (b.p_cup ?? 0) - (a.p_cup ?? 0)).slice(0, 10);
+
+  // 2x2 grid: Western divisions in the left column, Eastern in the right.
+  const divsOf = (conf: string) => [...new Set(rows.filter((r) => r.conference === conf).map((r) => r.division))].sort();
+  const divisionCell = (d: string) => {
+    const teams = simRows.filter((s) => byAbbrev.get(s.abbrev)?.division === d).sort((a, b) => b.p_division - a.p_division).slice(0, 3);
+    return `<div><h4 class="pf-sub">${escapeHtml(d)}</h4>${list(teams, (s) => s.p_division, true)}</div>`;
+  };
+  const west = divsOf("Western");
+  const east = divsOf("Eastern");
+  const divisionHtml = west.map((d, i) => divisionCell(d) + (east[i] ? divisionCell(east[i]) : "")).join("");
+
+  const top5 = (pick: (s: SimRow) => number) => [...simRows].sort((a, b) => pick(b) - pick(a)).slice(0, 5);
+  const hasCup = simRows.some((s) => s.p_cup);
+  const hasPath = hasCup && simRows.some((s) => s.p_round2);
   return `
-<h3 class="roster-group-title">Divisioonan voitto</h3>${divisionHtml}
-<h3 class="roster-group-title">Presidents' Trophy</h3>${list(presidents, (s) => s.p_presidents)}${
-    cup.length && cup[0].p_cup ? `<h3 class="roster-group-title">Stanley Cup</h3>${list(cup, (s) => s.p_cup ?? 0)}` : ""
+${hasPath ? renderForecastBracket(round1ByConf, rows, sim) : ""}
+<h3 class="roster-group-title">Divisioonan voitto</h3><div class="pf-div-grid">${divisionHtml}</div>
+<h3 class="roster-group-title">Presidents' Trophy</h3>${list(top5((s) => s.p_presidents), (s) => s.p_presidents)}${
+    hasCup ? `<h3 class="roster-group-title">Stanley Cup</h3>${list(top5((s) => s.p_cup ?? 0), (s) => s.p_cup ?? 0)}` : ""
   }
-<p class="pf-note">Listoissa Presidents' Trophy ja Stanley Cup on kymmenen todennäköisintä joukkuetta.${
-    cup.length && cup[0].p_cup ? " Cup-luku on karkeampi arvio kuin playoff-paikka: pudotuspelisarjat simuloidaan samalla ottelumallilla, jonka joukkuekohtaiset erot kutistetaan kauden loppua kohti." : ""
+<p class="pf-note">Divisioonan voitossa kolme todennäköisintä, Presidents' Trophyssa ja Stanley Cupissa viisi.${
+    hasCup ? " Pudotuspelit simuloidaan samalla ottelumallilla, jonka joukkuekohtaiset erot kutistetaan kauden loppua kohti, joten ne ovat karkeampi arvio kuin playoff-paikka." : ""
   }</p>`;
 }
 
@@ -384,6 +439,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   const confTabs = [...round1ByConf.keys()].map((c): [string, string] => [`w${c}`, c]);
   const bracketHtml = `
 ${renderDiagram(round1ByConf, odds)}
+<p class="pf-note">Playoff-kaavio jos playoffit alkaisivat tänään.${odds.size ? " Prosentti on joukkueen todennäköisyys päästä playoffeihin kauden päätteeksi." : ""}</p>
 <h3 class="roster-group-title">Sarjatilanne</h3>
 ${tabs("wcc", confTabs)}${standings}`;
 
@@ -400,7 +456,7 @@ ${
     ? tabs("top", [["bk", "Playoff-bracket"], ["pie", "Playoff-ennuste"], ["fc", "Kausiennuste"]]) +
       pane("top", "bk", bracketHtml, true) +
       pane("top", "pie", renderPies(rows, odds), false) +
-      pane("top", "fc", renderSeasonForecast(rows, simRows), false)
+      pane("top", "fc", renderSeasonForecast(round1ByConf, rows, simRows), false)
     : bracketHtml
 }
 ${hasOdds ? renderForecastInfo(simRows) : ""}
