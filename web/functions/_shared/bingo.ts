@@ -1,4 +1,4 @@
-import { icon } from "./format";
+import { icon } from "./format.ts";
 // Pistemiesbingo: pure logic + rendering. The user's slip (bingo_picks) is a
 // list of skaters; this turns it into per-player night stats from the box
 // scores the pages already fetch (_shared/boxScoreCache) -- no extra NHL

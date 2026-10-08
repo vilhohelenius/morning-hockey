@@ -1,4 +1,4 @@
-import { flagImg } from "./format";
+import { flagImg } from "./format.ts";
 // "Yön suomalaiset": every Finnish player (skaters and goalies) who played
 // in a started game of the dashboard's today panel. Pure logic + rendering,
 // fed with the same box scores the day panels already fetched -- no extra

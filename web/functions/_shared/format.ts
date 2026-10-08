@@ -2,7 +2,7 @@
 // short_date so page output reads the same as the existing Jinja2 site.
 
 import type { GameRow } from "./types";
-import { TEAM_COLORS } from "./teamColors";
+import { TEAM_COLORS } from "./teamColors.ts";
 
 export function formatToi(seconds: number): string {
   const total = Math.round(seconds);

@@ -265,11 +265,11 @@ const PBP = {
 };
 
 {
-  assert.equal(shortName("Vladislav", "Podkolzin"), "Podkolzin V.");
+  assert.equal(shortName("Vladislav", "Podkolzin"), "V. Podkolzin");
   assert.equal(shortName("", "Cher"), "Cher");
   const events = buildGoalEvents(SCORING_BY_PERIOD, "FLA", "CAR", new Set([2]));
-  assert.equal(events[0].scorer_short, "Forsling G.");
-  assert.deepEqual(events[0].assists_short, ["Verhaeghe C. 🇫🇮"]);
+  assert.equal(events[0].scorer_short, "G. Forsling");
+  assert.deepEqual(events[0].assists_short, ["C. Verhaeghe 🇫🇮"]);
   assert.equal(events[0].period, 2);
   assert.equal(events[1].period, 4);
   console.log("ok: goal events carry short names and a sortable period number");
@@ -293,14 +293,14 @@ const PBP = {
     period_label: "3. erä",
     time_in_period: "10:00",
     team_abbrev: "FLA",
-    player: "Marchand B.",
+    player: "B. Marchand",
     minutes: 2,
     reason: "Kampitus",
   });
   assert.equal(penalties[1].team_abbrev, "CAR");
-  assert.equal(penalties[1].player, "Aho S. 🇫🇮");
+  assert.equal(penalties[1].player, "S. Aho 🇫🇮");
   assert.equal(penalties[1].minutes, 5);
-  assert.equal(penalties[2].player, "Forsling G.", "bench minor falls back to the serving player");
+  assert.equal(penalties[2].player, "G. Forsling", "bench minor falls back to the serving player");
   console.log("ok: build_penalty_events maps team, player, minutes and Finnish reason");
 }
 
@@ -370,8 +370,8 @@ const RAW_SO = [
 {
   const attempts = buildShootoutAttempts(RAW_SO, new Set([7]));
   assert.deepEqual(attempts.map((a) => a.result), ["save", "goal", "miss", "goal"]);
-  assert.equal(attempts[0].player, "Jarvis S.");
-  assert.equal(attempts[2].player, "Aho S. 🇫🇮");
+  assert.equal(attempts[0].player, "S. Jarvis");
+  assert.equal(attempts[2].player, "S. Aho 🇫🇮");
   assert.equal(attempts[3].winner, true);
   assert.deepEqual(buildShootoutAttempts(undefined, new Set()), []);
 
