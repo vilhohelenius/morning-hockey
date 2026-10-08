@@ -2,16 +2,13 @@
 
 NHL-tulokset, suomalaisten pelaajien pisteet/torjunnat, kausitilastot ja xG-analytiikka
 kaikille 32 joukkueelle osoitteessa https://morning-hockey.pages.dev.
-Ei ilmoituksia eikä yhtä kovakoodattua joukkuetta: kirjautuminen tapahtuu
-Google-tilillä, ja oma tili tallentaa suosikkijoukkueet
-ja -pelaajat (enintään 30), teeman ja tulospiilo-asetuksen.
 
 <img src="docs/screenshots/etusivu.png" alt="Etusivu" width="250">
 
 ## Ominaisuudet
 
 Valikko: Etusivu, Suosikit, Sarjataulukko, Tilastot, Analytiikka, Joukkueet, Pelit,
-Playoff-bracket, Arkisto ja Asetukset. Pelaajahaku on ylä-/sivupalkissa (vähintään 3 merkkiä).
+Playoff-bracket, Arkisto ja Asetukset. Pelaajahaku on ylä-/sivupalkissa.
 
 ### Etusivu (`/`)
 Edellisen illan ottelut suomalaisten pelaajien maali-/syöttö-/torjuntarivein,
@@ -46,7 +43,7 @@ ottelujen form-taulukko (W/L/OTL, järjestys pistekeskiarvon mukaan).
 <img src="docs/screenshots/pisteporssi.png" alt="Pistepörssi" width="250"> <img src="docs/screenshots/suomiporssi.png" alt="Suomipörssi" width="250"> <img src="docs/screenshots/analytiikka.png" alt="Analytiikka" width="250"> <img src="docs/screenshots/edistyneet.png" alt="Edistyneet tilastot" width="250">
 
 ### Playoff-bracket (`/playoffit`)
-Ensimmäisen kierroksen pelipari johdettuna sarjataulukosta (divisioonien
+Ensimmäisen kierroksen ottelupari johdettuna sarjataulukosta (divisioonien
 kärkikaksikot ja wild cardit).
 
 <img src="docs/screenshots/playoffit.png" alt="Playoff-bracket" width="250">
