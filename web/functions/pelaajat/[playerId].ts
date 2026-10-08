@@ -43,6 +43,11 @@ import {
 
 const NHL_BASE = "https://api-web.nhle.com/v1";
 
+// The NHL's bot protection answers 403 to requests without a browser-like
+// User-Agent (Worker fetches send none; the Python sync needed the same fix),
+// which shows up as intermittent "player not found" on cold edge caches.
+const NHL_HEADERS = { "User-Agent": "Mozilla/5.0 (compatible; MorningHockey/1.0)", Accept: "application/json" };
+
 // The NHL API intermittently answers 429/5xx, which used to leave the player
 // card as a bare error page. Retry once after a short pause, and let
 // Cloudflare's edge cache serve repeat views for 5 min so most opens never hit
@@ -54,6 +59,7 @@ async function fetchJson(path: string): Promise<any> {
     try {
       // Timeout so a hung connection (common on a cold start) becomes a retry.
       const response = await fetch(`${NHL_BASE}${path}`, {
+        headers: NHL_HEADERS,
         cf: { cacheTtl: 300, cacheEverything: true },
         signal: AbortSignal.timeout(5000),
       });
@@ -66,6 +72,8 @@ async function fetchJson(path: string): Promise<any> {
   throw new Error(`NHL API ${path} returned ${status}`);
 }
 
+const LANDING_FRESH_MS = 10 * 60 * 1000;
+
 const STATS_BASE = "https://api.nhle.com/stats/rest/en";
 
 // The sporting nationality (what Suomipörssi filters on and NHL.com shows),
@@ -76,7 +84,7 @@ const STATS_BASE = "https://api.nhle.com/stats/rest/en";
 async function fetchNationalityCode(playerId: number, isGoalie: boolean): Promise<string> {
   try {
     const report = isGoalie ? "goalie" : "skater";
-    const response = await fetch(`${STATS_BASE}/${report}/bios?cayenneExp=playerId=${playerId}&limit=1`);
+    const response = await fetch(`${STATS_BASE}/${report}/bios?cayenneExp=playerId=${playerId}&limit=1`, { headers: NHL_HEADERS });
     if (!response.ok) return "";
     const body: any = await response.json();
     return body?.data?.[0]?.nationalityCode ?? "";
@@ -714,7 +722,15 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   }
 
   let landing: any;
-  try {
+  // A copy under LANDING_FRESH_MS old is served as is, so reopening a card
+  // doesn't depend on the NHL API at all.
+  const cached = await context.env.DB
+    .prepare("SELECT json, fetched_at FROM player_landing_cache WHERE player_id = ?")
+    .bind(playerId)
+    .first<{ json: string; fetched_at: string }>()
+    .catch(() => null);
+  if (cached && Date.now() - Date.parse(cached.fetched_at) < LANDING_FRESH_MS) landing = JSON.parse(cached.json);
+  else try {
     landing = await fetchJson(`/player/${playerId}/landing`);
     // Keep the last good copy so a later NHL API failure can still show the card.
     context.waitUntil(
@@ -729,13 +745,8 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     );
   } catch (error) {
     console.error(`Player landing fetch failed for ${playerId}:`, error);
-    const stale = await context.env.DB
-      .prepare("SELECT json FROM player_landing_cache WHERE player_id = ?")
-      .bind(playerId)
-      .first<{ json: string }>()
-      .catch(() => null);
-    if (stale) {
-      landing = JSON.parse(stale.json);
+    if (cached) {
+      landing = JSON.parse(cached.json);
     } else {
       const html = await renderLayout({
         title: "Pelaaja · Morning Hockey",
