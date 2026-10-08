@@ -43,10 +43,12 @@ ottelujen form-taulukko (W/L/OTL, järjestys pistekeskiarvon mukaan).
 <img src="docs/screenshots/pisteporssi.png" alt="Pistepörssi" width="250"> <img src="docs/screenshots/suomiporssi.png" alt="Suomipörssi" width="250"> <img src="docs/screenshots/analytiikka.png" alt="Analytiikka" width="250"> <img src="docs/screenshots/edistyneet.png" alt="Edistyneet tilastot" width="250">
 
 ### Playoffit (`/playoffit`)
-Ensimmäisen kierroksen ottelupari johdettuna sarjataulukosta (divisioonien
-kärkikaksikot ja wild cardit).
+Playoff-kaavio (1. kierroksen parit johdettuna sarjataulukosta, joukkueen playoff-%), sarjatilanne
+(villikortti ja divisioonat, mukana playoff-% ja ennustetut pisteet xP) sekä **Playoff-ennuste**:
+piirakka playoff-todennäköisyyksistä liigan, konferenssien tai divisioonien mukaan. Ennuste on
+season-simulaatiosta (ks. [Playoff-ennuste](#playoff-ennuste)).
 
-<img src="docs/screenshots/playoffit.png" alt="Playoff-bracket" width="250">
+<img src="docs/screenshots/playoffit.png" alt="Playoffit" width="250">
 
 ### Pelit
 - `/otteluohjelma` seuraavat 8 päivää
@@ -297,5 +299,5 @@ jäljellä olevan runkosarjan 100 000 kertaa (`winprob/season.py`, ydin `winprob
 xGoalBoostin `simcore.py`:stä, pidä synkassa). Joukkuetilat tulevat samasta D1-historiasta kuin otteluennakossa,
 aikataulu ja tulokset 32 `club-schedule-season`-kutsulla (~1 min). Tulos: yksi rivi / joukkue / päivä
 (`season_sim`, historia säilytetään): playoff-, divisioona- ja Presidents' Trophy -todennäköisyys sekä odotetut
-loppupisteet (10–90 %). Playoffit-sivu näyttää viimeisimmän tilanteen ja selitysosion. Uusi taulu pitää ajaa
+loppupisteet (10–90 %). Playoffit-sivu näyttää viimeisimmän tilanteen (playoff-% kaaviossa, taulukoissa ja piirakoissa, xP taulukoissa) ja selitysosion. Divisioona- ja Presidents' Trophy -todennäköisyydet ja pisteväli tallennetaan, mutta sivu ei näytä niitä. Uusi taulu pitää ajaa
 D1:een käsin (`d1/schema.sql`, `CREATE TABLE season_sim`). Playoff-sarjoja ja Cupia ei simuloida.
