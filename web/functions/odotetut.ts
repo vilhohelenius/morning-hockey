@@ -22,6 +22,8 @@ interface SkaterRow {
   goals: number;
   xgf: number | null;
   xga: number | null;
+  xgf5: number | null;
+  xga5: number | null;
 }
 
 interface GoalieRow {
@@ -68,10 +70,10 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     db
       .prepare(
         `SELECT s.player_id, s.name, s.headshot, s.team_abbrev, s.nationality, s.position, s.games_played AS gp,
-                SUM(x.xg) AS xg, SUM(x.goals) AS goals, o.xgf, o.xga
+                SUM(x.xg) AS xg, SUM(x.goals) AS goals, o.xgf, o.xga, o.xgf5, o.xga5
          FROM skater_game_xg x
          JOIN skater_season_stats s ON s.player_id = x.player_id AND s.season_id = x.season
-         LEFT JOIN (SELECT player_id, SUM(xgf) AS xgf, SUM(xga) AS xga FROM skater_game_onice_xg
+         LEFT JOIN (SELECT player_id, SUM(xgf) AS xgf, SUM(xga) AS xga, SUM(xgf_5v5) AS xgf5, SUM(xga_5v5) AS xga5 FROM skater_game_onice_xg
                     WHERE season = (SELECT MAX(season) FROM skater_game_xg) GROUP BY player_id) o ON o.player_id = x.player_id
          WHERE x.season = (SELECT MAX(season) FROM skater_game_xg) AND s.games_played >= MIN(?, (SELECT MAX(games_played) FROM skater_season_stats))
          GROUP BY x.player_id ORDER BY xg DESC`,
@@ -98,13 +100,15 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     .map(
       (p, i) => {
         const pct = p.xgf !== null && p.xga !== null ? xgfPct(p.xgf, p.xga) : null;
+        const pct5 = p.xgf5 !== null && p.xga5 !== null ? xgfPct(p.xgf5, p.xga5) : null;
         return `<tr data-name="${escapeHtml(p.name)}" data-gp="${p.gp}" data-goals="${p.goals}" data-xg="${p.xg}"
-      data-xgpg="${p.xg / p.gp}" data-xgf="${pct ?? -1}" data-rank="${i + 1}">
+      data-xgpg="${p.xg / p.gp}" data-xgf="${pct ?? -1}" data-xgf5="${pct5 ?? -1}" data-rank="${i + 1}">
     <td class="col-rank">${i + 1}</td>
     <td>${playerCell(p.player_id, p.name, p.headshot, `${nationalityFlag(p.nationality)} · ${escapeHtml(p.position)} · ${teamLogo(p.team_abbrev)}`)}</td>
     <td>${p.gp}</td><td>${p.goals}</td><td class="stat-strong">${formatXg(p.xg)}</td>
     <td>${(p.xg / p.gp).toFixed(2)}</td>
     <td>${pct !== null && p.xgf !== null && p.xga !== null ? xgPercent(p.xgf, p.xga) : "–"}</td>
+    <td>${pct5 !== null && p.xgf5 !== null && p.xga5 !== null ? xgPercent(p.xgf5, p.xga5) : "–"}</td>
   </tr>`;
       },
     )
@@ -126,10 +130,10 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   const teamRows = rankedTeamXg(league)
     .map((t, i) => {
       const s = names.get(t.abbrev);
-      return `<tr data-name="${escapeHtml(s?.name ?? t.abbrev)}" data-xgf="${t.xgf}" data-xga="${t.xga}" data-rank="${i + 1}">
+      return `<tr data-name="${escapeHtml(s?.name ?? t.abbrev)}" data-pct5="${t.pct5v5}" data-xgf="${t.xgf}" data-xga="${t.xga}" data-rank="${i + 1}">
     <td class="col-rank">${i + 1}</td>
     <td><a href="/joukkueet/${t.abbrev.toLowerCase()}" class="player-cell">${s ? `<img src="${escapeHtml(s.logo)}" alt="" class="team-logo-plain" loading="lazy">` : ""}<span class="player-name"><span class="player-name-line">${escapeHtml(s?.name ?? t.abbrev)}</span></span></a></td>
-    <td>${t.games}</td><td class="stat-strong">${t.pct.toFixed(1)}</td>
+    <td>${t.games}</td><td class="stat-strong">${t.pct.toFixed(1)}</td><td>${t.pct5v5.toFixed(1)}</td>
     <td>${t.xgf.toFixed(1)}</td><td>${t.xga.toFixed(1)}</td>
   </tr>`;
     })
@@ -152,8 +156,8 @@ ${XG_INFO_TEXT}
 
 <section class="analytiikka-view-section" data-view="skaters">
   <h2 class="section-title">Kärki xG:n mukaan</h2>
-  <p class="standings-legend">Vähintään ${MIN_GAMES} ottelua. Napauta sarakeotsikkoa järjestääksesi. xG/O = xG per ottelu, xGF% = joukkueen xG-osuus pelaajan ollessa jäällä.</p>
-  ${skaterRows ? table("xg-skaters-table", [["#"], ["Pelaaja", "name"], ["O", "gp"], ["M", "goals"], ["xG", "rank"], ["xG/O", "xgpg"], ["xGF%", "xgf"]], skaterRows, skaters.length) : empty}
+  <p class="standings-legend">Vähintään ${MIN_GAMES} ottelua. Napauta sarakeotsikkoa järjestääksesi. xG/O = xG per ottelu, xGF% = joukkueen xG-osuus pelaajan ollessa jäällä, xGF% 5v5 samoin tasakentällisin.</p>
+  ${skaterRows ? table("xg-skaters-table", [["#"], ["Pelaaja", "name"], ["O", "gp"], ["M", "goals"], ["xG", "rank"], ["xG/O", "xgpg"], ["xGF%", "xgf"], ["xGF% 5v5", "xgf5"]], skaterRows, skaters.length) : empty}
 </section>
 
 <section class="analytiikka-view-section is-hidden" data-view="goalies">
@@ -165,7 +169,7 @@ ${XG_INFO_TEXT}
 <section class="analytiikka-view-section is-hidden" data-view="teams">
   <h2 class="section-title">Joukkueet xGF%:n mukaan</h2>
   <p class="standings-legend">xGF ja xGA per ottelu. Napauta sarakeotsikkoa järjestääksesi.</p>
-  ${teamRows ? table("xg-teams-table", [["#"], ["Joukkue", "name"], ["O"], ["xGF%", "rank"], ["xGF", "xgf"], ["xGA", "xga"]], teamRows, 0) : empty}
+  ${teamRows ? table("xg-teams-table", [["#"], ["Joukkue", "name"], ["O"], ["xGF%", "rank"], ["xGF% 5v5", "pct5"], ["xGF", "xgf"], ["xGA", "xga"]], teamRows, 0) : empty}
 </section>
 `;
 

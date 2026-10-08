@@ -333,6 +333,7 @@ interface RankedTeamXg {
   xgf: number;
   xga: number;
   pct: number;
+  pct5v5: number;
   rankPct: number;
   rankXgf: number; // per game
   rankXga: number; // per game, fewer is better
@@ -342,7 +343,7 @@ interface RankedTeamXg {
 export function rankedTeamXg(league: Map<number, TeamXg & { games: number }>): RankedTeamXg[] {
   const rows = Object.entries(TEAM_IDS).flatMap(([abbrev, id]) => {
     const r = league.get(id);
-    return r ? [{ abbrev, games: r.games, xgf: r.xgf, xga: r.xga, pct: xgfPct(r.xgf, r.xga) ?? 0 }] : [];
+    return r ? [{ abbrev, games: r.games, xgf: r.xgf, xga: r.xga, pct: xgfPct(r.xgf, r.xga) ?? 0, pct5v5: xgfPct(r.xgf5v5, r.xga5v5) ?? 0 }] : [];
   });
   const pg = (v: number, g: number) => (g > 0 ? v / g : 0);
   return rows
