@@ -1,47 +1,49 @@
 # Morning Hockey
 
-NHL-tulokset, suomalaisten pelaajien pisteet/torjunnat ja kausitilastot kaikille
-32 joukkueelle, selattavissa osoitteessa https://morning-hockey.pages.dev.
+NHL-tulokset, suomalaisten pelaajien pisteet/torjunnat, kausitilastot ja xG-analytiikka
+kaikille 32 joukkueelle osoitteessa https://morning-hockey.pages.dev.
 Ei ilmoituksia eikä yhtä kovakoodattua joukkuetta: kirjautuminen on kevyt
-(käyttäjätunnus, salasana valinnainen), ja oma tili tallentaa suosikkijoukkueet,
-suosikkipelaajat, teeman ja tulospiilo-asetuksen.
+(käyttäjätunnus, salasana valinnainen), ja oma tili tallentaa suosikkijoukkueet
+ja -pelaajat (enintään 30), teeman ja tulospiilo-asetuksen.
 
 <img src="docs/screenshots/etusivu.png" alt="Etusivu" width="250">
 
-## Sivut
+## Ominaisuudet
 
-Sivupalkin rakenne: Etusivu, Omat (suosikkijoukkueet + Suosikkipelaajat),
-Sarjataulukko, Tilastot (alivalikko), Playoff-bracket, Ottelut (alivalikko),
-Arkisto ja Asetukset. Yläpalkissa/sivupalkissa on pelaajahaku (vähintään 3
-merkkiä).
+Valikko: Etusivu, Suosikit, Sarjataulukko, Tilastot, Analytiikka, Joukkueet, Pelit,
+Playoff-bracket, Arkisto ja Asetukset. Pelaajahaku on ylä-/sivupalkissa (vähintään 3 merkkiä).
 
 ### Etusivu (`/`)
-Edellisen illan (tai jo alkaneiden) ottelut suomalaisten pelaajien
-maali-/syöttö-/torjuntarivein, klikattava ottelukortti jossa maaliaikajana ja
-joukkuetilastot, YouTube-highlights-linkki, Suomipörssin ja pistepörssin top 5,
-kirjautuneen käyttäjän suosikkijoukkueiden minilaatikot sekä seuraavan kierroksen
-ottelut (manuaalinen päivitysnappi). Jos tulospiilo on päällä, `/` ohjaa
-sivulle `/tulospiilo`.
+Edellisen illan ottelut suomalaisten pelaajien maali-/syöttö-/torjuntarivein,
+klikattava ottelukortti (maaliaikajana, joukkuetilastot, YouTube-highlights),
+Suomipörssin ja pistepörssin top 5, suosikkijoukkueiden minilaatikot ja seuraavan
+kierroksen ottelut. Päivitysnapin jälkeen näytetään toast-ilmoitus
+("Päivitetty klo ..."). Jos tulospiilo on päällä, `/` ohjaa sivulle `/tulospiilo`.
 
 <img src="docs/screenshots/etusivu-ottelukortti.png" alt="Etusivu, ottelukortti" width="250">
 
+### Suosikit (`/suosikit`)
+Kirjautuneen käyttäjän suosikkijoukkueet ja -pelaajat yhdessä näkymässä:
+yhteenveto edellisestä pelipäivästä (myös ne suosikit, jotka eivät pelanneet),
+tämän illan ottelut joissa on suosikki sekä kausi-/viimeiset 5 ottelua
+-tilastotaulukot. Suosikkien hallinta on Asetuksissa.
+
+<img src="docs/screenshots/suosikit.png" alt="Suosikit" width="250">
+
 ### Sarjataulukko (`/sarjataulukko`)
 Divisioonittainen sarjataulukko sekä **Kuntopuntari**: joukkueiden viimeisten
-ottelujen form-taulukko (W/L/OTL, järjestys pistekeskiarvon mukaan). Joukkueen
-klikkaus avaa pikakatsauksen.
+ottelujen form-taulukko (W/L/OTL, järjestys pistekeskiarvon mukaan).
 
 <img src="docs/screenshots/sarjataulukko.png" alt="Sarjataulukko" width="250"> <img src="docs/screenshots/kuntopuntari.png" alt="Kuntopuntari" width="250">
 
-### Tilastot
+### Tilastot ja analytiikka
 - `/tilastot` Pistepörssi (myös rookie-pörssi)
-- `/maalivahtiporssi` Maalivahtipörssi, sarakkeina myös GSAx ja GSAx/100 (vähintään 500 kohdattua laukausta)
-- `/suomiporssi` Suomipörssi: suomalaisten oma pistepörssi ja maalivahdit
-- `/analytiikka` Analytiikka: D3-viivakaaviot. Joukkueet-näkymässä divisioonittain
-  sarjapisteiden kertymä kauden aikana (rakennetaan `games`-taulusta),
-  Pistepörssi-näkymässä nykyisen top-10-pelaajan kumulatiivinen pistekertymä
-  (NHL:n game log, välimuistitettu D1:een)
+- `/maalivahtiporssi` Maalivahtipörssi, mukana GSAx ja GSAx/100
+- `/suomiporssi` Suomipörssi: suomalaisten pisteet ja maalivahdit
+- `/odotetut` Edistyneet tilastot: xG-, GSAx- ja joukkue-xGF%-listat
+- `/analytiikka` D3-viivakaaviot: divisioonien sarjapisteiden kertymä ja top-10-pelaajien pistekertymä
 
-<img src="docs/screenshots/pisteporssi.png" alt="Pistepörssi" width="250"> <img src="docs/screenshots/suomiporssi.png" alt="Suomipörssi" width="250"> <img src="docs/screenshots/analytiikka.png" alt="Analytiikka" width="250">
+<img src="docs/screenshots/pisteporssi.png" alt="Pistepörssi" width="250"> <img src="docs/screenshots/suomiporssi.png" alt="Suomipörssi" width="250"> <img src="docs/screenshots/analytiikka.png" alt="Analytiikka" width="250"> <img src="docs/screenshots/edistyneet.png" alt="Edistyneet tilastot" width="250">
 
 ### Playoff-bracket (`/playoffit`)
 Ensimmäisen kierroksen pelipari johdettuna sarjataulukosta (divisioonien
@@ -49,41 +51,36 @@ kärkikaksikot ja wild cardit).
 
 <img src="docs/screenshots/playoffit.png" alt="Playoff-bracket" width="250">
 
-### Ottelut
-- `/otteluohjelma` Otteluohjelma: seuraavat 8 päivää, kaikki ottelut
-- `/primetime` Prime time: tulevat ottelut jotka alkavat klo 18:00-00:30 Suomen aikaa
-- `/ottelut/<id>` Ottelusivu: pelatuista otteluista täysi **ottelun raportti**
-  (maalit, pelaajataulukot, joukkuetilastot; haetaan NHL:n API:sta
-  ensimmäisellä käynnillä ja välimuistitetaan D1:een), tulevista
-  otteluista **ottelun esikatselu** (joukkueiden kausitilastovertailu,
-  kuntopuntari, kokoonpanot)
+### Pelit
+- `/otteluohjelma` seuraavat 8 päivää
+- `/primetime` ottelut jotka alkavat klo 18:00-00:30 Suomen aikaa
+- `/bingo` Pistemiesbingo: valitse pelaajat lapulle ja katso tulokset
+- `/ottelut/<id>` pelatusta ottelusta **raportti** (maalit, pelaajataulukot,
+  joukkuetilastot, **Vaaralliset maalipaikat**), tulevasta **esikatselu**
+  (kausitilastovertailu, kuntopuntari, kokoonpanot, voittotodennäköisyys)
 
-<img src="docs/screenshots/otteluohjelma.png" alt="Otteluohjelma" width="250"> <img src="docs/screenshots/ottelun-raportti.png" alt="Ottelun raportti" width="250"> <img src="docs/screenshots/ottelun-esikatselu.png" alt="Ottelun esikatselu" width="250">
+<img src="docs/screenshots/otteluohjelma.png" alt="Otteluohjelma" width="250"> <img src="docs/screenshots/ottelun-raportti.png" alt="Ottelun raportti" width="250"> <img src="docs/screenshots/ottelun-tilastot.png" alt="Ottelun tilastot" width="250"> <img src="docs/screenshots/ottelun-esikatselu.png" alt="Ottelun esikatselu" width="250">
 
 ### Joukkue- ja pelaajasivut
-- `/joukkueet/<lyhenne>` Joukkuesivu (kaikki 32): rosteri, kausitilastot, viimeisimmät/seuraavat ottelut;
-  `/joukkueet/<lyhenne>/ottelut` koko kauden otteluohjelma
-- `/pelaajat/<id>` Pelaajakortti: bio, kausi- ja uratilastot sekä kauden ottelukohtainen
-  loki, haetaan suoraan NHL:n API:sta (ei tallenneta D1:een). Kausikortissa ja
-  ottelulokissa myös xG (hyökkääjät) tai GSAx (maalivahdit) D1:n xG-taulusta
+- `/joukkueet` kaikki 32 joukkuetta divisioonittain, `/joukkueet/<lyhenne>` joukkuesivu
+  (rosteri, kausitilastot, xG, ottelut; `/ottelut` koko kauden ohjelma)
+- `/pelaajat/<id>` pelaajakortti: bio, kausi- ja uratilastot, ottelukohtainen loki,
+  xG (hyökkääjät) tai GSAx (maalivahdit)
 
 <img src="docs/screenshots/joukkue.png" alt="Joukkuesivu" width="250"> <img src="docs/screenshots/pelaaja.png" alt="Pelaajakortti" width="250">
 
 ### Arkisto (`/arkisto`)
-Kauden pelipäivät uusimmasta vanhimpaan; `/arkisto/<päivä>` näyttää päivän
-ottelut ottelukortteina. Perustuu `games`-tauluun, joka ei koskaan poista rivejä.
+Kauden pelipäivät ja `/arkisto/<päivä>`: päivän ottelut ottelukortteina.
 
 <img src="docs/screenshots/arkisto.png" alt="Arkisto" width="250">
 
-### Tili, suosikit ja asetukset
-- `/kirjaudu`: kirjautuminen/rekisteröityminen yhdellä lomakkeella (tuntematon
-  käyttäjätunnus luo tilin, salasana valinnainen, pitkäikäinen eväste; tarkoituksella
+### Tili ja asetukset
+- `/kirjaudu`: kirjautuminen ja rekisteröityminen yhdellä lomakkeella (tarkoituksella
   kevyt, ei tuotantotason tietoturvaa)
-- `/omat`: Asetukset, eli suosikkijoukkueiden ja -pelaajien hallinta, teema
-  (vaalea/tumma/järjestelmä, tallentuu tilille) ja tulospiilo päälle/pois
-- `/omat/pelaajat`: Suosikkipelaajat-pörssi
+- `/omat` Asetukset: suosikkijoukkueet ja -pelaajat, teema (vaalea/tumma/järjestelmä),
+  pörssien korostukset, tulospiilo ja bugiraportti
 - `/tulospiilo`: edellisen kierroksen ottelut ilman tuloksia, vain highlights-linkki;
-  tulos paljastuu vasta kun "olen katsonut highlightit" on ruksattu
+  tulos paljastuu kun "olen katsonut highlightit" on ruksattu
 
 <img src="docs/screenshots/asetukset.png" alt="Asetukset" width="250"> <img src="docs/screenshots/tulospiilo.png" alt="Tulospiilo" width="250">
 
@@ -136,8 +133,9 @@ NHL Highlights -videon; ilman sitä käytetään YouTube-hakulinkkiä.
 - Joukkueet: `team_roster_skaters`, `team_roster_goalies`, `team_season_stats`
 - Digest: `digests`, `digest_games`, `digest_scorers`, `digest_goalies`
 - xG/GSAx: `skater_game_xg`, `goalie_game_xg`, `team_game_xg` (joukkueen xGF/xGA, myös 5v5; ottelukohtaiset rivit, kausisummat lasketaan kyselyissä)
-- Käyttäjät: `users`, `favorite_teams`, `favorite_players`, `user_settings`
+- Käyttäjät: `users`, `favorite_teams`, `favorite_players`, `user_settings`, `bug_reports`
 - Välimuisti: `skater_game_log_cache` (analytiikan pistekaavio)
+- Muut: `bingo_picks` (Pistemiesbingo), `game_win_prob` (otteluennakko)
 
 ## Projektin rakenne
 
@@ -166,13 +164,14 @@ src/morning_hockey/
 web/
   functions/            Cloudflare Pages Functions (TypeScript), yksi
                          reitti/tiedosto per sivu, lukee env.DB:tä (D1):
-                         index, sarjataulukko, tilastot, maalivahtiporssi,
-                         suomiporssi, analytiikka, playoffit, otteluohjelma,
-                         primetime, tulospiilo, arkisto/, ottelut/, joukkueet/,
-                         pelaajat/, haku/, kirjaudu/, omat/
+                         index, suosikit, sarjataulukko, tilastot, maalivahtiporssi,
+                         suomiporssi, odotetut, analytiikka, playoffit,
+                         otteluohjelma, primetime, bingo, tulospiilo, arkisto/,
+                         ottelut/, joukkueet/, pelaajat/, haku/, kirjaudu/, omat/
   functions/_shared/     Layout, muotoilu, autentikaatio, ottelun raportti,
                          box score -välimuisti, kuntopuntari (formGuide),
-                         divisioonapisteet, YouTube, jaetut komponentit
+                         suosikit, bingo, xG, voittotodennäköisyys, YouTube,
+                         jaetut komponentit
   public/static/         CSS + vanilla JS (app.js, analytiikka.js/D3), ei build-stepiä
   scripts/               Node-testit (boxscore, divisionPoints, formGuide)
   wrangler.toml           Pages-projektin D1-binding
