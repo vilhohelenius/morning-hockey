@@ -2,7 +2,7 @@
 // straight from the sync_xg tables. Three tabs toggled client-side (the
 // analytiikka-view-picker pill wiring in app.js).
 
-import { icon, escapeHtml, nationalityFlag, seasonLabel, teamLogoUrl } from "./_shared/format";
+import { icon, escapeHtml, nationalityFlag, positionTag, seasonLabel, teamLogoUrl } from "./_shared/format";
 import { renderLayout } from "./_shared/layout";
 import { COLLAPSE_AT, expandToggle } from "./_shared/leaderboard";
 import type { Env, StandingsRow } from "./_shared/types";
@@ -104,7 +104,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
         return `<tr data-name="${escapeHtml(p.name)}" data-gp="${p.gp}" data-goals="${p.goals}" data-xg="${p.xg}"
       data-xgpg="${p.xg / p.gp}" data-xgf="${pct ?? -1}" data-xgf5="${pct5 ?? -1}" data-rank="${i + 1}">
     <td class="col-rank">${i + 1}</td>
-    <td>${playerCell(p.player_id, p.name, p.headshot, `${nationalityFlag(p.nationality)} · ${escapeHtml(p.position)} · ${teamLogo(p.team_abbrev)}`)}</td>
+    <td>${playerCell(p.player_id, p.name, p.headshot, `${nationalityFlag(p.nationality)} · ${positionTag(p.position)} · ${teamLogo(p.team_abbrev)}`)}</td>
     <td>${p.gp}</td><td>${p.goals}</td><td class="stat-strong">${formatXg(p.xg)}</td>
     <td>${(p.xg / p.gp).toFixed(2)}</td>
     <td>${pct !== null && p.xgf !== null && p.xga !== null ? xgPercent(p.xgf, p.xga) : "–"}</td>

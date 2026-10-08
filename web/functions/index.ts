@@ -45,7 +45,7 @@ import {
 import { fetchGameTeamXg, fetchGamesGoalieGsax, teamXgStatRows } from "./_shared/xg";
 import { resolveHighlightsUrl } from "./_shared/youtube";
 import { MAX_DAY_OFFSET, MIN_DAY_OFFSET, clampDayOffset, selectDayGames } from "./_shared/dayGames";
-import { flagImg, icon, addDays, escapeHtml, helsinkiParts, helsinkiToday, secondsToHelsinkiMidnight, humanDate, nationalityFlag, shortDate, teamHeroBackgroundStyle } from "./_shared/format";
+import { flagImg, icon, addDays, escapeHtml, helsinkiParts, helsinkiToday, secondsToHelsinkiMidnight, humanDate, nationalityFlag, positionTag, shortDate, teamHeroBackgroundStyle } from "./_shared/format";
 import { buildFinnishNight, renderFinnishNightSection, type NightGame } from "./_shared/finnishNight";
 import { renderLayout } from "./_shared/layout";
 import type {
@@ -64,7 +64,7 @@ function renderFinnishSkaterRow(row: FinnishSkaterRow, rank: number): string {
         <td>
           <a href="/pelaajat/${row.player_id}" class="player-cell">
             <img src="${escapeHtml(row.headshot)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
-            <span class="player-name">${escapeHtml(row.name)}<span class="player-meta">${escapeHtml(row.position)} · <img src="${escapeHtml(row.logo)}" alt="${escapeHtml(row.team_abbrev)}" class="table-team-logo" loading="lazy"></span></span>
+            <span class="player-name">${escapeHtml(row.name)}<span class="player-meta">${positionTag(row.position)} · <img src="${escapeHtml(row.logo)}" alt="${escapeHtml(row.team_abbrev)}" class="table-team-logo" loading="lazy"></span></span>
           </a>
         </td>
         <td>${row.games_played}</td>
@@ -83,7 +83,7 @@ function renderLeagueSkaterRow(row: SkaterStatsRow, rank: number): string {
             <img src="${escapeHtml(row.headshot)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
             <span class="player-name">
               ${escapeHtml(row.name)}
-              <span class="player-meta">${nationalityFlag(row.nationality)} · ${escapeHtml(row.position)} · <img src="${escapeHtml(row.logo)}" alt="${escapeHtml(row.team_abbrev)}" class="table-team-logo" loading="lazy"></span>
+              <span class="player-meta">${nationalityFlag(row.nationality)} · ${positionTag(row.position)} · <img src="${escapeHtml(row.logo)}" alt="${escapeHtml(row.team_abbrev)}" class="table-team-logo" loading="lazy"></span>
             </span>
           </a>
         </td>

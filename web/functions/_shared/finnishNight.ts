@@ -1,4 +1,4 @@
-import { flagImg } from "./format.ts";
+import { flagImg, positionTag } from "./format.ts";
 // "Yön suomalaiset": every Finnish player (skaters and goalies) who played
 // in a started game of the dashboard's today panel. Pure logic + rendering,
 // fed with the same box scores the day panels already fetched -- no extra
@@ -95,7 +95,7 @@ function playerCell(id: number, name: string, headshot: string, meta: string, lo
   return `<td class="st-first yf-first">
           <a href="/pelaajat/${id}" class="player-cell">
             <img src="${esc(headshot)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
-            <span class="player-name">${esc(name)}<span class="player-meta">${meta ? `${esc(meta)} · ` : ""}<img src="${esc(logo)}" alt="${esc(abbrev)}" class="table-team-logo" loading="lazy"></span></span>
+            <span class="player-name">${esc(name)}<span class="player-meta">${meta ? `${positionTag(meta)} · ` : ""}<img src="${esc(logo)}" alt="${esc(abbrev)}" class="table-team-logo" loading="lazy"></span></span>
           </a>
         </td>`;
 }

@@ -9,7 +9,7 @@
 // than reusing _shared/leaderboard.ts, which assumes both of those.
 
 import { favoriteTeamAbbrevs, readHighlightsCookie } from "./_shared/auth";
-import { flagImg, icon, escapeHtml, formatToi, seasonLabel } from "./_shared/format";
+import { flagImg, icon, escapeHtml, formatToi, positionTag, seasonLabel } from "./_shared/format";
 import { highlightDots, type HighlightOptions } from "./_shared/leaderboard";
 import { renderLayout } from "./_shared/layout";
 import { fetchGoaliesSeasonGsaxMap, formatGsax, formatPct, xgfPct } from "./_shared/xg";
@@ -65,7 +65,7 @@ function renderSkaterTable(rows: FinnishSkaterRow[], hl: HighlightOptions, extra
             <img src="${escapeHtml(row.headshot)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
             <span class="player-name">
               <span class="player-name-line">${escapeHtml(row.name)}${highlightDots("", row.team_abbrev, hl)}</span>
-              <span class="player-meta">${escapeHtml(row.position)} · <img src="${escapeHtml(row.logo)}" alt="${escapeHtml(row.team_abbrev)}" class="table-team-logo" loading="lazy"></span>
+              <span class="player-meta">${positionTag(row.position)} · <img src="${escapeHtml(row.logo)}" alt="${escapeHtml(row.team_abbrev)}" class="table-team-logo" loading="lazy"></span>
             </span>
           </a>
         </td>

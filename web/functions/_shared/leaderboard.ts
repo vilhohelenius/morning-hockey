@@ -6,7 +6,7 @@
 // source/shape, and empty-state message differ, so factored out rather
 // than duplicated.
 
-import { escapeHtml, formatToi, nationalityFlag, teamLogoUrl } from "./format";
+import { escapeHtml, formatToi, nationalityFlag, positionTag, teamLogoUrl } from "./format";
 import { TEAM_COLORS } from "./teamColors";
 import { formatGsax, gsaxPer100 } from "./xg";
 import type { GoalieStatsRow, SkaterStatsRow, TeamRosterGoalieRow, TeamRosterSkaterRow } from "./types";
@@ -104,7 +104,7 @@ function renderRow(row: SkaterStatsRow, rank: number, hl: HighlightOptions, with
             <img src="${escapeHtml(row.headshot)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
             <span class="player-name">
               <span class="player-name-line">${escapeHtml(row.name)}${highlightDots(row.nationality, row.team_abbrev, hl)}</span>
-              <span class="player-meta">${nationalityFlag(row.nationality)} · ${escapeHtml(row.position)} · <img src="${escapeHtml(row.logo)}" alt="${escapeHtml(row.team_abbrev)}" class="table-team-logo" loading="lazy"></span>
+              <span class="player-meta">${nationalityFlag(row.nationality)} · ${positionTag(row.position)} · <img src="${escapeHtml(row.logo)}" alt="${escapeHtml(row.team_abbrev)}" class="table-team-logo" loading="lazy"></span>
             </span>
           </a>
         </td>
@@ -276,7 +276,7 @@ export function renderRosterSkaterTable(
             <img src="${escapeHtml(player.headshot)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
             <span class="player-name">
               <span class="player-name-line">${escapeHtml(player.name)}${hl ? highlightDots(player.nationality, player.team_abbrev, hl) : ""}</span>
-              <span class="player-meta">#${player.sweater_number} · ${nationalityFlag(player.nationality)} ${escapeHtml(player.position)}${showTeam ? ` · ${teamMetaLogo(player.team_abbrev)}` : ""}</span>
+              <span class="player-meta">#${player.sweater_number} · ${nationalityFlag(player.nationality)} ${positionTag(player.position)}${showTeam ? ` · ${teamMetaLogo(player.team_abbrev)}` : ""}</span>
             </span>
           </a>
         </td>

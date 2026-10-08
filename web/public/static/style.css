@@ -2019,6 +2019,14 @@ main {
   font-weight: 400;
 }
 
+.pos-tag {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.15em;
+  letter-spacing: 0.04em;
+  color: var(--text);
+}
+
 .table-team-logo {
   width: 18px;
   height: 18px;

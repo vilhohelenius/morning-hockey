@@ -38,7 +38,7 @@ import {
 import { fetchGameWinProb, winProbInfoText, winProbStatRow, type GameWinProb } from "../_shared/winProb";
 import { renderMatchTimeline } from "../_shared/matchTimeline";
 import { computeFormGuide, type FormGuideEntry } from "../_shared/formGuide";
-import { icon, escapeHtml, finalTypeShort, helsinkiParts, humanDate, nationalityFlag } from "../_shared/format";
+import { icon, escapeHtml, finalTypeShort, helsinkiParts, humanDate, nationalityFlag, positionTag } from "../_shared/format";
 import { isLive } from "../_shared/gameCard";
 import { renderRosterGoalieTable, renderRosterSkaterTable } from "../_shared/leaderboard";
 import { TEAM_COLORS, jerseyColors } from "../_shared/teamColors";
@@ -98,7 +98,7 @@ function renderSkaterTable(skaters: PlayerGameStat[], xg: { ixg: Map<number, num
             <img src="${escapeHtml(p.headshot)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
             <span class="player-name">
               ${escapeHtml(p.name)}
-              <span class="player-meta">${nationalityFlag(p.nationality)} · ${escapeHtml(p.position)}</span>
+              <span class="player-meta">${nationalityFlag(p.nationality)} · ${positionTag(p.position)}</span>
             </span>
           </a>
         </td>

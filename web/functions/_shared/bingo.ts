@@ -1,4 +1,4 @@
-import { icon } from "./format.ts";
+import { icon, positionTag } from "./format.ts";
 // Pistemiesbingo: pure logic + rendering. The user's slip (bingo_picks) is a
 // list of skaters; this turns it into per-player night stats from the box
 // scores the pages already fetch (_shared/boxScoreCache) -- no extra NHL
@@ -199,7 +199,7 @@ function playerCell(p: BingoPick): string {
   return `<td class="bingo-first">
           <a href="/pelaajat/${p.player_id}" class="player-cell">
             <img src="${esc(p.headshot)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
-            <span class="player-name">${esc(p.name)}<span class="player-meta">${p.position ? `${esc(p.position)} · ` : ""}<img src="${esc(p.team_logo)}" alt="${esc(p.team_abbrev)}" class="table-team-logo" loading="lazy"></span></span>
+            <span class="player-name">${esc(p.name)}<span class="player-meta">${p.position ? `${positionTag(p.position)} · ` : ""}<img src="${esc(p.team_logo)}" alt="${esc(p.team_abbrev)}" class="table-team-logo" loading="lazy"></span></span>
           </a>
         </td>`;
 }

@@ -207,6 +207,12 @@ export function flagImg(iso2: string): string {
   return `<img src="/static/flags/${iso2.toLowerCase()}.svg" alt="" class="flag-img" loading="lazy">`;
 }
 
+// Position in the display font so it stands apart from the flag/team logo
+// next to it in the player-meta lines.
+export function positionTag(code: string): string {
+  return `<span class="pos-tag">${escapeHtml(code)}</span>`;
+}
+
 export function nationalityFlag(code: string): string {
   const iso2 = NATIONALITY_TO_ISO2[code] ?? "";
   if (iso2.length !== 2) return "";
