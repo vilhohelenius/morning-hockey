@@ -87,19 +87,18 @@ function renderDiagram(round1ByConf: Map<string, Row[][]>, odds: Map<string, num
     `<div class="pf-s" style="--tc:${color(r.abbrev)}"><img src="${escapeHtml(r.logo)}" alt="">${escapeHtml(r.abbrev)}${
       odds.has(r.abbrev) ? `<small>${formatOdds(odds.get(r.abbrev)!)} %</small>` : ""
     }</div>`;
-  const tbd = `<div class="pf-s tbd"><i></i></div>`;
   const side = (pairs: Row[][], cols: [number, number, number], cls: string) =>
     pairs
-      .map((m, k) => `<div class="pf-m ${cls}" style="grid-column:${cols[0]};grid-row:${2 + 2 * k}/span 2">${m.map(slot).join("")}</div>`)
+      .map((m, k) => `<div class="pf-m" style="grid-column:${cols[0]};grid-row:${2 + 2 * k}/span 2">${m.map(slot).join("")}</div>`)
       .join("") +
-    [0, 1].map((k) => `<div class="pf-m ${cls}" style="grid-column:${cols[1]};grid-row:${2 + 4 * k}/span 4">${tbd}${tbd}</div>`).join("") +
-    `<div class="pf-m ${cls}" style="grid-column:${cols[2]};grid-row:2/span 8">${tbd}${tbd}</div>`;
+    [0, 1].map((k) => `<div class="pf-j ${cls}" style="grid-column:${cols[1]};grid-row:${2 + 4 * k}/span 4"></div>`).join("") +
+    `<div class="pf-j ${cls}" style="grid-column:${cols[2]};grid-row:2/span 8"></div>`;
 
   return `
 <div class="pf-bk">
   <h4 style="grid-column:1/4">Western</h4><h4 style="grid-column:5/8;text-align:right">Eastern</h4>
   ${side(round1ByConf.get("Western") ?? [], [1, 2, 3], "w")}${side(round1ByConf.get("Eastern") ?? [], [7, 6, 5], "e")}
-  <div class="pf-fin" style="grid-column:4;grid-row:2/span 8">${icon("trophy")}<br>Finaali</div>
+  <div class="pf-fin" style="grid-column:4;grid-row:2/span 8"><span>${icon("trophy")}<br>Finaali</span></div>
 </div>
 <p class="pf-note">Playoff-kaavio jos playoffit alkaisivat tänään.${
     odds.size ? " Prosentti on joukkueen todennäköisyys päästä playoffeihin kauden päätteeksi." : ""
