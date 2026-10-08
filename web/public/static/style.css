@@ -5926,6 +5926,11 @@ main {
   animation: refresh-toast-in 0.2s ease-out;
 }
 
+.refresh-toast.is-leaving {
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
 .refresh-toast-spinner {
   width: 16px;
   height: 16px;

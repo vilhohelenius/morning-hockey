@@ -1147,9 +1147,34 @@ document.querySelectorAll(".refresh-btn").forEach(function (button) {
     toast.setAttribute("role", "status");
     toast.innerHTML = '<span class="refresh-toast-spinner"></span>Päivitetään otteluita…';
     document.body.appendChild(toast);
+    try {
+      sessionStorage.setItem("mh_refreshed", "1");
+    } catch (e) {}
     location.reload();
   });
 });
+
+// After the reload: confirm with the time, then fade away.
+(function () {
+  var flagged = false;
+  try {
+    flagged = sessionStorage.getItem("mh_refreshed") === "1";
+    sessionStorage.removeItem("mh_refreshed");
+  } catch (e) {}
+  if (!flagged || !document.querySelector(".refresh-btn")) return;
+  var toast = document.createElement("div");
+  toast.className = "refresh-toast";
+  toast.setAttribute("role", "status");
+  var time = new Date().toLocaleTimeString("fi-FI", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Helsinki" });
+  toast.textContent = "Päivitetty klo " + time;
+  document.body.appendChild(toast);
+  setTimeout(function () {
+    toast.classList.add("is-leaving");
+    setTimeout(function () {
+      toast.remove();
+    }, 300);
+  }, 2500);
+})();
 
 // Back/forward cache can restore the page with the toast still showing.
 window.addEventListener("pageshow", function (e) {
