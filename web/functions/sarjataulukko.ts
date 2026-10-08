@@ -112,6 +112,16 @@ async function buildSnapshots(db: D1Database, abbrevs: string[]): Promise<Snapsh
   return { snapshots, recentGames };
 }
 
+// Second-level filter under a tab: "Kaikki" + one pill per group (division or
+// conference name). Items carry .sub-item[data-sub]; the inline script hides
+// the ones that don't match.
+function subBar(names: string[], scope = ""): string {
+  const pills = ["Kaikki", ...names]
+    .map((n, i) => `<button type="button" class="standings-tab${i ? "" : " active"}" data-sub="${i ? escapeHtml(n) : ""}">${escapeHtml(n)}</button>`)
+    .join("");
+  return `<div class="tab-bar sub-bar"${scope ? ` data-scope="${scope}" hidden` : ""}>${pills}</div>`;
+}
+
 // Table-based standings (NHL-app look): first cell (rank + logo + abbrev) is
 // sticky, the stat columns scroll horizontally. Rows carry .stand-row (the
 // snapshot popup in app.js finds its anchor via .division-row or .stand-row)
@@ -194,7 +204,7 @@ function renderFormGuideRow(entry: FormGuideEntry, rank: number, team: Standings
     </div>`;
 }
 
-function renderFormTable(entries: FormGuideEntry[], teamsByAbbrev: Map<string, StandingsRow>, windowSize: number, title = ""): string {
+function renderFormTable(entries: FormGuideEntry[], teamsByAbbrev: Map<string, StandingsRow>, windowSize: number, title = "", sub = ""): string {
   const rowsHtml = entries
     .map((entry, index) => {
       const team = teamsByAbbrev.get(entry.abbrev);
@@ -203,7 +213,7 @@ function renderFormTable(entries: FormGuideEntry[], teamsByAbbrev: Map<string, S
     .join("");
 
   return `
-  <div class="form-block">
+  <div class="form-block${sub ? " sub-item" : ""}"${sub ? ` data-sub="${escapeHtml(sub)}"` : ""}>
   ${title ? `<h2 class="section-title">${escapeHtml(title)}</h2>` : ""}
   <div class="division-table">
     <div class="division-row division-header">
@@ -233,6 +243,7 @@ function renderFormGuide(recentGames: GameRow[], teamsByAbbrev: Map<string, Stan
             teamsByAbbrev,
             w,
             scope === "conference" ? `${g}-konferenssi` : g.split("|")[1],
+            scope === "conference" ? g : g.split("|")[1],
           ),
         )
         .join("");
@@ -287,14 +298,14 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
         const tables = divisionNames
           .map((d) => {
             const divRows = conferenceRows.filter((r) => r.division === d);
-            return renderRanked(d, overall ? divRows.sort((a, b) => a.division_rank - b.division_rank) : sortStandings(divRows));
+            return `<div class="sub-item" data-sub="${escapeHtml(d)}">${renderRanked(d, overall ? divRows.sort((a, b) => a.division_rank - b.division_rank) : sortStandings(divRows))}</div>`;
           })
           .join("");
-        return `<section>${confHeading(conferenceName)}${tables}</section>`;
+        return `<section class="sub-wrap">${confHeading(conferenceName)}${tables}</section>`;
       })
       .join("");
     const conferenceView = conferenceNames
-      .map((c) => `<section>${confHeading(c)}${renderRanked("Konferenssi", sortStandings(data.filter((r) => r.conference === c)))}</section>`)
+      .map((c) => `<section class="sub-item" data-sub="${escapeHtml(c)}">${confHeading(c)}${renderRanked("Konferenssi", sortStandings(data.filter((r) => r.conference === c)))}</section>`)
       .join("");
     return { division: divisionView, conference: conferenceView, league: renderRanked("Liiga", sortStandings(data)) };
   };
@@ -308,16 +319,17 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   const wildCardView = buildWildCardView(rows)
     .map((conf) => {
       const leaderTables = conf.leaders.map((l) => renderRanked(l.division, l.rows)).join("");
-      return `<section>${confHeading(conf.conference)}${leaderTables}${renderWildcardRace(conf.race)}</section>`;
+      return `<section class="sub-item" data-sub="${escapeHtml(conf.conference)}">${confHeading(conf.conference)}${leaderTables}${renderWildcardRace(conf.race)}</section>`;
     })
     .join("");
 
   const venueSections = (view: "division" | "conference" | "league") =>
     VENUES.map((v) => `<div class="venue-sec${v.key === "all" ? "" : " is-hidden"}" data-venue="${v.key}">${venueViews[v.key as "all"][view]}</div>`).join("");
+  const divisionNames = [...new Set(rows.map((r) => r.division))].sort();
   const tabs: { key: string; label: string; html: string }[] = [
-    { key: "wildcard", label: "Wild Card", html: wildCardView },
-    { key: "division", label: "Divisioona", html: venueSections("division") },
-    { key: "conference", label: "Konferenssi", html: venueSections("conference") },
+    { key: "wildcard", label: "Wild Card", html: subBar(conferenceNames) + wildCardView },
+    { key: "division", label: "Divisioona", html: subBar(divisionNames) + venueSections("division") },
+    { key: "conference", label: "Konferenssi", html: subBar(conferenceNames) + venueSections("conference") },
     { key: "league", label: "Liiga", html: venueSections("league") },
   ];
   const tabButtons = tabs
@@ -360,6 +372,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     Klikkaa joukkuetta nähdäksesi sen viimeisimmät ottelut, pistepörssin ja seuraavan ottelun.</p>
   <div class="tab-bar" id="form-win-picker">${FORM_WINDOWS.map((w) => `<button type="button" class="standings-tab${w === 10 ? " active" : ""}" data-win="${w}">${w} ottelua</button>`).join("")}</div>
   <div class="tab-bar" id="form-scope-picker">${FORM_SCOPES.map((x) => `<button type="button" class="standings-tab${x.key === "league" ? " active" : ""}" data-scope="${x.key}">${x.label}</button>`).join("")}</div>
+  ${subBar(divisionNames, "division")}${subBar(conferenceNames, "conference")}
   ${renderFormGuide(recentGames, teamsByAbbrev)}
 </section>
 
@@ -385,7 +398,27 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     document.querySelectorAll(".venue-sec").forEach(function (s) { s.classList.toggle("is-hidden", s.dataset.venue !== v); });
     var w = active("form-win-picker", "win"), sc = active("form-scope-picker", "scope");
     document.querySelectorAll(".form-sec").forEach(function (s) { s.classList.toggle("is-hidden", s.dataset.win !== w || s.dataset.scope !== sc); });
+    // Kuntopuntari sub-filter: only the bar of the active scope is shown, and its pick applies to every window.
+    document.querySelectorAll(".sub-bar[data-scope]").forEach(function (b) {
+      b.hidden = b.dataset.scope !== sc;
+      var on = b.querySelector(".active");
+      subFilter(document.querySelector('.form-sec[data-win="' + w + '"][data-scope="' + b.dataset.scope + '"]'), on && on.dataset.sub);
+    });
   }
+  // Show only items of the picked group; hide wrappers left with nothing visible.
+  function subFilter(root, value) {
+    if (!root) return;
+    root.querySelectorAll(".sub-item").forEach(function (i) { i.classList.toggle("is-hidden", !!value && i.dataset.sub !== value); });
+    root.querySelectorAll(".sub-wrap").forEach(function (w) { w.classList.toggle("is-hidden", !w.querySelector(".sub-item:not(.is-hidden)")); });
+  }
+  document.addEventListener("click", function (e) {
+    var pill = e.target.closest(".sub-bar .standings-tab");
+    if (!pill) return;
+    var bar = pill.parentNode;
+    bar.querySelectorAll(".standings-tab").forEach(function (p) { p.classList.toggle("active", p === pill); });
+    if (bar.dataset.scope) sync();
+    else subFilter(bar.closest(".standings-tab-section"), pill.dataset.sub);
+  });
   wire("venue-picker"); wire("form-win-picker"); wire("form-scope-picker");
   // Wild Card is always the overall table, so the venue pills don't apply there.
   var venue = document.getElementById("venue-picker");

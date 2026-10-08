@@ -4075,6 +4075,11 @@ main {
 }
 
 /* /joukkueet index + /odotetut */
+.team-index-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+@media (min-width: 700px) { .team-index-grid { grid-template-columns: 1fr 1fr; } }
+.stat-card-header.team-index-header { flex-direction: row; justify-content: flex-start; gap: 10px; text-align: left; font-size: 1rem; font-weight: 700; text-decoration: none; }
+.team-index-header .stat-card-team-logo { margin-left: 0; order: -1; }
+.team-index-grid .stat-card-value { font-size: 1.1rem; }
 
 /* Game preview goalie cards reuse .pw-card; "V-H-JH" is longer than the other cells. */
 .pw-card .stat-card-cell.pw-cell-sm .stat-card-value { font-size: 0.78rem; line-height: 1.55; }
@@ -4756,6 +4761,11 @@ main {
   font-size: 2.2rem;
 }
 
+.stat-card.team-index-header,
+.stat-card .team-index-header {
+  border-left-color: var(--tc, var(--accent));
+}
+
 .division-row {
   box-shadow: inset 5px 0 0 var(--tc, transparent);
 }
@@ -5277,6 +5287,9 @@ main {
 }
 
 .tab-bar[hidden],
+.team-index-group.is-hidden,
+.sub-item.is-hidden,
+.sub-wrap.is-hidden,
 .venue-sec.is-hidden,
 .form-sec.is-hidden {
   display: none;
@@ -5611,74 +5624,15 @@ main {
   }
 }
 
-/* Joukkueet-listaus: tiiviit rivit divisioonittain; leveällä ruudulla 2 tai 4 saraketta. */
-.team-index-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 18px 14px;
-  align-items: start;
-}
-
-.team-index-group.is-hidden {
-  display: none;
-}
-
-.team-list {
+/* Joukkueet-listaus: divisioonaryhmät; leveällä ruudulla 2 tai 4 saraketta. */
+.team-index-group {
   display: flex;
   flex-direction: column;
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  overflow: hidden;
-}
-
-.team-row {
-  display: grid;
-  grid-template-columns: 28px 1fr auto auto;
-  align-items: center;
   gap: 10px;
-  padding: 8px 12px;
-  color: var(--text);
-  text-decoration: none;
-  box-shadow: inset 4px 0 0 var(--tc, transparent);
-  border-bottom: 1px solid var(--border);
 }
 
-.team-row:last-child {
-  border-bottom: 0;
-}
-
-.team-row-logo {
-  width: 28px;
-  height: 28px;
-  object-fit: contain;
-}
-
-.team-row-name {
-  font-weight: 700;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.team-row-rec,
-.team-row-xg {
-  font-size: 0.85rem;
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-.team-row-xg {
-  min-width: 84px;
-  text-align: right;
-  color: var(--text);
-}
-
-.team-row-xg-label {
-  color: var(--muted);
-  font-size: 0.7rem;
+.team-index-grid {
+  grid-template-columns: 1fr;
 }
 
 @media (min-width: 860px) {
@@ -5688,6 +5642,42 @@ main {
 
   .team-index-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px 12px;
+    align-items: start;
+  }
+}
+
+@media (min-width: 1300px) {
+  .team-index-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1300px) {
+  main:has(.team-index-grid) {
+    max-width: 1200px;
+  }
+
+  .team-index-grid {
+    column-gap: 10px;
+  }
+
+  .team-index-grid .stat-card-grid-cells {
+    padding-left: 4px;
+    padding-right: 4px;
+  }
+
+  .team-index-grid .stat-card-label {
+    font-size: 0.68rem;
+  }
+
+  .team-index-grid .stat-card-value {
+    font-size: 1rem;
+  }
+
+  .team-index-grid .stat-card-cell {
+    padding-left: 2px;
+    padding-right: 2px;
   }
 }
 
