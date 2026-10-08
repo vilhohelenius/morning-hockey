@@ -187,7 +187,7 @@
 
   // Player hero card: click (or Enter/Space, since it's a role="button")
   // cycles front -> bio -> (trophy room, if the player has one) -> front.
-  // The inner wrapper keeps rotating 180deg per step, so each incoming face
+  // The inner wrapper alternates between 0 and 180deg, so each incoming face
   // gets the matching own rotation (0 or 180) while it is still hidden. The
   // fav-star form sits inside this same element (see [playerId].ts) so its
   // own clicks are excluded here -- otherwise starring a player would also
@@ -212,12 +212,19 @@
     }
 
     function toggleFlip() {
-      faces[step % faces.length].classList.remove("is-active");
+      var prev = faces[step % faces.length];
+      prev.classList.remove("is-active");
       step++;
       var next = faces[step % faces.length];
-      next.style.transform = "rotateY(" + (step % 2) * 180 + "deg)";
+      var angle = (step % 2) * 180;
+      next.style.transform = "rotateY(" + angle + "deg)";
+      // The face that is neither leaving nor arriving must face away from the
+      // viewer, otherwise its (always painted) background covers the new face.
+      faces.forEach(function (f) {
+        if (f !== next && f !== prev) f.style.transform = "rotateY(" + (180 - angle) + "deg)";
+      });
       next.classList.add("is-active");
-      inner.style.transform = "rotateY(" + step * 180 + "deg)";
+      inner.style.transform = "rotateY(" + (step % 2) * 180 + "deg)";
       card.setAttribute("aria-pressed", String(step % faces.length !== 0));
       fit();
     }

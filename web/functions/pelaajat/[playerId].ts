@@ -835,7 +835,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
         .first())
     : false;
 
-  const trophyRoom = renderTrophyRoom(landing.awards, escapeHtml(name));
+  const trophyRoom = renderTrophyRoom(landing.awards);
 
   const content = `
 <a class="back-link js-back" href="/">← Takaisin</a>

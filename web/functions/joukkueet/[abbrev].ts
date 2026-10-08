@@ -187,31 +187,46 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     ? !!(await db.prepare("SELECT 1 FROM favorite_teams WHERE username = ? AND team_abbrev = ?").bind(username, abbrev).first())
     : false;
 
-  const content = `
-<a class="back-link js-back" href="/sarjataulukko">← Takaisin</a>
-
-<div class="split">
-<div class="split-side">
-<header class="page-header team-page-header hero-banner" data-abbr="${escapeHtml(abbrev)}" style="${escapeHtml(teamHeroBackgroundStyle(abbrev))}">
-  ${
-    username
-      ? renderFavStar({
-          formAction: "/omat/favorites/teams",
-          hiddenFields: { abbrev },
-          isFavorite: isFavoriteTeam,
-          redirectTo: `/joukkueet/${abbrev.toLowerCase()}`,
-        })
-      : ""
-  }
+  const heroAttrs = `data-abbr="${escapeHtml(abbrev)}" style="${escapeHtml(teamHeroBackgroundStyle(abbrev))}"`;
+  const favStar = username
+    ? renderFavStar({
+        formAction: "/omat/favorites/teams",
+        hiddenFields: { abbrev },
+        isFavorite: isFavoriteTeam,
+        redirectTo: `/joukkueet/${abbrev.toLowerCase()}`,
+      })
+    : "";
+  const heroFront = `
   <img src="${escapeHtml(team.logo)}" alt="" class="team-hero-logo">
   <div class="team-hero-text">
     <h1>${escapeHtml(team.name)}</h1>
     <p class="subtitle">
       ${escapeHtml(team.division)}: ${team.division_rank}. sija · ${team.wins}-${team.losses}-${team.ot_losses} (${team.points} p)
     </p>
+  </div>`;
+  // Stanley Cup -voittajilla hero kääntyy (sama mekanismi kuin pelaajakortissa),
+  // muilla se on pelkkä etupuoli.
+  const cupsBack = renderTeamCups(abbrev);
+  const teamHero = cupsBack
+    ? `<div class="player-hero-flip team-hero-flip js-player-hero-flip" role="button" tabindex="0" aria-pressed="false" aria-label="Käännä kortti nähdäksesi Stanley Cup -voitot">
+  ${favStar}
+  <div class="player-hero-flip-inner">
+    <header class="page-header team-page-header hero-banner player-hero-face player-hero-front is-active" ${heroAttrs}>${heroFront}
+      <span class="player-hero-flip-hint" aria-hidden="true">⟲ Pokaalit</span>
+    </header>
+    <div class="page-header team-page-header hero-banner player-hero-face team-hero-back" ${heroAttrs}>${cupsBack}
+      <span class="player-hero-flip-hint" aria-hidden="true">⟲ Etu</span>
+    </div>
   </div>
-  ${renderTeamCups(abbrev)}
-</header>
+</div>`
+    : `<header class="page-header team-page-header hero-banner" ${heroAttrs}>${favStar}${heroFront}</header>`;
+
+  const content = `
+<a class="back-link js-back" href="/sarjataulukko">← Takaisin</a>
+
+<div class="split">
+<div class="split-side">
+${teamHero}
 </div>
 <div class="split-main">
 

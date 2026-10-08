@@ -76,7 +76,7 @@ function seasonYears(a: Award): number[] {
 }
 
 // Palkintohuone: tyhjä merkkijono jos pelaajalla ei ole yhtään tunnettua palkintoa.
-export function renderTrophyRoom(awards: Award[] | undefined, name: string): string {
+export function renderTrophyRoom(awards: Award[] | undefined): string {
   const list = awards ?? [];
   const cup = list.find((a) => a.trophy?.default === STANLEY_CUP);
   const items = list
@@ -96,7 +96,7 @@ export function renderTrophyRoom(awards: Award[] | undefined, name: string): str
     .join("");
 
   return `
-  <div class="trophy-room-title"><h2>Palkinnot</h2><span>${name}</span></div>
+  <div class="trophy-room-title"><h2>Palkinnot</h2></div>
   ${cupHtml}
   ${itemsHtml ? `<div class="trophy-shelf">${itemsHtml}</div>` : ""}`;
 }

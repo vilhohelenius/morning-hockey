@@ -998,7 +998,8 @@ main {
   -webkit-backface-visibility: hidden;
 }
 
-.hero-banner.player-hero-back {
+.hero-banner.player-hero-back,
+.hero-banner.player-hero-room {
   transform: rotateY(180deg);
 }
 
@@ -6075,15 +6076,25 @@ main {
   letter-spacing: 0.04em;
 }
 
-.team-page-header {
-  flex-wrap: wrap;
+/* Käännettävä joukkuehero: etupuoli on entinen rivi, takapuoli pelkät pokaalit. */
+.player-hero-flip.team-hero-flip .player-hero-flip-inner {
+  min-height: 150px;
+}
+
+.hero-banner.team-page-header.player-hero-face {
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+.hero-banner.team-page-header.team-hero-back {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 18px 16px 30px;
 }
 
 .team-cups {
-  flex: 0 0 100%;
-  margin-top: 4px;
-  padding-top: 10px;
-  border-top: 1px solid rgba(255, 255, 255, 0.22);
   text-align: left;
 }
 
@@ -6204,6 +6215,7 @@ main {
 /* mix-blend-mode: screen toimii vain jos kuvan esivanhemmat eivät muodosta omaa
    pinoamiskontekstia (heron lapsille asetettu z-index tekisi sen). */
 .hero-banner > .team-cups,
+.hero-banner.team-hero-back > *,
 .hero-banner.player-hero-room > * {
   z-index: auto;
 }
