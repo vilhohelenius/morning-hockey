@@ -4024,9 +4024,9 @@ main {
 .pf-j.e .pf-n { left: 0; }
 .pf-n img, .pf-champ img { display: block; box-sizing: border-box; width: 30px; height: 30px; padding: 3px; border-radius: 50%; background: #fff; border: 2px solid var(--tc); }
 .pf-n small, .pf-champ small { position: absolute; top: 100%; left: 50%; transform: translateX(-50%); padding: 0 3px; border-radius: 4px; background: var(--bg); font-size: 0.6rem; font-weight: 700; white-space: nowrap; }
-.pf-champ { position: relative; margin: 0 auto 26px; width: 44px; }
+.pf-champ { position: relative; margin: 0 auto 32px; width: 44px; }
 .pf-champ img { width: 44px; height: 44px; padding: 5px; border: 3px solid #d4af37; box-shadow: 0 0 0 3px color-mix(in srgb, #d4af37 35%, transparent), 0 0 14px #d4af37; }
-.pf-champ small { color: #d4af37; font-size: 0.7rem; }
+.pf-champ small { top: calc(100% + 8px); color: #d4af37; font-size: 0.7rem; }
 .pf-div-grid { display: grid; grid-template-columns: 1fr 1fr; column-gap: 14px; }
 .pf-bar-row.sm { grid-template-columns: auto 1fr 38px; gap: 6px; font-size: 0.85rem; }
 .pf-bar-row.sm img { width: 20px; height: 20px; }
