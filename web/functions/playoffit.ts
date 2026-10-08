@@ -102,7 +102,7 @@ function renderDiagram(round1ByConf: Map<string, Row[][]>, odds: Map<string, num
 </div>
 <p class="pf-note">Playoff-kaavio jos playoffit alkaisivat tänään.${
     odds.size ? " Prosentti on joukkueen todennäköisyys päästä playoffeihin kauden päätteeksi." : ""
-  } Vain 1. kierroksen parit tiedetään, myöhemmät kierrokset täyttyvät sitä mukaa kun sarjat ratkeavat.</p>`;
+  }</p>`;
 }
 
 // ---- Standings tables with playoff % and expected points.
