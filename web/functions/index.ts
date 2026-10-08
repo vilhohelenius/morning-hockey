@@ -452,7 +452,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     <a class="icon-btn day-nav-btn${dayOffset <= MIN_DAY_OFFSET ? " is-disabled" : ""}" ${dayOffset <= MIN_DAY_OFFSET ? 'aria-disabled="true"' : `href="${dayHref(dayOffset - 1)}"`} data-dir="-1" title="Edellinen päivä" aria-label="Edellinen päivä">${icon("chev-l")}</a>
     <h2 class="section-title" id="day-title">${dayTitle}</h2>
     <a class="icon-btn day-nav-btn${dayOffset >= MAX_DAY_OFFSET ? " is-disabled" : ""}" ${dayOffset >= MAX_DAY_OFFSET ? 'aria-disabled="true"' : `href="${dayHref(dayOffset + 1)}"`} data-dir="1" title="Seuraava päivä" aria-label="Seuraava päivä">${icon("chev-r")}</a>
-    <button type="button" class="icon-btn refresh-btn" title="Päivitä ottelutiedot" aria-label="Päivitä ottelutiedot" onclick="location.reload()">${icon("refresh")}</button>
+    <button type="button" class="icon-btn refresh-btn" title="Päivitä ottelutiedot" aria-label="Päivitä ottelutiedot">${icon("refresh")}</button>
   </div>
   <div class="day-panels">${dayPanelsHtml}</div>
 </section>

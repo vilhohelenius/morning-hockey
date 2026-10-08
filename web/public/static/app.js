@@ -1134,3 +1134,31 @@ document.querySelectorAll(".sk-seg").forEach(function (group) {
     });
   });
 });
+
+// Dashboard refresh button: show a top toast with a spinner while the page
+// reloads (the reload itself clears it), and block double presses.
+document.querySelectorAll(".refresh-btn").forEach(function (button) {
+  button.addEventListener("click", function () {
+    if (button.disabled) return;
+    button.disabled = true;
+    button.classList.add("is-loading");
+    var toast = document.createElement("div");
+    toast.className = "refresh-toast";
+    toast.setAttribute("role", "status");
+    toast.innerHTML = '<span class="refresh-toast-spinner"></span>Päivitetään otteluita…';
+    document.body.appendChild(toast);
+    location.reload();
+  });
+});
+
+// Back/forward cache can restore the page with the toast still showing.
+window.addEventListener("pageshow", function (e) {
+  if (!e.persisted) return;
+  document.querySelectorAll(".refresh-toast").forEach(function (t) {
+    t.remove();
+  });
+  document.querySelectorAll(".refresh-btn").forEach(function (b) {
+    b.disabled = false;
+    b.classList.remove("is-loading");
+  });
+});

@@ -5903,3 +5903,59 @@ main {
   color: var(--muted);
   font-size: 0.78rem;
 }
+
+/* Dashboard refresh: top toast + spinning button while the page reloads. */
+.refresh-toast {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: var(--card-bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+  font-size: 0.9rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transform: translateX(-50%);
+  animation: refresh-toast-in 0.2s ease-out;
+}
+
+.refresh-toast-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: refresh-spin 0.8s linear infinite;
+}
+
+.refresh-btn.is-loading svg {
+  animation: refresh-spin 0.8s linear infinite;
+}
+
+@keyframes refresh-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes refresh-toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -12px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .refresh-toast,
+  .refresh-toast-spinner,
+  .refresh-btn.is-loading svg {
+    animation: none;
+  }
+}
