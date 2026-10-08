@@ -28,6 +28,9 @@ import type { Env } from "../_shared/types";
 import {
   XG_INFO_TEXT,
   fetchGameXg,
+  fetchPlayerSeasonsXg,
+  teamIdOf,
+  type PlayerSeasonXg,
   fetchSkaterGameOnIcePct,
   fetchGoalieSeasonXg,
   fetchSkaterOnIceXg,
@@ -182,7 +185,7 @@ function renderSeasonSelect(playerId: number, seasons: number[], selected: numbe
 // the one-row "Ottelut" summary. rowClass defaults to "total-row" (the
 // one-row summary wants that emphasis); season-history passes "" for its
 // plain per-season rows and "total-row" again for its own total row.
-function renderSkaterTotalRow(label: string, t: SeasonTotal, rowClass = "total-row", withTeam = false): string {
+function renderSkaterTotalRow(label: string, t: SeasonTotal, rowClass = "total-row", withTeam = false, extraCells = ""): string {
   return `
       <tr${rowClass ? ` class="${rowClass}"` : ""}>
         <td>${escapeHtml(withTeam ? shortSeasonLabel(label) : label)}</td>
@@ -193,7 +196,7 @@ function renderSkaterTotalRow(label: string, t: SeasonTotal, rowClass = "total-r
         <td class="stat-strong">${t.points ?? 0}</td>
         <td>${(t.plusMinus ?? 0) > 0 ? "+" : ""}${t.plusMinus ?? 0}</td>
         <td>${t.pim ?? 0}</td>
-        <td>${t.avgToi ? escapeHtml(t.avgToi) : "–"}</td>
+        <td>${t.avgToi ? escapeHtml(t.avgToi) : "–"}</td>${extraCells}
       </tr>`;
 }
 
@@ -202,7 +205,7 @@ function renderSkaterTotalRow(label: string, t: SeasonTotal, rowClass = "total-r
 // instead of tiles. Used by the season-history table and the one-row
 // "Kauden tilastot" summary (goalies never had a per-game tfoot total, so
 // no third use here the way skaters have).
-function renderGoalieStatRow(label: string, t: SeasonTotal, rowClass = "total-row", withTeam = false): string {
+function renderGoalieStatRow(label: string, t: SeasonTotal, rowClass = "total-row", withTeam = false, extraCells = ""): string {
   return `
       <tr${rowClass ? ` class="${rowClass}"` : ""}>
         <td>${escapeHtml(withTeam ? shortSeasonLabel(label) : label)}</td>
@@ -211,7 +214,7 @@ function renderGoalieStatRow(label: string, t: SeasonTotal, rowClass = "total-ro
         <td>${t.wins ?? 0}</td>
         <td class="stat-strong">${(t.savePctg ?? 0).toFixed(3)}</td>
         <td>${(t.goalsAgainstAvg ?? 0).toFixed(2)}</td>
-        <td>${t.shutouts ?? 0}</td>
+        <td>${t.shutouts ?? 0}</td>${extraCells}
       </tr>`;
 }
 
@@ -553,11 +556,32 @@ function renderPlayerHeroBack(landing: any, age: number | null): string {
 // summing the per-season rows ourselves -- averages like SV%/GAA can't be
 // correctly derived by averaging per-season averages, so the API's own
 // aggregate is the only correct source for that row.
-function renderSkaterSeasonHistory(rows: SeasonTotal[], total: SeasonTotal | null): string {
+// Advanced-stat cells for one season-history row (or the summed total row).
+// Regular season only, "–" where the xG sync has no rows for that season/team.
+function careerXgCells(x: PlayerSeasonXg | undefined, isGoalie: boolean): string {
+  if (isGoalie) return `<td>${x ? formatGsax(x.gsax, 1) : "–"}</td>`;
+  if (!x) return "<td>–</td><td>–</td><td>–</td>";
+  return `<td>${formatXg(x.xg)}</td><td>${xgPercent(x.xgf, x.xga)}</td><td>${xgPercent(x.xgf5v5, x.xga5v5)}</td>`;
+}
+
+function careerXgFor(t: SeasonTotal, xgBy: Map<string, PlayerSeasonXg> | null, isGoalie: boolean): PlayerSeasonXg | undefined {
+  if (!xgBy) return undefined;
+  const abbrev = t.teamName?.default ? TEAM_ABBREV_BY_NAME[t.teamName.default] : undefined;
+  const teamId = isGoalie ? "" : abbrev ? teamIdOf(abbrev) : undefined;
+  return teamId === undefined ? undefined : xgBy.get(`${t.season}|${teamId}`);
+}
+
+function sumCareerXg(xgBy: Map<string, PlayerSeasonXg>): PlayerSeasonXg {
+  const sum: PlayerSeasonXg = { xg: 0, xgf: 0, xga: 0, xgf5v5: 0, xga5v5: 0, gsax: 0 };
+  for (const x of xgBy.values()) for (const k of Object.keys(sum) as (keyof PlayerSeasonXg)[]) sum[k] += x[k];
+  return sum;
+}
+
+function renderSkaterSeasonHistory(rows: SeasonTotal[], total: SeasonTotal | null, xgBy: Map<string, PlayerSeasonXg> | null = null): string {
   if (!rows.length) return `<p class="empty-note">Ei NHL-kausia.</p>`;
 
-  const trs = rows.map((t) => renderSkaterTotalRow(seasonLabel(t.season), t, "", true)).join("");
-  const totalRow = total ? renderSkaterTotalRow("Yhteensä", total, "total-row", true) : "";
+  const trs = rows.map((t) => renderSkaterTotalRow(seasonLabel(t.season), t, "", true, xgBy ? careerXgCells(careerXgFor(t, xgBy, false), false) : "")).join("");
+  const totalRow = total ? renderSkaterTotalRow("Yhteensä", total, "total-row", true, xgBy ? careerXgCells(sumCareerXg(xgBy), false) : "") : "";
 
   return `
   <div class="stats-table-wrap">
@@ -572,7 +596,7 @@ function renderSkaterSeasonHistory(rows: SeasonTotal[], total: SeasonTotal | nul
           <th>P</th>
           <th>+/-</th>
           <th>JH</th>
-          <th>TOI/GP</th>
+          <th>TOI/GP</th>${xgBy ? '<th title="Yksilöllinen odotettu maalimäärä (ixG)">xG</th><th title="Joukkueen xG-osuus pelaajan ollessa jäällä">xGF%</th><th title="xGF% tasakentällisin 5v5">xGF% 5v5</th>' : ""}
         </tr>
       </thead>
       <tbody>${trs}</tbody>
@@ -581,11 +605,11 @@ function renderSkaterSeasonHistory(rows: SeasonTotal[], total: SeasonTotal | nul
   </div>`;
 }
 
-function renderGoalieSeasonHistory(rows: SeasonTotal[], total: SeasonTotal | null): string {
+function renderGoalieSeasonHistory(rows: SeasonTotal[], total: SeasonTotal | null, xgBy: Map<string, PlayerSeasonXg> | null = null): string {
   if (!rows.length) return `<p class="empty-note">Ei NHL-kausia.</p>`;
 
-  const trs = rows.map((t) => renderGoalieStatRow(seasonLabel(t.season), t, "", true)).join("");
-  const totalRow = total ? renderGoalieStatRow("Yhteensä", total, "total-row", true) : "";
+  const trs = rows.map((t) => renderGoalieStatRow(seasonLabel(t.season), t, "", true, xgBy ? careerXgCells(xgBy.get(`${t.season}|`), true) : "")).join("");
+  const totalRow = total ? renderGoalieStatRow("Yhteensä", total, "total-row", true, xgBy ? careerXgCells(sumCareerXg(xgBy), true) : "") : "";
 
   return `
   <div class="stats-table-wrap">
@@ -598,7 +622,7 @@ function renderGoalieSeasonHistory(rows: SeasonTotal[], total: SeasonTotal | nul
           <th>Voitot</th>
           <th>SV%</th>
           <th>GAA</th>
-          <th>NP</th>
+          <th>NP</th>${xgBy ? '<th title="Torjutut maalit yli odotuksen (GSAx)">GSAx</th>' : ""}
         </tr>
       </thead>
       <tbody>${trs}</tbody>
@@ -617,6 +641,7 @@ function renderSeasonHistorySection(
   playoffRows: SeasonTotal[],
   careerRegularTotal: SeasonTotal | null,
   careerPlayoffsTotal: SeasonTotal | null,
+  xgBy: Map<string, PlayerSeasonXg> | null = null,
 ): string {
   if (!regularSeasonRows.length && !playoffRows.length) return "";
 
@@ -629,7 +654,7 @@ function renderSeasonHistorySection(
     <button type="button" class="day-pill active" data-game-type="2">Runkosarja</button>
     <button type="button" class="day-pill" data-game-type="3">Playoffs</button>
   </div>
-  <div class="season-history-section" data-game-type="2">${render(regularSeasonRows, careerRegularTotal)}</div>
+  <div class="season-history-section" data-game-type="2">${render(regularSeasonRows, careerRegularTotal, xgBy)}${xgBy ? `<p class="standings-legend">xG-tilastot ovat saatavilla vain synkattujen kausien osalta; Yhteensä-rivin xG-sarakkeet summaavat vain ne.</p>` : ""}</div>
   <div class="season-history-section is-hidden" data-game-type="3">${render(playoffRows, careerPlayoffsTotal)}</div>
 </section>`;
 }
@@ -746,6 +771,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       ? await fetchLeagueRanks(context.env.DB, playerId, seasons[0], isGoalie)
       : {};
 
+  const careerXgBy = await fetchPlayerSeasonsXg(context.env.DB, playerId, isGoalie);
   const xgCells = await latestSeasonXgCells(context.env.DB, playerId, seasons[0], isGoalie);
 
   const age = landing.birthDate ? ageFromBirthDate(landing.birthDate) : null;
@@ -817,7 +843,7 @@ ${renderPeriodStatsSection(
 
 ${xgCells ? XG_INFO_TEXT : ""}
 
-${renderSeasonHistorySection(isGoalie, regularSeasonHistory, playoffHistory, careerTotal, careerPlayoffsTotal)}
+${renderSeasonHistorySection(isGoalie, regularSeasonHistory, playoffHistory, careerTotal, careerPlayoffsTotal, careerXgBy.size ? careerXgBy : null)}
 
 <section>
   <h2 class="section-title">Ottelut</h2>

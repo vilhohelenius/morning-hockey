@@ -131,6 +131,51 @@ export function xgPercent(xgf: number, xga: number): string {
   return xgf + xga > 0 ? `${((xgf / (xgf + xga)) * 100).toFixed(1)} %` : "–";
 }
 
+// ---- Career table: one player's xG per (season, team) ----
+
+// Keyed "season|teamId". Skaters: xg + on-ice xgf/xga (all + 5v5); goalies: gsax.
+// Only seasons/teams the xG sync has covered appear; empty map on failure.
+export interface PlayerSeasonXg {
+  xg: number;
+  xgf: number;
+  xga: number;
+  xgf5v5: number;
+  xga5v5: number;
+  gsax: number;
+}
+
+export async function fetchPlayerSeasonsXg(db: D1Database, playerId: number, isGoalie: boolean): Promise<Map<string, PlayerSeasonXg>> {
+  const out = new Map<string, PlayerSeasonXg>();
+  const blank = (): PlayerSeasonXg => ({ xg: 0, xgf: 0, xga: 0, xgf5v5: 0, xga5v5: 0, gsax: 0 });
+  try {
+    if (isGoalie) {
+      const { results } = await db
+        .prepare("SELECT season, SUM(xga) - SUM(goals_against) AS v FROM goalie_game_xg WHERE player_id = ? GROUP BY season")
+        .bind(playerId)
+        .all<{ season: number; v: number }>();
+      // goalie rows carry opp_team_id only, so goalies are keyed by season alone
+      for (const r of results) out.set(`${r.season}|`, { ...blank(), gsax: r.v });
+      return out;
+    }
+    const [s, o] = await Promise.all([
+      db.prepare("SELECT season, team_id, SUM(xg) AS xg FROM skater_game_xg WHERE player_id = ? GROUP BY season, team_id").bind(playerId).all<{ season: number; team_id: number; xg: number }>(),
+      db
+        .prepare("SELECT season, team_id, SUM(xgf) AS xgf, SUM(xga) AS xga, SUM(xgf_5v5) AS xgf5, SUM(xga_5v5) AS xga5 FROM skater_game_onice_xg WHERE player_id = ? GROUP BY season, team_id")
+        .bind(playerId)
+        .all<{ season: number; team_id: number; xgf: number; xga: number; xgf5: number; xga5: number }>(),
+    ]);
+    for (const r of s.results) out.set(`${r.season}|${r.team_id}`, { ...blank(), xg: r.xg });
+    for (const r of o.results) {
+      const key = `${r.season}|${r.team_id}`;
+      out.set(key, { ...(out.get(key) ?? blank()), xgf: r.xgf, xga: r.xga, xgf5v5: r.xgf5, xga5v5: r.xga5 });
+    }
+  } catch (error) {
+    console.error(`Career xG lookup failed for ${playerId}:`, error);
+    out.clear();
+  }
+  return out;
+}
+
 // ---- Team xGF% (team_game_xg) ----
 
 // games/standings_rows carry only abbrevs, team_game_xg only NHL team ids.
