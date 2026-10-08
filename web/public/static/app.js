@@ -770,7 +770,11 @@
         goalsAway += period.away_goals || 0;
         goalsHome += period.home_goals || 0;
       });
-      if ((data.timeline || []).length) {
+      // Newer box-score cache rows already carry a "Maalit" row from the server.
+      var hasGoalRow = statRows.some(function (row) {
+        return row.label === "Maalit";
+      });
+      if ((data.timeline || []).length && !hasGoalRow) {
         var goalRow = { label: "Maalit", away_value: String(goalsAway), home_value: String(goalsHome) };
         if (goalsAway + goalsHome > 0) {
           goalRow.away_pct = (100 * goalsAway) / (goalsAway + goalsHome);
