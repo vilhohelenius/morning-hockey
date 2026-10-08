@@ -224,12 +224,23 @@ export async function fetchTeamSeasonXg(db: D1Database, abbrev: string): Promise
 }
 
 // One finished game's team xG, keyed by side.
-export async function fetchGameTeamXg(db: D1Database, gameId: number, awayAbbrev: string, homeAbbrev: string): Promise<{ away: TeamXg; home: TeamXg } | null> {
+// `preloaded` (from loadGameTeamXgRows) replaces the per-game lookup.
+export async function fetchGameTeamXg(
+  db: D1Database,
+  gameId: number,
+  awayAbbrev: string,
+  homeAbbrev: string,
+  preloaded?: Map<number, Record<string, number>[]>,
+): Promise<{ away: TeamXg; home: TeamXg } | null> {
   try {
-    const { results } = await db
-      .prepare("SELECT * FROM team_game_xg WHERE game_id = ?") // * so a DB without the hd_* columns still works
-      .bind(gameId)
-      .all<Record<string, number>>();
+    const results = preloaded
+      ? (preloaded.get(gameId) ?? [])
+      : (
+          await db
+            .prepare("SELECT * FROM team_game_xg WHERE game_id = ?") // * so a DB without the hd_* columns still works
+            .bind(gameId)
+            .all<Record<string, number>>()
+        ).results;
     const toXg = (r: Record<string, number>): TeamXg & { team_id: number } => ({
       team_id: r.team_id, xgf: r.xgf, xga: r.xga, xgf5v5: r.xgf_5v5, xga5v5: r.xga_5v5, hdFor: r.hd_for, hdAgainst: r.hd_against,
     });
@@ -239,6 +250,24 @@ export async function fetchGameTeamXg(db: D1Database, gameId: number, awayAbbrev
   } catch (error) {
     console.error(`Game team xG lookup failed for ${gameId}:`, error);
     return null;
+  }
+}
+
+// Team xG rows for many games in one query, grouped by game_id. undefined on
+// failure (callers then fall back to the per-game lookup).
+export async function loadGameTeamXgRows(db: D1Database, gameIds: number[]): Promise<Map<number, Record<string, number>[]> | undefined> {
+  if (!gameIds.length) return new Map();
+  try {
+    const { results } = await db
+      .prepare(`SELECT * FROM team_game_xg WHERE game_id IN (${gameIds.map(() => "?").join(",")})`)
+      .bind(...gameIds)
+      .all<Record<string, number>>();
+    const byGame = new Map<number, Record<string, number>[]>();
+    for (const r of results) byGame.set(r.game_id, [...(byGame.get(r.game_id) ?? []), r]);
+    return byGame;
+  } catch (error) {
+    console.error("team_game_xg bulk lookup failed:", error);
+    return undefined;
   }
 }
 

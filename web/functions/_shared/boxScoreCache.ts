@@ -207,6 +207,15 @@ function isStale(cached: GameBoxScoreRow, game: GameRow): boolean {
   return Date.now() - new Date(cached.cached_at).getTime() > LIVE_CACHE_TTL_MS;
 }
 
+export async function loadBoxScoreRows(db: D1Database, gameIds: number[]): Promise<Map<number, GameBoxScoreRow>> {
+  if (!gameIds.length) return new Map();
+  const { results } = await db
+    .prepare(`SELECT * FROM game_box_scores WHERE game_id IN (${gameIds.map(() => "?").join(",")})`)
+    .bind(...gameIds)
+    .all<GameBoxScoreRow>();
+  return new Map(results.map((r) => [r.game_id, r]));
+}
+
 // For any game that's started (finished or currently live -- callers should
 // check game.is_finished || isLive(game) first; an upcoming game has no box
 // score yet and should show a "not played yet" placeholder instead).
@@ -217,11 +226,16 @@ function isStale(cached: GameBoxScoreRow, game: GameRow): boolean {
 // caught up yet -- closes that gap on the next view instead of waiting for
 // the next fast-tier sync. Mutates the passed-in `game` to match, so this
 // same request's own rendering reflects it immediately too.
+// `preloaded` (from loadBoxScoreRows) replaces the per-game cache lookup when
+// a page renders many games, so it costs one query instead of one per game.
 export async function getBoxScore(
   db: D1Database,
   game: GameRow,
+  preloaded?: Map<number, GameBoxScoreRow>,
 ): Promise<{ box: ParsedBoxScore | null; fetchError: boolean }> {
-  const cached = await db.prepare("SELECT * FROM game_box_scores WHERE game_id = ?").bind(game.game_id).first<GameBoxScoreRow>();
+  const cached = preloaded
+    ? (preloaded.get(game.game_id) ?? null)
+    : await db.prepare("SELECT * FROM game_box_scores WHERE game_id = ?").bind(game.game_id).first<GameBoxScoreRow>();
   if (cached && !isStale(cached, game)) return { box: fromCacheRow(cached), fetchError: false };
 
   try {

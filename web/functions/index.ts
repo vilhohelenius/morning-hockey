@@ -31,7 +31,7 @@
 // ported -- superseded by /arkisto, a real route here.
 
 import { currentUsername, readVersionCookie, readTulospiiloBypassDate, readTulospiiloCookie } from "./_shared/auth";
-import { getBoxScore, missingBoxRetryScript } from "./_shared/boxScoreCache";
+import { getBoxScore, loadBoxScoreRows, missingBoxRetryScript } from "./_shared/boxScoreCache";
 import { buildTimeline } from "./_shared/boxscore";
 import {
   finnishGoalieLines,
@@ -42,8 +42,8 @@ import {
   type FinnGoalieLine,
   type FinnScorerLine,
 } from "./_shared/gameCard";
-import { fetchGameTeamXg, fetchGamesGoalieGsax, teamXgStatRows } from "./_shared/xg";
-import { resolveHighlightsUrl } from "./_shared/youtube";
+import { fetchGameTeamXg, fetchGamesGoalieGsax, loadGameTeamXgRows, teamXgStatRows } from "./_shared/xg";
+import { loadYoutubeRows, resolveHighlightsUrl } from "./_shared/youtube";
 import { MAX_DAY_OFFSET, MIN_DAY_OFFSET, clampDayOffset, selectDayGames } from "./_shared/dayGames";
 import { flagImg, icon, addDays, escapeHtml, helsinkiParts, helsinkiToday, secondsToHelsinkiMidnight, humanDate, nationalityFlag, positionTag, shortDate, teamHeroBackgroundStyle } from "./_shared/format";
 import { buildFinnishNight, renderFinnishNightSection, type NightGame } from "./_shared/finnishNight";
@@ -261,7 +261,15 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       }
     }
     let gameCardsHtml = "";
-    const gsaxByGame = await fetchGamesGoalieGsax(db, roundGames.filter((g) => g.is_finished || isLive(g)).map((g) => g.game_id));
+    const startedIds = roundGames.filter((g) => g.is_finished || isLive(g)).map((g) => g.game_id);
+    const finishedIds = roundGames.filter((g) => g.is_finished).map((g) => g.game_id);
+    // One query per table for the whole day instead of three per game.
+    const [gsaxByGame, boxRows, youtubeRows, teamXgRows] = await Promise.all([
+      fetchGamesGoalieGsax(db, startedIds),
+      loadBoxScoreRows(db, startedIds),
+      loadYoutubeRows(db, finishedIds),
+      loadGameTeamXgRows(db, finishedIds),
+    ]);
 
     for (const game of roundGames) {
       let scorers: FinnScorerLine[] = [];
@@ -270,7 +278,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       // Finished or live: the shared cached-or-fetch path (short TTL while
       // live, permanent once finished -- see _shared/boxScoreCache).
       // Not started yet: no box score exists.
-      const box = game.is_finished || isLive(game) ? (await getBoxScore(db, game)).box : null;
+      const box = game.is_finished || isLive(game) ? (await getBoxScore(db, game, boxRows)).box : null;
       if (!box && (game.is_finished || isLive(game))) missingBoxes++;
 
       // The card's own score otherwise only updates every ~30 min (the
@@ -280,7 +288,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       let displayGame = game;
 
       if (game.is_finished) {
-        gameDetails[game.game_id] = { youtube_url: await resolveHighlightsUrl(db, context.env, game) };
+        gameDetails[game.game_id] = { youtube_url: await resolveHighlightsUrl(db, context.env, game, youtubeRows) };
       }
 
       if (box && offset === 0) {
@@ -297,7 +305,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       }
 
       if (box) {
-        const gameXg = game.is_finished ? await fetchGameTeamXg(db, game.game_id, game.away_abbrev, game.home_abbrev) : null;
+        const gameXg = game.is_finished ? await fetchGameTeamXg(db, game.game_id, game.away_abbrev, game.home_abbrev, teamXgRows) : null;
         gameDetails[game.game_id] = { ...gameDetails[game.game_id], timeline: buildTimeline(box.goals, box.penalties, game.away_abbrev, box.shootout, box.goalieChanges), team_stats: [...box.teamStats, ...(gameXg ? teamXgStatRows(gameXg.away, gameXg.home, true, undefined, false) : [])] };
         scorers = [
           ...finnishScorerLines(box.awaySkaters, game.away_abbrev),

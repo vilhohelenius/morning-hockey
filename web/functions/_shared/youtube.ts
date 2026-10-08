@@ -48,15 +48,20 @@ async function searchNhlVideo(title: string, apiKey: string): Promise<string | n
 // otherwise render fine without it -- a D1/network/API hiccup here (e.g.
 // the youtube_highlights table not existing yet, or a bad API key) must
 // degrade to the plain search-link fallback, not crash the whole page.
-export async function resolveHighlightsUrl(db: D1Database, env: Env, game: GameRow): Promise<string> {
+// `preloaded` (from loadYoutubeRows) replaces the per-game cache lookup.
+export async function resolveHighlightsUrl(
+  db: D1Database,
+  env: Env,
+  game: GameRow,
+  preloaded?: Map<number, YoutubeHighlightRow>,
+): Promise<string> {
   const fallback = youtubeHighlightsUrl(game);
   if (!env.YOUTUBE_API_KEY) return fallback;
 
   try {
-    const cached = await db
-      .prepare("SELECT * FROM youtube_highlights WHERE game_id = ?")
-      .bind(game.game_id)
-      .first<YoutubeHighlightRow>();
+    const cached = preloaded
+      ? (preloaded.get(game.game_id) ?? null)
+      : await db.prepare("SELECT * FROM youtube_highlights WHERE game_id = ?").bind(game.game_id).first<YoutubeHighlightRow>();
 
     if (cached?.video_url) return cached.video_url;
     if (cached && Date.now() - new Date(cached.checked_at).getTime() < RETRY_AFTER_MS) return fallback;
@@ -76,5 +81,22 @@ export async function resolveHighlightsUrl(db: D1Database, env: Env, game: GameR
   } catch (error) {
     console.error(`resolveHighlightsUrl failed for game ${game.game_id}:`, error);
     return fallback;
+  }
+}
+
+// One query for many games. undefined on failure so callers fall back to the
+// per-game lookup (which degrades to the plain search link) instead of
+// treating every game as "never searched" and spending YouTube quota.
+export async function loadYoutubeRows(db: D1Database, gameIds: number[]): Promise<Map<number, YoutubeHighlightRow> | undefined> {
+  if (!gameIds.length) return new Map();
+  try {
+    const { results } = await db
+      .prepare(`SELECT * FROM youtube_highlights WHERE game_id IN (${gameIds.map(() => "?").join(",")})`)
+      .bind(...gameIds)
+      .all<YoutubeHighlightRow>();
+    return new Map(results.map((r) => [r.game_id, r]));
+  } catch (error) {
+    console.error("youtube_highlights bulk lookup failed:", error);
+    return undefined;
   }
 }
