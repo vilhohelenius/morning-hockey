@@ -365,10 +365,7 @@ ${hasPath ? renderForecastBracket(round1ByConf, rows, sim) : ""}
 <h3 class="roster-group-title">Divisioonan voitto</h3><div class="pf-div-grid">${divisionHtml}</div>
 <h3 class="roster-group-title">Presidents' Trophy</h3>${list(top5((s) => s.p_presidents), (s) => s.p_presidents)}${
     hasCup ? `<h3 class="roster-group-title">Stanley Cup</h3>${list(top5((s) => s.p_cup ?? 0), (s) => s.p_cup ?? 0)}` : ""
-  }
-<p class="pf-note">Divisioonan voitossa kolme todennäköisintä, Presidents' Trophyssa ja Stanley Cupissa viisi.${
-    hasCup ? " Pudotuspelit simuloidaan samalla ottelumallilla, jonka joukkuekohtaiset erot kutistetaan kauden loppua kohti, joten ne ovat karkeampi arvio kuin playoff-paikka." : ""
-  }</p>`;
+  }`;
 }
 
 function renderForecastInfo(sim: SimRow[]): string {
@@ -385,7 +382,7 @@ ${early}
   samalla mallilla kuin ottelun ennakossa: joukkueiden viimeaikaiset tulokset, maalipaikat ja laukaukset,
   maalivahtien taso, kotietu ja pelirasitus. Sen jälkeen loppukausi pelataan satatuhatta kertaa läpi, myös
   jatkoajat ja voittolaukaukset mukaan lukien. Prosentti kertoo, kuinka suuressa osassa simulaatioita joukkue
-  pääsi playoffeihin. xP on ennustettu pistemäärä kauden lopussa.</p>
+  pääsi playoffeihin. xP on ennustettu pistemäärä kauden lopussa. Pudotuspelit simuloidaan samalla ottelumallilla, jonka joukkuekohtaiset erot kutistetaan kauden loppua kohti, joten ne ovat karkeampi arvio kuin playoff-paikka.</p>
   <p><strong>Kuinka tarkka ennuste on.</strong> Tarkkuus on mitattu viiden kauden (2021–22 – 2025–26)
   takautuvalla testillä, jossa ennuste tehtiin vain sen hetken tiedoilla.</p>
   <ul>
