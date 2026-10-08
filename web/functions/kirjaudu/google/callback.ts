@@ -43,7 +43,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   const token = await createSession(env, claims.sub, user?.username ?? null);
 
   const headers = new Headers({
-    Location: user ? saved.next || "/omat" : `/kirjaudu/valitse?next=${encodeURIComponent(saved.next || "/omat")}`,
+    Location: user ? saved.next || "/" : `/kirjaudu/valitse?next=${encodeURIComponent(saved.next || "/")}`,
   });
   headers.append("Set-Cookie", sessionCookieHeader(token));
   headers.append("Set-Cookie", oauthCookieHeader("", 0));

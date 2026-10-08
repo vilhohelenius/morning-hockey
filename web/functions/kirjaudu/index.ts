@@ -8,7 +8,7 @@ import type { Env } from "../_shared/types";
 
 export function safeNext(value: string | null): string {
   // `next` is attacker-controllable -- only ever redirect within this site.
-  return value && value.startsWith("/") && !value.startsWith("//") ? value : "/omat";
+  return value && value.startsWith("/") && !value.startsWith("//") ? value : "/";
 }
 
 export const onRequestGet: PagesFunction<Env> = async (context) => {
