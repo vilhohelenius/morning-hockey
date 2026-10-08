@@ -430,9 +430,11 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   // Browser-cache lifetime (private + Vary: Cookie): 60 s while a game is
   // live, otherwise up to 30 min, never past the next game start or the
   // Helsinki midnight (the "today" panel changes then).
+  // A page with games whose box score failed to load must not stay cached
+  // (that left cards without timeline/stats for up to 30 min): minimum TTL.
   const cacheTtl = Math.max(
     15,
-    Math.floor(anyLive ? 60 : Math.min(1800, secondsToHelsinkiMidnight(), (nextStartMs - Date.now()) / 1000)),
+    missingBoxes ? 0 : Math.floor(anyLive ? 60 : Math.min(1800, secondsToHelsinkiMidnight(), (nextStartMs - Date.now()) / 1000)),
   );
 
   const dayHref = (offset: number) => (offset === 0 ? "/" : `/?pv=${offset}`);
