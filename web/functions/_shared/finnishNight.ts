@@ -158,7 +158,7 @@ function renderFinnishNightGoalies(rows: NightGoalie[]): string {
     .map(
       (r) => `
       <tr>
-        ${playerCell(r.player.player_id, r.player.name, r.player.headshot, "MV", r.teamLogo, r.teamAbbrev)}
+        ${playerCell(r.player.player_id, r.player.name, r.player.headshot, "G", r.teamLogo, r.teamAbbrev)}
         ${gameCell(r)}
         <td>${r.player.saves}/${r.player.shots_against}</td>
         <td class="st-pts">${r.player.shots_against > 0 ? r.player.save_pct.toFixed(3) : "–"}</td>
