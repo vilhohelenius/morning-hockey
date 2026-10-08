@@ -9,9 +9,9 @@
 // ports each page in turn, which is fine while this only runs on the
 // *.pages.dev preview domain, side by side with the live site.
 
-import { currentUsername, readThemeCookie } from "./auth";
-import { icon, escapeHtml } from "./format";
-import type { Env, StandingsRow } from "./types";
+import { readThemeCookie } from "./auth";
+import { icon } from "./format";
+import type { Env } from "./types";
 
 interface LayoutOptions {
   title: string;
@@ -51,7 +51,7 @@ const GAME_PAGES = [
   { key: "bingo", href: "/bingo", label: "Pistemiesbingo" },
 ];
 
-const OMAT_PLAYERS_ITEM = { key: "omat_players", href: "/omat/pelaajat", label: `${icon("star")}Suosikkipelaajat` };
+const NAV_FAVORITES = { key: "suosikit", href: "/suosikit", label: `${icon("star")}Suosikit` };
 
 function navLink(item: { key: string; href: string; label: string }, activePage: string): string {
   const active = item.key === activePage ? " active" : "";
@@ -83,32 +83,6 @@ function navGroup(
       </li>`;
 }
 
-// The Omat group's team entries are per-user, so they're fetched here
-// (rather than passed in) -- every route already passes request/env for
-// the theme cookie, so this piggybacks on the same plumbing instead of
-// every single page handler needing its own favorite_teams query.
-async function favoriteTeamNavItems(
-  request: Request | undefined,
-  env: Env | undefined,
-): Promise<{ key: string; href: string; label: string }[]> {
-  if (!request || !env) return [];
-  const username = currentUsername(request);
-  if (!username) return [];
-
-  const { results } = await env.DB.prepare(
-    `SELECT s.* FROM favorite_teams f JOIN standings_rows s ON s.abbrev = f.team_abbrev
-     WHERE f.username = ? ORDER BY s.name`,
-  )
-    .bind(username)
-    .all<StandingsRow>();
-
-  return results.map((team) => ({
-    key: `team_${team.abbrev.toLowerCase()}`,
-    href: `/joukkueet/${team.abbrev.toLowerCase()}`,
-    label: `<img src="${escapeHtml(team.logo)}" alt="" class="nav-team-logo" loading="lazy">${escapeHtml(team.name)}`,
-  }));
-}
-
 // Home-page-only player search (see app.js's ".player-search" handler and
 // haku/pelaajat.ts). Rendered twice -- once in .topbar (mobile, where it's
 // the only header besides the hamburger+title) and once in .sidebar-header
@@ -132,7 +106,6 @@ function renderPlayerSearch(): string {
 export async function renderLayout(options: LayoutOptions): Promise<string> {
   const { title, headerTitle, activePage, content, request, env } = options;
   const theme = request ? readThemeCookie(request) : null;
-  const omatItems = [...(await favoriteTeamNavItems(request, env)), OMAT_PLAYERS_ITEM];
   const playerSearch = activePage === "home" ? renderPlayerSearch() : "";
 
   return `<!doctype html>
@@ -167,7 +140,7 @@ ${["TBL", "TOR", "NSH"].map((t) => `<link rel="preload" as="image" href="https:/
     </div>
     <ul class="nav-list">
       ${navLink(NAV_HOME, activePage)}
-      ${navGroup("omat", `${icon("star")}Omat`, omatItems, activePage)}
+      ${navLink(NAV_FAVORITES, activePage)}
       ${navLink(NAV_STANDINGS, activePage)}
       ${navGroup("stats", `${icon("trend")}Tilastot`, STATS_PAGES, activePage)}
       ${navGroup("analytics", `${icon("analytics")}Analytiikka`, ANALYTICS_PAGES, activePage)}

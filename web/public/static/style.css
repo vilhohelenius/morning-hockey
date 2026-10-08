@@ -5706,3 +5706,200 @@ main {
   color: var(--text);
   resize: vertical;
 }
+
+/* ---------- /suosikit ---------- */
+
+.sk-when {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.sk-digest {
+  margin: 4px 0 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.7rem, 5.5vw, 2.4rem);
+  font-weight: 500;
+  line-height: 1.1;
+}
+
+.sk-hit {
+  color: var(--accent);
+}
+
+.sk-h {
+  margin: 24px 0 8px;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.05;
+}
+
+/* Teams + players side by side, also on a phone. */
+.sk-duo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  align-items: start;
+}
+
+.sk-list {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.sk-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 8px 9px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.88rem;
+  color: inherit;
+  text-decoration: none;
+}
+
+.sk-row:last-child {
+  border-bottom: 0;
+}
+
+.sk-grow {
+  flex: 1;
+  min-width: 0;
+}
+
+.sk-logo {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.sk-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--bg);
+}
+
+.sk-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.sk-score {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.sk-hot {
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.sk-hot .sk-score {
+  color: var(--accent);
+}
+
+.sk-dim,
+.sk-dim .sk-score {
+  color: var(--muted);
+}
+
+.sk-none {
+  font-size: 0.75rem;
+}
+
+.sk-res {
+  min-width: 18px;
+  height: 16px;
+  padding: 0 3px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.sk-res.w {
+  background: #1f9d55;
+}
+
+.sk-res.l {
+  background: #cf3b34;
+}
+
+.sk-res.otl {
+  background: #d98a1c;
+}
+
+.sk-night-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  color: inherit;
+  text-decoration: none;
+}
+
+.sk-night-row:last-child {
+  border-bottom: 0;
+}
+
+.sk-time {
+  width: 52px;
+  flex-shrink: 0;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.sk-night-fav {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.sk-stats-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.sk-seg {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.sk-stats .stats-table-wrap {
+  margin-bottom: 14px;
+}
+
+.sk-l,
+.sk-last .sk-s {
+  display: none;
+}
+
+.sk-last .sk-l {
+  display: inline;
+}
+
+.sk-next {
+  color: var(--muted);
+  font-size: 0.78rem;
+}

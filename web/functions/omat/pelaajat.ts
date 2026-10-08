@@ -17,7 +17,7 @@ function renderNotSignedIn(request: Request): Promise<string> {
   return renderLayout({
     title: "Suosikkipelaajat · Morning Hockey",
     headerTitle: "Suosikkipelaajat",
-    activePage: "omat_players",
+    activePage: "suosikit",
     request,
     content: `
 <header class="page-header"><h1>${icon("star")} Suosikkipelaajat</h1></header>
@@ -87,7 +87,7 @@ ${favoriteGoalies.length ? renderRosterGoalieTable(favoriteGoalies, `${icon("goa
   const html = await renderLayout({
     title: "Suosikkipelaajat · Morning Hockey",
     headerTitle: "Suosikkipelaajat",
-    activePage: "omat_players",
+    activePage: "suosikit",
     request: context.request,
     env: context.env,
     content,

@@ -1116,3 +1116,17 @@ document.addEventListener("click", function (e) {
     tab.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
   }
 });
+
+// /suosikit: the Koko kausi / Viimeiset 5 toggle flips every table cell
+// between its season and last-5 value (CSS shows one of the two spans).
+document.querySelectorAll(".sk-seg").forEach(function (group) {
+  var stats = document.getElementById("sk-stats");
+  group.querySelectorAll("[data-sk-mode]").forEach(function (button) {
+    button.addEventListener("click", function () {
+      stats.classList.toggle("sk-last", button.dataset.skMode === "l");
+      group.querySelectorAll("[data-sk-mode]").forEach(function (b) {
+        b.classList.toggle("active", b === button);
+      });
+    });
+  });
+});
