@@ -552,6 +552,11 @@ CREATE TABLE IF NOT EXISTS team_game_xg (
     xga REAL NOT NULL,
     xgf_5v5 REAL NOT NULL,
     xga_5v5 REAL NOT NULL,
+    -- High-danger chances (attempts with xG >= 0.2), 2026-10-08. Existing DBs:
+    -- ALTER TABLE team_game_xg ADD COLUMN hd_for INTEGER; ... ADD COLUMN hd_against INTEGER;
+    -- then `sync_xg --backfill-teams SEASON` per season (refills rows lacking hd_for).
+    hd_for INTEGER,
+    hd_against INTEGER,
     PRIMARY KEY (game_id, team_id)
 );
 CREATE INDEX IF NOT EXISTS idx_team_game_xg_team ON team_game_xg(team_id, season);

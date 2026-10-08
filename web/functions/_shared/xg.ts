@@ -144,6 +144,9 @@ export interface TeamXg {
   xga: number;
   xgf5v5: number;
   xga5v5: number;
+  // High-danger chances for/against; null/absent until the game is backfilled.
+  hdFor?: number | null;
+  hdAgainst?: number | null;
 }
 
 export function xgfPct(xgf: number, xga: number): number | null {
@@ -179,11 +182,14 @@ export async function fetchTeamSeasonXg(db: D1Database, abbrev: string): Promise
 export async function fetchGameTeamXg(db: D1Database, gameId: number, awayAbbrev: string, homeAbbrev: string): Promise<{ away: TeamXg; home: TeamXg } | null> {
   try {
     const { results } = await db
-      .prepare("SELECT team_id, xgf, xga, xgf_5v5 AS xgf5v5, xga_5v5 AS xga5v5 FROM team_game_xg WHERE game_id = ?")
+      .prepare("SELECT * FROM team_game_xg WHERE game_id = ?") // * so a DB without the hd_* columns still works
       .bind(gameId)
-      .all<TeamXg & { team_id: number }>();
-    const away = results.find((r) => r.team_id === TEAM_IDS[awayAbbrev]);
-    const home = results.find((r) => r.team_id === TEAM_IDS[homeAbbrev]);
+      .all<Record<string, number>>();
+    const toXg = (r: Record<string, number>): TeamXg & { team_id: number } => ({
+      team_id: r.team_id, xgf: r.xgf, xga: r.xga, xgf5v5: r.xgf_5v5, xga5v5: r.xga_5v5, hdFor: r.hd_for, hdAgainst: r.hd_against,
+    });
+    const away = results.map(toXg).find((r) => r.team_id === TEAM_IDS[awayAbbrev]);
+    const home = results.map(toXg).find((r) => r.team_id === TEAM_IDS[homeAbbrev]);
     return away && home ? { away, home } : null;
   } catch (error) {
     console.error(`Game team xG lookup failed for ${gameId}:`, error);
@@ -208,8 +214,13 @@ export function teamXgStatRows(
   const total = withTotals
     ? [{ label: "xG", away_value: away.xgf.toFixed(2), home_value: home.xgf.toFixed(2), ...(away.xgf + home.xgf > 0 ? { away_pct: (100 * away.xgf) / (away.xgf + home.xgf), home_pct: (100 * home.xgf) / (away.xgf + home.xgf) } : {}) }]
     : [];
+  const hd =
+    away.hdFor != null && home.hdFor != null
+      ? [{ label: "Korkean vaaran paikat", away_value: String(away.hdFor), home_value: String(home.hdFor), ...(away.hdFor + home.hdFor > 0 ? { away_pct: (100 * away.hdFor) / (away.hdFor + home.hdFor), home_pct: (100 * home.hdFor) / (away.hdFor + home.hdFor) } : {}) }]
+      : [];
   return [
     ...total,
+    ...hd,
     row("xGF%", xgfPct(away.xgf, away.xga), xgfPct(home.xgf, home.xga), "pct"),
     row("xGF% 5v5", xgfPct(away.xgf5v5, away.xga5v5), xgfPct(home.xgf5v5, home.xga5v5), "pct5v5"),
   ];

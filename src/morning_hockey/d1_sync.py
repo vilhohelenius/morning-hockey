@@ -444,7 +444,7 @@ def _insert_rows(client: D1Client, table: str, columns: list[str], rows: list[di
         client.execute(f"INSERT OR REPLACE INTO {table} ({','.join(columns)}) VALUES {values}")
 
 
-_XG_TEAM_COLUMNS = ["game_id", "team_id", "season", "game_date", "xgf", "xga", "xgf_5v5", "xga_5v5"]
+_XG_TEAM_COLUMNS = ["game_id", "team_id", "season", "game_date", "xgf", "xga", "xgf_5v5", "xga_5v5", "hd_for", "hd_against"]
 
 
 def sync_team_xg_games(client: D1Client, team_rows: list[dict]) -> None:

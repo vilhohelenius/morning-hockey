@@ -81,9 +81,9 @@ def backfill_games(d1: D1Client, season: int) -> list[int]:
 
 
 def backfill_team_games(d1: D1Client, season: int) -> list[int]:
-    """Games with skater xG rows (so finished) but no team row yet; avoids probing the
+    """Games with skater xG rows (so finished) but no team row (with high-danger counts) yet; avoids probing the
     season's unplayed game numbers one by one."""
-    have = set(query_game_ids(d1, "SELECT DISTINCT game_id FROM team_game_xg WHERE season = ?", [season]))
+    have = set(query_game_ids(d1, "SELECT DISTINCT game_id FROM team_game_xg WHERE season = ? AND hd_for IS NOT NULL", [season]))
     return [g for g in query_game_ids(d1, "SELECT DISTINCT game_id FROM skater_game_xg WHERE season = ? ORDER BY game_id", [season]) if g not in have]
 
 
