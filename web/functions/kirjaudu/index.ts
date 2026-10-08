@@ -22,7 +22,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     content: `
 <a class="back-link js-back" href="/">← Takaisin</a>
 <header class="page-header"><h1>${icon("key")} Kirjaudu sisään</h1></header>
-<p class="standings-legend">Kirjaudu Google-tilillä. Sovellus tallentaa vain Googlen tunnisteen, ei sähköpostiosoitettasi.</p>
+<p class="standings-legend">Kirjaudu Google-tilillä. Sovellus tallentaa vain Googlen tunnisteen, ei sähköpostiosoitettasi. <a href="/tietosuoja">Tietosuoja</a></p>
 <p><a class="filter-btn active" href="/kirjaudu/google?next=${escapeHtml(encodeURIComponent(next))}">Kirjaudu Googlella</a></p>`,
   });
   return new Response(html, { headers: { "content-type": "text/html; charset=utf-8" } });

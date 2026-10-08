@@ -5972,3 +5972,10 @@ main {
   white-space: normal;
   border-radius: 16px;
 }
+
+.privacy-link {
+  align-self: center;
+  margin-top: 16px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}

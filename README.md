@@ -2,8 +2,8 @@
 
 NHL-tulokset, suomalaisten pelaajien pisteet/torjunnat, kausitilastot ja xG-analytiikka
 kaikille 32 joukkueelle osoitteessa https://morning-hockey.pages.dev.
-Ei ilmoituksia eikä yhtä kovakoodattua joukkuetta: kirjautuminen on kevyt
-(käyttäjätunnus, salasana valinnainen), ja oma tili tallentaa suosikkijoukkueet
+Ei ilmoituksia eikä yhtä kovakoodattua joukkuetta: kirjautuminen tapahtuu
+Google-tilillä, ja oma tili tallentaa suosikkijoukkueet
 ja -pelaajat (enintään 30), teeman ja tulospiilo-asetuksen.
 
 <img src="docs/screenshots/etusivu.png" alt="Etusivu" width="250">
@@ -75,8 +75,12 @@ Kauden pelipäivät ja `/arkisto/<päivä>`: päivän ottelut ottelukortteina.
 <img src="docs/screenshots/arkisto.png" alt="Arkisto" width="250">
 
 ### Tili ja asetukset
-- `/kirjaudu`: kirjautuminen ja rekisteröityminen yhdellä lomakkeella (tarkoituksella
-  kevyt, ei tuotantotason tietoturvaa)
+- `/kirjaudu`: Google-kirjautuminen (OAuth-koodivirta + PKCE + state, palvelinpuolen
+  istunnot D1:ssä, eväste `HttpOnly; Secure`, 30 pv). Tallennetaan vain Googlen `sub`,
+  ei sähköpostia. Ensimmäisellä kirjautumisella `/kirjaudu/valitse` kysyy käyttäjänimen;
+  vanhan (ennen Googlea luodun) tunnuksen voi liittää kirjoittamalla sen nimen
+  (salasana vain jos tunnuksella oli sellainen)
+- `/tietosuoja`: tietosuojaseloste
 - `/omat` Asetukset: suosikkijoukkueet ja -pelaajat, teema (vaalea/tumma/järjestelmä),
   pörssien korostukset, tulospiilo ja bugiraportti
 - `/tulospiilo`: edellisen kierroksen ottelut ilman tuloksia, vain highlights-linkki;
@@ -133,7 +137,7 @@ NHL Highlights -videon; ilman sitä käytetään YouTube-hakulinkkiä.
 - Joukkueet: `team_roster_skaters`, `team_roster_goalies`, `team_season_stats`
 - Digest: `digests`, `digest_games`, `digest_scorers`, `digest_goalies`
 - xG/GSAx: `skater_game_xg`, `goalie_game_xg`, `team_game_xg` (joukkueen xGF/xGA, myös 5v5; ottelukohtaiset rivit, kausisummat lasketaan kyselyissä)
-- Käyttäjät: `users`, `favorite_teams`, `favorite_players`, `user_settings`, `bug_reports`
+- Käyttäjät: `users` (+ `google_sub`), `sessions`, `favorite_teams`, `favorite_players`, `user_settings`, `bug_reports`
 - Välimuisti: `skater_game_log_cache` (analytiikan pistekaavio)
 - Muut: `bingo_picks` (Pistemiesbingo), `game_win_prob` (otteluennakko)
 
@@ -167,7 +171,7 @@ web/
                          index, suosikit, sarjataulukko, tilastot, maalivahtiporssi,
                          suomiporssi, odotetut, analytiikka, playoffit,
                          otteluohjelma, primetime, bingo, tulospiilo, arkisto/,
-                         ottelut/, joukkueet/, pelaajat/, haku/, kirjaudu/, omat/
+                         ottelut/, joukkueet/, pelaajat/, haku/, kirjaudu/, omat/, tietosuoja
   functions/_shared/     Layout, muotoilu, autentikaatio, ottelun raportti,
                          box score -välimuisti, kuntopuntari (formGuide),
                          suosikit, bingo, xG, voittotodennäköisyys, YouTube,
@@ -210,7 +214,13 @@ tests/                 Pytest-yksikkötestit Python-puolelle
    (`npx wrangler deploy`) ja aseta sille secret `GITHUB_TOKEN`
    (`npx wrangler secret put GITHUB_TOKEN`, fine-grained PAT, vain Actions:
    read+write tälle repolle).
-6. (Valinnainen) Aseta Pages-secret `YOUTUBE_API_KEY` oikeiden
+6. **Google-kirjautuminen**: luo Google Cloud Consolessa OAuth client (Web
+   application), lisää redirect URI:t `https://<sivu>/kirjaudu/google/callback`
+   (ja paikalliseen testiin `http://localhost:8788/kirjaudu/google/callback`) ja
+   aseta Pages-secretit `GOOGLE_CLIENT_ID` ja `GOOGLE_CLIENT_SECRET`
+   (`npx wrangler pages secret put ... --project-name=morning-hockey`).
+   Paikallisesti samat arvot tiedostoon `web/.dev.vars`.
+7. (Valinnainen) Aseta Pages-secret `YOUTUBE_API_KEY` oikeiden
    highlights-videoiden hakuun.
 
 ## Ajaminen paikallisesti

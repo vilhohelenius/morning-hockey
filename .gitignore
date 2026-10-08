@@ -24,3 +24,5 @@ skills-lock.json
 # Redesign mockups (kept locally for later revisions)
 docs/mockups/
 .claude/settings.local.json
+
+web/.dev.vars
