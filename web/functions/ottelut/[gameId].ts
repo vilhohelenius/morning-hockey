@@ -148,17 +148,6 @@ function renderSkaterTable(skaters: PlayerGameStat[], xg: { ixg: Map<number, num
 </div>`;
 }
 
-// e.g. "2 (1 YV)" -- the base goals-against total, plus a parenthetical
-// breakdown only for the special-teams goals within it (even-strength ones
-// need no tag, same convention as the goal timeline's own strength labels).
-function goalsAgainstBreakdown(g: GoalieGameStat): string {
-  const total = g.shots_against - g.saves;
-  const tags: string[] = [];
-  if (g.pp_goals_against > 0) tags.push(`${g.pp_goals_against} YV`);
-  if (g.sh_goals_against > 0) tags.push(`${g.sh_goals_against} AV`);
-  return tags.length ? `${total} (${tags.join(", ")})` : String(total);
-}
-
 function renderGoalieTable(goalies: GoalieGameStat[], gsax: Map<number, number>): string {
   const rows = goalies
     .map(
@@ -177,7 +166,7 @@ function renderGoalieTable(goalies: GoalieGameStat[], gsax: Map<number, number>)
         </td>
         <td>${g.shots_against}</td>
         <td>${g.saves}</td>
-        <td>${goalsAgainstBreakdown(g)}</td>
+        <td>${g.shots_against - g.saves}</td>
         <td class="stat-strong">${g.save_pct.toFixed(3)}</td>
         ${gsax.size ? `<td>${gsax.has(g.player_id) ? formatGsax(gsax.get(g.player_id), 2) : "–"}</td>` : ""}
         <td>${escapeHtml(g.toi)}</td>
