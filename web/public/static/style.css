@@ -5660,3 +5660,22 @@ main {
 .spoiler-score-row:not(.is-shown) .finn-stats {
   display: none;
 }
+
+.bug-form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.bug-form textarea {
+  width: 100%;
+  max-width: 560px;
+  font: inherit;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card-bg);
+  color: var(--text);
+  resize: vertical;
+}

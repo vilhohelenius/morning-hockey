@@ -611,3 +611,13 @@ CREATE TABLE IF NOT EXISTS sync_state (
     key  TEXT PRIMARY KEY,
     hash TEXT NOT NULL
 );
+
+-- Bug reports from Asetukset (2026-10-08). Read in the D1 Console:
+-- SELECT created_at, username, message FROM bug_reports ORDER BY id DESC;
+CREATE TABLE IF NOT EXISTS bug_reports (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL,
+    message TEXT NOT NULL,
+    user_agent TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL
+);

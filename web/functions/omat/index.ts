@@ -185,6 +185,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   const tulospiiloEnabled = !!settings?.tulospiilo_mode;
   const highlightsEnabled = settings ? !!settings.highlights : readHighlightsCookie(context.request);
 
+  const reportSent = url.searchParams.get("lahetetty") === "1";
   const tabParam = url.searchParams.get("osio");
   const tab: SettingsTab = query ? "suosikit" : tabParam === "suosikit" || tabParam === "tulospiilo" ? tabParam : "yleiset";
   const back = `<input type="hidden" name="redirect_to" value="/omat?osio=${tab}">`;
@@ -297,7 +298,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   <h2 class="section-title">${icon("target")} Pistemiesbingo</h2>
   <p class="standings-legend">
     Pistemiesbingo-lappusi pelaajat näkyvät Tulospiilon alaosassa: pelaajan tilasto paljastuu samalla
-    kun ottelun tulos. Lappu nollautuu itsestään, kun seuraava pelikierros alkaa.
+    kun ottelun tulos. Lappu nollautuu itsestään joka päivä klo 14 Suomen aikaa.
   </p>
   <div class="fav-row">
     <span class="fav-row-info">${picks.length ? `${picks.length} ${picks.length === 1 ? "pelaaja" : "pelaajaa"} lapussa` : "Ei pelaajia lapussa"}</span>
@@ -305,6 +306,17 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   </div>
 </section>`;
   }
+
+  const bugSection = `
+<section>
+  <h2 class="section-title">Ilmoita virheestä</h2>
+  ${reportSent ? `<p class="standings-legend">Kiitos, ilmoitus on lähetetty.</p>` : ""}
+  <form method="post" action="/omat/bugi" class="bug-form">
+    <textarea name="message" rows="4" maxlength="2000" required placeholder="Mikä meni pieleen ja millä sivulla?"></textarea>
+    <input type="hidden" name="redirect_to" value="/omat?osio=yleiset&lahetetty=1">
+    <button type="submit" class="filter-btn">Lähetä</button>
+  </form>
+</section>`;
 
   const tabs: { key: SettingsTab; label: string }[] = [
     { key: "yleiset", label: "Yleiset" },
@@ -322,7 +334,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
   const sections =
     tab === "yleiset"
-      ? accountSection + themeSection + highlightsSection
+      ? accountSection + themeSection + highlightsSection + bugSection
       : tab === "suosikit"
         ? favoriteTeamsSection + favoritePlayersSection
         : tulospiiloSections;
