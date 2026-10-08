@@ -3193,7 +3193,6 @@ main {
   font-size: 0.9rem;
 }
 
-.mt-goalie .mt-who strong,
 .mt-penalty .mt-who strong {
   font-weight: 400;
 }
@@ -3303,7 +3302,6 @@ main {
   font-size: 0.8rem;
 }
 
-.mt-goalie .mt-who,
 .mt-penalty .mt-who {
   font-size: 0.82rem;
 }
