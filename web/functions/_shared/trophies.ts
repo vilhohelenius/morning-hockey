@@ -54,18 +54,94 @@ const TROPHIES: Record<string, { file: string; label: string }> = {
 
 const STANLEY_CUP = "Stanley Cup";
 
+// Muut joukkuepalkinnot (kauden päättymisvuosi, uusin ensin), poimittu Wikipedian
+// voittajalistoista ja tarkistettu Stanley Cup -finalistien kanssa. Konferenssipalkinnot
+// = konferenssin pudotuspelimestari 1982 alkaen (2021: puolivälierävoittajat). Päivitä
+// kerran vuodessa Stanley Cupin yhteydessä.
+const PRESIDENTS: Record<string, number[]> = {
+  DET: [2008, 2006, 2004, 2002, 1996, 1995],
+  NYR: [2024, 2015, 1994, 1992],
+  COL: [2026, 2021, 2001, 1997],
+  BOS: [2020, 2014, 1990],
+  WSH: [2017, 2016, 2010],
+  EDM: [1987, 1986],
+  CGY: [1989, 1988],
+  CHI: [2013, 1991],
+  DAL: [1999, 1998],
+  VAN: [2012, 2011],
+  PIT: [1993],
+  STL: [2000],
+  OTT: [2003],
+  BUF: [2007],
+  SJS: [2009],
+  NSH: [2018],
+  TBL: [2019],
+  FLA: [2022],
+  WPG: [2025],
+};
+
+const PRINCE_OF_WALES: Record<string, number[]> = {
+  PIT: [2017, 2016, 2009, 2008, 1992, 1991],
+  BOS: [2019, 2013, 2011, 1990, 1988],
+  NJD: [2012, 2003, 2001, 2000, 1995],
+  TBL: [2022, 2021, 2020, 2015, 2004],
+  PHI: [2010, 1997, 1987, 1985],
+  FLA: [2025, 2024, 2023, 1996],
+  NYI: [1984, 1983, 1982],
+  MTL: [1993, 1989, 1986],
+  CAR: [2026, 2006, 2002],
+  NYR: [2014, 1994],
+  WSH: [2018, 1998],
+  BUF: [1999],
+  OTT: [2007],
+};
+
+const CLARENCE_CAMPBELL: Record<string, number[]> = {
+  EDM: [2025, 2024, 2006, 1990, 1988, 1987, 1985, 1984, 1983],
+  DET: [2009, 2008, 2002, 1998, 1997, 1995],
+  DAL: [2020, 2000, 1999, 1991],
+  CHI: [2015, 2013, 2010, 1992],
+  VAN: [2011, 1994, 1982],
+  CGY: [2004, 1989, 1986],
+  LAK: [2014, 2012, 1993],
+  COL: [2022, 2001, 1996],
+  VGK: [2026, 2023, 2018],
+  ANA: [2007, 2003],
+  SJS: [2016],
+  NSH: [2017],
+  STL: [2019],
+  MTL: [2021],
+};
+
 export function renderCupYears(years: number[]): string {
   return `<div class="cup-years">${years.map((y) => `<span>${y}</span>`).join("")}</div>`;
 }
 
-// Joukkuesivun heron Stanley Cup -puoli; tyhjä jos joukkue ei ole voittanut.
+const TEAM_TROPHIES = [
+  { file: "presidents", label: "Presidents’", wins: PRESIDENTS },
+  { file: "prince-of-wales", label: "Prince of Wales", wins: PRINCE_OF_WALES },
+  { file: "clarence-s-campbell", label: "Campbell Bowl", wins: CLARENCE_CAMPBELL },
+];
+
+// Joukkuesivun heron pokaalipuoli; tyhjä jos joukkue ei ole voittanut mitään.
+// Stanley Cupista kaikki vuodet, muista vuodet vain jos voittoja enintään kolme.
 export function renderTeamCups(abbrev: string): string {
   const years = STANLEY_CUPS[abbrev];
-  if (!years?.length) return "";
-  return `
-  <div class="team-cups">
+  const cup = years?.length
+    ? `
     <div class="team-cups-head"><img src="/static/trophies/stanley-cup.png" alt="Stanley Cup" width="31" height="46" class="trophy-img"><b>${years.length}</b></div>
-    ${renderCupYears(years)}
+    ${renderCupYears(years)}`
+    : "";
+  const items = TEAM_TROPHIES.filter((t) => t.wins[abbrev]?.length)
+    .map(({ file, label, wins }) => {
+      const w = wins[abbrev];
+      const when = w.length > 3 ? "" : `<small>${[...w].reverse().join(" · ")}</small>`;
+      return `<div class="trophy-item"><div class="trophy-pic"><img src="/static/trophies/${file}.png" alt="" width="40" height="60" class="trophy-img" loading="lazy"></div><span class="trophy-count">${w.length}<i>×</i></span><b>${label}</b>${when}</div>`;
+    })
+    .join("");
+  if (!cup && !items) return "";
+  return `
+  <div class="team-cups">${cup}${items ? `<div class="trophy-shelf team-shelf">${items}</div>` : ""}
   </div>`;
 }
 

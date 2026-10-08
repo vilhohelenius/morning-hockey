@@ -6095,7 +6095,9 @@ main {
 }
 
 .team-cups {
+  width: 100%;
   text-align: left;
+  color: #fff;
 }
 
 .team-cups-head {
@@ -6215,3 +6217,12 @@ main {
   color: rgba(255, 255, 255, 0.7);
 }
 
+
+.team-cups-head + .cup-years {
+  margin-bottom: 10px;
+}
+
+.team-shelf {
+  gap: 8px;
+  padding: 8px 10px;
+}

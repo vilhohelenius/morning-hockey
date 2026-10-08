@@ -204,11 +204,11 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       ${escapeHtml(team.division)}: ${team.division_rank}. sija · ${team.wins}-${team.losses}-${team.ot_losses} (${team.points} p)
     </p>
   </div>`;
-  // Stanley Cup -voittajilla hero kääntyy (sama mekanismi kuin pelaajakortissa),
+  // Pokaaleja voittaneilla hero kääntyy (sama mekanismi kuin pelaajakortissa),
   // muilla se on pelkkä etupuoli.
   const cupsBack = renderTeamCups(abbrev);
   const teamHero = cupsBack
-    ? `<div class="player-hero-flip team-hero-flip js-player-hero-flip" role="button" tabindex="0" aria-pressed="false" aria-label="Käännä kortti nähdäksesi Stanley Cup -voitot">
+    ? `<div class="player-hero-flip team-hero-flip js-player-hero-flip" role="button" tabindex="0" aria-pressed="false" aria-label="Käännä kortti nähdäksesi pokaalit">
   ${favStar}
   <div class="player-hero-flip-inner">
     <header class="page-header team-page-header hero-banner player-hero-face player-hero-front is-active" ${heroAttrs}>${heroFront}
