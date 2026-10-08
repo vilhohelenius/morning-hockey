@@ -61,7 +61,7 @@ function renderDivisionTable(division: StandingsRow[], teamAbbrev: string): stri
     <div class="division-row division-header">
       <span class="division-rank"></span>
       <span class="division-team">Joukkue</span>
-      <span class="division-stats"><span>O</span><span>V</span><span>H</span><span>JH</span><span>P</span></span>
+      <span class="division-stats"><span>GP</span><span>W</span><span>L</span><span>OTL</span><span>PTS</span></span>
     </div>
     ${rows}
   </div>
@@ -94,15 +94,15 @@ function renderSeasonStats(
   const cell = (label: string, value: string, highlight = false, rank = "") =>
     `<div class="stat-card-cell${highlight ? " stat-card-highlight" : ""}"><span class="stat-card-label">${label}</span><span class="stat-card-value">${value}${rank}</span></div>`;
   const cells = [
-    cell("O", `${stats.games_played}`),
-    cell("YV%", (stats.power_play_pct * 100).toFixed(1), false, statRank((r) => r.power_play_pct, true)),
-    cell("AV%", (stats.penalty_kill_pct * 100).toFixed(1), false, statRank((r) => r.penalty_kill_pct, true)),
-    cell("AL%", (stats.faceoff_pct * 100).toFixed(1), false, statRank((r) => r.faceoff_pct, true)),
-    cell("TM", `${stats.goals_for}`, false, statRank((r) => perGame(r.goals_for, r.games_played), true)),
-    cell("PM", `${stats.goals_against}`, false, statRank((r) => perGame(r.goals_against, r.games_played), false)),
+    cell("GP", `${stats.games_played}`),
+    cell("PP%", (stats.power_play_pct * 100).toFixed(1), false, statRank((r) => r.power_play_pct, true)),
+    cell("PK%", (stats.penalty_kill_pct * 100).toFixed(1), false, statRank((r) => r.penalty_kill_pct, true)),
+    cell("FO%", (stats.faceoff_pct * 100).toFixed(1), false, statRank((r) => r.faceoff_pct, true)),
+    cell("GF", `${stats.goals_for}`, false, statRank((r) => perGame(r.goals_for, r.games_played), true)),
+    cell("GA", `${stats.goals_against}`, false, statRank((r) => perGame(r.goals_against, r.games_played), false)),
     cell("+/-", `${goalDifferential > 0 ? "+" : ""}${goalDifferential}`, true, statRank(diffPerGame, true)),
-    cell("LKT/O", stats.shots_for_per_game.toFixed(1), false, statRank((r) => r.shots_for_per_game, true)),
-    cell("NP", `${stats.shutouts}`, false, statRank((r) => r.shutouts, true)),
+    cell("SF/GP", stats.shots_for_per_game.toFixed(1), false, statRank((r) => r.shots_for_per_game, true)),
+    cell("SO", `${stats.shutouts}`, false, statRank((r) => r.shutouts, true)),
     ...(xg
       ? [
           cell("xGF", xg.xgf.toFixed(1), false, xgRank((r) => perGame(r.xgf, r.games), true)),

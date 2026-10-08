@@ -116,7 +116,7 @@ async function buildSnapshots(db: D1Database, abbrevs: string[]): Promise<Snapsh
 // sticky, the stat columns scroll horizontally. Rows carry .stand-row (the
 // snapshot popup in app.js finds its anchor via .division-row or .stand-row)
 // and keep the .team-trigger button.
-const STAND_HEADERS = ["O", "V", "H", "JH", "P", "P%", "+/-"];
+const STAND_HEADERS = ["GP", "W", "L", "OTL", "PTS", "PTS%", "+/-"];
 const STAND_TOTAL_COLS = 1 + STAND_HEADERS.length;
 
 function renderStandRow(row: StandingsRow, rankLabel: string): string {
@@ -136,7 +136,7 @@ function renderStandRow(row: StandingsRow, rankLabel: string): string {
 
 // `rowsHtml` is pre-rendered so callers can splice a cutoff line in.
 function renderStandTable(title: string, rowsHtml: string): string {
-  const headCells = STAND_HEADERS.map((h) => `<th${h === "P" ? ` class="st-active"` : ""}>${h}${h === "P" ? `<span class="st-arrow"></span>` : ""}</th>`).join("");
+  const headCells = STAND_HEADERS.map((h) => `<th${h === "PTS" ? ` class="st-active"` : ""}>${h}${h === "PTS" ? `<span class="st-arrow"></span>` : ""}</th>`).join("");
   return `
   <div class="stand-scroll">
     <table class="stand-table">
@@ -156,7 +156,7 @@ function renderWildcardRace(rows: StandingsRow[]): string {
     .slice(0, WILDCARD_SPOTS_SHOWN)
     .map(
       (row, index) =>
-        renderStandRow(row, `VK${row.wildcard_rank}`) +
+        renderStandRow(row, `WC${row.wildcard_rank}`) +
         (index + 1 === WILDCARD_CUTOFF
           ? `<tr class="stand-cutoff"><td colspan="${STAND_TOTAL_COLS}"><div class="wc-cutoff-line"></div></td></tr>`
           : ""),

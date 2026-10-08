@@ -284,9 +284,9 @@ function renderBingoTable(rows: BingoRow[], opts: BingoRenderOptions, nowMs: num
         <tr>
           <th class="bingo-first">Pelaaja</th>
           <th>Ottelu</th>
-          <th title="Maalit">M</th>
-          <th title="Syötöt">S</th>
-          <th title="Pisteet">P</th>
+          <th title="Maalit">G</th>
+          <th title="Syötöt">A</th>
+          <th title="Pisteet">PTS</th>
         </tr>
       </thead>
       <tbody>${body}</tbody>

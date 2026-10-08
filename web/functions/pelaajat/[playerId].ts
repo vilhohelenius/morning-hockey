@@ -108,7 +108,7 @@ function ageFromBirthDate(birthDate: string): number {
 }
 
 const POSITION_ABBR: Record<string, string> = { C: "C", L: "LW", R: "RW", D: "D", G: "G" };
-const GOALIE_DECISION_FI: Record<string, string> = { W: "V", L: "H", O: "JH" };
+const GOALIE_DECISION_FI: Record<string, string> = { W: "W", L: "L", O: "OTL" };
 
 interface SeasonTotal {
   season: number;
@@ -233,23 +233,23 @@ function statCell(label: string, value: string, highlight = false): string {
 
 function renderSkaterStatCardCells(t: SeasonTotal, ranks: LeagueRanks = {}): string {
   return [
-    statCell("O", `${t.gamesPlayed}`),
-    statCell("M", `${t.goals ?? 0}${rankBadge(ranks.goals)}`),
-    statCell("S", `${t.assists ?? 0}${rankBadge(ranks.assists)}`),
-    statCell("P", `${t.points ?? 0}${rankBadge(ranks.points)}`, true),
+    statCell("GP", `${t.gamesPlayed}`),
+    statCell("G", `${t.goals ?? 0}${rankBadge(ranks.goals)}`),
+    statCell("A", `${t.assists ?? 0}${rankBadge(ranks.assists)}`),
+    statCell("PTS", `${t.points ?? 0}${rankBadge(ranks.points)}`, true),
     statCell("+/-", `${(t.plusMinus ?? 0) > 0 ? "+" : ""}${t.plusMinus ?? 0}`),
-    statCell("JH", `${t.pim ?? 0}`),
+    statCell("PIM", `${t.pim ?? 0}`),
     statCell("TOI/GP", t.avgToi ? escapeHtml(t.avgToi) : "–"),
   ].join("");
 }
 
 function renderGoalieStatCardCells(t: SeasonTotal, ranks: LeagueRanks = {}): string {
   return [
-    statCell("O", `${t.gamesPlayed}`),
-    statCell("V", `${t.wins ?? 0}${rankBadge(ranks.wins)}`),
+    statCell("GP", `${t.gamesPlayed}`),
+    statCell("W", `${t.wins ?? 0}${rankBadge(ranks.wins)}`),
     statCell("SV%", `${(t.savePctg ?? 0).toFixed(3)}${rankBadge(ranks.savePct)}`, true),
     statCell("GAA", `${(t.goalsAgainstAvg ?? 0).toFixed(2)}${rankBadge(ranks.gaa)}`),
-    statCell("NP", `${t.shutouts ?? 0}${rankBadge(ranks.shutouts)}`),
+    statCell("SO", `${t.shutouts ?? 0}${rankBadge(ranks.shutouts)}`),
   ].join("");
 }
 
@@ -391,12 +391,12 @@ function renderSkaterOneRowSummary(t: SeasonTotal): string {
       <thead>
         <tr>
           <th>Kausi</th>
-          <th>Ottelut</th>
-          <th>M</th>
-          <th>S</th>
-          <th>P</th>
+          <th>GP</th>
+          <th>G</th>
+          <th>A</th>
+          <th>PTS</th>
           <th>+/-</th>
-          <th>JH</th>
+          <th>PIM</th>
           <th>TOI/GP</th>
         </tr>
       </thead>
@@ -412,11 +412,11 @@ function renderGoalieOneRowSummary(t: SeasonTotal): string {
       <thead>
         <tr>
           <th>Kausi</th>
-          <th>Ottelut</th>
-          <th>Voitot</th>
+          <th>GP</th>
+          <th>W</th>
           <th>SV%</th>
           <th>GAA</th>
-          <th>NP</th>
+          <th>SO</th>
         </tr>
       </thead>
       <tbody>${renderGoalieStatRow(seasonLabel(t.season), t)}</tbody>
@@ -463,15 +463,15 @@ function renderSkaterGameLog(games: any[], xgByGame: Map<number, number>, onIceB
     <table id="player-game-log" class="stats-table game-log-table" data-collapse-at="${GAME_LOG_COLLAPSE_AT}">
       <thead>
         <tr>
-          <th>Pvm</th>
-          <th>Vast</th>
-          <th>M</th>
+          <th>Date</th>
+          <th>Opp</th>
+          <th>G</th>
           ${xgByGame.size ? '<th title="Yksilöllinen odotettu maalimäärä">ixG</th>' : ""}
-          <th>S</th>
-          <th>P</th>
+          <th>A</th>
+          <th>PTS</th>
           <th>+/-</th>
-          <th>JH</th>
-          <th>Peliaika</th>
+          <th>PIM</th>
+          <th>TOI</th>
           ${onIceByGame.size ? "<th>xGF%</th>" : ""}
         </tr>
       </thead>
@@ -594,12 +594,12 @@ function renderSkaterSeasonHistory(rows: SeasonTotal[], total: SeasonTotal | nul
         <tr>
           <th>Kausi</th>
           <th>Joukkue</th>
-          <th>Ottelut</th>
-          <th>M</th>
-          <th>S</th>
-          <th>P</th>
+          <th>GP</th>
+          <th>G</th>
+          <th>A</th>
+          <th>PTS</th>
           <th>+/-</th>
-          <th>JH</th>
+          <th>PIM</th>
           <th>TOI/GP</th>${xgBy ? '<th title="Yksilöllinen odotettu maalimäärä (ixG)">xG</th><th title="Joukkueen xG-osuus pelaajan ollessa jäällä">xGF%</th><th title="xGF% tasakentällisin 5v5">xGF% 5v5</th>' : ""}
         </tr>
       </thead>
@@ -622,11 +622,11 @@ function renderGoalieSeasonHistory(rows: SeasonTotal[], total: SeasonTotal | nul
         <tr>
           <th>Kausi</th>
           <th>Joukkue</th>
-          <th>Ottelut</th>
-          <th>Voitot</th>
+          <th>GP</th>
+          <th>W</th>
           <th>SV%</th>
           <th>GAA</th>
-          <th>NP</th>${xgBy ? '<th title="Torjutut maalit yli odotuksen (GSAx)">GSAx</th>' : ""}
+          <th>SO</th>${xgBy ? '<th title="Torjutut maalit yli odotuksen (GSAx)">GSAx</th>' : ""}
         </tr>
       </thead>
       <tbody>${trs}</tbody>
@@ -688,13 +688,13 @@ function renderGoalieGameLog(games: any[], gsaxByGame: Map<number, number>): str
     <table id="player-game-log" class="stats-table game-log-table" data-collapse-at="${GAME_LOG_COLLAPSE_AT}">
       <thead>
         <tr>
-          <th>Pvm</th>
-          <th>Vast</th>
-          <th>Rat.</th>
-          <th>Torj.</th>
+          <th>Date</th>
+          <th>Opp</th>
+          <th>W/L</th>
+          <th>SV</th>
           <th>SV%</th>
           ${gsaxByGame.size ? "<th>GSAx</th>" : ""}
-          <th>Peliaika</th>
+          <th>TOI</th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>

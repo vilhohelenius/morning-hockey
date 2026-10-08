@@ -148,11 +148,11 @@ export function renderSkaterLeaderboard(options: LeaderboardOptions): string {
         <tr>
           <th class="col-rank">#</th>
           <th data-sort="name" data-type="text">Pelaaja</th>
-          <th data-sort="gp">O</th>
-          <th data-sort="goals">M</th>
-          <th data-sort="assists">S</th>
-          <th data-sort="rank" data-first-dir="asc" class="sort-asc">P</th>
-          ${withShots ? '<th data-sort="spg">L/O</th>' : ""}
+          <th data-sort="gp">GP</th>
+          <th data-sort="goals">G</th>
+          <th data-sort="assists">A</th>
+          <th data-sort="rank" data-first-dir="asc" class="sort-asc">PTS</th>
+          ${withShots ? '<th data-sort="spg">SOG/GP</th>' : ""}
         </tr>
       </thead>
       <tbody>${body}</tbody>
@@ -225,11 +225,11 @@ export function renderGoalieLeaderboard(options: GoalieLeaderboardOptions): stri
         <tr>
           <th class="col-rank">#</th>
           <th data-sort="name" data-type="text">Pelaaja</th>
-          <th data-sort="gp">O</th>
-          <th data-sort="wins">V</th>
+          <th data-sort="gp">GP</th>
+          <th data-sort="wins">W</th>
           <th data-sort="gaa">GAA</th>
           <th data-sort="rank" data-first-dir="asc" class="sort-asc">SV%</th>
-          <th data-sort="shutouts">NP</th>
+          <th data-sort="shutouts">SO</th>
           ${withXg ? '<th data-sort="gsax">GSAx</th><th data-sort="gsax100">GSAx/100</th>' : ""}
         </tr>
       </thead>
@@ -299,12 +299,12 @@ export function renderRosterSkaterTable(
         <tr>
           <th class="col-rank">#</th>
           <th data-sort="name" data-type="text">Pelaaja</th>
-          <th data-sort="gp">O</th>
-          <th data-sort="goals">M</th>
-          <th data-sort="assists">S</th>
-          <th data-sort="rank" data-first-dir="asc" class="sort-asc">P</th>
+          <th data-sort="gp">GP</th>
+          <th data-sort="goals">G</th>
+          <th data-sort="assists">A</th>
+          <th data-sort="rank" data-first-dir="asc" class="sort-asc">PTS</th>
           <th data-sort="plusminus">+/-</th>
-          <th data-sort="toi">KA</th>
+          <th data-sort="toi">TOI/GP</th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>
@@ -356,9 +356,9 @@ export function renderRosterGoalieTable(
         <tr>
           <th class="col-rank">#</th>
           <th data-sort="name" data-type="text">Pelaaja</th>
-          <th data-sort="gp">O</th>
-          <th data-sort="wins">V</th>
-          <th data-sort="shutouts">NP</th>
+          <th data-sort="gp">GP</th>
+          <th data-sort="wins">W</th>
+          <th data-sort="shutouts">SO</th>
           <th data-sort="gaa">GAA</th>
           <th data-sort="rank" data-first-dir="asc" class="sort-asc">SV%</th>
           ${withGsax ? '<th data-sort="gsax">GSAx</th>' : ""}

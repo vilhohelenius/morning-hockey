@@ -89,13 +89,13 @@ function renderSkaterTable(rows: FinnishSkaterRow[], hl: HighlightOptions, extra
         <tr>
           <th class="col-rank">#</th>
           <th data-sort="name" data-type="text">Pelaaja</th>
-          <th data-sort="gp">O</th>
-          <th data-sort="goals">M</th>
-          <th data-sort="assists">S</th>
-          <th data-sort="rank" data-first-dir="asc" class="sort-asc">P</th>
+          <th data-sort="gp">GP</th>
+          <th data-sort="goals">G</th>
+          <th data-sort="assists">A</th>
+          <th data-sort="rank" data-first-dir="asc" class="sort-asc">PTS</th>
           <th data-sort="plusminus">+/-</th>
-          <th data-sort="toi">KA</th>
-          <th data-sort="pim">JM</th>
+          <th data-sort="toi">TOI/GP</th>
+          <th data-sort="pim">PIM</th>
           <th data-sort="xgf">xGF%</th>
           <th data-sort="xgf5">xGF% 5v5</th>
         </tr>
@@ -142,13 +142,13 @@ function renderGoalieTable(rows: FinnishGoalieRow[], hl: HighlightOptions, gsax:
         <tr>
           <th class="col-rank">#</th>
           <th data-sort="name" data-type="text">Pelaaja</th>
-          <th data-sort="gp">O</th>
-          <th data-sort="wins">V</th>
-          <th data-sort="losses">H</th>
-          <th data-sort="otl">JH</th>
+          <th data-sort="gp">GP</th>
+          <th data-sort="wins">W</th>
+          <th data-sort="losses">L</th>
+          <th data-sort="otl">OTL</th>
           <th data-sort="gaa">GAA</th>
           <th data-sort="rank" data-first-dir="asc" class="sort-asc">SV%</th>
-          <th data-sort="shutouts">NP</th>
+          <th data-sort="shutouts">SO</th>
           ${withGsax ? '<th data-sort="gsax">GSAx</th>' : ""}
         </tr>
       </thead>

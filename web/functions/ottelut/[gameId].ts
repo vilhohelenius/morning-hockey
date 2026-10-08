@@ -127,19 +127,19 @@ function renderSkaterTable(skaters: PlayerGameStat[], xg: { ixg: Map<number, num
       <tr>
         <th class="col-rank">#</th>
         <th data-sort="name" data-type="text">Pelaaja</th>
-        <th data-sort="goals" title="Maalit">M</th>
-        <th data-sort="assists" title="Syötöt">S</th>
-        <th data-sort="points" title="Pisteet">P</th>
+        <th data-sort="goals" title="Maalit">G</th>
+        <th data-sort="assists" title="Syötöt">A</th>
+        <th data-sort="points" title="Pisteet">PTS</th>
         <th data-sort="pm" title="Plus/miinus">+/-</th>
-        <th data-sort="shots" title="Laukaukset">L</th>
+        <th data-sort="shots" title="Laukaukset">SOG</th>
         ${ixg.size ? '<th data-sort="ixg" title="Yksilöllinen odotettu maalimäärä (ixG)">ixG</th>' : ""}
-        <th data-sort="blocks" title="Blokatut laukaukset">Blokit</th>
-        <th data-sort="hits" title="Taklaukset">Taklat</th>
-        <th data-sort="give" title="Kiekon menetykset">Menet.</th>
-        <th data-sort="take" title="Kiekon riistot">Riistot</th>
-        <th data-sort="fo" title="Aloitusprosentti">Al.%</th>
-        <th data-sort="pim" title="Jäähyt (min)">JH</th>
-        <th data-sort="toi">Peliaika</th>
+        <th data-sort="blocks" title="Blokatut laukaukset">BLK</th>
+        <th data-sort="hits" title="Taklaukset">HIT</th>
+        <th data-sort="give" title="Kiekon menetykset">GV</th>
+        <th data-sort="take" title="Kiekon riistot">TK</th>
+        <th data-sort="fo" title="Aloitusprosentti">FO%</th>
+        <th data-sort="pim" title="Jäähyt (min)">PIM</th>
+        <th data-sort="toi">TOI</th>
       </tr>
     </thead>
     <tbody>${rows}</tbody>
@@ -191,12 +191,12 @@ function renderGoalieTable(goalies: GoalieGameStat[], gsax: Map<number, number>)
       <tr>
         <th class="col-rank">#</th>
         <th data-sort="name" data-type="text">Pelaaja</th>
-        <th data-sort="sa" title="Laukauksia vastaan">Lauk.</th>
-        <th data-sort="saves" title="Torjunnat">Torj.</th>
-        <th data-sort="ga" data-first-dir="asc" title="Päästetyt maalit">Päästi</th>
+        <th data-sort="sa" title="Laukauksia vastaan">SA</th>
+        <th data-sort="saves" title="Torjunnat">SV</th>
+        <th data-sort="ga" data-first-dir="asc" title="Päästetyt maalit">GA</th>
         <th data-sort="svp" title="Torjuntaprosentti">SV%</th>
         ${gsax.size ? '<th data-sort="gsax" title="Torjutut maalit yli odotuksen (GSAx)">GSAx</th>' : ""}
-        <th data-sort="toi">Peliaika</th>
+        <th data-sort="toi">TOI</th>
       </tr>
     </thead>
     <tbody>${rows}</tbody>
@@ -273,10 +273,10 @@ function renderWatchCard(p: TeamRosterSkaterRow | null, teamLogo: string, xgfPct
   const cell = (label: string, value: string, highlight = false) =>
     `<div class="stat-card-cell${highlight ? " stat-card-highlight" : ""}"><span class="stat-card-label">${label}</span><span class="stat-card-value">${value}</span></div>`;
   const cells = [
-    cell("O", `${p.games_played}`),
-    cell("M", `${p.goals}`),
-    cell("S", `${p.assists}`),
-    cell("P", `${p.points}`, true),
+    cell("GP", `${p.games_played}`),
+    cell("G", `${p.goals}`),
+    cell("A", `${p.assists}`),
+    cell("PTS", `${p.points}`, true),
     cell("+/-", `${p.plus_minus > 0 ? "+" : ""}${p.plus_minus}`),
     ...(xgfPcts.has(p.player_id) ? [cell("xGF%", formatPct(xgfPcts.get(p.player_id) ?? null))] : []),
   ].join("");
@@ -309,11 +309,11 @@ function renderGoalieCard(g: TeamRosterGoalieRow, teamLogo: string, gsax: Map<nu
   const cell = (label: string, value: string, extra = "") =>
     `<div class="stat-card-cell${extra}"><span class="stat-card-label">${label}</span><span class="stat-card-value">${value}</span></div>`;
   const cells = [
-    cell("O", `${g.games_played}`),
-    cell("V-H-JH", `${g.wins}-${g.losses}-${g.ot_losses}`, " pw-cell-sm"),
+    cell("GP", `${g.games_played}`),
+    cell("W-L-OTL", `${g.wins}-${g.losses}-${g.ot_losses}`, " pw-cell-sm"),
     cell("GAA", g.goals_against_average.toFixed(2)),
     cell("SV%", g.save_pct.toFixed(3), " stat-card-highlight"),
-    cell("NP", `${g.shutouts}`),
+    cell("SO", `${g.shutouts}`),
     ...(gsax.size ? [cell("GSAx", formatGsax(gsax.get(g.player_id)))] : []),
   ].join("");
   return `

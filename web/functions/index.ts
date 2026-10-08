@@ -113,10 +113,10 @@ function statTeaserTable(
         <tr>
           <th class="col-rank">#</th>
           <th>Pelaaja</th>
-          <th>O</th>
-          <th>M</th>
-          <th>S</th>
-          <th>P</th>
+          <th>GP</th>
+          <th>G</th>
+          <th>A</th>
+          <th>PTS</th>
         </tr>
       </thead>
       <tbody>${rows.join("")}</tbody>
@@ -136,7 +136,7 @@ function renderTeamGameLine(team: StandingsRow, game: GameRow, played: boolean):
     ? (() => {
         const teamScore = isHome ? game.home_score : game.away_score;
         const opponentScore = isHome ? game.away_score : game.home_score;
-        return `<span class="fav-row-meta">${teamScore}–${opponentScore} ${teamScore > opponentScore ? "V" : "H"}</span>`;
+        return `<span class="fav-row-meta">${teamScore}–${opponentScore} ${teamScore > opponentScore ? "W" : "L"}</span>`;
       })()
     : (() => {
         const { hour, minute } = helsinkiParts(game.start_time_utc);

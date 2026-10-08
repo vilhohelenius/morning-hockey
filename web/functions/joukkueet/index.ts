@@ -27,7 +27,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     <span class="stat-card-name">${escapeHtml(t.name)}</span>
   </a>
   <div class="stat-card-grid-cells">
-    ${cell("V-H-JH", `${t.wins}-${t.losses}-${t.ot_losses}`)}
+    ${cell("W-L-OTL", `${t.wins}-${t.losses}-${t.ot_losses}`)}
     ${cell("xGF%", x ? x.pct.toFixed(1) : "–", x ? rankBadge(x.rankPct) : "")}
     ${cell("xGF", x ? x.xgf.toFixed(1) : "–", x ? rankBadge(x.rankXgf) : "")}
     ${cell("xGA", x ? x.xga.toFixed(1) : "–", x ? rankBadge(x.rankXga) : "")}

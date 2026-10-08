@@ -156,20 +156,20 @@ ${XG_INFO_TEXT}
 
 <section class="analytiikka-view-section" data-view="skaters">
   <h2 class="section-title">Kärki xG:n mukaan</h2>
-  <p class="standings-legend">Vähintään ${MIN_GAMES} ottelua. Napauta sarakeotsikkoa järjestääksesi. xG/O = xG per ottelu, xGF% = joukkueen xG-osuus pelaajan ollessa jäällä, xGF% 5v5 samoin tasakentällisin.</p>
-  ${skaterRows ? table("xg-skaters-table", [["#"], ["Pelaaja", "name"], ["O", "gp"], ["M", "goals"], ["xG", "rank"], ["xG/O", "xgpg"], ["xGF%", "xgf"], ["xGF% 5v5", "xgf5"]], skaterRows, skaters.length) : empty}
+  <p class="standings-legend">Vähintään ${MIN_GAMES} ottelua. Napauta sarakeotsikkoa järjestääksesi. xG/GP = xG per ottelu, xGF% = joukkueen xG-osuus pelaajan ollessa jäällä, xGF% 5v5 samoin tasakentällisin.</p>
+  ${skaterRows ? table("xg-skaters-table", [["#"], ["Pelaaja", "name"], ["GP", "gp"], ["G", "goals"], ["xG", "rank"], ["xG/GP", "xgpg"], ["xGF%", "xgf"], ["xGF% 5v5", "xgf5"]], skaterRows, skaters.length) : empty}
 </section>
 
 <section class="analytiikka-view-section is-hidden" data-view="goalies">
   <h2 class="section-title">Kärki GSAx:n mukaan</h2>
   <p class="standings-legend">Vähintään ${MIN_GAMES} ottelua. Napauta sarakeotsikkoa järjestääksesi. GSAx/100 näytetään vasta 300 laukauksen jälkeen.</p>
-  ${goalieRows ? table("xg-goalies-table", [["#"], ["Maalivahti", "name"], ["O", "gp"], ["GSAx", "rank"], ["GSAx/100", "gsax100"], ["L", "sa"]], goalieRows, goalies.length) : empty}
+  ${goalieRows ? table("xg-goalies-table", [["#"], ["Maalivahti", "name"], ["GP", "gp"], ["GSAx", "rank"], ["GSAx/100", "gsax100"], ["SA", "sa"]], goalieRows, goalies.length) : empty}
 </section>
 
 <section class="analytiikka-view-section is-hidden" data-view="teams">
   <h2 class="section-title">Joukkueet xGF%:n mukaan</h2>
   <p class="standings-legend">xGF ja xGA per ottelu. Napauta sarakeotsikkoa järjestääksesi.</p>
-  ${teamRows ? table("xg-teams-table", [["#"], ["Joukkue", "name"], ["O"], ["xGF%", "rank"], ["xGF% 5v5", "pct5"], ["xGF", "xgf"], ["xGA", "xga"]], teamRows, 0) : empty}
+  ${teamRows ? table("xg-teams-table", [["#"], ["Joukkue", "name"], ["GP"], ["xGF%", "rank"], ["xGF% 5v5", "pct5"], ["xGF", "xgf"], ["xGA", "xga"]], teamRows, 0) : empty}
 </section>
 `;
 

@@ -81,9 +81,9 @@ export function buildFinnishNight(games: NightGame[]): { skaters: NightSkater[];
 }
 
 export function goalieDecisionFi(decision: string | null): string {
-  if (decision === "W") return "V";
-  if (decision === "L") return "H";
-  if (decision) return "JH"; // OT loss
+  if (decision === "W") return "W";
+  if (decision === "L") return "L";
+  if (decision) return "OTL";
   return "–";
 }
 
@@ -140,11 +140,11 @@ function renderFinnishNightSkaters(rows: NightSkater[]): string {
         <tr>
           <th class="st-first">Pelaaja</th>
           <th>Ottelu</th>
-          <th title="Maalit">M</th>
-          <th title="Syötöt">S</th>
-          <th title="Pisteet">P</th>
+          <th title="Maalit">G</th>
+          <th title="Syötöt">A</th>
+          <th title="Pisteet">PTS</th>
           <th title="Plus/miinus">+/-</th>
-          <th title="Peliaika">Aika</th>
+          <th title="Peliaika">TOI</th>
         </tr>
       </thead>
       <tbody>${body}</tbody>
@@ -174,10 +174,10 @@ function renderFinnishNightGoalies(rows: NightGoalie[]): string {
         <tr>
           <th class="st-first">Maalivahti</th>
           <th>Ottelu</th>
-          <th title="Torjunnat / laukaukset">Torj.</th>
-          <th title="Torjuntaprosentti">T-%</th>
-          <th title="Päätös: V voitto, H tappio, JH jatkoaikatappio">Pää.</th>
-          <th title="Peliaika">Aika</th>
+          <th title="Torjunnat / laukaukset">SV</th>
+          <th title="Torjuntaprosentti">SV%</th>
+          <th title="Päätös: W voitto, L tappio, OTL jatkoaikatappio">W/L</th>
+          <th title="Peliaika">TOI</th>
         </tr>
       </thead>
       <tbody>${body}</tbody>
