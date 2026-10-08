@@ -7,7 +7,7 @@ directly, with no need to resolve a traded player's most recent team.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from .suomiporssi import HEADSHOT_URL, TEAM_LOGO_URL, current_team
 from .nhl_api import NHLClient
@@ -37,6 +37,7 @@ class SkaterStatRow:
     goals: int
     assists: int
     points: int
+    shots: int = 0  # shots on goal; filled only by build_skater_top
 
 
 @dataclass(frozen=True)
@@ -97,7 +98,12 @@ def build_skater_top(client: NHLClient, season_id: int, limit: int = 1000) -> li
     pre-truncated at the source the way it used to be."""
     cayenne_exp = f"seasonId={season_id} and gameTypeId=2"
     rows = client.skater_bios(cayenne_exp, _SKATER_SORT, limit=-1)
-    return [skater_row(row, season_id) for row in cap_per_position(rows, limit)]
+    # bios has no shots; the summary report does
+    shots = {r["playerId"]: r.get("shots") or 0 for r in client.skater_summary(cayenne_exp, _SKATER_SORT, limit=-1)}
+    return [
+        replace(skater_row(row, season_id), shots=shots.get(row["playerId"], 0))
+        for row in cap_per_position(rows, limit)
+    ]
 
 
 def _goalie_nationalities(client: NHLClient, season_id: int) -> dict[int, str]:

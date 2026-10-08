@@ -65,8 +65,10 @@ CREATE TABLE IF NOT EXISTS skater_season_stats (
     goals INTEGER NOT NULL,
     assists INTEGER NOT NULL,
     points INTEGER NOT NULL,
+    shots INTEGER NOT NULL DEFAULT 0,
     updated_at TEXT NOT NULL
 );
+-- Added later (existing DBs): ALTER TABLE skater_season_stats ADD COLUMN shots INTEGER NOT NULL DEFAULT 0;
 
 CREATE INDEX IF NOT EXISTS idx_skater_season_stats_points ON skater_season_stats(points DESC);
 

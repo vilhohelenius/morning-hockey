@@ -92,11 +92,11 @@ def sync_schedule(client: D1Client, page: SchedulePage) -> int:
 
 # ---------- Slow tier (a few times a day) ----------
 
-_INSERT_SKATER_SQL = """
+_INSERT_SKATER_WITH_SHOTS_SQL = """
 INSERT INTO skater_season_stats (
     player_id, season_id, name, team_abbrev, logo, headshot, nationality, position,
-    games_played, goals, assists, points, updated_at
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    games_played, goals, assists, points, shots, updated_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 """
 
 _INSERT_GOALIE_SQL = """
@@ -158,7 +158,8 @@ def sync_skater_stats(client: D1Client, rows: list, season_id: int) -> int:
     synced_at = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
     client.execute("DELETE FROM skater_season_stats")
     for row in rows:
-        client.execute(_INSERT_SKATER_SQL, _skater_params(row, season_id, synced_at))
+        params = _skater_params(row, season_id, synced_at)
+        client.execute(_INSERT_SKATER_WITH_SHOTS_SQL, params[:-1] + [row.shots, synced_at])
     return len(rows)
 
 

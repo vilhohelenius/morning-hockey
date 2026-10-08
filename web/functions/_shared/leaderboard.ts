@@ -91,12 +91,13 @@ export function highlightDots(nationality: string, teamAbbrev: string, options: 
   return dots.length ? `<span class="hl-dots">${dots.join("")}</span>` : "";
 }
 
-function renderRow(row: SkaterStatsRow, rank: number, hl: HighlightOptions): string {
+function renderRow(row: SkaterStatsRow, rank: number, hl: HighlightOptions, withShots: boolean): string {
+  const spg = row.games_played ? (row.shots ?? 0) / row.games_played : 0;
   return `
       <tr data-name="${escapeHtml(row.name)}" data-team="${escapeHtml(row.team_abbrev)}"
           data-nationality="${escapeHtml(row.nationality)}"
           data-gp="${row.games_played}" data-goals="${row.goals}" data-assists="${row.assists}"
-          data-rank="${rank}" data-position="${escapeHtml(row.position)}">
+          data-rank="${rank}" data-position="${escapeHtml(row.position)}" data-spg="${spg}">
         <td class="col-rank">${rank}</td>
         <td>
           <a href="/pelaajat/${row.player_id}" class="player-cell">
@@ -111,6 +112,7 @@ function renderRow(row: SkaterStatsRow, rank: number, hl: HighlightOptions): str
         <td>${row.goals}</td>
         <td>${row.assists}</td>
         <td class="stat-strong">${row.points}</td>
+        ${withShots ? `<td>${spg.toFixed(1)}</td>` : ""}
       </tr>`;
 }
 
@@ -130,7 +132,9 @@ export function renderSkaterLeaderboard(options: LeaderboardOptions): string {
     return `<p class="empty-note">${escapeHtml(emptyMessage)}</p>`;
   }
 
-  const body = rows.map((row, index) => renderRow(row, index + 1, hl)).join("");
+  // Column only when shots are synced (rookie table has none).
+  const withShots = rows.some((row) => (row.shots ?? 0) > 0);
+  const body = rows.map((row, index) => renderRow(row, index + 1, hl, withShots)).join("");
 
   return `
   <div class="table-filters" data-table-id="${tableId}">
@@ -148,6 +152,7 @@ export function renderSkaterLeaderboard(options: LeaderboardOptions): string {
           <th data-sort="goals">M</th>
           <th data-sort="assists">S</th>
           <th data-sort="rank" data-first-dir="asc" class="sort-asc">P</th>
+          ${withShots ? '<th data-sort="spg">L/O</th>' : ""}
         </tr>
       </thead>
       <tbody>${body}</tbody>

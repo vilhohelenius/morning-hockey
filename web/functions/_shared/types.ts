@@ -49,6 +49,8 @@ export interface SkaterStatsRow {
   goals: number;
   assists: number;
   points: number;
+  // Shots on goal; only skater_season_stats has it (0/absent elsewhere).
+  shots?: number;
 }
 
 export interface GoalieStatsRow {
