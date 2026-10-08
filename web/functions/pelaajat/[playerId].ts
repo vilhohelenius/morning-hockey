@@ -40,10 +40,23 @@ import {
 
 const NHL_BASE = "https://api-web.nhle.com/v1";
 
+// The NHL API intermittently answers 429/5xx, which used to leave the player
+// card as a bare error page. Retry once after a short pause, and let
+// Cloudflare's edge cache serve repeat views for 5 min so most opens never hit
+// the API at all (only successful responses are cached).
 async function fetchJson(path: string): Promise<any> {
-  const response = await fetch(`${NHL_BASE}${path}`);
-  if (!response.ok) throw new Error(`NHL API ${path} returned ${response.status}`);
-  return response.json();
+  let status = 0;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    if (attempt) await new Promise((resolve) => setTimeout(resolve, 400));
+    try {
+      const response = await fetch(`${NHL_BASE}${path}`, { cf: { cacheTtl: 300, cacheEverything: true } });
+      if (response.ok) return await response.json();
+      status = response.status;
+    } catch (error) {
+      console.error(`NHL API ${path} fetch error:`, error);
+    }
+  }
+  throw new Error(`NHL API ${path} returned ${status}`);
 }
 
 const STATS_BASE = "https://api.nhle.com/stats/rest/en";
