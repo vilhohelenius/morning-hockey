@@ -5,10 +5,11 @@
 // non-GET request (all settings/favorites mutations are POSTs) bumps this
 // non-HttpOnly version cookie too; app.js also compares it to detect stale
 // bfcache / back-forward restores.
+import { withSession } from "./_shared/auth";
 import type { Env } from "./_shared/types";
 
 export const onRequest: PagesFunction<Env> = async (context) => {
-  const response = await context.next();
+  const response = await context.next(await withSession(context.request, context.env));
   const method = context.request.method;
   if (method === "GET" || method === "HEAD" || method === "OPTIONS") return response;
 

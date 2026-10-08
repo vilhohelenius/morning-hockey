@@ -1,20 +1,12 @@
-// Login, phase 7 -> replaced 2026-10-01. Was Cloudflare Access (email
-// allow-list, verified at Cloudflare's edge); the user asked for something
-// lighter to experiment with instead, explicitly not caring about its
-// security since this only runs for a handful of people who already have
-// the URL -- a username (password optional), created on first login,
-// remembered in a long-lived cookie. Cloudflare Access can come back later
-// (or real OAuth) without touching anything downstream of currentUsername(),
-// since every route only ever asks "who is this, or null".
-//
-// The cookie holds the username in plain text, unsigned -- trivially
-// spoofable by editing it in devtools. That's a deliberate, acknowledged
-// trade-off for a single-digit-friends app, not an oversight.
+// Login: Google OAuth (functions/kirjaudu/google*) + server-side sessions in
+// D1. The cookie holds a random token; D1 holds only its SHA-256 and the
+// username it belongs to. _middleware.ts resolves the session once per
+// request, so currentUsername() stays synchronous for every route.
 
 import type { Env } from "./types";
 
-const SESSION_COOKIE = "mh_user";
-const SESSION_MAX_AGE = 10 * 365 * 24 * 60 * 60; // ~10 years: "stay logged in basically forever"
+const SESSION_COOKIE = "mh_session";
+const SESSION_MAX_AGE = 30 * 24 * 60 * 60;
 
 function readCookie(request: Request, name: string): string | null {
   const header = request.headers.get("Cookie");
@@ -23,8 +15,92 @@ function readCookie(request: Request, name: string): string | null {
   return match ? decodeURIComponent(match[1]) : null;
 }
 
+// _middleware.ts (root, so it wraps every route) strips any client-sent
+// x-mh-* headers and re-adds them from the verified session, because Pages
+// hands routes a different Request object than the middleware saw.
+// Pending = signed in with Google but no username chosen yet.
+export function currentSession(request: Request): { username: string | null; googleSub: string } | null {
+  const sub = request.headers.get("x-mh-sub");
+  if (!sub) return null;
+  const user = request.headers.get("x-mh-user");
+  return { username: user ? decodeURIComponent(user) : null, googleSub: sub };
+}
+
 export function currentUsername(request: Request): string | null {
-  return readCookie(request, SESSION_COOKIE);
+  return currentSession(request)?.username ?? null;
+}
+
+export function randomHex(bytes = 32): string {
+  return [...crypto.getRandomValues(new Uint8Array(bytes))].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+export async function sha256Hex(value: string): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+// Called by _middleware.ts: returns the request to hand to the route.
+export async function withSession(request: Request, env: Env): Promise<Request> {
+  const headers = new Headers(request.headers);
+  headers.delete("x-mh-sub");
+  headers.delete("x-mh-user");
+  const token = readCookie(request, SESSION_COOKIE);
+  const row = token
+    ? await env.DB.prepare("SELECT username, google_sub FROM sessions WHERE id_hash = ? AND expires_at > ?")
+        .bind(await sha256Hex(token), new Date().toISOString())
+        .first<{ username: string | null; google_sub: string }>()
+    : null;
+  if (row) {
+    headers.set("x-mh-sub", row.google_sub);
+    if (row.username) headers.set("x-mh-user", encodeURIComponent(row.username));
+  }
+  return new Request(request, { headers });
+}
+
+export async function createSession(env: Env, googleSub: string, username: string | null): Promise<string> {
+  const token = randomHex();
+  const now = Date.now();
+  await env.DB.batch([
+    env.DB.prepare("DELETE FROM sessions WHERE expires_at < ?").bind(new Date(now).toISOString()),
+    env.DB.prepare("INSERT INTO sessions (id_hash, username, google_sub, expires_at) VALUES (?, ?, ?, ?)").bind(
+      await sha256Hex(token),
+      username,
+      googleSub,
+      new Date(now + SESSION_MAX_AGE * 1000).toISOString(),
+    ),
+  ]);
+  return token;
+}
+
+export async function deleteSession(request: Request, env: Env): Promise<void> {
+  const token = readCookie(request, SESSION_COOKIE);
+  if (token) await env.DB.prepare("DELETE FROM sessions WHERE id_hash = ?").bind(await sha256Hex(token)).run();
+}
+
+export async function setSessionUsername(request: Request, env: Env, username: string): Promise<void> {
+  const token = readCookie(request, SESSION_COOKIE);
+  if (token) await env.DB.prepare("UPDATE sessions SET username = ? WHERE id_hash = ?").bind(username, await sha256Hex(token)).run();
+}
+
+export function sessionCookieHeader(token: string): string {
+  return `${SESSION_COOKIE}=${token}; Path=/; Max-Age=${SESSION_MAX_AGE}; SameSite=Lax; HttpOnly; Secure`;
+}
+
+export function clearSessionCookieHeader(): string {
+  return `${SESSION_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax; HttpOnly; Secure`;
+}
+
+// Short-lived OAuth state: "state.verifier.next", HttpOnly, sent back on
+// Google's top-level redirect (SameSite=Lax allows that).
+export const OAUTH_COOKIE = "mh_oauth";
+
+export function readOauthCookie(request: Request): { state: string; verifier: string; next: string } | null {
+  const [state, verifier, ...rest] = (readCookie(request, OAUTH_COOKIE) ?? "").split(".");
+  return state && verifier ? { state, verifier, next: decodeURIComponent(rest.join(".")) } : null;
+}
+
+export function oauthCookieHeader(value: string, maxAge = 600): string {
+  return `${OAUTH_COOKIE}=${value}; Path=/kirjaudu; Max-Age=${maxAge}; SameSite=Lax; HttpOnly; Secure`;
 }
 
 // Cache-version cookie bumped by functions/_middleware.ts on every POST.
@@ -38,22 +114,9 @@ export function redirectTarget(form: FormData, fallback: string): string {
   return value.startsWith("/") && !value.startsWith("//") ? value : fallback;
 }
 
-export function sessionCookieHeader(username: string): string {
-  return `${SESSION_COOKIE}=${encodeURIComponent(username)}; Path=/; Max-Age=${SESSION_MAX_AGE}; SameSite=Lax; HttpOnly`;
-}
-
-export function clearSessionCookieHeader(): string {
-  return `${SESSION_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax; HttpOnly`;
-}
-
-// SHA-256 via Web Crypto (available natively in Workers) -- not a
-// password-hashing-grade KDF (no salt/work factor), but this isn't
-// guarding anything sensitive; it's just "don't store plaintext" for free.
-export async function hashPassword(password: string): Promise<string> {
-  const bytes = new TextEncoder().encode(password);
-  const digest = await crypto.subtle.digest("SHA-256", bytes);
-  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
-}
+// Legacy SHA-256 hash: only used to verify the password of a pre-Google
+// account during its one-time claim (/kirjaudu/valitse).
+export const hashPassword = sha256Hex;
 
 // "system" isn't a real cookie/CSS value -- it means "no explicit choice",
 // which is already what an absent cookie means to style.css's

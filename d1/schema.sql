@@ -631,3 +631,19 @@ CREATE TABLE IF NOT EXISTS player_landing_cache (
     json TEXT NOT NULL,
     fetched_at TEXT NOT NULL
 );
+
+-- Google login + server-side sessions, 2026-10-08 (replaces the unsigned
+-- mh_user username cookie). id_hash = SHA-256 of the random cookie token, so
+-- a leaked DB can't be replayed as sessions. username NULL = signed in with
+-- Google but hasn't picked/claimed a username yet (/kirjaudu/valitse).
+-- Existing users keep their username (and favorites): they claim it once on
+-- first Google login; password_hash is only used for that one-time claim.
+ALTER TABLE users ADD COLUMN google_sub TEXT;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_google_sub ON users(google_sub);
+
+CREATE TABLE IF NOT EXISTS sessions (
+    id_hash TEXT PRIMARY KEY,
+    username TEXT,
+    google_sub TEXT NOT NULL,
+    expires_at TEXT NOT NULL
+);

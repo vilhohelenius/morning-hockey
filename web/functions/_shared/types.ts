@@ -336,17 +336,19 @@ export interface UserSettingsRow {
   updated_at: string;
 }
 
-// Simple username(+optional password) login, replacing Cloudflare Access
-// 2026-10-01 -- see _shared/auth.ts.
+// See _shared/auth.ts. password_hash is legacy (one-time claim only).
 export interface UserRow {
   username: string;
   password_hash: string | null;
+  google_sub: string | null;
   created_at: string;
 }
 
 export interface Env {
   DB: D1Database;
   YOUTUBE_API_KEY?: string;
+  GOOGLE_CLIENT_ID?: string;
+  GOOGLE_CLIENT_SECRET?: string;
 }
 
 // See _shared/youtube.ts -- video_url is null for a checked-but-not-found-
