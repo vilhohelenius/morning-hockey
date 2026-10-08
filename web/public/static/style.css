@@ -479,10 +479,27 @@ main {
   font-size: 0.9rem;
 }
 
+/* Empty state: a quiet dashed card with a puck, instead of loose grey text. */
 .empty-note {
+  padding: 22px 16px;
+  margin: 16px 0;
   text-align: center;
   color: var(--muted);
-  margin-top: 32px;
+  font-size: 0.92rem;
+  border: 1px dashed var(--border);
+  border-radius: 14px;
+}
+
+.empty-note::before {
+  content: "";
+  display: block;
+  margin: 0 auto 14px;
+  width: 30px;
+  height: 11px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  opacity: 0.55;
+  box-shadow: 0 5px 0 -1px currentColor;
 }
 
 .game-card,
@@ -2372,6 +2389,7 @@ main {
 .section-tile.hero-tinted .col-rank,
 .section-tile.hero-tinted .empty-note {
   color: rgba(255, 255, 255, 0.75);
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
 .section-tile.hero-tinted .stats-table tbody tr {
