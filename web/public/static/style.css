@@ -5763,6 +5763,7 @@ main {
 /* Tulospiilo: sama ottelukortti kuin etusivulla; tulosta paljastavat osat
    (jatkoaika-merkintä, suomalaisten pisteet) näkyvät vasta kun tulos avataan. */
 .spoiler-score-row:not(.is-shown) .score-note,
+.spoiler-score-row:not(.is-shown) .spoiler-live,
 .spoiler-score-row:not(.is-shown) .finn-stats {
   display: none;
 }

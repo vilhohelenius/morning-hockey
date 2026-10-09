@@ -219,6 +219,7 @@ export function renderGameCard(
 
   <div class="spoiler-score-row game-card-trigger" data-game-id="${game.game_id}" data-away-score="${game.away_score}" data-home-score="${game.home_score}" tabindex="-1" role="button" aria-expanded="false">
     ${scoreRow}
+    ${!game.is_finished && isLive(game) ? `<p class="live-tag spoiler-live"><span class="live-dot"></span>${escapeHtml(liveBadgeText(live))}</p>` : ""}
     ${finnStats}
     <p class="game-card-hint spoiler-reveal-hint">Näytä tulos ▾</p>
   </div>

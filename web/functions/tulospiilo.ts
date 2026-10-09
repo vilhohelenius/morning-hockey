@@ -9,8 +9,8 @@
 //
 // Only ever shows the same round index.ts's dashboard calls "currentRound"
 // (the most recent date with any started game), filtered down to games
-// that have actually finished -- a game still live has no highlights yet
-// and nothing final to spoil, so it just doesn't show up here until it is.
+// that have finished or are in progress. A live game's card works like the
+// others (hidden until checked) and shows its score as of page load.
 //
 // Reachable via / redirecting here (when the signed-in user's tulospiilo
 // cookie is on, see _shared/auth.ts + omat/tulospiilo.ts) or by visiting
@@ -62,14 +62,16 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     // live state (as the dashboard does), so refresh in-progress games first
     // or a game that just ended would be missing from this list.
     await Promise.all(allRoundGames.filter((g) => !g.is_finished && isLive(g)).map((g) => getBoxScore(db, g)));
-    const games = allRoundGames.filter((g) => g.is_finished);
+    // Finished games plus ones in progress (shown as cards whose current
+    // score stays hidden until checked; see renderGameCard's live badge).
+    const games = allRoundGames.filter((g) => g.is_finished || isLive(g));
     // Only the already-finished games are listed/checkable here -- if the
     // round still has one or more games in progress, checking off every
     // *listed* game isn't the same as the round actually being over, so the
     // inline script below must not set tulospiilo_bypass_date in that case
     // (it would otherwise permanently skip the redirect for a round that
     // still has unrevealed results coming later the same night).
-    roundComplete = games.length === allRoundGames.length;
+    roundComplete = games.every((g) => g.is_finished) && games.length === allRoundGames.length;
 
     if (games.length) {
       roundDate = currentRound.date;
@@ -82,6 +84,12 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
         ]);
 
         if (!box) missingBoxes++;
+        // In-progress game: the DB score lags, so take the running tally.
+        const lastGoal = box && !game.is_finished ? box.goals[box.goals.length - 1] : undefined;
+        if (lastGoal) {
+          game.away_score = lastGoal.away_score;
+          game.home_score = lastGoal.home_score;
+        }
         gameDetails[game.game_id] = {
           youtube_url: youtubeUrl ?? undefined,
           ...(box
@@ -105,7 +113,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
               ...finnishGoalieLines(box.homeGoalies, game.home_abbrev, gsaxByGame.get(game.game_id)),
             ]
           : [];
-        gamesHtml += renderGameCard(game, scorers, goalies, null, { youtubeUrl });
+        gamesHtml += renderGameCard(game, scorers, goalies, box?.live ?? null, { youtubeUrl });
       }
     }
   }

@@ -173,3 +173,14 @@ INSERT INTO favorite_players (username, player_id, is_goalie, created_at) VALUES
 
 INSERT INTO user_settings (username, theme, updated_at) VALUES
 ('testuser', 'dark', '2026-09-30T12:00:00Z');
+
+-- 3001 cache row: 2. erä 8:42, EDM 2-1 CGY. Its live fetch fails locally, so
+-- the stale row is served as-is -- gives tulospiilo's live card something
+-- to show (current score, timeline, team stats) when opened.
+INSERT INTO game_box_scores (game_id, final_type, goals_json, team_stats_json, away_skaters_json, home_skaters_json, away_goalies_json, home_goalies_json, live_json, cached_at) VALUES
+(3001, 'REG',
+'[{"period_label":"1. erä","time_in_period":"06:30","team_abbrev":"EDM","scorer":"Connor McDavid","assists":["Leon Draisaitl"],"strength":"","away_score":1,"home_score":0},{"period_label":"1. erä","time_in_period":"15:02","team_abbrev":"CGY","scorer":"Nazem Kadri","assists":[],"strength":"","away_score":1,"home_score":1},{"period_label":"2. erä","time_in_period":"03:18","team_abbrev":"EDM","scorer":"Leon Draisaitl","assists":["Connor McDavid"],"strength":"YV","away_score":2,"home_score":1}]',
+'[{"label":"Laukaukset","away_value":"19","home_value":"14","away_pct":100,"home_pct":73.7}]',
+'[]', '[]', '[]', '[]',
+'{"periodNumber":2,"periodType":"REG","timeRemaining":"11:18","inIntermission":false}',
+'2026-10-02T23:45:00Z');
