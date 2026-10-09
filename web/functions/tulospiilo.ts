@@ -79,7 +79,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       for (const game of games) {
         const [{ box }, youtubeUrl, gameXg] = await Promise.all([
           getBoxScore(db, game),
-          resolveHighlightsUrl(db, context.env, game),
+          game.is_finished ? resolveHighlightsUrl(db, context.env, game) : Promise.resolve(null),
           fetchGameTeamXg(db, game.game_id, game.away_abbrev, game.home_abbrev),
         ]);
 
@@ -113,7 +113,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
               ...finnishGoalieLines(box.homeGoalies, game.home_abbrev, gsaxByGame.get(game.game_id)),
             ]
           : [];
-        gamesHtml += renderGameCard(game, scorers, goalies, box?.live ?? null, { youtubeUrl });
+        gamesHtml += renderGameCard(game, scorers, goalies, null, { youtubeUrl });
       }
     }
   }
