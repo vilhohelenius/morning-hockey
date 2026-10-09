@@ -36,7 +36,7 @@ import { buildTimeline } from "./_shared/boxscore";
 import { resolveHighlightsUrl } from "./_shared/youtube";
 import { icon, escapeHtml, humanDate, teamHeroBackgroundStyle } from "./_shared/format";
 import { renderLayout } from "./_shared/layout";
-import { finnishGoalieLines, finnishScorerLines, renderGameCard } from "./_shared/gameCard";
+import { finnishGoalieLines, finnishScorerLines, isLive, renderGameCard } from "./_shared/gameCard";
 import { fetchGameTeamXg, fetchGamesGoalieGsax, teamXgStatRows } from "./_shared/xg";
 import type { Env, GameRow } from "./_shared/types";
 
@@ -54,13 +54,15 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   let missingBoxes = 0;
 
   if (currentRound) {
-    const [{ results: games }, { results: allRoundGames }] = await Promise.all([
-      db
-        .prepare("SELECT * FROM games WHERE date = ? AND is_finished = 1 ORDER BY start_time_utc ASC")
-        .bind(currentRound.date)
-        .all<GameRow>(),
-      db.prepare("SELECT game_id FROM games WHERE date = ?").bind(currentRound.date).all<{ game_id: number }>(),
-    ]);
+    const { results: allRoundGames } = await db
+      .prepare("SELECT * FROM games WHERE date = ? ORDER BY start_time_utc ASC")
+      .bind(currentRound.date)
+      .all<GameRow>();
+    // The fast tier's is_finished lags; getBoxScore self-heals it from NHL's
+    // live state (as the dashboard does), so refresh in-progress games first
+    // or a game that just ended would be missing from this list.
+    await Promise.all(allRoundGames.filter((g) => !g.is_finished && isLive(g)).map((g) => getBoxScore(db, g)));
+    const games = allRoundGames.filter((g) => g.is_finished);
     // Only the already-finished games are listed/checkable here -- if the
     // round still has one or more games in progress, checking off every
     // *listed* game isn't the same as the round actually being over, so the
