@@ -226,7 +226,7 @@ export function renderGameCard(
 
   <label class="spoiler-check-label" for="${checkboxId}">
     <span class="spoiler-check-box" aria-hidden="true"></span>
-    <span class="spoiler-check-text">Merkitse nähdyksi, kun olet katsonut highlightit</span>
+    <span class="spoiler-check-text">${!game.is_finished && isLive(game) ? "Merkitse nähdyksi, jos haluat nähdä tilanteen" : "Merkitse nähdyksi, kun olet katsonut highlightit"}</span>
   </label>
 
   ${spoiler.youtubeUrl ? `<a class="game-card-youtube" href="${escapeHtml(spoiler.youtubeUrl)}" target="_blank" rel="noopener">▶ Highlightit (YouTube)</a>` : ""}
