@@ -761,6 +761,16 @@
       openGameTrigger = null;
     }
 
+    function youtubeLink(url) {
+      var a = document.createElement("a");
+      a.className = "game-card-youtube";
+      a.href = url;
+      a.target = "_blank";
+      a.rel = "noopener";
+      a.textContent = "▶ Highlightit (YouTube)";
+      return a;
+    }
+
     function openGameDetail(trigger) {
       var data = gameDetails[trigger.dataset.gameId];
 
@@ -803,10 +813,11 @@
       panel.appendChild(fullLink);
 
       var body = el("div", "team-detail-body");
-      if (!data) {
-        // No box score cached yet (e.g. game just started).
-        body.appendChild(el("p", "muted", "Ei vielä tapahtumia."));
+      if (!data || (!data.timeline && !data.team_stats)) {
+        // No box score cached yet (e.g. game just started, fetch failed).
+        body.appendChild(el("p", "muted", "Ottelun tietoja ei ole vielä saatavilla."));
         panel.appendChild(body);
+        if (data && data.youtube_url) panel.appendChild(youtubeLink(data.youtube_url));
         trigger.insertAdjacentElement("afterend", panel);
         trigger.setAttribute("aria-expanded", "true");
         gameDetailEl = panel;
@@ -836,15 +847,7 @@
       body.appendChild(renderTeamStats(statRows, awayAbbrev, homeAbbrev));
       panel.appendChild(body);
 
-      if (data.youtube_url) {
-        var ytLink = document.createElement("a");
-        ytLink.className = "game-card-youtube";
-        ytLink.href = data.youtube_url;
-        ytLink.target = "_blank";
-        ytLink.rel = "noopener";
-        ytLink.textContent = "▶ Highlightit (YouTube)";
-        panel.appendChild(ytLink);
-      }
+      if (data.youtube_url) panel.appendChild(youtubeLink(data.youtube_url));
 
       trigger.insertAdjacentElement("afterend", panel);
 
