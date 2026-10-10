@@ -5,6 +5,12 @@ on:
   # Cloudflare Worker (cron-trigger/) calls workflow_dispatch hourly instead.
   workflow_dispatch: {}
 
+# A duplicate dispatch must queue, not run in parallel: the sync does a
+# delete-then-insert and parallel runs collide on primary keys.
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
 jobs:
   sync:
     runs-on: ubuntu-latest
