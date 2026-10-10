@@ -269,10 +269,28 @@ export async function getBoxScore(
   const cached = preloaded
     ? (preloaded.get(game.game_id) ?? null)
     : await db.prepare("SELECT * FROM game_box_scores WHERE game_id = ?").bind(game.game_id).first<GameBoxScoreRow>();
-  if (cached && !isStale(cached, game)) return { box: fromCacheRow(cached), fetchError: false };
+  if (cached && !isStale(cached, game)) {
+    const box = fromCacheRow(cached);
+    // A fresh live cache row can be newer than games.*_score, which the
+    // fast-tier cron overwrites from the (laggier) schedule endpoint.
+    const lastGoal = game.is_finished ? undefined : box.goals[box.goals.length - 1];
+    if (lastGoal) {
+      game.away_score = lastGoal.away_score;
+      game.home_score = lastGoal.home_score;
+    }
+    return { box, fetchError: false };
+  }
 
   try {
     const box = await fetchAndParseBoxScore(game);
+    // NHL's edge caches can briefly serve an older snapshot than one we've
+    // already stored; a live game never loses goals, so keep the newer row.
+    if (cached && !game.is_finished && !NHL_FINISHED_STATES.has(box.nhlGameState)) {
+      const prev = fromCacheRow(cached);
+      if (prev.goals.length > box.goals.length || (box.awayScore ?? 0) + (box.homeScore ?? 0) < game.away_score + game.home_score) {
+        return { box: prev, fetchError: false };
+      }
+    }
     const params = [
       box.finalType,
       serializeTimeline({ goals: box.goals, penalties: box.penalties, goalieChanges: box.goalieChanges, shootout: box.shootout, complete: box.timelineComplete }),
