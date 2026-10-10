@@ -72,7 +72,7 @@ function goalieChangeHtml(change: GoalieChange, side: "away" | "home"): string {
   return `
     <div class="mt-event mt-${side} mt-goalie">
       <div class="mt-main">
-        <span class="mt-time">${escapeHtml(change.time_in_period)}</span>
+        <span class="mt-time">${change.approx ? "" : escapeHtml(change.time_in_period)}</span>
         <span class="mt-badge mt-swap" title="Maalivahdinvaihto" aria-label="Maalivahdinvaihto">${SWAP_ICON}</span>
         <span class="mt-who"><strong>${nameHtml(change.goalie_in)}</strong><span class="mt-reason">${nameHtml(change.goalie_out)}</span></span>
       </div>

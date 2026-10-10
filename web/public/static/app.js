@@ -620,7 +620,7 @@
       var row = el("div", "mt-event mt-" + side + (isGoal ? " mt-goal" : isGoalie ? " mt-goalie" : " mt-penalty"));
       var main = el("div", "mt-main");
       // Shootout attempts carry no meaningful clock time.
-      if (!(item.period >= 100)) main.appendChild(el("span", "mt-time", item.time_in_period));
+      if (!(item.period >= 100)) main.appendChild(el("span", "mt-time", item.approx ? "" : item.time_in_period));
       var who = el("span", "mt-who");
 
       if (isGoal) {

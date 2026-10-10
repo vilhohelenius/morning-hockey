@@ -195,6 +195,7 @@ export interface GoalieChange {
   team_abbrev: string; // the goalie's team
   goalie_out: string;
   goalie_in: string;
+  approx?: boolean; // derived from shots, not the shift chart: time is not shown
 }
 
 export interface TeamStatRow {

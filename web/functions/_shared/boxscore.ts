@@ -558,6 +558,7 @@ function goalieChangesFromShots(pbp: RawPlayByPlay, awayAbbrev: string, homeAbbr
       team_abbrev: team,
       goalie_out: pbpPlayerName(spots, previous, finnishIds),
       goalie_in: pbpPlayerName(spots, goalie, finnishIds),
+      approx: true,
     });
   }
   return changes;
