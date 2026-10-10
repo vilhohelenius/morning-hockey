@@ -57,6 +57,10 @@ export interface ParsedBoxScore {
   // instead of waiting for the next ~30 min fast-tier cron tick to notice a
   // game has started or finished.
   nhlGameState: string;
+  // landing's own running score -- fresher than games.*_score, which only
+  // moves with the ~10 min fast-tier cron. null on a cache hit.
+  awayScore: number | null;
+  homeScore: number | null;
 }
 
 const NHL_FINISHED_STATES = new Set(["OFF", "FINAL"]);
@@ -95,7 +99,9 @@ async function fetchAndParseBoxScore(game: GameRow): Promise<ParsedBoxScore> {
   const goals = playByPlay ? attachGoalClips(baseGoals, playByPlay, game.away_abbrev, game.home_abbrev) : baseGoals;
   const penalties = playByPlay ? buildPenaltyEvents(playByPlay, game.away_abbrev, game.home_abbrev, finnishIds) : [];
   const goalieChanges = playByPlay ? buildGoalieChanges(playByPlay, game.away_abbrev, game.home_abbrev, finnishIds, shifts?.length ? shifts : null) : [];
-  const teamStats = buildTeamStats(rightRail?.teamGameStats ?? [], game.away_score, game.home_score);
+  const awayScore: number = landing?.awayTeam?.score ?? game.away_score;
+  const homeScore: number = landing?.homeTeam?.score ?? game.home_score;
+  const teamStats = buildTeamStats(rightRail?.teamGameStats ?? [], awayScore, homeScore);
 
   const playerStats = boxscore?.playerByGameStats ?? {};
   const { skaters: awaySkaters, goalies: awayGoalies } = teamPlayerStats(
@@ -125,7 +131,7 @@ async function fetchAndParseBoxScore(game: GameRow): Promise<ParsedBoxScore> {
   const finalType = resolveFinalType(landing, playByPlay, NHL_FINISHED_STATES.has(nhlGameState));
   const shootout = buildShootoutAttempts(landing?.summary?.shootout?.events, finnishIds);
 
-  return { finalType, goals, penalties, goalieChanges, shootout, timelineComplete: playByPlay !== null, teamStats, awaySkaters, homeSkaters, awayGoalies, homeGoalies, live, nhlGameState };
+  return { finalType, goals, penalties, goalieChanges, shootout, timelineComplete: playByPlay !== null, teamStats, awaySkaters, homeSkaters, awayGoalies, homeGoalies, live, nhlGameState, awayScore, homeScore };
 }
 
 function fromCacheRow(cached: GameBoxScoreRow): ParsedBoxScore {
@@ -146,6 +152,8 @@ function fromCacheRow(cached: GameBoxScoreRow): ParsedBoxScore {
     // Only meaningful right after a fresh NHL fetch (see getBoxScore's
     // write-through below) -- nothing reads it off a cache hit.
     nhlGameState: "",
+    awayScore: null,
+    homeScore: null,
   };
 }
 
@@ -273,23 +281,22 @@ export async function getBoxScore(
         .run();
     }
 
-    if (box.nhlGameState && box.nhlGameState !== game.game_state) {
-      const finished = NHL_FINISHED_STATES.has(box.nhlGameState);
-      // Carries the score along too, from the goal timeline's own running
-      // tally -- otherwise a self-healed "finished" row would show as
-      // finished (no more LIVE badge) while still displaying whatever score
-      // the last cron sync happened to have, which can be behind the real
-      // final score by up to ~30 min.
-      const lastGoal = box.goals[box.goals.length - 1];
-      const awayScore = lastGoal ? lastGoal.away_score : game.away_score;
-      const homeScore = lastGoal ? lastGoal.home_score : game.home_score;
+    const awayScore = box.awayScore ?? game.away_score;
+    const homeScore = box.homeScore ?? game.home_score;
+    const stateChanged = !!box.nhlGameState && box.nhlGameState !== game.game_state;
+    if (stateChanged || awayScore !== game.away_score || homeScore !== game.home_score) {
+      // Writes the live score back on every fetch, not only on a state change
+      // -- otherwise a goal shows in the timeline but the score stays behind
+      // until the next fast-tier cron tick.
+      const state = stateChanged ? box.nhlGameState : game.game_state;
+      const finished = NHL_FINISHED_STATES.has(state);
       await db
         .prepare("UPDATE games SET is_finished = ?, game_state = ?, final_type = ?, away_score = ?, home_score = ? WHERE game_id = ?")
-        .bind(finished ? 1 : 0, box.nhlGameState, box.finalType, awayScore, homeScore, game.game_id)
+        .bind(finished ? 1 : 0, state, stateChanged ? box.finalType : game.final_type, awayScore, homeScore, game.game_id)
         .run();
       game.is_finished = finished ? 1 : 0;
-      game.game_state = box.nhlGameState;
-      game.final_type = box.finalType;
+      game.game_state = state;
+      if (stateChanged) game.final_type = box.finalType;
       game.away_score = awayScore;
       game.home_score = homeScore;
     }
