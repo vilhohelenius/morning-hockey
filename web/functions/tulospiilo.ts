@@ -7,9 +7,9 @@
 // mechanism -- see _shared/gameCard.ts and index.ts), not a separate
 // tulospiilo-only rendering of the result.
 //
-// Only ever shows the same round index.ts's dashboard calls "currentRound"
-// (the most recent date with any started game), filtered down to games
-// that have finished or are in progress. A live game's card works like the
+// Only ever shows the latest round (dayGames.latestRound: the newest
+// cluster of started games, split at >6 h gaps between start times), i.e.
+// games that have finished or are in progress. A live game's card works like the
 // others (hidden until checked) and shows its score as of page load.
 //
 // Reachable via / redirecting here (when the signed-in user's tulospiilo
@@ -29,6 +29,7 @@
 // since there's nothing left to spoil at that point.
 
 import { currentUsername } from "./_shared/auth";
+import { latestRound, loadRoundCandidates, roundKey } from "./_shared/dayGames";
 import { renderBingoSection } from "./_shared/bingo";
 import { loadActiveRows, loadPicks, loadWindowGames } from "./_shared/bingoData";
 import { getBoxScore, missingBoxRetryScript } from "./_shared/boxScoreCache";
@@ -43,40 +44,31 @@ import type { Env, GameRow } from "./_shared/types";
 export const onRequestGet: PagesFunction<Env> = async (context) => {
   const db = context.env.DB;
 
-  const currentRound = await db
-    .prepare("SELECT date FROM games WHERE game_state != 'FUT' ORDER BY date DESC LIMIT 1")
-    .first<{ date: string }>();
-
   let gamesHtml = "";
   let roundDate: string | null = null;
-  let startedCount = 0;
+  let roundKeyValue: string | null = null;
   let roundComplete = false;
   const gameDetails: Record<number, { timeline?: unknown; team_stats?: unknown; youtube_url?: string }> = {};
   let missingBoxes = 0;
 
-  if (currentRound) {
-    const { results: allRoundGames } = await db
-      .prepare("SELECT * FROM games WHERE date = ? ORDER BY start_time_utc ASC")
-      .bind(currentRound.date)
-      .all<GameRow>();
+  {
+    const candidates = await loadRoundCandidates(db);
     // The fast tier's is_finished lags; getBoxScore self-heals it from NHL's
     // live state (as the dashboard does), so refresh in-progress games first
     // or a game that just ended would be missing from this list.
-    await Promise.all(allRoundGames.filter((g) => !g.is_finished && isLive(g)).map((g) => getBoxScore(db, g)));
+    await Promise.all(candidates.filter((g) => !g.is_finished && isLive(g)).map((g) => getBoxScore(db, g)));
     // Finished games plus ones in progress (shown as cards whose current
     // score stays hidden until checked; see renderGameCard's live badge).
-    const games = allRoundGames.filter((g) => g.is_finished || isLive(g));
-    // Only the already-finished games are listed/checkable here -- if the
-    // round still has one or more games in progress, checking off every
-    // *listed* game isn't the same as the round actually being over, so the
-    // inline script below must not set tulospiilo_bypass_date in that case
-    // (it would otherwise permanently skip the redirect for a round that
-    // still has unrevealed results coming later the same night).
+    const games = latestRound(candidates);
+    // A round with a game still in progress isn't over, so the inline script
+    // below must not set tulospiilo_bypass_date then. Games that haven't
+    // started yet don't count: they join the round (changing its key, which
+    // ends the bypass) the moment they start.
     roundComplete = games.every((g) => g.is_finished);
 
     if (games.length) {
-      roundDate = currentRound.date;
-      startedCount = games.length;
+      roundDate = games[0].date;
+      roundKeyValue = roundKey(games);
       const gsaxByGame = await fetchGamesGoalieGsax(db, games.map((g) => g.game_id));
       for (const game of games) {
         const [{ box }, youtubeUrl, gameXg] = await Promise.all([
@@ -178,8 +170,7 @@ ${bingoHtml}
 ${missingBoxRetryScript(missingBoxes)}
 <script>
 (function () {
-  var ROUND_DATE = ${JSON.stringify(roundDate)};
-  var STARTED_COUNT = ${startedCount};
+  var ROUND_KEY = ${JSON.stringify(roundKeyValue)};
   var ROUND_COMPLETE = ${JSON.stringify(roundComplete)};
   var checkboxes = Array.prototype.slice.call(document.querySelectorAll(".spoiler-reveal-toggle"));
   var allRevealed = false;
@@ -191,8 +182,8 @@ ${missingBoxRetryScript(missingBoxes)}
 
   function recomputeAllRevealed() {
     allRevealed = ROUND_COMPLETE && checkboxes.length > 0 && checkboxes.every(function (cb) { return cb.checked; });
-    if (allRevealed && ROUND_DATE) {
-      document.cookie = "tulospiilo_bypass_date=" + encodeURIComponent(ROUND_DATE + "|" + STARTED_COUNT) + "; path=/; max-age=259200; samesite=lax";
+    if (allRevealed && ROUND_KEY) {
+      document.cookie = "tulospiilo_bypass_date=" + encodeURIComponent(ROUND_KEY) + "; path=/; max-age=259200; samesite=lax";
     }
   }
 

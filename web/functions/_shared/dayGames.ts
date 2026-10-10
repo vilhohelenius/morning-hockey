@@ -57,3 +57,30 @@ export function isStartingSoon(game: GameRow, now: number = Date.now()): boolean
   if (game.is_finished || isGameLive(game, now)) return false;
   return game.game_state === "PRE" || new Date(game.start_time_utc).getTime() - now <= 30 * 60 * 1000;
 }
+
+// Tulospiilo's "round": the latest cluster of started games, split wherever
+// two consecutive start times are more than ROUND_GAP_MS apart (night games
+// ~02:00 vs evening games ~20:00 share a date but are separate rounds).
+const ROUND_GAP_MS = 6 * 60 * 60 * 1000;
+
+export function latestRound(rows: GameRow[], now: number = Date.now()): GameRow[] {
+  const started = rows
+    .filter((g) => g.is_finished || (isGameLive(g, now) && now - new Date(g.start_time_utc).getTime() <= MAX_LIVE_AGE_MS))
+    .sort((a, b) => b.start_time_utc.localeCompare(a.start_time_utc) || b.game_id - a.game_id);
+  let n = 1;
+  while (n < started.length && new Date(started[n - 1].start_time_utc).getTime() - new Date(started[n].start_time_utc).getTime() <= ROUND_GAP_MS) n++;
+  return started.slice(0, started.length ? n : 0).reverse();
+}
+
+// Bypass-cookie value: changes when a game joins the round or a new round starts.
+export const roundKey = (round: GameRow[]): string | null => (round.length ? `${round[0].game_id}|${round.length}` : null);
+
+// Candidates only: callers heal lagging live states, then call latestRound.
+export async function loadRoundCandidates(db: D1Database): Promise<GameRow[]> {
+  const { results } = await db
+    .prepare(
+      "SELECT * FROM games WHERE datetime(start_time_utc) <= datetime('now') AND datetime(start_time_utc) > datetime('now', '-3 days') ORDER BY start_time_utc ASC",
+    )
+    .all<GameRow>();
+  return results;
+}

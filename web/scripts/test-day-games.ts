@@ -2,7 +2,7 @@
 // built-in TS stripping.
 
 import assert from "node:assert/strict";
-import { clampDayOffset, selectDayGames } from "../functions/_shared/dayGames.ts";
+import { clampDayOffset, latestRound, roundKey, selectDayGames } from "../functions/_shared/dayGames.ts";
 import type { GameRow } from "../functions/_shared/types.ts";
 
 function game(overrides: Partial<GameRow>): GameRow {
@@ -71,3 +71,15 @@ assert.deepEqual(ids(selectDayGames(rows, day, false, now)), [2, 3]);
 assert.deepEqual(ids(selectDayGames([game({ game_id: 20, date: "2026-10-07" })], day, true, now)), []);
 
 console.log("test-day-games: ok");
+
+// latestRound: night games (02:00) and evening games (20:00) of one date are separate rounds.
+{
+  const g = (id: number, start: string, o: Partial<GameRow> = {}) => game({ game_id: id, start_time_utc: start, ...o });
+  const night = [g(1, "2026-10-09T23:00:00Z", { is_finished: 1 }), g(2, "2026-10-10T00:00:00Z", { is_finished: 1 })];
+  const now = new Date("2026-10-10T17:30:00Z").getTime();
+  const evening = g(3, "2026-10-10T17:00:00Z", { game_state: "LIVE" });
+  const future = g(4, "2026-10-10T19:30:00Z");
+  assert.deepEqual(ids(latestRound([...night, future], now)), [1, 2]);
+  assert.deepEqual(ids(latestRound([...night, evening, future], now)), [3]);
+  assert.notEqual(roundKey(latestRound(night, now)), roundKey(latestRound([...night, evening], now)));
+}

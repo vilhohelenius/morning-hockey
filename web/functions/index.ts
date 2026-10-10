@@ -44,7 +44,7 @@ import {
 } from "./_shared/gameCard";
 import { fetchGameTeamXg, fetchGamesGoalieGsax, loadGameTeamXgRows, teamXgStatRows } from "./_shared/xg";
 import { loadYoutubeRows, resolveHighlightsUrl } from "./_shared/youtube";
-import { MAX_DAY_OFFSET, MIN_DAY_OFFSET, clampDayOffset, selectDayGames } from "./_shared/dayGames";
+import { MAX_DAY_OFFSET, MIN_DAY_OFFSET, clampDayOffset, latestRound, loadRoundCandidates, roundKey, selectDayGames } from "./_shared/dayGames";
 import { flagImg, icon, addDays, escapeHtml, helsinkiParts, helsinkiToday, secondsToHelsinkiMidnight, humanDate, nationalityFlag, positionTag, shortDate, teamHeroBackgroundStyle } from "./_shared/format";
 import { buildFinnishNight, renderFinnishNightSection, type NightGame } from "./_shared/finnishNight";
 import { renderLayout } from "./_shared/layout";
@@ -218,21 +218,12 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   // back here. tulospiilo_bypass_date (set by /tulospiilo's own inline
   // script once every game in the round has been checked off) bypasses it
   // for that specific round's date, same reasoning but automatic.
-  // The bypass cookie is "date|startedCount": a later game of the same date
-  // (evening games after the night's) starting changes the count, so the
-  // redirect resumes instead of spoiling it on the dashboard.
-  const started = currentRound
-    ? await db
-        .prepare(
-          "SELECT COUNT(*) AS n FROM games WHERE date = ? AND (is_finished = 1 OR game_state NOT IN ('FUT', 'PRE') OR datetime(start_time_utc) <= datetime('now'))",
-        )
-        .bind(currentRound.date)
-        .first<{ n: number }>()
-    : null;
+  // The bypass cookie is the round's key (see dayGames.roundKey): it changes
+  // when a later game starts, so the redirect resumes instead of spoiling it.
   if (
     readTulospiiloCookie(context.request) &&
     url.searchParams.get("tulospiilo") !== "ohita" &&
-    readTulospiiloBypassDate(context.request) !== `${currentRound?.date}|${started?.n}`
+    readTulospiiloBypassDate(context.request) !== roundKey(latestRound(await loadRoundCandidates(db)))
   ) {
     return new Response(null, { status: 302, headers: { Location: "/tulospiilo", "Cache-Control": "no-store" } });
   }
