@@ -39,7 +39,7 @@ import { fetchGameWinProb, winProbInfoText, winProbStatRow, type GameWinProb } f
 import { renderMatchTimeline } from "../_shared/matchTimeline";
 import { computeFormGuide, type FormGuideEntry } from "../_shared/formGuide";
 import { icon, escapeHtml, finalTypeShort, helsinkiParts, humanDate, nationalityFlag, positionTag } from "../_shared/format";
-import { isLive } from "../_shared/gameCard";
+import { isLive, liveBadgeText } from "../_shared/gameCard";
 import { renderRosterGoalieTable, renderRosterSkaterTable } from "../_shared/leaderboard";
 import { TEAM_COLORS, jerseyColors } from "../_shared/teamColors";
 import { resolveHighlightsUrl } from "../_shared/youtube";
@@ -493,7 +493,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     </div>
     ${game.is_finished && game.final_type !== "REG" ? `<span class="score-note">${finalTypeShort(game.final_type)}</span>` : ""}
   </div>
-  ${game.is_finished ? `<p class="mt-final-label">Lopputulos</p>` : ""}
+  ${game.is_finished ? `<p class="mt-final-label">Lopputulos</p>` : isLive(game) ? `<p class="live-tag"><span class="live-dot"></span>${escapeHtml(liveBadgeText(box?.live ?? null))}</p>` : ""}
   ${game.is_finished ? `<a class="game-card-youtube" href="${escapeHtml(youtubeUrl)}" target="_blank" rel="noopener">▶ Highlightit (YouTube)</a>` : ""}
 </section>
 
