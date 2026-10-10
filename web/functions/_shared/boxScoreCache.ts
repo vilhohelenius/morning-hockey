@@ -256,7 +256,10 @@ export async function getBoxScore(
       JSON.stringify(box.homeSkaters),
       JSON.stringify(box.awayGoalies),
       JSON.stringify(box.homeGoalies),
-      JSON.stringify(box.live),
+      // NULL once NHL calls the game over: its landing still carries a
+      // 00:00 clock, which isStale would read as "captured mid-game" and
+      // refetch the finished game on every view (-> NHL 429s).
+      box.live && !NHL_FINISHED_STATES.has(box.nhlGameState) ? JSON.stringify(box.live) : null,
       new Date().toISOString(),
     ];
     if (cached) {
