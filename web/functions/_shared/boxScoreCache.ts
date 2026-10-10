@@ -32,6 +32,9 @@ export interface LiveStatus {
   periodNumber: number;
   periodType: string; // "REG" | "OT" | "SO"
   timeRemaining: string; // "MM:SS", counts down to 00:00
+  // "MM:SS" played in the period (counts up, like the match timeline's event
+  // times); absent on rows cached before it existed.
+  timeElapsed?: string;
   inIntermission: boolean;
 }
 
@@ -65,6 +68,27 @@ export interface ParsedBoxScore {
 
 const NHL_FINISHED_STATES = new Set(["OFF", "FINAL"]);
 
+// Rosters only feed the Finnish-player flags and barely change mid-game, so
+// each live refresh must not re-fetch them (NHL rate-limits with 429s).
+const ROSTER_TTL_MS = 6 * 60 * 60 * 1000;
+const rosterCache = new Map<string, { at: number; data: Promise<any> }>();
+
+function fetchRoster(abbrev: string): Promise<any> {
+  const hit = rosterCache.get(abbrev);
+  if (hit && Date.now() - hit.at < ROSTER_TTL_MS) return hit.data;
+  const data = fetchJson(`/roster/${abbrev}/current`);
+  rosterCache.set(abbrev, { at: Date.now(), data });
+  data.catch(() => rosterCache.delete(abbrev));
+  return data;
+}
+
+// Regular-season OT is 5 min, playoff OT a full 20 (game ids: ...03xxxx).
+function elapsedInPeriod(game: GameRow, periodType: string, secondsRemaining: number): string {
+  const length = periodType === "REG" || String(game.game_id).slice(4, 6) === "03" ? 1200 : 300;
+  const played = Math.max(0, length - secondsRemaining);
+  return `${String(Math.floor(played / 60)).padStart(2, "0")}:${String(played % 60).padStart(2, "0")}`;
+}
+
 async function fetchAndParseBoxScore(game: GameRow): Promise<ParsedBoxScore> {
   const seasonId = seasonIdForDate(game.date);
 
@@ -72,8 +96,8 @@ async function fetchAndParseBoxScore(game: GameRow): Promise<ParsedBoxScore> {
     fetchJson(`/gamecenter/${game.game_id}/landing`),
     fetchJson(`/gamecenter/${game.game_id}/right-rail`),
     fetchJson(`/gamecenter/${game.game_id}/boxscore`),
-    fetchJson(`/roster/${game.away_abbrev}/current`),
-    fetchJson(`/roster/${game.home_abbrev}/current`),
+    fetchRoster(game.away_abbrev),
+    fetchRoster(game.home_abbrev),
     // Penalties + goal highlight clips only live here. Optional: a failure
     // must not take down the rest of the box score.
     fetchJson(`/gamecenter/${game.game_id}/play-by-play`).catch((error): null => {
@@ -123,6 +147,7 @@ async function fetchAndParseBoxScore(game: GameRow): Promise<ParsedBoxScore> {
           periodNumber: landing.periodDescriptor.number ?? 0,
           periodType: landing.periodDescriptor.periodType ?? "REG",
           timeRemaining: landing.clock.timeRemaining ?? "00:00",
+          timeElapsed: elapsedInPeriod(game, landing.periodDescriptor.periodType ?? "REG", landing.clock.secondsRemaining ?? 0),
           inIntermission: !!landing.clock.inIntermission,
         }
       : null;

@@ -75,7 +75,7 @@ export function isLive(game: GameRow): boolean {
 export function liveBadgeText(live: LiveStatus | null): string {
   if (!live) return "LIVE";
   if (live.inIntermission) return "Erätauko";
-  return `${periodLabel({ periodType: live.periodType, number: live.periodNumber })} · ${live.timeRemaining}`;
+  return `${periodLabel({ periodType: live.periodType, number: live.periodNumber })} · ${live.timeElapsed ?? live.timeRemaining}`;
 }
 
 const EN_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
