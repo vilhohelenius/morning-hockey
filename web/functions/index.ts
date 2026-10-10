@@ -218,10 +218,21 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   // back here. tulospiilo_bypass_date (set by /tulospiilo's own inline
   // script once every game in the round has been checked off) bypasses it
   // for that specific round's date, same reasoning but automatic.
+  // The bypass cookie is "date|startedCount": a later game of the same date
+  // (evening games after the night's) starting changes the count, so the
+  // redirect resumes instead of spoiling it on the dashboard.
+  const started = currentRound
+    ? await db
+        .prepare(
+          "SELECT COUNT(*) AS n FROM games WHERE date = ? AND (is_finished = 1 OR game_state NOT IN ('FUT', 'PRE') OR datetime(start_time_utc) <= datetime('now'))",
+        )
+        .bind(currentRound.date)
+        .first<{ n: number }>()
+    : null;
   if (
     readTulospiiloCookie(context.request) &&
     url.searchParams.get("tulospiilo") !== "ohita" &&
-    readTulospiiloBypassDate(context.request) !== currentRound?.date
+    readTulospiiloBypassDate(context.request) !== `${currentRound?.date}|${started?.n}`
   ) {
     return new Response(null, { status: 302, headers: { Location: "/tulospiilo", "Cache-Control": "no-store" } });
   }

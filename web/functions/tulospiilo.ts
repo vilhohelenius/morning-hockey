@@ -18,7 +18,7 @@
 // intended entry point.
 //
 // Once every game on the page has been checked, this page's own inline
-// script sets a tulospiilo_bypass_date cookie for the round's date --
+// script sets a tulospiilo_bypass_date cookie ("date|startedCount") for the round --
 // index.ts's redirect then skips itself for that date only, without
 // touching the user's saved tulospiilo_mode preference (so the next
 // round still opens here). Leaving early -- the sidebar or the "Poistu
@@ -49,6 +49,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
   let gamesHtml = "";
   let roundDate: string | null = null;
+  let startedCount = 0;
   let roundComplete = false;
   const gameDetails: Record<number, { timeline?: unknown; team_stats?: unknown; youtube_url?: string }> = {};
   let missingBoxes = 0;
@@ -71,10 +72,11 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     // inline script below must not set tulospiilo_bypass_date in that case
     // (it would otherwise permanently skip the redirect for a round that
     // still has unrevealed results coming later the same night).
-    roundComplete = games.every((g) => g.is_finished) && games.length === allRoundGames.length;
+    roundComplete = games.every((g) => g.is_finished);
 
     if (games.length) {
       roundDate = currentRound.date;
+      startedCount = games.length;
       const gsaxByGame = await fetchGamesGoalieGsax(db, games.map((g) => g.game_id));
       for (const game of games) {
         const [{ box }, youtubeUrl, gameXg] = await Promise.all([
@@ -177,6 +179,7 @@ ${missingBoxRetryScript(missingBoxes)}
 <script>
 (function () {
   var ROUND_DATE = ${JSON.stringify(roundDate)};
+  var STARTED_COUNT = ${startedCount};
   var ROUND_COMPLETE = ${JSON.stringify(roundComplete)};
   var checkboxes = Array.prototype.slice.call(document.querySelectorAll(".spoiler-reveal-toggle"));
   var allRevealed = false;
@@ -189,7 +192,7 @@ ${missingBoxRetryScript(missingBoxes)}
   function recomputeAllRevealed() {
     allRevealed = ROUND_COMPLETE && checkboxes.length > 0 && checkboxes.every(function (cb) { return cb.checked; });
     if (allRevealed && ROUND_DATE) {
-      document.cookie = "tulospiilo_bypass_date=" + encodeURIComponent(ROUND_DATE) + "; path=/; max-age=259200; samesite=lax";
+      document.cookie = "tulospiilo_bypass_date=" + encodeURIComponent(ROUND_DATE + "|" + STARTED_COUNT) + "; path=/; max-age=259200; samesite=lax";
     }
   }
 
