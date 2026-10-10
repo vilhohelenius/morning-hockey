@@ -526,6 +526,11 @@ export function buildGoalieChanges(
       goalie_in: pbpPlayerName(spots, shift.playerId, finnishIds),
     });
   }
+  // The chart only lists finished shifts, so a goalie who is still in net (live,
+  // or the closing shift) is missing; add shot-derived changes it doesn't cover.
+  for (const change of goalieChangesFromShots(pbp, awayAbbrev, homeAbbrev, finnishIds)) {
+    if (!changes.some((c) => c.team_abbrev === change.team_abbrev && c.goalie_in === change.goalie_in)) changes.push(change);
+  }
   return changes;
 }
 
