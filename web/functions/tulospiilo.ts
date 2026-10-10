@@ -47,7 +47,6 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   let gamesHtml = "";
   let roundDate: string | null = null;
   let roundKeyValue: string | null = null;
-  let roundComplete = false;
   const gameDetails: Record<number, { timeline?: unknown; team_stats?: unknown; youtube_url?: string }> = {};
   let missingBoxes = 0;
 
@@ -60,12 +59,6 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     // Finished games plus ones in progress (shown as cards whose current
     // score stays hidden until checked; see renderGameCard's live badge).
     const games = latestRound(candidates);
-    // A round with a game still in progress isn't over, so the inline script
-    // below must not set tulospiilo_bypass_date then. Games that haven't
-    // started yet don't count: they join the round (changing its key, which
-    // ends the bypass) the moment they start.
-    roundComplete = games.every((g) => g.is_finished);
-
     if (games.length) {
       roundDate = games[0].date;
       roundKeyValue = roundKey(games);
@@ -171,7 +164,6 @@ ${missingBoxRetryScript(missingBoxes)}
 <script>
 (function () {
   var ROUND_KEY = ${JSON.stringify(roundKeyValue)};
-  var ROUND_COMPLETE = ${JSON.stringify(roundComplete)};
   var checkboxes = Array.prototype.slice.call(document.querySelectorAll(".spoiler-reveal-toggle"));
   var allRevealed = false;
 
@@ -181,7 +173,7 @@ ${missingBoxRetryScript(missingBoxes)}
   }
 
   function recomputeAllRevealed() {
-    allRevealed = ROUND_COMPLETE && checkboxes.length > 0 && checkboxes.every(function (cb) { return cb.checked; });
+    allRevealed = checkboxes.length > 0 && checkboxes.every(function (cb) { return cb.checked; });
     if (allRevealed && ROUND_KEY) {
       document.cookie = "tulospiilo_bypass_date=" + encodeURIComponent(ROUND_KEY) + "; path=/; max-age=259200; samesite=lax";
     }
