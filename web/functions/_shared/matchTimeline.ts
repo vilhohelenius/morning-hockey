@@ -86,7 +86,7 @@ function eventHtml(event: TimelineEvent, awayAbbrev: string): string {
 }
 
 export function renderMatchTimeline(periods: TimelinePeriod[], awayAbbrev: string): string {
-  if (!periods.length) return `<p class="tp-empty">Ei maaleja eikä jäähyjä.</p>`;
+  if (!periods.length) return `<p class="tp-empty">Ei tapahtumia.</p>`;
   const bands = periods
     .map(
       (period) => `

@@ -679,7 +679,7 @@
     function renderTimeline(periods, awayAbbrev) {
       var wrap = section("Ottelun kulku");
       if (!periods.length) {
-        wrap.appendChild(el("p", "tp-empty", "Ei maaleja eikä jäähyjä."));
+        wrap.appendChild(el("p", "tp-empty", "Ei tapahtumia."));
         return wrap;
       }
       var list = el("div", "mt");
