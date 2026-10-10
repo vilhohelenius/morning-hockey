@@ -195,10 +195,23 @@ ${missingBoxRetryScript(missingBoxes)}
       // One-way: once watched-and-checked, locked so it can't be
       // unchecked again (by the box itself or its <label>) -- nothing
       // should be able to re-hide an already-revealed result.
-      if (cb.checked) cb.disabled = true;
+      if (cb.checked) { cb.disabled = true; saveSeen(cb.id); }
     });
   });
   recomputeAllRevealed();
+
+  // Games ticked "seen" stay seen across reloads (also while still live, so
+  // re-checking a running game shows its current score right away).
+  function loadSeen() {
+    try { return JSON.parse(localStorage.getItem("tulospiilo_seen") || "[]"); } catch (e) { return []; }
+  }
+  function saveSeen(id) {
+    try {
+      var seen = loadSeen().filter(function (x) { return x !== id; });
+      seen.push(id);
+      localStorage.setItem("tulospiilo_seen", JSON.stringify(seen.slice(-300)));
+    } catch (e) {}
+  }
 
   // Pistemiesbingo rows reveal together with the game's own result.
   var bingoRows = Array.prototype.slice.call(document.querySelectorAll(".bingo-row[data-gate]"));
@@ -252,6 +265,13 @@ ${missingBoxRetryScript(missingBoxes)}
     row.addEventListener("keydown", function (event) {
       if (event.key === "Enter" || event.key === " ") revealScore(row);
     });
+  });
+
+  var seenIds = loadSeen();
+  checkboxes.forEach(function (cb) {
+    if (seenIds.indexOf(cb.id) < 0) return;
+    checkBox(cb);
+    revealScore(cb.parentElement.querySelector(".spoiler-score-row"));
   });
 
   var modal = document.getElementById("tulospiilo-exit-modal");
