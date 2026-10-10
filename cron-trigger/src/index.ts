@@ -33,15 +33,27 @@ export default {
       return;
     }
 
-    const response = await fetch(`https://api.github.com/repos/${env.GITHUB_REPO}/actions/workflows/${workflow}/dispatches`, {
+    const headers = {
+      Authorization: `Bearer ${env.GITHUB_TOKEN}`,
+      Accept: "application/vnd.github+json",
+      "X-GitHub-Api-Version": "2022-11-28",
+      "User-Agent": "morning-hockey-cron-trigger",
+      "Content-Type": "application/json",
+    };
+    const workflowUrl = `https://api.github.com/repos/${env.GITHUB_REPO}/actions/workflows/${workflow}`;
+
+    // Cloudflare has been seen firing the same cron twice ~6 s apart (2026-10-10).
+    // Skip if this workflow was already dispatched in the last minute.
+    const since = new Date(Date.now() - 60_000).toISOString();
+    const recent = await fetch(`${workflowUrl}/runs?event=workflow_dispatch&per_page=1&created=>${since}`, { headers }).catch((): null => null);
+    if (recent?.ok && ((await recent.json<{ total_count?: number }>()).total_count ?? 0) > 0) {
+      console.log(`Skipping duplicate trigger for ${workflow}`);
+      return;
+    }
+
+    const response = await fetch(`${workflowUrl}/dispatches`, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${env.GITHUB_TOKEN}`,
-        Accept: "application/vnd.github+json",
-        "X-GitHub-Api-Version": "2022-11-28",
-        "User-Agent": "morning-hockey-cron-trigger",
-        "Content-Type": "application/json",
-      },
+      headers,
       body: JSON.stringify({ ref: "main" }),
     });
 
