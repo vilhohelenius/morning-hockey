@@ -68,24 +68,7 @@
     });
   }
 
-  // Etusivun välilehdet (Ottelut / Yön suomalaiset): CSS piilottaa .tab-* -lohkot.
-  var homeTabs = document.querySelector(".home-tabs");
-  if (homeTabs) {
-    var dash = document.querySelector(".dashboard");
-    var showTab = function (tab) {
-      dash.dataset.tab = tab;
-      homeTabs.querySelectorAll(".day-pill").forEach(function (p) {
-        p.classList.toggle("active", p.dataset.tab === tab);
-      });
-      try { localStorage.setItem("home-tab", tab); } catch (e) {}
-    };
-    homeTabs.querySelectorAll(".day-pill").forEach(function (p) {
-      p.addEventListener("click", function () { showTab(p.dataset.tab); });
-    });
-    try { if (localStorage.getItem("home-tab") === "fin") showTab("fin"); } catch (e) {}
-  }
-
-  wirePillToggle(".day-picker:not(.home-tabs)", ".schedule-day-section", "date");
+  wirePillToggle(".day-picker", ".schedule-day-section", "date");
   wirePillToggle(".season-type-picker", ".season-history-section", "gameType");
   wirePillToggle(".team-games-picker", ".team-games-section", "filter");
   wirePillToggle(".player-filter-picker", ".player-filter-section", "filter");
