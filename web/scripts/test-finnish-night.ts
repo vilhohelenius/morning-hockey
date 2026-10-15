@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { buildFinnishNight, goalieDecisionFi, renderFinnishNightSection } from "../functions/_shared/finnishNight.ts";
+import { buildFinnishNight, finnishInRound, goalieDecisionFi, renderFinnishNightSection } from "../functions/_shared/finnishNight.ts";
 
 const sk = (id: number, name: string, nat: string, goals: number, assists: number, toi = "18:00") =>
   ({ player_id: id, name, position: "C", nationality: nat, headshot: "", goals, assists, points: goals + assists, plus_minus: 1, shots: 0, blocked_shots: 0, hits: 0, giveaways: 0, takeaways: 0, faceoff_pct: null, pim: 0, toi }) as any;
@@ -36,4 +36,8 @@ assert.doesNotMatch(html, /TBL 4–1 PHI/);
 // Away skater sees the same game from the other side.
 assert.match(html, /<img src="a" alt="PHI"[^>]*class="yf-game-logo yf-own"[^>]*><span class="yf-score"><strong class="yf-own-score">1<\/strong>–<span class="yf-opp-score">4<\/span>/);
 assert.match(renderFinnishNightSection({ skaters: [], goalies: [] }, "x"), /Ei suomalaisia pelaajia yön otteluissa\./);
+// Round under way, nobody has played yet: empty state lists the Finns in the lineups.
+const fresh = { game, awaySkaters: [sk(1, "Pointless Fin", "FIN", 0, 0, "00:00"), sk(2, "Swede", "SWE", 0, 0, "00:00")], homeSkaters: [], awayGoalies: [gl(6, "Backup", "FIN", "00:00", null)], homeGoalies: [], live: true, liveText: "" };
+assert.deepEqual(finnishInRound([fresh]), ["Pointless Fin"]);
+assert.match(renderFinnishNightSection({ skaters: [], goalies: [] }, "x", ["A", "B"]), /Illan pelit käynnissä, suomalaiset pelaamassa: A, B/);
 console.log("finnish-night tests passed");

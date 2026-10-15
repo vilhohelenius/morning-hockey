@@ -80,6 +80,17 @@ export function buildFinnishNight(games: NightGame[]): { skaters: NightSkater[];
   return { skaters, goalies };
 }
 
+// Finnish skaters in the lineups (ice time or not) plus goalies who got in, for
+// the empty state while a new round is under way and nobody has played yet.
+export function finnishInRound(games: NightGame[]): string[] {
+  const names: string[] = [];
+  for (const g of games) {
+    for (const p of [...g.awaySkaters, ...g.homeSkaters]) if (p.nationality === "FIN") names.push(p.name);
+    for (const p of [...g.awayGoalies, ...g.homeGoalies]) if (p.nationality === "FIN" && played(p.toi)) names.push(p.name);
+  }
+  return names;
+}
+
 export function goalieDecisionFi(decision: string | null): string {
   if (decision === "W") return "W";
   if (decision === "L") return "L";
@@ -188,11 +199,15 @@ function renderFinnishNightGoalies(rows: NightGoalie[]): string {
 export function renderFinnishNightSection(
   night: { skaters: NightSkater[]; goalies: NightGoalie[] },
   heroStyle: string,
+  playing: string[] = [], // Finns in a round that is under way (empty state only)
 ): string {
   const empty = !night.skaters.length && !night.goalies.length;
+  const emptyText = playing.length
+    ? `Illan pelit käynnissä, suomalaiset pelaamassa: ${playing.map(esc).join(", ")}`
+    : "Ei suomalaisia pelaajia yön otteluissa.";
   return `
 <section class="section-tile hero-tinted yf-section" style="${esc(heroStyle)}">
   <h2 class="section-title">${flagImg("fi")} Yön suomalaiset</h2>
-  ${empty ? `<p class="empty-note">Ei suomalaisia pelaajia yön otteluissa.</p>` : renderFinnishNightSkaters(night.skaters) + renderFinnishNightGoalies(night.goalies)}
+  ${empty ? `<p class="empty-note">${emptyText}</p>` : renderFinnishNightSkaters(night.skaters) + renderFinnishNightGoalies(night.goalies)}
 </section>`;
 }

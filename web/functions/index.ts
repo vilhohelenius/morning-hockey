@@ -46,7 +46,7 @@ import { fetchGameTeamXg, fetchGamesGoalieGsax, loadGameTeamXgRows, teamXgStatRo
 import { loadYoutubeRows, resolveHighlightsUrl } from "./_shared/youtube";
 import { MAX_DAY_OFFSET, MIN_DAY_OFFSET, clampDayOffset, latestRound, loadRoundCandidates, roundKey, selectDayGames } from "./_shared/dayGames";
 import { flagImg, icon, addDays, escapeHtml, helsinkiParts, helsinkiToday, secondsToHelsinkiMidnight, humanDate, nationalityFlag, positionTag, shortDate, teamHeroBackgroundStyle } from "./_shared/format";
-import { buildFinnishNight, renderFinnishNightSection, type NightGame } from "./_shared/finnishNight";
+import { buildFinnishNight, finnishInRound, renderFinnishNightSection, type NightGame } from "./_shared/finnishNight";
 import { renderLayout } from "./_shared/layout";
 import type {
   Env,
@@ -234,8 +234,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   const dayOffset = clampDayOffset(url.searchParams.get("pv"));
   const todayDate = helsinkiToday();
 
-  // Started games of today's panel (offset 0) with their box scores, reused
-  // for "Yön suomalaiset" below -- no extra fetches.
+  // Started games of the latest round with their box scores, for "Yön suomalaiset".
   const nightGames: NightGame[] = [];
 
   const gameDetails: Record<number, { timeline?: unknown; team_stats?: unknown; youtube_url?: string }> = {};
@@ -294,19 +293,6 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
         gameDetails[game.game_id] = { youtube_url: await resolveHighlightsUrl(db, context.env, game, youtubeRows) };
       }
 
-      if (box && offset === 0) {
-        const live = !game.is_finished && isLive(game);
-        nightGames.push({
-          game,
-          awaySkaters: box.awaySkaters,
-          homeSkaters: box.homeSkaters,
-          awayGoalies: box.awayGoalies,
-          homeGoalies: box.homeGoalies,
-          live,
-          liveText: live ? liveBadgeText(box.live ?? null) : "",
-        });
-      }
-
       if (box) {
         const gameXg = game.is_finished ? await fetchGameTeamXg(db, game.game_id, game.away_abbrev, game.home_abbrev, teamXgRows) : null;
         gameDetails[game.game_id] = { ...gameDetails[game.game_id], timeline: buildTimeline(box.goals, box.penalties, game.away_abbrev, box.shootout, box.goalieChanges), team_stats: [...box.teamStats, ...(gameXg ? teamXgStatRows(gameXg.away, gameXg.home, true, undefined, false) : [])] };
@@ -354,6 +340,28 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
         `<div class="day-panel" data-offset="${dayOffsets[i]}" data-title="${escapeHtml(d.title)}"${dayOffsets[i] === dayOffset ? "" : " hidden"}>${d.html}</div>`,
     )
     .join("");
+
+  // ---------- Yön suomalaiset: the latest round only (same 6 h clustering as tulospiilo) ----------
+
+  // After the day panels, so live box scores are already in the cache.
+  const round = latestRound(await loadRoundCandidates(db));
+  const roundBoxes = await loadBoxScoreRows(db, round.map((g) => g.game_id));
+  for (const game of round) {
+    const box = (await getBoxScore(db, game, roundBoxes)).box;
+    if (!box) continue;
+    const live = !game.is_finished && isLive(game);
+    nightGames.push({
+      game,
+      awaySkaters: box.awaySkaters,
+      homeSkaters: box.homeSkaters,
+      awayGoalies: box.awayGoalies,
+      homeGoalies: box.homeGoalies,
+      live,
+      liveText: live ? liveBadgeText(box.live ?? null) : "",
+    });
+  }
+  const night = buildFinnishNight(nightGames);
+  const roundLive = round.some((g) => !g.is_finished && isLive(g));
 
   // ---------- Stat teasers ----------
 
@@ -473,7 +481,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 </section>
 
 <div class="dashboard-side">
-${renderFinnishNightSection(buildFinnishNight(nightGames), teamHeroBackgroundStyle("NYR", false))}
+${renderFinnishNightSection(night, teamHeroBackgroundStyle("NYR", false), roundLive ? finnishInRound(nightGames) : [])}
 
 ${favoriteTeamsHtml}
 
