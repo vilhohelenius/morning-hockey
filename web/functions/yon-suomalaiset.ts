@@ -62,6 +62,8 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   const xg = { ixg: new Map<number, number>(), gsax: new Map<number, number>(), xgfPct: new Map<number, number>(), xgfPct5v5: new Map<number, number>() };
   for (const x of xgs) for (const k of Object.keys(xg) as (keyof typeof xg)[]) for (const [id, v] of x[k]) xg[k].set(id, v);
 
+  const teams = new Map([...night.skaters, ...night.goalies].map((r) => [r.player.player_id, { abbrev: r.teamAbbrev, logo: r.teamLogo }]));
+
   const content = `
 ${header}
 
@@ -75,8 +77,8 @@ ${digest ? `<p class="sk-digest">${digest}</p>` : ""}
 
 <div class="sk-stats">
   <div class="sk-stats-head"><h2 class="sk-h">Tilastot</h2></div>
-  ${night.skaters.length ? renderSkaterTable(night.skaters.map((r) => r.player), xg) : ""}
-  ${night.goalies.length ? renderGoalieTable(night.goalies.map((r) => r.player), xg.gsax) : ""}
+  ${night.skaters.length ? renderSkaterTable(night.skaters.map((r) => r.player), xg, teams) : ""}
+  ${night.goalies.length ? renderGoalieTable(night.goalies.map((r) => r.player), xg.gsax, teams) : ""}
 </div>`;
 
   return html(await layout(content));

@@ -81,7 +81,15 @@ const toiSeconds = (toi: string): number => {
   return (m || 0) * 60 + (s || 0);
 };
 
-export function renderSkaterTable(skaters: PlayerGameStat[], xg: { ixg: Map<number, number>; xgfPct: Map<number, number>; xgfPct5v5: Map<number, number> }): string {
+type TeamTags = Map<number, { abbrev: string; logo: string }>;
+
+// Flag by default; the Finnish-night page passes team logos instead.
+const metaTag = (nat: string, id: number, teams?: TeamTags) => {
+  const t = teams?.get(id);
+  return t ? `<img src="${escapeHtml(t.logo)}" alt="${escapeHtml(t.abbrev)}" class="table-team-logo" loading="lazy">` : nationalityFlag(nat);
+};
+
+export function renderSkaterTable(skaters: PlayerGameStat[], xg: { ixg: Map<number, number>; xgfPct: Map<number, number>; xgfPct5v5: Map<number, number> }, teams?: TeamTags): string {
   const { ixg, xgfPct, xgfPct5v5 } = xg;
   const pctCell = (m: Map<number, number>, id: number) => (m.has(id) ? `${m.get(id)!.toFixed(0)} %` : "–");
   const rows = skaters
@@ -98,7 +106,7 @@ export function renderSkaterTable(skaters: PlayerGameStat[], xg: { ixg: Map<numb
             <img src="${escapeHtml(p.headshot)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
             <span class="player-name">
               ${escapeHtml(p.name)}
-              <span class="player-meta">${nationalityFlag(p.nationality)} · ${positionTag(p.position)}</span>
+              <span class="player-meta">${metaTag(p.nationality, p.player_id, teams)} · ${positionTag(p.position)}</span>
             </span>
           </a>
         </td>
@@ -148,7 +156,7 @@ export function renderSkaterTable(skaters: PlayerGameStat[], xg: { ixg: Map<numb
 </div>`;
 }
 
-export function renderGoalieTable(goalies: GoalieGameStat[], gsax: Map<number, number>): string {
+export function renderGoalieTable(goalies: GoalieGameStat[], gsax: Map<number, number>, teams?: TeamTags): string {
   const rows = goalies
     .map(
       (g, i) => `
@@ -160,7 +168,7 @@ export function renderGoalieTable(goalies: GoalieGameStat[], gsax: Map<number, n
             <img src="${escapeHtml(g.headshot)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
             <span class="player-name">
               ${escapeHtml(g.name)}
-              <span class="player-meta">${nationalityFlag(g.nationality)}</span>
+              <span class="player-meta">${metaTag(g.nationality, g.player_id, teams)}</span>
             </span>
           </a>
         </td>
