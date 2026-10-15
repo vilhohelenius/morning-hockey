@@ -114,10 +114,6 @@ export function redirectTarget(form: FormData, fallback: string): string {
   return value.startsWith("/") && !value.startsWith("//") ? value : fallback;
 }
 
-// Legacy SHA-256 hash: only used to verify the password of a pre-Google
-// account during its one-time claim (/kirjaudu/valitse).
-export const hashPassword = sha256Hex;
-
 // "system" isn't a real cookie/CSS value -- it means "no explicit choice",
 // which is already what an absent cookie means to style.css's
 // prefers-color-scheme fallback. Choosing it just clears the cookie.

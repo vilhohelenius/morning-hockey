@@ -1781,10 +1781,8 @@ main {
 .table-filters select,
 .table-filters input[type="search"],
 .table-filters input[type="text"],
-.table-filters input[type="password"],
 .login-form select,
-.login-form input[type="text"],
-.login-form input[type="password"] {
+.login-form input[type="text"] {
   padding: 6px 14px;
   background: var(--card-bg);
   border: 1px solid var(--border);
