@@ -4052,14 +4052,9 @@ main {
 .pf-row .pts { font-weight: 700; color: var(--accent); }
 .pf-cut { border-top: 2px dashed var(--muted); opacity: 0.6; margin: 2px 4px 6px; }
 
-.pf-pie-wrap svg { display: block; width: 100%; max-width: 520px; margin: 0 auto; height: auto; }
-.pf-cap { display: flex; justify-content: space-between; font: 600 1.2rem var(--font-display); letter-spacing: 0.04em; max-width: 520px; margin: 0 auto 14px; padding: 0 6px; }
-.pf-cap.center { justify-content: center; }
-.pf-pie-wrap svg text { font-family: var(--font-body); fill: var(--text); }
-.pf-pie-wrap .dl { font-size: 14px; font-weight: 600; fill: var(--muted); }
-.pf-pie-wrap .pp-out { font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; }
-.pf-pie-wrap .lead { stroke: var(--muted); stroke-width: 1.2; fill: none; }
-.pf-pie-wrap .sl { stroke: var(--card-bg); stroke-width: 2.5; }
+.pf-sort { display: flex; align-items: center; gap: 10px; margin: 6px 0 10px; }
+.pf-sort > span { color: var(--muted); font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+.pf-sort .tab-bar { margin: 0; }
 
 /* Game preview goaltending: big headshot left, name beside it, team logo right
    (overrides the centered column header the player cards use). */
