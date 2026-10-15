@@ -241,7 +241,7 @@ function renderStatBarRows(rows: TeamStatRow[], awayAbbrev: string, homeAbbrev: 
 
 function renderPreviewTeamStats(rows: TeamStatRow[], awayAbbrev: string, homeAbbrev: string, awayForm: FormGuideEntry | undefined, homeForm: FormGuideEntry | undefined): string {
   const formRow = `
-      <div class="gd-stat-row">
+      <div class="gd-stat-row gd-form-row">
         ${renderFormChips(awayForm, "start")}
         <span class="gd-stat-label">Viimeiset ${FORM_GUIDE_WINDOW} ottelua</span>
         ${renderFormChips(homeForm, "end")}

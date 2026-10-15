@@ -6236,3 +6236,16 @@ main {
   text-align: center;
   opacity: 0.7;
 }
+
+/* Game preview "Viimeiset 5 ottelua": two chip groups + label don't fit on a
+   phone, so the label drops to its own line above the chips. */
+@media (max-width: 520px) {
+  .gd-form-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .gd-form-row .gd-stat-label {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+}
