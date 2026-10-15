@@ -6,8 +6,10 @@
 import { gameNight, nightLabel } from "./_shared/bingo";
 import { getBoxScore, loadBoxScoreRows } from "./_shared/boxScoreCache";
 import { isGameLive, latestRound, loadRoundCandidates } from "./_shared/dayGames";
+import { renderGoalieTable, renderSkaterTable } from "./ottelut/[gameId]";
+import { fetchGamePlayerXg } from "./_shared/xg";
 import { buildDigest } from "./_shared/favorites";
-import { buildFinnishNight, goalieDecisionFi, type NightGame } from "./_shared/finnishNight";
+import { buildFinnishNight, type NightGame } from "./_shared/finnishNight";
 import { abbreviatedName, escapeHtml, flagImg } from "./_shared/format";
 import { liveBadgeText } from "./_shared/gameCard";
 import { renderLayout } from "./_shared/layout";
@@ -15,8 +17,6 @@ import type { Env } from "./_shared/types";
 
 const lastName = (full: string) => full.slice(full.lastIndexOf(" ") + 1);
 const html = (body: string) => new Response(body, { headers: { "content-type": "text/html; charset=utf-8" } });
-const signed = (n: number) => (n > 0 ? `+${n}` : String(n));
-const pct = (v: number | null) => (v === null ? "–" : v.toFixed(3).replace(/^0/, ""));
 
 export const onRequestGet: PagesFunction<Env> = async (context) => {
   const { request, env } = context;
@@ -57,43 +57,10 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   const skaterRecap = night.skaters.map((r) => recapRow(r, `${r.player.goals}+${r.player.assists}`, r.player.points > 0)).join("");
   const goalieRecap = night.goalies.map((r) => recapRow(r, `${r.player.saves}/${r.player.shots_against}`, false)).join("");
 
-  // ---- stats tables ----
-  const playerCell = (p: { player_id: number; name: string; headshot: string }, team: string) =>
-    `<td><a href="/pelaajat/${p.player_id}" class="player-cell"><img src="${escapeHtml(p.headshot)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'"><span class="player-name">${escapeHtml(p.name)}<span class="player-meta">${escapeHtml(team)}</span></span></a></td>`;
-
-  const skaterRows = night.skaters
-    .map((r, i) => {
-      const p = r.player;
-      return `
-      <tr>
-        <td class="col-rank">${i + 1}</td>${playerCell(p, r.teamAbbrev)}
-        <td>${p.goals}</td>
-        <td>${p.assists}</td>
-        <td class="stat-strong">${p.points}</td>
-        <td>${signed(p.plus_minus)}</td>
-        <td>${p.shots}</td>
-        <td>${p.toi}</td>
-        <td>${p.pim}</td>
-      </tr>`;
-    })
-    .join("");
-
-  const goalieRows = night.goalies
-    .map((r, i) => {
-      const p = r.player;
-      return `
-      <tr>
-        <td class="col-rank">${i + 1}</td>${playerCell(p, r.teamAbbrev)}
-        <td>${p.saves}/${p.shots_against}</td>
-        <td class="stat-strong">${pct(p.save_pct)}</td>
-        <td>${p.toi}</td>
-        <td>${goalieDecisionFi(p.decision)}</td>
-      </tr>`;
-    })
-    .join("");
-
-  const table = (head: string, rows: string) =>
-    `<div class="stats-table-wrap"><table class="stats-table"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>`;
+  // ---- stats tables: the game page's own tables, all of the night's Finns together ----
+  const xgs = await Promise.all(nightGames.filter((g) => g.game.is_finished).map((g) => fetchGamePlayerXg(db, g.game.game_id)));
+  const xg = { ixg: new Map<number, number>(), gsax: new Map<number, number>(), xgfPct: new Map<number, number>(), xgfPct5v5: new Map<number, number>() };
+  for (const x of xgs) for (const k of Object.keys(xg) as (keyof typeof xg)[]) for (const [id, v] of x[k]) xg[k].set(id, v);
 
   const content = `
 ${header}
@@ -108,8 +75,8 @@ ${digest ? `<p class="sk-digest">${digest}</p>` : ""}
 
 <div class="sk-stats">
   <div class="sk-stats-head"><h2 class="sk-h">Tilastot</h2></div>
-  ${skaterRows ? table(`<th class="col-rank">#</th><th>Pelaaja</th><th>G</th><th>A</th><th>PTS</th><th>+/-</th><th>S</th><th>TOI</th><th>PIM</th>`, skaterRows) : ""}
-  ${goalieRows ? table(`<th class="col-rank">#</th><th>Maalivahti</th><th>SV</th><th>SV%</th><th>TOI</th><th title="Päätös">W/L</th>`, goalieRows) : ""}
+  ${night.skaters.length ? renderSkaterTable(night.skaters.map((r) => r.player), xg) : ""}
+  ${night.goalies.length ? renderGoalieTable(night.goalies.map((r) => r.player), xg.gsax) : ""}
 </div>`;
 
   return html(await layout(content));

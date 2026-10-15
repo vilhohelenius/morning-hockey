@@ -81,7 +81,7 @@ const toiSeconds = (toi: string): number => {
   return (m || 0) * 60 + (s || 0);
 };
 
-function renderSkaterTable(skaters: PlayerGameStat[], xg: { ixg: Map<number, number>; xgfPct: Map<number, number>; xgfPct5v5: Map<number, number> }): string {
+export function renderSkaterTable(skaters: PlayerGameStat[], xg: { ixg: Map<number, number>; xgfPct: Map<number, number>; xgfPct5v5: Map<number, number> }): string {
   const { ixg, xgfPct, xgfPct5v5 } = xg;
   const pctCell = (m: Map<number, number>, id: number) => (m.has(id) ? `${m.get(id)!.toFixed(0)} %` : "–");
   const rows = skaters
@@ -148,7 +148,7 @@ function renderSkaterTable(skaters: PlayerGameStat[], xg: { ixg: Map<number, num
 </div>`;
 }
 
-function renderGoalieTable(goalies: GoalieGameStat[], gsax: Map<number, number>): string {
+export function renderGoalieTable(goalies: GoalieGameStat[], gsax: Map<number, number>): string {
   const rows = goalies
     .map(
       (g, i) => `
