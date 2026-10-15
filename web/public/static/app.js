@@ -685,7 +685,11 @@
         pill.appendChild(el("span", "mt-pill-score", attempt.away_score + " - " + attempt.home_score));
         main.appendChild(pill);
       } else {
-        main.appendChild(el("span", "mt-so-miss", attempt.result === "save" ? "Torjuttu" : "Ohi"));
+        var miss = el("span", "mt-so-miss");
+        miss.title = attempt.result === "save" ? "Torjuttu" : "Ohi";
+        miss.setAttribute("aria-label", miss.title);
+        miss.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>';
+        main.appendChild(miss);
       }
       var who = el("span", "mt-who");
       who.appendChild(linkPlayer(elFlags("strong", null, attempt.player), attempt.player_id));

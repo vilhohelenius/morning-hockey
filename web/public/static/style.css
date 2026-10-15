@@ -3283,9 +3283,8 @@ main {
 /* Shootout attempts (mt-so) */
 .mt-so-miss {
   flex-shrink: 0;
-  color: var(--muted);
-  font-size: 0.8rem;
-  font-weight: 600;
+  display: inline-flex;
+  color: #d93025;
 }
 
 .mt-so-save strong,

@@ -49,13 +49,15 @@ function penaltyHtml(penalty: PenaltyEvent, side: "away" | "home"): string {
 }
 
 const SO_RESULT_FI: Record<string, string> = { save: "Torjuttu", miss: "Ohi" };
+// Red cross (Material close); same path in app.js.
+const MISS_ICON = `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>`;
 
 function shootoutHtml(attempt: ShootoutAttempt, awayAbbrev: string): string {
   const side = attempt.team_abbrev === awayAbbrev ? "away" : "home";
   const outcome =
     attempt.result === "goal"
       ? `<span class="mt-pill">${logoHtml(attempt.team_abbrev)}<span class="mt-pill-score">${attempt.away_score} - ${attempt.home_score}</span></span>`
-      : `<span class="mt-so-miss">${SO_RESULT_FI[attempt.result]}</span>`;
+      : `<span class="mt-so-miss" title="${SO_RESULT_FI[attempt.result]}" aria-label="${SO_RESULT_FI[attempt.result]}">${MISS_ICON}</span>`;
   return `
     <div class="mt-event mt-${side} mt-so mt-so-${attempt.result}">
       <div class="mt-main">
