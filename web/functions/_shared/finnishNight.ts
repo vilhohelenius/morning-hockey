@@ -198,6 +198,9 @@ function renderFinnishNightGoalies(rows: NightGoalie[]): string {
   </div>`;
 }
 
+// Front page shows the top few per table; /yon-suomalaiset has everyone.
+const FRONT_PAGE_MAX = 5;
+
 export function renderFinnishNightSection(
   night: { skaters: NightSkater[]; goalies: NightGoalie[] },
   heroStyle: string,
@@ -210,7 +213,7 @@ export function renderFinnishNightSection(
   return `
 <section class="section-tile hero-tinted yf-section" style="${esc(heroStyle)}">
   <h2 class="section-title">${flagImg("fi")} Yön suomalaiset</h2>
-  ${empty ? `<p class="empty-note">${emptyText}</p>` : renderFinnishNightSkaters(night.skaters) + renderFinnishNightGoalies(night.goalies)}
+  ${empty ? `<p class="empty-note">${emptyText}</p>` : renderFinnishNightSkaters(night.skaters.slice(0, FRONT_PAGE_MAX)) + renderFinnishNightGoalies(night.goalies.slice(0, FRONT_PAGE_MAX))}
   <a class="archive-link" href="/yon-suomalaiset">Koko yön yhteenveto →</a>
 </section>`;
 }
