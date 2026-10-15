@@ -16,7 +16,7 @@
 
 import { favoriteTeamAbbrevs } from "./_shared/auth";
 import { computeDivisionPointsRace } from "./_shared/divisionPoints";
-import { icon, abbreviatedName, escapeHtml } from "./_shared/format";
+import { icon, abbreviatedName, escapeHtml, teamLogoUrl, shortDate } from "./_shared/format";
 import { renderLayout } from "./_shared/layout";
 import { getSkaterPointsRace } from "./_shared/skaterGameLog";
 import type { Env, GameRow, SkaterStatsRow, StandingsRow } from "./_shared/types";
@@ -43,6 +43,39 @@ interface AnalyticsSkater {
 
 const TOP_SKATER_COUNT = 10;
 
+interface StreakRow {
+  player_id: number;
+  kind: "active" | "best";
+  name: string;
+  team_abbrev: string;
+  headshot: string | null;
+  games: number;
+  goals: number;
+  assists: number;
+  points: number;
+  start_date: string;
+  end_date: string;
+}
+
+function streakTable(rows: StreakRow[]): string {
+  if (!rows.length) return `<p class="tp-empty">Ei pisteputkia (väh. 3 peliä).</p>`;
+  const body = rows
+    .map(
+      (r, i) => `<tr>
+    <td>${i + 1}</td>
+    <td><a href="/pelaajat/${r.player_id}" class="player-cell">
+      <img src="${escapeHtml(r.headshot ?? "")}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
+      <span class="player-name"><span class="player-name-line">${escapeHtml(r.name)}</span>
+      <span class="player-meta"><img src="${escapeHtml(teamLogoUrl(r.team_abbrev))}" alt="${escapeHtml(r.team_abbrev)}" class="table-team-logo" loading="lazy"></span></span>
+    </a></td>
+    <td class="stat-strong">${r.games}</td><td>${r.goals}</td><td>${r.assists}</td><td>${r.points}</td>
+    <td>${shortDate(r.start_date)} – ${shortDate(r.end_date)}</td>
+  </tr>`,
+    )
+    .join("");
+  return `<div class="stats-table-wrap"><table class="stats-table"><thead><tr><th>#</th><th>Pelaaja</th><th title="Peliä putkessa">Putki</th><th>M</th><th>S</th><th>P</th><th>Aikaväli</th></tr></thead><tbody>${body}</tbody></table></div>`;
+}
+
 export const onRequestGet: PagesFunction<Env> = async (context) => {
   const db = context.env.DB;
 
@@ -55,6 +88,15 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       .all<SkaterStatsRow>(),
     favoriteTeamAbbrevs(context.request, context.env),
   ]);
+
+  // Table may not exist yet (created by hand in prod D1) -> empty lists.
+  const { results: streaks } = await db
+    .prepare(
+      `SELECT t.*, s.headshot FROM skater_point_streaks t LEFT JOIN skater_season_stats s ON s.player_id = t.player_id
+       ORDER BY t.games DESC, t.points DESC, t.name ASC`,
+    )
+    .all<StreakRow>()
+    .catch(() => ({ results: [] as StreakRow[] }));
 
   const teamsByAbbrev = new Map(standings.map((row) => [row.abbrev, row]));
   const divisionNames = [...new Set(standings.map((row) => row.division))].sort();
@@ -121,6 +163,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 <div class="analytiikka-view-picker">
   <button type="button" class="day-pill active" data-view="teams">Joukkueet</button>
   <button type="button" class="day-pill" data-view="skaters">Pistepörssi</button>
+  <button type="button" class="day-pill" data-view="streaks">Pisteputket</button>
 </div>
 
 <section class="analytiikka-view-section" data-view="teams">
@@ -132,6 +175,16 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
 <section class="analytiikka-view-section is-hidden" data-view="skaters">
   <div class="skater-chart"></div>
+</section>
+
+<section class="analytiikka-view-section is-hidden" data-view="streaks">
+  <div class="streak-picker">
+    <button type="button" class="day-pill active" data-streak="active">Käynnissä olevat</button>
+    <button type="button" class="day-pill" data-streak="best">Kauden pisimmät</button>
+  </div>
+  <section class="streak-section" data-streak="active">${streakTable(streaks.filter((r) => r.kind === "active"))}</section>
+  <section class="streak-section is-hidden" data-streak="best">${streakTable(streaks.filter((r) => r.kind === "best"))}</section>
+  <p class="subtitle">Peräkkäiset ottelut, joissa vähintään yksi piste (väh. 3 peliä). Päivittyy kerran vuorokaudessa.</p>
 </section>
 
 <script type="application/json" id="analytiikka-data">${divisionsJson}</script>

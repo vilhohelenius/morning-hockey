@@ -128,6 +128,14 @@ class NHLClient:
     def skater_summary(self, cayenne_exp: str, sort: str, limit: int = -1) -> list[dict]:
         return self._stats_query("skater/summary", cayenne_exp, sort, limit)
 
+    def skater_game_rows(self, cayenne_exp: str) -> list[dict]:
+        """One row per skater per game (isGame=true); the API returns at most 10000 rows."""
+        response = self._request(
+            f"{STATS_BASE_URL}/skater/summary",
+            params={"isGame": "true", "cayenneExp": cayenne_exp, "limit": -1},
+        )
+        return response.json()["data"]
+
     def skater_bios(self, cayenne_exp: str, sort: str, limit: int = -1) -> list[dict]:
         """Like skater_summary, but includes nationalityCode and currentTeamAbbrev."""
         return self._stats_query("skater/bios", cayenne_exp, sort, limit)

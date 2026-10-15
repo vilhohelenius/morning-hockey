@@ -2801,6 +2801,7 @@ main {
 /* ---------- Analytiikka: division + Pistepörssi points-race charts ---------- */
 
 .division-picker,
+.streak-picker,
 .analytiikka-view-picker {
   display: flex;
   flex-wrap: wrap;
@@ -2809,6 +2810,7 @@ main {
 }
 
 .division-chart-section.is-hidden,
+.streak-section.is-hidden,
 .analytiikka-view-section.is-hidden {
   display: none;
 }
@@ -5420,6 +5422,7 @@ main {
 .team-games-picker,
 .player-filter-picker,
 .analytiikka-view-picker,
+.streak-picker,
 .division-picker,
 .sarjataulukko-view-picker {
   display: flex;
@@ -5430,7 +5433,7 @@ main {
   margin: 12px 0 14px;
 }
 
-:is(.season-type-picker, .team-games-picker, .player-filter-picker, .analytiikka-view-picker, .division-picker, .sarjataulukko-view-picker) .day-pill {
+:is(.season-type-picker, .team-games-picker, .player-filter-picker, .analytiikka-view-picker, .streak-picker, .division-picker, .sarjataulukko-view-picker) .day-pill {
   flex: 1;
   padding: 10px 8px;
   background: none;
@@ -5444,7 +5447,7 @@ main {
   font-weight: 400;
 }
 
-:is(.season-type-picker, .team-games-picker, .player-filter-picker, .analytiikka-view-picker, .division-picker, .sarjataulukko-view-picker) .day-pill.active {
+:is(.season-type-picker, .team-games-picker, .player-filter-picker, .analytiikka-view-picker, .streak-picker, .division-picker, .sarjataulukko-view-picker) .day-pill.active {
   background: none;
   border-bottom-color: var(--text);
   color: var(--text);
@@ -5463,12 +5466,12 @@ main {
 .standings-tab-picker::-webkit-scrollbar,
 .tab-bar::-webkit-scrollbar,
 .day-picker::-webkit-scrollbar,
-:is(.season-type-picker, .team-games-picker, .player-filter-picker, .analytiikka-view-picker, .division-picker, .sarjataulukko-view-picker)::-webkit-scrollbar {
+:is(.season-type-picker, .team-games-picker, .player-filter-picker, .analytiikka-view-picker, .streak-picker, .division-picker, .sarjataulukko-view-picker)::-webkit-scrollbar {
   display: none;
 }
 
 .standings-tab,
-:is(.season-type-picker, .team-games-picker, .player-filter-picker, .analytiikka-view-picker, .division-picker, .sarjataulukko-view-picker) .day-pill {
+:is(.season-type-picker, .team-games-picker, .player-filter-picker, .analytiikka-view-picker, .streak-picker, .division-picker, .sarjataulukko-view-picker) .day-pill {
   flex: 1 0 auto;
   padding-left: 14px;
   padding-right: 14px;

@@ -668,3 +668,21 @@ CREATE TABLE IF NOT EXISTS sessions (
     google_sub TEXT NOT NULL,
     expires_at TEXT NOT NULL
 );
+
+-- Pisteputket (2026-10-15), Analytiikka: per skater the active streak (kind 'active')
+-- and the season-longest streak (kind 'best') of consecutive games with >= 1 point,
+-- min 3 games. Rebuilt daily by `sync_streaks` (digest workflow). Idempotent.
+CREATE TABLE IF NOT EXISTS skater_point_streaks (
+    player_id INTEGER NOT NULL,
+    kind TEXT NOT NULL,
+    season_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    team_abbrev TEXT NOT NULL,
+    games INTEGER NOT NULL,
+    goals INTEGER NOT NULL,
+    assists INTEGER NOT NULL,
+    points INTEGER NOT NULL,
+    start_date TEXT NOT NULL,
+    end_date TEXT NOT NULL,
+    PRIMARY KEY (player_id, kind)
+);
