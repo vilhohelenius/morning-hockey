@@ -211,5 +211,6 @@ export function renderFinnishNightSection(
 <section class="section-tile hero-tinted yf-section" style="${esc(heroStyle)}">
   <h2 class="section-title">${flagImg("fi")} Yön suomalaiset</h2>
   ${empty ? `<p class="empty-note">${emptyText}</p>` : renderFinnishNightSkaters(night.skaters) + renderFinnishNightGoalies(night.goalies)}
+  <a class="archive-link" href="/yon-suomalaiset">Koko yön yhteenveto →</a>
 </section>`;
 }
