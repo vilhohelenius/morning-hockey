@@ -5615,7 +5615,24 @@ main {
   }
 }
 
-.dashboard-side > section {
+div.tab-fin,
+div.tab-games {
+  display: contents;
+}
+
+.dashboard[data-tab="games"] .tab-fin,
+.dashboard[data-tab="fin"] .tab-games {
+  display: none;
+}
+
+@media (min-width: 860px) {
+  .dashboard[data-tab="fin"] {
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 700px;
+  }
+}
+
+.dashboard-side section {
   overflow-x: auto;
 }
 
