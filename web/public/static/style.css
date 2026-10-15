@@ -2135,6 +2135,25 @@ main {
   min-width: 0;
 }
 
+/* Edistyneet tilastot: nimi kahdella rivillä + pienempi kuva kapeuttaa jäädytettyä saraketta. */
+.porssi-table .player-cell.two-line {
+  gap: 6px;
+}
+
+.porssi-table .player-cell.two-line > img:first-child {
+  width: 28px;
+  height: 28px;
+}
+
+.porssi-table .player-cell.two-line .player-name {
+  font-size: 0.85rem;
+  line-height: 1.2;
+}
+
+.porssi-table .player-cell.two-line .player-meta {
+  font-size: 0.72rem;
+}
+
 .porssi-table .player-name {
   font-size: 0.92rem;
 }

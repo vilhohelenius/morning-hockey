@@ -43,14 +43,19 @@ const teamLogo = (abbrev: string) =>
   `<img src="${escapeHtml(teamLogoUrl(abbrev))}" alt="${escapeHtml(abbrev)}" class="table-team-logo" loading="lazy">`;
 
 // meta is trusted HTML (flag/logo markup), callers escape any raw values.
-const playerCell = (id: number, name: string, headshot: string, meta: string) => `
-  <a href="/pelaajat/${id}" class="player-cell">
+const playerCell = (id: number, name: string, headshot: string, meta: string) => {
+  // First name / rest on two lines keeps the frozen column narrow.
+  const cut = name.indexOf(" ");
+  const lines = cut < 0 ? [name] : [name.slice(0, cut), name.slice(cut + 1)];
+  return `
+  <a href="/pelaajat/${id}" class="player-cell two-line">
     <img src="${escapeHtml(headshot)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
     <span class="player-name">
-      <span class="player-name-line">${escapeHtml(name)}</span>
+      ${lines.map((l) => `<span class="player-name-line">${escapeHtml(l)}</span>`).join("")}
       <span class="player-meta">${meta}</span>
     </span>
   </a>`;
+};
 
 // Same markup as the Pistepörssi tables (porssi-table, click-to-sort headers,
 // "show 25 more" paging). head items: [label, sortKey?]; the last-sorted-by-
