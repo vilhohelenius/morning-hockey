@@ -5,7 +5,8 @@
 // stronger WC1), and each division's 2nd/3rd place teams play each other.
 // Only round 1 resolves to real teams; later rounds depend on unplayed
 // series, so the diagram shows round 1 and leaves the rest empty.
-// With season_sim (playoff odds) the page also gets a probability pie view.
+// With season_sim (playoff odds) the bracket/tables can also be ordered by xP,
+// and the Kausiennuste tab builds its bracket from that xP order.
 
 import { TEAM_COLORS } from "./_shared/teamColors";
 import { icon, escapeHtml, humanDate } from "./_shared/format";
@@ -14,18 +15,15 @@ import type { Env, StandingsRow } from "./_shared/types";
 
 type Row = StandingsRow;
 
-function topThree(rows: Row[]): Row[] {
-  return [...rows].sort((a, b) => a.division_rank - b.division_rank).slice(0, 3);
-}
-
 // Round 1 pairs, top to bottom: [strong 1 v WC2], [strong 2 v 3], [weak 1 v WC1], [weak 2 v 3].
-function buildRound1(divisionX: Row[], divisionY: Row[], wildcardRace: Row[]): Row[][] {
-  const topX = topThree(divisionX);
-  const topY = topThree(divisionY);
-  const xIsStronger = topX[0].points >= topY[0].points;
+// The view decides who is in (current table or xP order); strength picks the
+// stronger division leader.
+function buildRound1(view: ConferenceView, divisionNames: string[], strength: (r: Row) => number): Row[][] {
+  const [topX, topY] = divisionNames.map((n) => (view.divs.get(n) ?? []).slice(0, 3).map((l) => l.r));
+  const xIsStronger = strength(topX[0]) >= strength(topY[0]);
   const strong = xIsStronger ? topX : topY;
   const weak = xIsStronger ? topY : topX;
-  const [wc1, wc2] = wildcardRace;
+  const [wc1, wc2] = view.wc.map((l) => l.r);
   return [
     [strong[0], wc2],
     [strong[1], strong[2]],
@@ -328,34 +326,39 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   const odds = new Map(simRows.map((s) => [s.abbrev, s.p_playoffs]));
   const asOfDate = rows[0]?.as_of_date ?? "";
 
-  const round1ByConf = new Map<string, Row[][]>();
+  const round1P = new Map<string, Row[][]>();
+  const round1X = new Map<string, Row[][]>();
   const standings = { p: "", x: "" };
   for (const conf of ["Eastern", "Western"]) {
     const conferenceRows = rows.filter((r) => r.conference === conf);
     const divisionNames = [...new Set(conferenceRows.map((r) => r.division))].sort();
     if (divisionNames.length !== 2) continue;
-    const [divisionX, divisionY] = divisionNames.map((name) => conferenceRows.filter((r) => r.division === name));
     const wildcardRace = conferenceRows.filter((r) => r.wildcard_rank > 0).sort((a, b) => a.wildcard_rank - b.wildcard_rank);
     if (wildcardRace.length < 2) continue;
 
-    round1ByConf.set(conf, buildRound1(divisionX, divisionY, wildcardRace));
     const visible = conf === "Eastern";
-    standings.p += pane("wccp", `wp${conf}`, renderStandings(pointsView(conferenceRows, divisionNames, wildcardRace), divisionNames, sim, conf[0], "p"), visible);
-    if (sim.size) standings.x += pane("wccx", `wx${conf}`, renderStandings(xpView(conferenceRows, divisionNames, sim), divisionNames, sim, conf[0], "x"), visible);
+    const pView = pointsView(conferenceRows, divisionNames, wildcardRace);
+    round1P.set(conf, buildRound1(pView, divisionNames, (r) => r.points));
+    standings.p += pane("wccp", `wp${conf}`, renderStandings(pView, divisionNames, sim, conf[0], "p"), visible);
+    if (sim.size) {
+      const xView = xpView(conferenceRows, divisionNames, sim);
+      round1X.set(conf, buildRound1(xView, divisionNames, (r) => sim.get(r.abbrev)?.exp_points ?? r.points));
+      standings.x += pane("wccx", `wx${conf}`, renderStandings(xView, divisionNames, sim, conf[0], "x"), visible);
+    }
   }
 
-  const confs = [...round1ByConf.keys()];
+  const confs = [...round1P.keys()];
   const confTabs = (m: "p" | "x") => tabs(`wcc${m}`, confs.map((c): [string, string] => [`w${m}${c}`, c]));
-  const standingsHtml = sim.size
-    ? `<div class="pf-sort"><span>Järjestys</span>${tabs("srt", [["srtp", "Pisteet"], ["srtx", "xP"]])}</div>` +
-      pane("srt", "srtp", confTabs("p") + standings.p, true) +
-      pane("srt", "srtx", confTabs("x") + standings.x, false)
-    : confTabs("p") + standings.p;
-  const bracketHtml = `
-${renderDiagram(round1ByConf, odds)}
-<p class="pf-note">Playoff-kaavio jos playoffit alkaisivat tänään.${odds.size ? " Prosentti on joukkueen todennäköisyys päästä playoffeihin kauden päätteeksi." : ""}</p>
+  const bracketBody = (m: "p" | "x") => `
+${renderDiagram(m === "x" ? round1X : round1P, odds)}
+<p class="pf-note">${m === "x" ? "Playoff-kaavio ennustetun pistemäärän (xP) mukaan." : "Playoff-kaavio jos playoffit alkaisivat tänään."}${odds.size ? " Prosentti on joukkueen todennäköisyys päästä playoffeihin kauden päätteeksi." : ""}</p>
 <h3 class="roster-group-title">Sarjatilanne</h3>
-${standingsHtml}`;
+${confTabs(m)}${standings[m]}`;
+  const bracketHtml = sim.size
+    ? `<div class="pf-sort"><span>Järjestys</span>${tabs("srt", [["srtp", "Pisteet"], ["srtx", "xP"]])}</div>` +
+      pane("srt", "srtp", bracketBody("p"), true) +
+      pane("srt", "srtx", bracketBody("x"), false)
+    : bracketBody("p");
 
   const hasOdds = simRows.length > 0;
   const content = `
@@ -369,7 +372,7 @@ ${
   hasOdds
     ? tabs("top", [["bk", "Playoff-bracket"], ["fc", "Kausiennuste"]]) +
       pane("top", "bk", bracketHtml, true) +
-      pane("top", "fc", renderSeasonForecast(round1ByConf, rows, simRows), false)
+      pane("top", "fc", renderSeasonForecast(round1X, rows, simRows), false)
     : bracketHtml
 }
 ${hasOdds ? renderForecastInfo(simRows) : ""}
