@@ -11,8 +11,9 @@ const STRENGTH_FI: Record<string, string> = { YV: "YV", AV: "AV" };
 
 // Names carry a trailing FI flag emoji from boxscore.ts; show the SVG flag
 // instead (same as app.js elFlags).
-function nameHtml(name: string): string {
-  return escapeHtml(name).replace(/\u{1F1EB}\u{1F1EE}/gu, flagImg("fi"));
+function nameHtml(name: string, playerId?: number): string {
+  const html = escapeHtml(name).replace(/\u{1F1EB}\u{1F1EE}/gu, flagImg("fi"));
+  return playerId ? `<a class="mt-link" href="/pelaajat/${playerId}">${html}</a>` : html;
 }
 
 function logoHtml(abbrev: string): string {
@@ -28,8 +29,8 @@ function goalHtml(goal: GoalEvent, side: "away" | "home"): string {
         ${(goal.period ?? 0) >= 100 ? "" : `<span class="mt-time">${escapeHtml(goal.time_in_period)}</span>`}
         <span class="mt-pill">${logoHtml(goal.team_abbrev)}<span class="mt-pill-score">${goal.away_score} - ${goal.home_score}</span></span>
         <div class="mt-col">
-          <span class="mt-who"><strong>${nameHtml(goal.scorer_short ?? goal.scorer)}</strong>${strength}</span>
-          ${assists.length ? `<p class="mt-assists">${nameHtml(assists.join(" · "))}</p>` : ""}
+          <span class="mt-who"><strong>${nameHtml(goal.scorer_short ?? goal.scorer, goal.scorer_id)}</strong>${strength}</span>
+          ${assists.length ? `<p class="mt-assists">${assists.map((a, i) => nameHtml(a, goal.assist_ids?.[i])).join(" · ")}</p>` : ""}
         </div>
       </div>
     </div>`;
@@ -42,7 +43,7 @@ function penaltyHtml(penalty: PenaltyEvent, side: "away" | "home"): string {
       <div class="mt-main">
         <span class="mt-time">${escapeHtml(penalty.time_in_period)}</span>
         <span class="mt-badge">${penalty.minutes > 0 ? penalty.minutes : "RL"}</span>
-        <span class="mt-who"><strong>${nameHtml(who)}</strong>${penalty.reason ? `<span class="mt-reason">(${escapeHtml(penalty.reason)})</span>` : ""}</span>
+        <span class="mt-who"><strong>${nameHtml(who, penalty.player ? penalty.player_id : undefined)}</strong>${penalty.reason ? `<span class="mt-reason">(${escapeHtml(penalty.reason)})</span>` : ""}</span>
       </div>
     </div>`;
 }
@@ -60,7 +61,7 @@ function shootoutHtml(attempt: ShootoutAttempt, awayAbbrev: string): string {
       <div class="mt-main">
         <span class="mt-time">${attempt.sequence}.</span>
         ${outcome}
-        <span class="mt-who"><strong>${nameHtml(attempt.player)}</strong></span>
+        <span class="mt-who"><strong>${nameHtml(attempt.player, attempt.player_id)}</strong></span>
       </div>
     </div>`;
 }
@@ -74,7 +75,7 @@ function goalieChangeHtml(change: GoalieChange, side: "away" | "home"): string {
       <div class="mt-main">
         <span class="mt-time">${change.approx ? "" : escapeHtml(change.time_in_period)}</span>
         <span class="mt-badge mt-swap" title="Maalivahdinvaihto" aria-label="Maalivahdinvaihto">${SWAP_ICON}</span>
-        <span class="mt-who"><strong>${nameHtml(change.goalie_in)}</strong><span class="mt-reason">${nameHtml(change.goalie_out)}</span></span>
+        <span class="mt-who"><strong>${nameHtml(change.goalie_in, change.goalie_in_id)}</strong><span class="mt-reason">${nameHtml(change.goalie_out, change.goalie_out_id)}</span></span>
       </div>
     </div>`;
 }

@@ -163,12 +163,16 @@ export interface GoalEvent {
   scorer_short?: string;
   assists_short?: string[];
   clip_url?: string;
+  // Player ids (v6 cache) so the timeline can link to /pelaajat/<id>.
+  scorer_id?: number;
+  assist_ids?: number[];
 }
 
 export interface ShootoutAttempt {
   sequence: number;
   team_abbrev: string;
   player: string; // "F. Last" (+ flag)
+  player_id?: number;
   result: "goal" | "save" | "miss";
   away_score: number; // running shootout score after this attempt
   home_score: number;
@@ -181,6 +185,7 @@ export interface PenaltyEvent {
   time_in_period: string;
   team_abbrev: string;
   player: string; // "F. Last" (+ flag), "" when it was a team penalty
+  player_id?: number;
   minutes: number;
   reason: string; // Finnish
 }
@@ -195,6 +200,8 @@ export interface GoalieChange {
   team_abbrev: string; // the goalie's team
   goalie_out: string;
   goalie_in: string;
+  goalie_in_id?: number;
+  goalie_out_id?: number;
   approx?: boolean; // derived from shots, not the shift chart: time is not shown
 }
 

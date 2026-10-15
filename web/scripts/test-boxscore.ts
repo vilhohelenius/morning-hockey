@@ -297,6 +297,7 @@ const PBP = {
     time_in_period: "10:00",
     team_abbrev: "FLA",
     player: "B. Marchand",
+    player_id: 9,
     minutes: 2,
     reason: "Kampitus",
   });
@@ -339,7 +340,7 @@ const PBP = {
   assert.deepEqual(round.goals, goals);
   assert.deepEqual(round.penalties, penalties);
   assert.equal(round.complete, true);
-  assert.ok(serializeTimeline({ goals, penalties, goalieChanges: [], shootout: [], complete: true }).startsWith('{"v":5,"complete":true'));
+  assert.ok(serializeTimeline({ goals, penalties, goalieChanges: [], shootout: [], complete: true }).startsWith('{"v":6,"complete":true'));
   assert.equal(parseTimeline(serializeTimeline({ goals, penalties: [], shootout: [], complete: false })).complete, false);
 
   // legacy cache row: a bare goals array, no period field

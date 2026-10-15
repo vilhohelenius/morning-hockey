@@ -382,6 +382,17 @@
     return node;
   }
 
+  // Wraps node's contents in a link to the player page (timeline names).
+  function linkPlayer(node, id) {
+    if (!id) return node;
+    var a = document.createElement("a");
+    a.className = "mt-link";
+    a.href = "/pelaajat/" + id;
+    while (node.firstChild) a.appendChild(node.firstChild);
+    node.appendChild(a);
+    return node;
+  }
+
   function section(titleText) {
     var wrap = el("div", "tp-section");
     wrap.appendChild(el("p", "tp-section-title", titleText));
@@ -628,12 +639,19 @@
         pill.appendChild(mtLogo(item.team_abbrev));
         pill.appendChild(el("span", "mt-pill-score", item.away_score + " - " + item.home_score));
         main.appendChild(pill);
-        who.appendChild(elFlags("strong", null, item.scorer_short || item.scorer));
+        who.appendChild(linkPlayer(elFlags("strong", null, item.scorer_short || item.scorer), item.scorer_id));
         if (item.strength) who.appendChild(el("span", "mt-strength mt-strength-tag", MT_STRENGTH[item.strength] || item.strength));
         var col = el("div", "mt-col");
         col.appendChild(who);
         var assists = item.assists_short || item.assists || [];
-        if (assists.length) col.appendChild(elFlags("p", "mt-assists", assists.join(" · ")));
+        if (assists.length) {
+          var assistsEl = el("p", "mt-assists");
+          assists.forEach(function (name, i) {
+            if (i) assistsEl.appendChild(document.createTextNode(" · "));
+            assistsEl.appendChild(linkPlayer(elFlags("span", null, name), (item.assist_ids || [])[i]));
+          });
+          col.appendChild(assistsEl);
+        }
         main.appendChild(col);
         row.appendChild(main);
       } else if (isGoalie) {
@@ -642,13 +660,13 @@
         swap.setAttribute("aria-label", "Maalivahdinvaihto");
         swap.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M6.99 11 3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg>';
         main.appendChild(swap);
-        who.appendChild(elFlags("strong", null, item.goalie_in));
-        who.appendChild(elFlags("span", "mt-reason", item.goalie_out));
+        who.appendChild(linkPlayer(elFlags("strong", null, item.goalie_in), item.goalie_in_id));
+        who.appendChild(linkPlayer(elFlags("span", "mt-reason", item.goalie_out), item.goalie_out_id));
         main.appendChild(who);
         row.appendChild(main);
       } else {
         main.appendChild(el("span", "mt-badge", item.minutes > 0 ? String(item.minutes) : "RL"));
-        who.appendChild(elFlags("strong", null, item.player || item.team_abbrev));
+        who.appendChild(linkPlayer(elFlags("strong", null, item.player || item.team_abbrev), item.player ? item.player_id : 0));
         if (item.reason) who.appendChild(el("span", "mt-reason", "(" + item.reason + ")"));
         main.appendChild(who);
         row.appendChild(main);
@@ -670,7 +688,7 @@
         main.appendChild(el("span", "mt-so-miss", attempt.result === "save" ? "Torjuttu" : "Ohi"));
       }
       var who = el("span", "mt-who");
-      who.appendChild(elFlags("strong", null, attempt.player));
+      who.appendChild(linkPlayer(elFlags("strong", null, attempt.player), attempt.player_id));
       main.appendChild(who);
       row.appendChild(main);
       return row;

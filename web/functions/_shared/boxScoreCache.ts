@@ -225,10 +225,10 @@ function isStale(cached: GameBoxScoreRow, game: GameRow): boolean {
   // already-cached finished game picks up the new wording on next view
   // instead of being stuck with whatever text was cached before the rename.
   if (cached.team_stats_json.includes('"Torjutut laukaukset"') || cached.team_stats_json.includes('"Menetetyt kiekot"') || cached.team_stats_json.includes('"Riistetyt kiekot"')) return true;
-  // 2026-10-06: goals_json became {v:3 -> v:5 2026-10-08 adds goalieChanges (v5: exact times from shift charts); complete, goals, penalties, shootout} (match
+  // 2026-10-06: goals_json became {v:3 -> v:6 2026-10-15 adds player ids (v5 2026-10-08 adds goalieChanges (v5: exact times from shift charts); complete, goals, penalties, shootout} (match
   // timeline). A legacy bare-array row, or one whose play-by-play fetch
   // failed (complete:false), is refetched -- again no migration needed.
-  if (!cached.goals_json.startsWith('{"v":5,"complete":true')) return true;
+  if (!cached.goals_json.startsWith('{"v":6,"complete":true')) return true;
   // A cache row is only a trustworthy "settled result" if it was itself
   // captured after the game looked over -- `live_json` is non-null exactly
   // when the fetch that produced this row still saw a clock/period (see

@@ -6249,3 +6249,13 @@ main {
     grid-row: 1;
   }
 }
+
+/* Ottelun kulku: player names link to the player page without looking like links. */
+.mt-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.mt-link:hover {
+  text-decoration: underline;
+}

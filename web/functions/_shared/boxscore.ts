@@ -94,6 +94,8 @@ export function buildGoalEvents(
         scorer_short: shortNameWithFlag(goal, finnishIds),
         assists: (goal.assists ?? []).map((a) => nameWithFlag(a, finnishIds)),
         assists_short: (goal.assists ?? []).map((a) => shortNameWithFlag(a, finnishIds)),
+        scorer_id: goal.playerId,
+        assist_ids: (goal.assists ?? []).map((a) => a.playerId),
         strength: STRENGTH_LABELS[goal.strength ?? ""] ?? "",
         away_score: awayScore,
         home_score: homeScore,
@@ -466,15 +468,19 @@ export function buildPenaltyEvents(pbp: RawPlayByPlay, awayAbbrev: string, homeA
     const descriptor = play.periodDescriptor ?? {};
     // Bench / too-many-men minors have no committing player; whoever serves
     // it is the closest thing to a name, else it's shown as a team penalty.
-    const player =
-      pbpPlayerName(spots, play.details.committedByPlayerId, finnishIds) ||
-      pbpPlayerName(spots, play.details.servedByPlayerId, finnishIds);
+    const playerId = pbpPlayerName(spots, play.details.committedByPlayerId, finnishIds)
+      ? play.details.committedByPlayerId
+      : pbpPlayerName(spots, play.details.servedByPlayerId, finnishIds)
+        ? play.details.servedByPlayerId
+        : undefined;
+    const player = pbpPlayerName(spots, playerId, finnishIds);
     events.push({
       period: periodOrder(descriptor),
       period_label: periodLabel(descriptor),
       time_in_period: play.timeInPeriod ?? "00:00",
       team_abbrev: team,
       player,
+      player_id: playerId,
       minutes: play.details.duration ?? 0,
       reason: penaltyReasonFi(play.details.descKey),
     });
@@ -524,6 +530,8 @@ export function buildGoalieChanges(
       team_abbrev: team,
       goalie_out: pbpPlayerName(spots, previous, finnishIds),
       goalie_in: pbpPlayerName(spots, shift.playerId, finnishIds),
+      goalie_out_id: previous,
+      goalie_in_id: shift.playerId,
     });
   }
   // The chart only lists finished shifts, so a goalie who is still in net (live,
@@ -558,6 +566,8 @@ function goalieChangesFromShots(pbp: RawPlayByPlay, awayAbbrev: string, homeAbbr
       team_abbrev: team,
       goalie_out: pbpPlayerName(spots, previous, finnishIds),
       goalie_in: pbpPlayerName(spots, goalie, finnishIds),
+      goalie_out_id: previous,
+      goalie_in_id: goalie,
       approx: true,
     });
   }
@@ -689,6 +699,7 @@ export function buildShootoutAttempts(events: RawShootoutEvent[] | undefined, fi
     sequence: e.sequence ?? i + 1,
     team_abbrev: e.teamAbbrev.default,
     player: shortNameWithFlag(e, finnishIds),
+    player_id: e.playerId,
     result: e.result === "goal" ? "goal" : e.result === "save" ? "save" : "miss",
     away_score: e.awayScore ?? 0,
     home_score: e.homeScore ?? 0,
@@ -728,7 +739,7 @@ interface Timeline {
 }
 
 export function serializeTimeline(timeline: Timeline): string {
-  return JSON.stringify({ v: 5, complete: timeline.complete, goals: timeline.goals, penalties: timeline.penalties, goalieChanges: timeline.goalieChanges, shootout: timeline.shootout });
+  return JSON.stringify({ v: 6, complete: timeline.complete, goals: timeline.goals, penalties: timeline.penalties, goalieChanges: timeline.goalieChanges, shootout: timeline.shootout });
 }
 
 // Reads both the current envelope and the legacy bare goals array.
