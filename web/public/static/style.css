@@ -2800,6 +2800,9 @@ main {
 
 /* ---------- Analytiikka: division + Pistepörssi points-race charts ---------- */
 
+.live-now { margin-bottom: 16px; }
+.live-now-title { margin: 0 0 8px; font-size: 14px; font-weight: 600; color: #d93025; text-transform: uppercase; letter-spacing: .04em; }
+
 .division-picker,
 .streak-picker,
 .analytiikka-view-picker {

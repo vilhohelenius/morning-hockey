@@ -906,6 +906,47 @@
     document.addEventListener("keydown", function (event) {
       if (event.key === "Escape") closeGameDetail();
     });
+
+    // Front page: while a game is live, re-fetch the page every 30 s and swap in the
+    // game panels + "Yön suomalaiset" without a reload (scroll, selected day and an
+    // open game card are kept). Paused while the tab is hidden.
+    var homeNav = document.getElementById("day-nav");
+    var silentRefreshing = false;
+    var silentRefresh = function () {
+      if (!homeNav || silentRefreshing || document.hidden || homeNav.getAttribute("data-live") !== "1") return;
+      silentRefreshing = true;
+      fetch(location.pathname + location.search, { cache: "no-store", credentials: "same-origin" })
+        .then(function (r) { return r.ok ? r.text() : Promise.reject(new Error("HTTP " + r.status)); })
+        .then(function (html) {
+          var doc = new DOMParser().parseFromString(html, "text/html");
+          var newNav = doc.getElementById("day-nav");
+          var newDetails = doc.getElementById("game-details");
+          if (!newNav || !newDetails) return;
+          var openId = openGameTrigger && openGameTrigger.dataset.gameId;
+          closeGameDetail();
+          doc.querySelectorAll(".day-panel").forEach(function (np) {
+            var cur = document.querySelector('.day-panel[data-offset="' + np.getAttribute("data-offset") + '"]');
+            if (!cur) return;
+            cur.innerHTML = np.innerHTML;
+            cur.setAttribute("data-title", np.getAttribute("data-title"));
+          });
+          var shown = document.querySelector(".day-panel:not([hidden])");
+          var titleEl = document.getElementById("day-title");
+          if (shown && titleEl) titleEl.innerHTML = shown.getAttribute("data-title");
+          var oldYf = document.querySelector(".yf-section");
+          var newYf = doc.querySelector(".yf-section");
+          if (oldYf && newYf) oldYf.replaceWith(newYf);
+          try { gameDetails = JSON.parse(newDetails.textContent || "{}"); } catch (e) {}
+          ["data-rendered", "data-ttl", "data-live"].forEach(function (a) { homeNav.setAttribute(a, newNav.getAttribute(a) || ""); });
+          if (openId) {
+            var t = document.querySelector('.game-card-trigger[data-game-id="' + openId + '"]');
+            if (t) openGameDetail(t);
+          }
+        })
+        .catch(function () {})
+        .then(function () { silentRefreshing = false; });
+    };
+    if (homeNav) setInterval(silentRefresh, 30000);
   }
 
   // Position (single-select dropdown) + team/nationality (multi-select

@@ -263,6 +263,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       }
     }
     let gameCardsHtml = "";
+    let liveCardsHtml = ""; // today's panel only: games in progress get their own "Käynnissä nyt" block
     const startedIds = roundGames.filter((g) => g.is_finished || isLive(g)).map((g) => g.game_id);
     const finishedIds = roundGames.filter((g) => g.is_finished).map((g) => g.game_id);
     // One query per table for the whole day instead of three per game.
@@ -323,7 +324,9 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
         }
       }
 
-      gameCardsHtml += renderGameCard(displayGame, scorers, goalies, box?.live ?? null);
+      const card = renderGameCard(displayGame, scorers, goalies, box?.live ?? null);
+      if (offset === 0 && !game.is_finished && isLive(game)) liveCardsHtml += card;
+      else gameCardsHtml += card;
     }
 
     // Two lines: a headline (relative day, or just the weekday further out) and a
@@ -337,7 +340,9 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     return {
       title,
       count: roundGames.length,
-      html: roundGames.length ? `<div class="game-list">${gameCardsHtml}</div>` : `<p class="empty-note">Ei otteluita tänä päivänä.</p>`,
+      html: !roundGames.length
+        ? `<p class="empty-note">Ei otteluita tänä päivänä.</p>`
+        : `${liveCardsHtml ? `<div class="live-now"><h3 class="live-now-title">Käynnissä nyt</h3><div class="game-list">${liveCardsHtml}</div></div>` : ""}${gameCardsHtml ? `<div class="game-list">${gameCardsHtml}</div>` : ""}`,
     };
   }
 
@@ -458,7 +463,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
 <div class="dashboard">
 <section class="dashboard-main">
-  <div class="section-title-row" id="day-nav" data-offset="${dayOffset}" data-rendered="${Date.now()}" data-ttl="${cacheTtl}" data-ver="${escapeHtml(readVersionCookie(context.request))}">
+  <div class="section-title-row" id="day-nav" data-offset="${dayOffset}" data-rendered="${Date.now()}" data-ttl="${cacheTtl}" data-live="${anyLive ? 1 : 0}" data-ver="${escapeHtml(readVersionCookie(context.request))}">
     <a class="icon-btn day-nav-btn${dayOffset <= MIN_DAY_OFFSET ? " is-disabled" : ""}" ${dayOffset <= MIN_DAY_OFFSET ? 'aria-disabled="true"' : `href="${dayHref(dayOffset - 1)}"`} data-dir="-1" title="Edellinen päivä" aria-label="Edellinen päivä">${icon("chev-l")}</a>
     <h2 class="section-title" id="day-title">${dayTitle}</h2>
     <a class="icon-btn day-nav-btn${dayOffset >= MAX_DAY_OFFSET ? " is-disabled" : ""}" ${dayOffset >= MAX_DAY_OFFSET ? 'aria-disabled="true"' : `href="${dayHref(dayOffset + 1)}"`} data-dir="1" title="Seuraava päivä" aria-label="Seuraava päivä">${icon("chev-r")}</a>
