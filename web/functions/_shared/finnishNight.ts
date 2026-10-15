@@ -124,12 +124,12 @@ function renderFinnishNightSkaters(rows: NightSkater[]): string {
       (r) => `
       <tr>
         ${playerCell(r.player.player_id, r.player.name, r.player.headshot, r.player.position, r.teamLogo, r.teamAbbrev)}
-        ${gameCell(r)}
         <td>${r.player.goals}</td>
         <td>${r.player.assists}</td>
         <td class="st-pts">${r.player.points}</td>
         <td>${signed(r.player.plus_minus)}</td>
         <td>${esc(r.player.toi)}</td>
+        ${gameCell(r)}
       </tr>`,
     )
     .join("");
@@ -139,12 +139,12 @@ function renderFinnishNightSkaters(rows: NightSkater[]): string {
       <thead>
         <tr>
           <th class="st-first">Pelaaja</th>
-          <th>Ottelu</th>
           <th title="Maalit">G</th>
           <th title="Syötöt">A</th>
           <th title="Pisteet">PTS</th>
           <th title="Plus/miinus">+/-</th>
           <th title="Peliaika">TOI</th>
+          <th>Ottelu</th>
         </tr>
       </thead>
       <tbody>${body}</tbody>
@@ -159,11 +159,11 @@ function renderFinnishNightGoalies(rows: NightGoalie[]): string {
       (r) => `
       <tr>
         ${playerCell(r.player.player_id, r.player.name, r.player.headshot, "G", r.teamLogo, r.teamAbbrev)}
-        ${gameCell(r)}
         <td>${r.player.saves}/${r.player.shots_against}</td>
         <td class="st-pts">${r.player.shots_against > 0 ? r.player.save_pct.toFixed(3) : "–"}</td>
         <td>${goalieDecisionFi(r.player.decision)}</td>
         <td>${esc(r.player.toi)}</td>
+        ${gameCell(r)}
       </tr>`,
     )
     .join("");
@@ -173,11 +173,11 @@ function renderFinnishNightGoalies(rows: NightGoalie[]): string {
       <thead>
         <tr>
           <th class="st-first">Maalivahti</th>
-          <th>Ottelu</th>
           <th title="Torjunnat / laukaukset">SV</th>
           <th title="Torjuntaprosentti">SV%</th>
           <th title="Päätös: W voitto, L tappio, OTL jatkoaikatappio">W/L</th>
           <th title="Peliaika">TOI</th>
+          <th>Ottelu</th>
         </tr>
       </thead>
       <tbody>${body}</tbody>
