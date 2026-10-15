@@ -19,6 +19,7 @@ export interface NightGame {
 }
 
 interface GameContext {
+  gameId: number;
   teamAbbrev: string;
   teamLogo: string;
   oppAbbrev: string;
@@ -40,6 +41,7 @@ interface NightGoalie extends GameContext {
 function context(g: NightGame, away: boolean): GameContext {
   const { game } = g;
   return {
+    gameId: game.game_id,
     teamAbbrev: away ? game.away_abbrev : game.home_abbrev,
     teamLogo: away ? game.away_logo : game.home_logo,
     oppAbbrev: away ? game.home_abbrev : game.away_abbrev,
