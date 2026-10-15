@@ -13,3 +13,10 @@ def test_active_and_best():
     assert set(rows) == {(1, "best"), (1, "active")}
     assert rows[(1, "best")]["games"] == 4 and rows[(1, "active")]["games"] == 3
     assert rows[(1, "active")]["points"] == 4 and rows[(1, "active")]["start_date"] == "2026-10-06"
+
+
+def test_sql_literal_escapes_names():
+    from morning_hockey.d1_sync import _sql_literal
+
+    assert _sql_literal("Jackson Blake") == "'Jackson Blake'"
+    assert _sql_literal("Ryan O'Reilly") == "'Ryan O''Reilly'"

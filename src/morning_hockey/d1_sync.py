@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import datetime as dt
 import hashlib
-import re
 
 import requests
 
@@ -425,12 +424,13 @@ _XG_INSERT_CHUNK = 200
 def _sql_literal(value) -> str:
     """Inlined instead of bound: D1 caps a statement at 100 bound parameters,
     which would mean one HTTP call per ~11 rows -- far too slow for a
-    backfill of tens of thousands of rows. Only ever called with values
-    compute_game() produced (ints, floats, an ISO date string)."""
+    backfill of tens of thousands of rows. Strings (ISO dates, player names
+    with apostrophes/accents) are single-quote escaped; SQLite has no other
+    escape character."""
     if isinstance(value, str):
-        if not re.fullmatch(r"[0-9A-Za-z:\-]+", value):
+        if "\x00" in value:
             raise ValueError(f"unexpected string in xG row: {value!r}")
-        return f"'{value}'"
+        return "'" + value.replace("'", "''") + "'"
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise TypeError(f"unexpected value in xG row: {value!r}")
     return repr(value)
