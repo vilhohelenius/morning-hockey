@@ -3588,6 +3588,13 @@ main {
   z-index: 2;
 }
 
+/* Kaksirivinen nimisolu: sarake mitoitetaan sisällön mukaan (ei 150 px:n vähimmäisleveyttä). */
+.porssi-table:has(.player-cell.two-line) :is(th, td):nth-child(2) {
+  min-width: 0;
+  max-width: none;
+  padding-right: 6px;
+}
+
 .porssi-table td.stat-strong {
   color: var(--text);
   font-weight: 700;
