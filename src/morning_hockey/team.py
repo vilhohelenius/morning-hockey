@@ -23,6 +23,7 @@ class RosterSkater:
     plus_minus: int
     avg_toi_seconds: float
     avg_toi: str  # "MM:SS" per game, for display -- avg_toi_seconds is the sortable form
+    penalty_minutes: int = 0
 
 
 @dataclass(frozen=True)
@@ -100,6 +101,7 @@ def _build_skaters(client: NHLClient, season_id: int, raw_roster: dict) -> list[
                 plus_minus=stats.get("plusMinus", 0),
                 avg_toi_seconds=stats.get("timeOnIcePerGame", 0.0),
                 avg_toi=_format_toi(stats.get("timeOnIcePerGame", 0.0)),
+                penalty_minutes=stats.get("penaltyMinutes") or 0,
             )
         )
     skaters.sort(key=lambda s: (-s.points, -s.goals, s.name))

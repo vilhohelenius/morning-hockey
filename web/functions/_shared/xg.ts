@@ -176,6 +176,36 @@ export async function fetchPlayerSeasonsXg(db: D1Database, playerId: number, isG
   return out;
 }
 
+// Latest-season xG + on-ice xG for a set of skaters (team page roster table).
+// Missing players/tables -> empty map (columns then show "–" / are hidden).
+export async function fetchSkatersSeasonXg(db: D1Database, playerIds: number[]): Promise<Map<number, PlayerSeasonXg>> {
+  const out = new Map<number, PlayerSeasonXg>();
+  if (!playerIds.length) return out;
+  const ph = playerIds.map(() => "?").join(",");
+  try {
+    const [s, o] = await Promise.all([
+      db
+        .prepare(`SELECT player_id, SUM(xg) AS xg FROM skater_game_xg WHERE season = (SELECT MAX(season) FROM skater_game_xg) AND player_id IN (${ph}) GROUP BY player_id`)
+        .bind(...playerIds)
+        .all<{ player_id: number; xg: number }>(),
+      db
+        .prepare(
+          `SELECT player_id, SUM(xgf) AS xgf, SUM(xga) AS xga, SUM(xgf_5v5) AS xgf5, SUM(xga_5v5) AS xga5 FROM skater_game_onice_xg
+           WHERE season = (SELECT MAX(season) FROM skater_game_xg) AND player_id IN (${ph}) GROUP BY player_id`,
+        )
+        .bind(...playerIds)
+        .all<{ player_id: number; xgf: number; xga: number; xgf5: number; xga5: number }>(),
+    ]);
+    const blank = (): PlayerSeasonXg => ({ xg: 0, xgf: 0, xga: 0, xgf5v5: 0, xga5v5: 0, gsax: 0 });
+    for (const r of s.results) out.set(r.player_id, { ...blank(), xg: r.xg });
+    for (const r of o.results) out.set(r.player_id, { ...(out.get(r.player_id) ?? blank()), xgf: r.xgf, xga: r.xga, xgf5v5: r.xgf5, xga5v5: r.xga5 });
+  } catch (error) {
+    console.error("Roster xG lookup failed:", error);
+    out.clear();
+  }
+  return out;
+}
+
 // ---- Team xGF% (team_game_xg) ----
 
 // games/standings_rows carry only abbrevs, team_game_xg only NHL team ids.

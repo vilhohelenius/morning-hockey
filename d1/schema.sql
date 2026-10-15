@@ -322,6 +322,9 @@ CREATE TABLE IF NOT EXISTS team_roster_skaters (
 -- (delete+reinsert, every 4h) overwrites every row anyway.
 ALTER TABLE team_roster_skaters ADD COLUMN nationality TEXT NOT NULL DEFAULT '';
 
+-- 2026-10-15: PIM column for the team page roster table.
+ALTER TABLE team_roster_skaters ADD COLUMN penalty_minutes INTEGER NOT NULL DEFAULT 0;
+
 CREATE INDEX IF NOT EXISTS idx_team_roster_skaters_team ON team_roster_skaters(team_abbrev, points DESC);
 
 CREATE TABLE IF NOT EXISTS team_roster_goalies (

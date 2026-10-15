@@ -20,6 +20,8 @@ interface SkaterRow {
   gp: number;
   xg: number;
   goals: number;
+  points: number;
+  toi: number | null;
   xgf: number | null;
   xga: number | null;
   xgf5: number | null;
@@ -70,10 +72,10 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     db
       .prepare(
         `SELECT s.player_id, s.name, s.headshot, s.team_abbrev, s.nationality, s.position, s.games_played AS gp,
-                SUM(x.xg) AS xg, SUM(x.goals) AS goals, o.xgf, o.xga, o.xgf5, o.xga5
+                SUM(x.xg) AS xg, SUM(x.goals) AS goals, s.points, o.xgf, o.xga, o.xgf5, o.xga5, o.toi
          FROM skater_game_xg x
          JOIN skater_season_stats s ON s.player_id = x.player_id AND s.season_id = x.season
-         LEFT JOIN (SELECT player_id, SUM(xgf) AS xgf, SUM(xga) AS xga, SUM(xgf_5v5) AS xgf5, SUM(xga_5v5) AS xga5 FROM skater_game_onice_xg
+         LEFT JOIN (SELECT player_id, SUM(xgf) AS xgf, SUM(xga) AS xga, SUM(xgf_5v5) AS xgf5, SUM(xga_5v5) AS xga5, SUM(toi_sec) AS toi FROM skater_game_onice_xg
                     WHERE season = (SELECT MAX(season) FROM skater_game_xg) GROUP BY player_id) o ON o.player_id = x.player_id
          WHERE x.season = (SELECT MAX(season) FROM skater_game_xg) AND s.games_played >= MIN(?, (SELECT MAX(games_played) FROM skater_season_stats))
          GROUP BY x.player_id ORDER BY xg DESC`,
@@ -101,7 +103,11 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       (p, i) => {
         const pct = p.xgf !== null && p.xga !== null ? xgfPct(p.xgf, p.xga) : null;
         const pct5 = p.xgf5 !== null && p.xga5 !== null ? xgfPct(p.xgf5, p.xga5) : null;
+        const per60 = (v: number | null) => (v !== null && p.toi ? (v * 3600) / p.toi : null);
+        const xgf60 = per60(p.xgf), xga60 = per60(p.xga), p60 = per60(p.points);
+        const f2 = (v: number | null) => (v === null ? "–" : v.toFixed(2));
         return `<tr data-name="${escapeHtml(p.name)}" data-gp="${p.gp}" data-goals="${p.goals}" data-xg="${p.xg}"
+      data-xgf60="${xgf60 ?? -1}" data-xga60="${xga60 ?? -1}" data-p60="${p60 ?? -1}"
       data-xgpg="${p.xg / p.gp}" data-xgf="${pct ?? -1}" data-xgf5="${pct5 ?? -1}" data-rank="${i + 1}">
     <td class="col-rank">${i + 1}</td>
     <td>${playerCell(p.player_id, p.name, p.headshot, `${nationalityFlag(p.nationality)} · ${positionTag(p.position)} · ${teamLogo(p.team_abbrev)}`)}</td>
@@ -109,6 +115,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     <td>${(p.xg / p.gp).toFixed(2)}</td>
     <td>${pct !== null && p.xgf !== null && p.xga !== null ? xgPercent(p.xgf, p.xga) : "–"}</td>
     <td>${pct5 !== null && p.xgf5 !== null && p.xga5 !== null ? xgPercent(p.xgf5, p.xga5) : "–"}</td>
+    <td>${f2(xgf60)}</td><td>${f2(xga60)}</td><td>${f2(p60)}</td>
   </tr>`;
       },
     )
@@ -156,8 +163,8 @@ ${XG_INFO_TEXT}
 
 <section class="analytiikka-view-section" data-view="skaters">
   <h2 class="section-title">Kärki xG:n mukaan</h2>
-  <p class="standings-legend">Vähintään ${MIN_GAMES} ottelua. Napauta sarakeotsikkoa järjestääksesi. xG/GP = xG per ottelu, xGF% = joukkueen xG-osuus pelaajan ollessa jäällä, xGF% 5v5 samoin tasakentällisin.</p>
-  ${skaterRows ? table("xg-skaters-table", [["#"], ["Pelaaja", "name"], ["GP", "gp"], ["G", "goals"], ["xG", "rank"], ["xG/GP", "xgpg"], ["xGF%", "xgf"], ["xGF% 5v5", "xgf5"]], skaterRows, skaters.length) : empty}
+  <p class="standings-legend">Vähintään ${MIN_GAMES} ottelua. Napauta sarakeotsikkoa järjestääksesi. xG/GP = xG per ottelu, xGF% = joukkueen xG-osuus pelaajan ollessa jäällä, xGF% 5v5 samoin tasakentällisin. xGF/60 ja xGA/60 = joukkueen luoma/päästetty xG 60 minuuttia kohden pelaajan ollessa jäällä, P/60 = pisteet 60 minuuttia kohden (kaikki pelitilanteet).</p>
+  ${skaterRows ? table("xg-skaters-table", [["#"], ["Pelaaja", "name"], ["GP", "gp"], ["G", "goals"], ["xG", "rank"], ["xG/GP", "xgpg"], ["xGF%", "xgf"], ["xGF% 5v5", "xgf5"], ["xGF/60", "xgf60"], ["xGA/60", "xga60"], ["P/60", "p60"]], skaterRows, skaters.length) : empty}
 </section>
 
 <section class="analytiikka-view-section is-hidden" data-view="goalies">

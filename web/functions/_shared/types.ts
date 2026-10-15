@@ -290,6 +290,7 @@ export interface TeamRosterSkaterRow {
   points: number;
   plus_minus: number;
   avg_toi_seconds: number;
+  penalty_minutes?: number; // absent until the ALTER has run in D1
 }
 
 export interface TeamRosterGoalieRow {

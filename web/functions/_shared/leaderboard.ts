@@ -8,7 +8,7 @@
 
 import { escapeHtml, formatToi, nationalityFlag, positionTag, teamLogoUrl } from "./format";
 import { TEAM_COLORS } from "./teamColors";
-import { formatGsax, gsaxPer100 } from "./xg";
+import { formatGsax, formatXg, gsaxPer100, type PlayerSeasonXg, xgPercent } from "./xg";
 import type { GoalieStatsRow, SkaterStatsRow, TeamRosterGoalieRow, TeamRosterSkaterRow } from "./types";
 
 export const COLLAPSE_AT = 25;
@@ -263,13 +263,16 @@ export function renderRosterSkaterTable(
   sectionTitle: string,
   showTeam = false,
   hl?: HighlightOptions,
+  xg?: Map<number, PlayerSeasonXg>, // season xG per player_id; xG columns hidden when empty/absent
 ): string {
+  const showXg = !!xg?.size;
+  const showPim = skaters.some((p) => p.penalty_minutes !== undefined);
   const rows = skaters
     .map(
       (player, index) => `
       <tr data-name="${escapeHtml(player.name)}" data-gp="${player.games_played}"
           data-goals="${player.goals}" data-assists="${player.assists}" data-rank="${index + 1}"
-          data-plusminus="${player.plus_minus}" data-toi="${player.avg_toi_seconds}">
+          data-plusminus="${player.plus_minus}" data-toi="${player.avg_toi_seconds}"${rosterXgData(xg?.get(player.player_id), player.penalty_minutes)}>
         <td class="col-rank">${index + 1}</td>
         <td>
           <a href="/pelaajat/${player.player_id}" class="player-cell">
@@ -285,7 +288,9 @@ export function renderRosterSkaterTable(
         <td>${player.assists}</td>
         <td class="stat-strong">${player.points}</td>
         <td>${player.plus_minus > 0 ? "+" : ""}${player.plus_minus}</td>
+        ${showPim ? `<td>${player.penalty_minutes ?? 0}</td>` : ""}
         <td>${formatToi(player.avg_toi_seconds)}</td>
+        ${showXg ? rosterXgCells(xg!.get(player.player_id)) : ""}
       </tr>`,
     )
     .join("");
@@ -304,13 +309,25 @@ export function renderRosterSkaterTable(
           <th data-sort="assists">A</th>
           <th data-sort="rank" data-first-dir="asc" class="sort-asc">PTS</th>
           <th data-sort="plusminus">+/-</th>
+          ${showPim ? '<th data-sort="pim">PIM</th>' : ""}
           <th data-sort="toi">TOI/GP</th>
+          ${showXg ? '<th data-sort="xg" title="Yksilöllinen odotettu maalimäärä (ixG)">xG</th><th data-sort="xgfpct" title="Joukkueen xG-osuus pelaajan ollessa jäällä">xGF%</th><th data-sort="xgf5pct" title="xGF% tasakentällisin 5v5">xGF% 5v5</th>' : ""}
         </tr>
       </thead>
       <tbody>${rows}</tbody>
     </table>
   </div>
 </section>`;
+}
+
+const pctValue = (xgf: number, xga: number) => (xgf + xga > 0 ? (100 * xgf) / (xgf + xga) : -1);
+
+function rosterXgData(x: PlayerSeasonXg | undefined, pim: number | undefined): string {
+  return ` data-pim="${pim ?? 0}" data-xg="${x?.xg ?? -1}" data-xgfpct="${x ? pctValue(x.xgf, x.xga) : -1}" data-xgf5pct="${x ? pctValue(x.xgf5v5, x.xga5v5) : -1}"`;
+}
+
+function rosterXgCells(x: PlayerSeasonXg | undefined): string {
+  return x ? `<td>${formatXg(x.xg)}</td><td>${xgPercent(x.xgf, x.xga)}</td><td>${xgPercent(x.xgf5v5, x.xga5v5)}</td>` : "<td>–</td><td>–</td><td>–</td>";
 }
 
 export function renderRosterGoalieTable(
