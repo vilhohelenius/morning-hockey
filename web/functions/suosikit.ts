@@ -325,7 +325,7 @@ ${tonightHtml ? `<h2 class="sk-h">Tänä yönä</h2><div class="sk-list">${tonig
       <button type="button" class="day-pill" data-sk-mode="l">Viimeiset ${LAST_N}</button>
     </div>
   </div>
-  ${teamRows ? table(`<th class="col-rank">#</th><th>Joukkue</th><th>GP</th><th>W-L-OTL</th><th>PTS</th><th>GF–GA</th><th>Muoto</th><th>Seuraava</th>`, teamRows) : ""}
+  ${teamRows ? table(`<th class="col-rank">#</th><th>Joukkue</th><th>GP</th><th>W-L-OTL</th><th>PTS</th><th>GF–GA</th><th title="Viimeiset 5 ottelua">L5</th><th>Seuraava</th>`, teamRows) : ""}
   ${skaterTableRows ? table(`<th class="col-rank">#</th><th>Pelaaja</th><th>GP</th><th>G</th><th>A</th><th>PTS</th><th>+/-</th>`, skaterTableRows) : ""}
   ${goalieTableRows ? table(`<th class="col-rank">#</th><th>Maalivahti</th><th>GP</th><th>W</th><th>SV%</th><th>GAA</th>`, goalieTableRows) : ""}
 </div>`;
